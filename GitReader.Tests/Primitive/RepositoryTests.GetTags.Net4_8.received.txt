@@ -1,0 +1,86 @@
+﻿[
+  {
+    Name: 0.9.5,
+    Target: {
+      HashCode: 3ef21313178355e27bd787db51ed86c190236760
+    }
+  },
+  {
+    Name: 0.9.6,
+    Target: {
+      HashCode: 907b533f97fe2a5cefb51d73d856953872efc51c
+    }
+  },
+  {
+    Name: 0.9.7,
+    Target: {
+      HashCode: 6f0ea23fc9acf42ba547fa7886d1a57f7724c24e
+    }
+  },
+  {
+    Name: 1.0.0,
+    Target: {
+      HashCode: f64b3080ed198060dc4878d86085111b49e36df8
+    }
+  },
+  {
+    Name: 1.1.0,
+    Target: {
+      HashCode: f690a87062ac0f833e7c250db8ba30ccbc130f15
+    }
+  },
+  {
+    Name: 1.1.1,
+    Target: {
+      HashCode: 8641a1e6608d72aec10bedf62b937d585f6d746a
+    }
+  },
+  {
+    Name: 2.0.0,
+    Target: {
+      HashCode: f64de5e3ad34528757207109e68f626bf8cc1a31
+    }
+  },
+  {
+    Name: 2.0.12,
+    Target: {
+      HashCode: d852c9b28e21cfd6d32fda05bc316528c6805ce7
+    }
+  },
+  {
+    Name: 2.0.15,
+    Target: {
+      HashCode: 828bfa5f9794d78ebc58af03500e8bfeed8f8dda
+    }
+  },
+  {
+    Name: 2.0.16,
+    Target: {
+      HashCode: 001ea63de0c2967a898a0ef96caff6ee8f7c6b52
+    }
+  },
+  {
+    Name: 2.0.17,
+    Target: {
+      HashCode: 0fad4e52989d259eea5c68afc74516b5b8358bc7
+    }
+  },
+  {
+    Name: 2.0.18,
+    Target: {
+      HashCode: 1205dc34ce48bda28fc543daaf9525a9bb6e6d10
+    }
+  },
+  {
+    Name: 2.0.22,
+    Target: {
+      HashCode: 3195237679829c06b3ca764484b0554ccb67562a
+    }
+  },
+  {
+    Name: 2.1.0,
+    Target: {
+      HashCode: 30aaea993cc0a3cb1dad2968d3e5f4d90a287e25
+    }
+  }
+]

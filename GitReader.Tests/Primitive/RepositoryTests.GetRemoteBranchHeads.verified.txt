@@ -1,0 +1,38 @@
+﻿[
+  {
+    Name: origin/appveyor,
+    Target: {
+      HashCode: 0a064ec9cd2199e1ecf879496b55d5e956e546ac
+    }
+  },
+  {
+    Name: origin/devel,
+    Target: {
+      HashCode: f2f51b6fe6076ca630ca66c5c9f451217762652a
+    }
+  },
+  {
+    Name: origin/expression-tree,
+    Target: {
+      HashCode: d449e3191e52be96c29ef47992a3bf78b0c759b1
+    }
+  },
+  {
+    Name: origin/HEAD,
+    Target: {
+      HashCode: 9bb78d13405cab568d3e213130f31beda1ce21d1
+    }
+  },
+  {
+    Name: origin/master,
+    Target: {
+      HashCode: 9bb78d13405cab568d3e213130f31beda1ce21d1
+    }
+  },
+  {
+    Name: origin/netcore,
+    Target: {
+      HashCode: f690f0e7bf703582a1fad7e6f1c2d1586390f43d
+    }
+  }
+]
