@@ -32,6 +32,28 @@ internal readonly struct HashResults
 
 internal static class RepositoryAccessor
 {
+    public static async Task<Reference[]> ReadReferencesAsync(
+        Repository repository,
+        string type,
+        CancellationToken ct)
+    {
+        var headsPath = Utilities.Combine(
+            repository.Path, "refs", type);
+        var branches = await Utilities.WhenAll(
+            Utilities.EnumerateFiles(headsPath, "*").
+            Select(async path =>
+            {
+                var results = await ReadHashAsync(
+                    repository,
+                    path.Substring(repository.Path.Length + 1),
+                    ct);
+                return Reference.Create(
+                    path.Substring(headsPath.Length + 1).Replace(Path.DirectorySeparatorChar, '/'),
+                    results.Hash);
+            }));
+        return branches;
+    }
+
     public static async Task<HashResults> ReadHashAsync(
         Repository repository,
         string relativePath,

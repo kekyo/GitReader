@@ -35,6 +35,24 @@ public static class RepositoryExtension
         return Reference.Create(branchName, results.Hash);
     }
 
+    public static async Task<Reference> GetRemoteBranchHeadReferenceAsync(
+        this Repository repository,
+        string branchName, CancellationToken ct = default)
+    {
+        var results = await RepositoryAccessor.ReadHashAsync(
+            repository, $"refs/remotes/{branchName}", ct);
+        return Reference.Create(branchName, results.Hash);
+    }
+
+    public static async Task<Reference> GetTagReferenceAsync(
+        this Repository repository,
+        string tagName, CancellationToken ct = default)
+    {
+        var results = await RepositoryAccessor.ReadHashAsync(
+            repository, $"refs/tags/{tagName}", ct);
+        return Reference.Create(tagName, results.Hash);
+    }
+
     public static Task<Commit> GetCommitAsync(
         this Repository repository,
         Hash commit, CancellationToken ct = default) =>
@@ -46,40 +64,18 @@ public static class RepositoryExtension
         await RepositoryAccessor.ReadTagAsync(repository, tag, ct) is { } t ?
             t : Tag.Create(tag, ObjectTypes.Commit, tag.Name, null, null);
 
-    private static async Task<Reference[]> GetReferencesAsync(
-        Repository repository,
-        string type,
-        CancellationToken ct)
-    {
-        var headsPath = Utilities.Combine(
-            repository.Path, "refs", type);
-        var branches = await Utilities.WhenAll(
-            Utilities.EnumerateFiles(headsPath, "*").
-            Select(async path =>
-            {
-                var results = await RepositoryAccessor.ReadHashAsync(
-                    repository,
-                    path.Substring(repository.Path.Length + 1),
-                    ct);
-                return Reference.Create(
-                    path.Substring(headsPath.Length + 1).Replace(Path.DirectorySeparatorChar, '/'),
-                    results.Hash);
-            }));
-        return branches;
-    }
-
     public static Task<Reference[]> GetBranchHeadReferencesAsync(
         this Repository repository,
         CancellationToken ct = default) =>
-        GetReferencesAsync(repository, "heads", ct);
+        RepositoryAccessor.ReadReferencesAsync(repository, "heads", ct);
 
     public static Task<Reference[]> GetRemoteBranchHeadReferencesAsync(
         this Repository repository,
         CancellationToken ct = default) =>
-        GetReferencesAsync(repository, "remotes", ct);
+        RepositoryAccessor.ReadReferencesAsync(repository, "remotes", ct);
 
     public static Task<Reference[]> GetTagReferencesAsync(
         this Repository repository,
         CancellationToken ct = default) =>
-        GetReferencesAsync(repository, "tags", ct);
+        RepositoryAccessor.ReadReferencesAsync(repository, "tags", ct);
 }

@@ -1,0 +1,134 @@
+﻿[
+  {
+    Name: origin/appveyor,
+    Head: {
+      Hash: {
+        HashCode: 0a064ec9cd2199e1ecf879496b55d5e956e546ac
+      },
+      Author: {
+        Name: Kouji Matsui,
+        MailAddress: k@kekyo.net,
+        Date: 2016-02-23 11:20:58 +9,
+        RawFormat: Kouji Matsui <k@kekyo.net> 1456194058 0900
+      },
+      Committer: {
+        Name: Kouji Matsui,
+        MailAddress: k@kekyo.net,
+        Date: 2016-02-23 11:20:58 +9,
+        RawFormat: Kouji Matsui <k@kekyo.net> 1456194058 0900
+      },
+      Message: Bit changed.
+    }
+  },
+  {
+    Name: origin/devel,
+    Head: {
+      Hash: {
+        HashCode: f2f51b6fe6076ca630ca66c5c9f451217762652a
+      },
+      Author: {
+        Name: Kouji Matsui,
+        MailAddress: k@kekyo.net,
+        Date: 2020-12-24 17:15:37 +9,
+        RawFormat: Kouji Matsui <k@kekyo.net> 1608797737 0900
+      },
+      Committer: {
+        Name: Kouji Matsui,
+        MailAddress: k@kekyo.net,
+        Date: 2020-12-24 17:21:02 +9,
+        RawFormat: Kouji Matsui <k@kekyo.net> 1608798062 0900
+      },
+      Message:
+Updates test nuget refs.
+
+    }
+  },
+  {
+    Name: origin/expression-tree,
+    Head: {
+      Hash: {
+        HashCode: d449e3191e52be96c29ef47992a3bf78b0c759b1
+      },
+      Author: {
+        Name: Kouji Matsui,
+        MailAddress: k@kekyo.net,
+        Date: 2016-02-15 22:13:35 +9,
+        RawFormat: Kouji Matsui <k@kekyo.net> 1455542015 0900
+      },
+      Committer: {
+        Name: Kouji Matsui,
+        MailAddress: k@kekyo.net,
+        Date: 2016-02-15 22:13:35 +9,
+        RawFormat: Kouji Matsui <k@kekyo.net> 1455542015 0900
+      },
+      Message: Still working (broken)
+    }
+  },
+  {
+    Name: origin/HEAD,
+    Head: {
+      Hash: {
+        HashCode: 9bb78d13405cab568d3e213130f31beda1ce21d1
+      },
+      Author: {
+        Name: Kouji Matsui,
+        MailAddress: k@kekyo.net,
+        Date: 2021-11-11 09:40:12 +9,
+        RawFormat: Kouji Matsui <k@kekyo.net> 1636591212 0900
+      },
+      Committer: {
+        Name: Kouji Matsui,
+        MailAddress: k@kekyo.net,
+        Date: 2021-11-11 09:40:12 +9,
+        RawFormat: Kouji Matsui <k@kekyo.net> 1636591212 0900
+      },
+      Message:
+Added installation .NET 6 SDK on GitHub Actions.
+
+    }
+  },
+  {
+    Name: origin/master,
+    Head: {
+      Hash: {
+        HashCode: 9bb78d13405cab568d3e213130f31beda1ce21d1
+      },
+      Author: {
+        Name: Kouji Matsui,
+        MailAddress: k@kekyo.net,
+        Date: 2021-11-11 09:40:12 +9,
+        RawFormat: Kouji Matsui <k@kekyo.net> 1636591212 0900
+      },
+      Committer: {
+        Name: Kouji Matsui,
+        MailAddress: k@kekyo.net,
+        Date: 2021-11-11 09:40:12 +9,
+        RawFormat: Kouji Matsui <k@kekyo.net> 1636591212 0900
+      },
+      Message:
+Added installation .NET 6 SDK on GitHub Actions.
+
+    }
+  },
+  {
+    Name: origin/netcore,
+    Head: {
+      Hash: {
+        HashCode: f690f0e7bf703582a1fad7e6f1c2d1586390f43d
+      },
+      Author: {
+        Name: Kouji Matsui,
+        MailAddress: k@kekyo.net,
+        Date: 2016-02-22 13:09:13 +9,
+        RawFormat: Kouji Matsui <k@kekyo.net> 1456114153 0900
+      },
+      Committer: {
+        Name: Kouji Matsui,
+        MailAddress: k@kekyo.net,
+        Date: 2016-02-22 13:38:28 +9,
+        RawFormat: Kouji Matsui <k@kekyo.net> 1456115908 0900
+      },
+      Message: Add UWP and .NETCore test projects.
+    }
+  }
+]

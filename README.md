@@ -48,11 +48,113 @@ GitReader has high-level interfaces and primitive interfaces.
 * The primitive interface is an interface that exposes the internal structure of the Git repository as it is,
   It is easy to handle and will be make high-performance with asynchronous operations
   if you know the structure knowledge.
+  
+----
 
 ## Samples (High-level interfaces)
 
-TODO:
+### Read current head commit
 
+```csharp
+using GitReader;
+using GitReader.Structures;
+
+using Repository repository = await Repository.Factory.OpenAsync(
+    "/home/kekyo/Projects/YourOwnLocalGitRepo");
+
+Commit commit = await repository.GetCurrentHeadAsync();
+
+Console.WriteLine($"Hash: {commit.Hash}");
+Console.WriteLine($"Author: {commit.Author}");
+Console.WriteLine($"Committer: {commit.Committer}");
+Console.WriteLine($"Message: {commit.Message}");
+```
+
+### Read a branch head commit
+
+```csharp
+Branch branch = await repository.GetBranchAsync("develop");
+
+Console.WriteLine($"Name: {branch.Name}");
+
+Console.WriteLine($"Hash: {branch.Head.Hash}");
+Console.WriteLine($"Author: {branch.Head.Author}");
+Console.WriteLine($"Committer: {branch.Head.Committer}");
+Console.WriteLine($"Message: {branch.Head.Message}");
+```
+
+### Read a remote branch head commit
+
+```csharp
+Branch branch = await repository.GetRemoteBranchAsync("origin/develop");
+
+Console.WriteLine($"Name: {branch.Name}");
+
+Console.WriteLine($"Hash: {branch.Head.Hash}");
+Console.WriteLine($"Author: {branch.Head.Author}");
+Console.WriteLine($"Committer: {branch.Head.Committer}");
+Console.WriteLine($"Message: {branch.Head.Message}");
+```
+
+### Enumerate branches
+
+```csharp
+Branch[] branches = await repository.GetBranchesAsync();
+
+foreach (Branch branch in branches)
+{
+    Console.WriteLine($"Name: {branch.Name}");
+
+    Console.WriteLine($"Hash: {branch.Head.Hash}");
+    Console.WriteLine($"Author: {branch.Head.Author}");
+    Console.WriteLine($"Committer: {branch.Head.Committer}");
+    Console.WriteLine($"Message: {branch.Head.Message}");
+}
+```
+
+### Enumerate tags
+
+```csharp
+Tag[] tags = await repository.GetTagsAsync();
+
+foreach (Tag tag in tags)
+{
+    Console.WriteLine($"Name: {tag.Name}");
+
+    Console.WriteLine($"Hash: {tag.Hash}");
+    Console.WriteLine($"Author: {tag.Author}");
+    Console.WriteLine($"Committer: {tag.Committer}");
+    Console.WriteLine($"Message: {tag.Message}");
+}
+```
+
+### Traverse a branch through primary commits
+
+```csharp
+Branch branch = await repository.GetBranchAsync("develop");
+
+Console.WriteLine($"Name: {branch.Name}");
+
+Commit current = branch.Head;
+while (true)
+{
+    Console.WriteLine($"Hash: {current.Hash}");
+    Console.WriteLine($"Author: {current.Author}");
+    Console.WriteLine($"Committer: {current.Committer}");
+    Console.WriteLine($"Message: {current.Message}");
+
+    // Bottom of branch.
+    if (current.GetParentCount() == 0)
+    {
+        break;
+    }
+
+    // Get primary parent.
+    current = await current.GetParentAsync(0);
+}
+```
+
+----
 
 ## Samples (Primitive interfaces)
 
@@ -128,12 +230,13 @@ while (true)
     Console.WriteLine($"Committer: {commit.Committer}");
     Console.WriteLine($"Message: {commit.Message}");
 
-    // Primary parent.
+    // Bottom of branch.
     if (commit.Parents.Length == 0)
     {
-        // Bottom of branch.
         break;
     }
+
+    // Get primary parent.
     Hash primary = commit.Parents[0];
     commit = await repository.GetCommitAsync(primary);
 }
