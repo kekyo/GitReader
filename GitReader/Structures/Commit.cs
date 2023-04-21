@@ -15,12 +15,12 @@ namespace GitReader.Structures;
 public sealed class Commit : IEquatable<Commit?>
 {
     internal readonly Repository repository;
-    internal readonly Primitive.Hash treeRoot;
-    internal readonly Primitive.Hash[] parents;
+    internal readonly Hash treeRoot;
+    internal readonly Hash[] parents;
 
-    public readonly Primitive.Hash Hash;
-    public readonly Primitive.Signature Author;
-    public readonly Primitive.Signature Committer;
+    public readonly Hash Hash;
+    public readonly Signature Author;
+    public readonly Signature Committer;
     public readonly string Message;
 
     internal Commit(
@@ -64,9 +64,9 @@ public sealed class Commit : IEquatable<Commit?>
         $"{this.Hash}: {this.Author}: {this.Message}";
 
     public void Deconstruct(
-        out Primitive.Hash hash,
-        out Primitive.Signature author,
-        out Primitive.Signature committer,
+        out Hash hash,
+        out Signature author,
+        out Signature committer,
         out string message)
     {
         hash = this.Hash;

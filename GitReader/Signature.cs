@@ -12,7 +12,7 @@ using System.Globalization;
 using System.Linq;
 using GitReader.Internal;
 
-namespace GitReader.Primitive;
+namespace GitReader;
 
 public readonly struct Signature : IEquatable<Signature>
 {
