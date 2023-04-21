@@ -250,6 +250,7 @@ while (true)
 * Supported synchronously accessors.
 * Supported rich-collection based accessors.
 * Supported CRC32 verifier.
+* Supported F# bindings.
 
 ----
 
