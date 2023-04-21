@@ -244,6 +244,15 @@ while (true)
 
 ----
 
+## TODO
+
+* Supported tree/file accessors.
+* Supported synchronously accessors.
+* Supported rich-collection based accessors.
+* Supported CRC32 verifier.
+
+----
+
 ## License
 
 Apache-v2
