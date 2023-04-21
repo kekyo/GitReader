@@ -17,7 +17,7 @@ namespace GitReader.Structures;
 
 public static class RepositoryFactoryExtension
 {
-    public static async Task<Repository> OpenAsync(
+    public static async Task<StructuredRepository> OpenAsync(
         this RepositoryFactory _,
         string path, CancellationToken ct = default, bool forceUnlock = false)
     {

@@ -8,7 +8,6 @@
 ////////////////////////////////////////////////////////////////////////////
 
 using GitReader.Internal;
-using GitReader.Primitive;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -18,7 +17,7 @@ namespace GitReader.Structures;
 public static class RepositoryExtension
 {
     public static async Task<Commit> GetCurrentHeadAsync(
-        this Repository repository,
+        this StructuredRepository repository,
         CancellationToken ct = default)
     {
         var results = await RepositoryAccessor.ReadHashAsync(
@@ -42,7 +41,7 @@ public static class RepositoryExtension
     }
 
     public static async Task<Branch> GetBranchAsync(
-        this Repository repository,
+        this StructuredRepository repository,
         string branchName,
         CancellationToken ct = default)
     {
@@ -54,7 +53,7 @@ public static class RepositoryExtension
     }
 
     public static async Task<Branch> GetRemoteBranchAsync(
-        this Repository repository,
+        this StructuredRepository repository,
         string branchName,
         CancellationToken ct = default)
     {
@@ -66,7 +65,7 @@ public static class RepositoryExtension
     }
 
     public static async Task<Tag> GetTagAsync(
-        this Repository repository,
+        this StructuredRepository repository,
         string tagName,
         CancellationToken ct = default)
     {
@@ -79,7 +78,7 @@ public static class RepositoryExtension
     }
 
     public static async Task<Branch[]> GetBranchesAsync(
-        this Repository repository,
+        this StructuredRepository repository,
         CancellationToken ct = default)
     {
         var references = await RepositoryAccessor.ReadReferencesAsync(
@@ -98,7 +97,7 @@ public static class RepositoryExtension
     }
 
     public static async Task<Branch[]> GetRemoteBranchesAsync(
-        this Repository repository,
+        this StructuredRepository repository,
         CancellationToken ct = default)
     {
         var references = await RepositoryAccessor.ReadReferencesAsync(
@@ -117,7 +116,7 @@ public static class RepositoryExtension
     }
 
     public static async Task<Tag[]> GetTagsAsync(
-        this Repository repository,
+        this StructuredRepository repository,
         CancellationToken ct = default)
     {
         var references = await RepositoryAccessor.ReadReferencesAsync(

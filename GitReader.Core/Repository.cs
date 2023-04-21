@@ -13,7 +13,7 @@ using System.Threading;
 
 namespace GitReader;
 
-public sealed class Repository : IDisposable
+public class Repository : IDisposable
 {
     private TemporaryFile locker;
     internal ObjectAccessor accessor;

@@ -33,7 +33,7 @@ Target .NET platforms are (Almost all!):
 * .NET 7.0 to 5.0
 * .NET Core 3.1 to 2.0
 * .NET Standard 2.1 to 1.6
-* .NET Framework 4.8 to 3.5
+* .NET Framework 4.8.1 to 3.5
 
 ----
 
