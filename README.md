@@ -2,7 +2,7 @@
 
 Lightweight Git local repository traversal library.
 
-![GitReader](Images/GitReader.128.png)
+![GitReader](Images/GitReader.100.png)
 
 # Status
 
