@@ -1,6 +1,6 @@
 ﻿////////////////////////////////////////////////////////////////////////////
 //
-// GitReader - Lightweight Git local repository exploration library.
+// GitReader - Lightweight Git local repository traversal library.
 // Copyright (c) Kouji Matsui (@kozy_kekyo, @kekyo@mastodon.cloud)
 //
 // Licensed under Apache-v2: https://opensource.org/licenses/Apache-2.0
@@ -17,17 +17,23 @@ namespace GitReader;
 
 public sealed class Repository : IDisposable
 {
-    private Locker locker;
+    private TemporaryFile locker;
+    internal ObjectAccessor accessor;
 
-    private Repository(
-        string path, Locker locker)
+    internal Repository(
+        string repositoryPath, TemporaryFile locker)
     {
-        this.Path = path;
+        this.Path = repositoryPath;
+        this.accessor = new(repositoryPath);
         this.locker = locker;
     }
 
     public void Dispose()
     {
+        if (Interlocked.Exchange(ref this.accessor, null!) is { } accessor)
+        {
+            accessor.Dispose();
+        }
         if (Interlocked.Exchange(ref this.locker, null!) is { } locker)
         {
             locker.Dispose();
@@ -36,20 +42,33 @@ public sealed class Repository : IDisposable
 
     public string Path { get; }
 
-    public static async Task<Repository> OpenAsync(
-        string repositoryPath, CancellationToken ct = default, bool forceUnlock = false)
-    {
-        var path = System.IO.Path.GetFileName(repositoryPath) != ".git" ?
-            Utilities.Combine(repositoryPath, ".git") : repositoryPath;
+    public static readonly RepositoryFactory Factory = new();
+}
 
-        if (!Directory.Exists(path))
+public sealed class RepositoryFactory
+{
+    internal RepositoryFactory()
+    {
+    }
+}
+
+public static class RepositoryFactoryExtension
+{
+    public static async Task<Repository> OpenAsync(
+        this RepositoryFactory _,
+        string path, CancellationToken ct = default, bool forceUnlock = false)
+    {
+        var repositoryPath = System.IO.Path.GetFileName(path) != ".git" ?
+            Utilities.Combine(path, ".git") : path;
+
+        if (!Directory.Exists(repositoryPath))
         {
             throw new ArgumentException("Repository does not exist.");
         }
 
-        var lockPath = Utilities.Combine(path, "index.lock");
-        var locker = await Locker.CreateAsync(lockPath, ct, forceUnlock);
+        var lockPath = Utilities.Combine(repositoryPath, "index.lock");
+        var locker = await TemporaryFile.CreateLockFileAsync(lockPath, ct, forceUnlock);
 
-        return new(path, locker);
+        return new(repositoryPath, locker);
     }
 }

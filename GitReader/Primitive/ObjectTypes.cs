@@ -7,6 +7,12 @@
 //
 ////////////////////////////////////////////////////////////////////////////
 
-using System.Runtime.CompilerServices;
+namespace GitReader.Primitive;
 
-[assembly: InternalsVisibleTo("GitReader.Tests")]
+public enum ObjectTypes
+{
+    Commit = 1,
+    Tree,
+    Blob,
+    Tag,
+}

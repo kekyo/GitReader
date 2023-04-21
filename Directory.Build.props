@@ -22,7 +22,7 @@
     <Product>GitReader</Product>
     <Trademark>GitReader</Trademark>
     <Copyright>Copyright (c) Kouji Matsui</Copyright>
-    <Description>Lightweight Git local repository exploration library.</Description>
+    <Description>Lightweight Git local repository traversal library.</Description>
 
     <Company>Kouji Matsui (@kozy_kekyo, @kekyo@mastodon.cloud)</Company>
     <Authors>Kouji Matsui (@kozy_kekyo, @kekyo@mastodon.cloud)</Authors>

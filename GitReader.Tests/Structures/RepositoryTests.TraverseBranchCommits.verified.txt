@@ -3,9 +3,6 @@
     Hash: {
       HashCode: 9bb78d13405cab568d3e213130f31beda1ce21d1
     },
-    TreeRoot: {
-      HashCode: e6d9dd7ac6252f145bc13b7b7f7512a6cf933525
-    },
     Author: {
       Name: Kouji Matsui,
       MailAddress: k@kekyo.net,
@@ -18,11 +15,6 @@
       Date: 2021-11-11 09:40:12 +9,
       RawFormat: Kouji Matsui <k@kekyo.net> 1636591212 0900
     },
-    Parents: [
-      {
-        HashCode: 30aaea993cc0a3cb1dad2968d3e5f4d90a287e25
-      }
-    ],
     Message:
 Added installation .NET 6 SDK on GitHub Actions.
 
@@ -31,9 +23,6 @@ Added installation .NET 6 SDK on GitHub Actions.
     Hash: {
       HashCode: 30aaea993cc0a3cb1dad2968d3e5f4d90a287e25
     },
-    TreeRoot: {
-      HashCode: 44e287276bd844143678a0e3c388e1db81b0366a
-    },
     Author: {
       Name: Kouji Matsui,
       MailAddress: k@kekyo.net,
@@ -46,11 +35,6 @@ Added installation .NET 6 SDK on GitHub Actions.
       Date: 2021-11-10 22:50:12 +9,
       RawFormat: Kouji Matsui <k@kekyo.net> 1636552212 0900
     },
-    Parents: [
-      {
-        HashCode: cb9b168ff973ce766d55e8697b3aea2c93ad3986
-      }
-    ],
     Message:
 Upgraded .NET 6.0.
 
@@ -59,9 +43,6 @@ Upgraded .NET 6.0.
     Hash: {
       HashCode: cb9b168ff973ce766d55e8697b3aea2c93ad3986
     },
-    TreeRoot: {
-      HashCode: 3dae1f4ba48c80ae8cf9dfafc4d5c780b42962a2
-    },
     Author: {
       Name: Kouji Matsui,
       MailAddress: k@kekyo.net,
@@ -74,11 +55,6 @@ Upgraded .NET 6.0.
       Date: 2021-01-21 00:21:32 +9,
       RawFormat: Kouji Matsui <k@kekyo.net> 1611156092 0900
     },
-    Parents: [
-      {
-        HashCode: 3195237679829c06b3ca764484b0554ccb67562a
-      }
-    ],
     Message:
 Update badge.
 
@@ -87,9 +63,6 @@ Update badge.
     Hash: {
       HashCode: 3195237679829c06b3ca764484b0554ccb67562a
     },
-    TreeRoot: {
-      HashCode: 561b9d988b35514a618e93a687364df476d45996
-    },
     Author: {
       Name: Kouji Matsui,
       MailAddress: k@kekyo.net,
@@ -102,11 +75,6 @@ Update badge.
       Date: 2021-01-21 00:12:21 +9,
       RawFormat: Kouji Matsui <k@kekyo.net> 1611155541 0900
     },
-    Parents: [
-      {
-        HashCode: 01c78604dc4a22a6662f8afb41c4c3bf795d2fe6
-      }
-    ],
     Message:
 Update readmes.
 
@@ -115,9 +83,6 @@ Update readmes.
     Hash: {
       HashCode: 01c78604dc4a22a6662f8afb41c4c3bf795d2fe6
     },
-    TreeRoot: {
-      HashCode: f1441ad99e94eecada3043f2e45fc71a16cf3765
-    },
     Author: {
       Name: Kouji Matsui,
       MailAddress: k@kekyo.net,
@@ -130,11 +95,6 @@ Update readmes.
       Date: 2021-01-21 00:00:48 +9,
       RawFormat: Kouji Matsui <k@kekyo.net> 1611154848 0900
     },
-    Parents: [
-      {
-        HashCode: f2f51b6fe6076ca630ca66c5c9f451217762652a
-      }
-    ],
     Message:
 Added fallback delegate features.
 
@@ -142,9 +102,6 @@ Added fallback delegate features.
   {
     Hash: {
       HashCode: f2f51b6fe6076ca630ca66c5c9f451217762652a
-    },
-    TreeRoot: {
-      HashCode: cc2b563b8b002dac82ca506bd80fbfcf557c7d3c
     },
     Author: {
       Name: Kouji Matsui,
@@ -158,11 +115,6 @@ Added fallback delegate features.
       Date: 2020-12-24 17:21:02 +9,
       RawFormat: Kouji Matsui <k@kekyo.net> 1608798062 0900
     },
-    Parents: [
-      {
-        HashCode: 8a2786ff6485e1d5d8aca7ad6fcf53fcf9a521a8
-      }
-    ],
     Message:
 Updates test nuget refs.
 
@@ -171,9 +123,6 @@ Updates test nuget refs.
     Hash: {
       HashCode: 8a2786ff6485e1d5d8aca7ad6fcf53fcf9a521a8
     },
-    TreeRoot: {
-      HashCode: cf2f854c665603166cbb485372c06ec162ca4e9d
-    },
     Author: {
       Name: Kouji Matsui,
       MailAddress: k@kekyo.net,
@@ -186,11 +135,6 @@ Updates test nuget refs.
       Date: 2020-12-24 13:52:29 +9,
       RawFormat: Kouji Matsui <k@kekyo.net> 1608785549 0900
     },
-    Parents: [
-      {
-        HashCode: 1205dc34ce48bda28fc543daaf9525a9bb6e6d10
-      }
-    ],
     Message:
 Updated readme.
 
@@ -199,9 +143,6 @@ Updated readme.
     Hash: {
       HashCode: 1205dc34ce48bda28fc543daaf9525a9bb6e6d10
     },
-    TreeRoot: {
-      HashCode: 5462bf28fdc4681762057cac7704730b1c590b38
-    },
     Author: {
       Name: Kouji Matsui,
       MailAddress: k@kekyo.net,
@@ -214,14 +155,6 @@ Updated readme.
       Date: 2020-12-24 13:27:23 +9,
       RawFormat: Kouji Matsui <k@kekyo.net> 1608784043 0900
     },
-    Parents: [
-      {
-        HashCode: 0fad4e52989d259eea5c68afc74516b5b8358bc7
-      },
-      {
-        HashCode: c8d16aa17c9684ce321f2363ad07d5b7f1906fed
-      }
-    ],
     Message:
 Merge branch 'devel'
 
@@ -229,9 +162,6 @@ Merge branch 'devel'
   {
     Hash: {
       HashCode: 0fad4e52989d259eea5c68afc74516b5b8358bc7
-    },
-    TreeRoot: {
-      HashCode: d42985bdb3a4046be8a1c57933d40459c127e032
     },
     Author: {
       Name: Kouji Matsui,
@@ -245,14 +175,6 @@ Merge branch 'devel'
       Date: 2020-12-21 22:17:52 +9,
       RawFormat: Kouji Matsui <k@kekyo.net> 1608556672 0900
     },
-    Parents: [
-      {
-        HashCode: 001ea63de0c2967a898a0ef96caff6ee8f7c6b52
-      },
-      {
-        HashCode: 330c1d88245efc7c608ca6834e80c81895b85c8f
-      }
-    ],
     Message:
 Merge branch 'devel'
 
@@ -260,9 +182,6 @@ Merge branch 'devel'
   {
     Hash: {
       HashCode: 001ea63de0c2967a898a0ef96caff6ee8f7c6b52
-    },
-    TreeRoot: {
-      HashCode: 10635e425f5b9428e754d8ca64fa6ac18aec9004
     },
     Author: {
       Name: Kouji Matsui,
@@ -276,11 +195,6 @@ Merge branch 'devel'
       Date: 2020-12-18 09:32:28 +9,
       RawFormat: Kouji Matsui <k@kekyo.net> 1608251548 0900
     },
-    Parents: [
-      {
-        HashCode: 828bfa5f9794d78ebc58af03500e8bfeed8f8dda
-      }
-    ],
     Message:
 Updated packing script.
 
@@ -289,9 +203,6 @@ Updated packing script.
     Hash: {
       HashCode: 828bfa5f9794d78ebc58af03500e8bfeed8f8dda
     },
-    TreeRoot: {
-      HashCode: a2dca81dca1f274c92266a8e287de1303087b764
-    },
     Author: {
       Name: Kouji Matsui,
       MailAddress: k@kekyo.net,
@@ -304,11 +215,6 @@ Updated packing script.
       Date: 2020-12-18 09:16:07 +9,
       RawFormat: Kouji Matsui <k@kekyo.net> 1608250567 0900
     },
-    Parents: [
-      {
-        HashCode: 81b50b4b72cf696471dd897377d921e77f2bfeae
-      }
-    ],
     Message:
 Updated namespace name.
 
@@ -317,9 +223,6 @@ Updated namespace name.
     Hash: {
       HashCode: 81b50b4b72cf696471dd897377d921e77f2bfeae
     },
-    TreeRoot: {
-      HashCode: 4c948e37b08b7f70d39c2e9477a6a625ee6b6d62
-    },
     Author: {
       Name: Kouji Matsui,
       MailAddress: k@kekyo.net,
@@ -332,11 +235,6 @@ Updated namespace name.
       Date: 2020-12-18 08:51:06 +9,
       RawFormat: Kouji Matsui <k@kekyo.net> 1608249066 0900
     },
-    Parents: [
-      {
-        HashCode: 51fd2b5f595f2e2e1c6cf64352494aae3065511c
-      }
-    ],
     Message:
 Updated readme.
 
@@ -345,9 +243,6 @@ Updated readme.
     Hash: {
       HashCode: 51fd2b5f595f2e2e1c6cf64352494aae3065511c
     },
-    TreeRoot: {
-      HashCode: 6da4484e22220dbeeb5a4a1aed05ba018e32866f
-    },
     Author: {
       Name: Kouji Matsui,
       MailAddress: k@kekyo.net,
@@ -360,11 +255,6 @@ Updated readme.
       Date: 2020-12-17 19:16:53 +9,
       RawFormat: Kouji Matsui <k@kekyo.net> 1608200213 0900
     },
-    Parents: [
-      {
-        HashCode: d852c9b28e21cfd6d32fda05bc316528c6805ce7
-      }
-    ],
     Message:
 Updated readme.
 
@@ -372,9 +262,6 @@ Updated readme.
   {
     Hash: {
       HashCode: d852c9b28e21cfd6d32fda05bc316528c6805ce7
-    },
-    TreeRoot: {
-      HashCode: 6a11890821f40f7bc2883871d0d7c722742135bb
     },
     Author: {
       Name: Kouji Matsui,
@@ -388,11 +275,6 @@ Updated readme.
       Date: 2020-12-17 19:07:59 +9,
       RawFormat: Kouji Matsui <k@kekyo.net> 1608199679 0900
     },
-    Parents: [
-      {
-        HashCode: e38a3bac2919b87483eaf547d75681a9a5faa42a
-      }
-    ],
     Message:
 Changed the NuGet package name from "CenterCLR.NamingFormatter" to "NamingFormatter".
 
@@ -400,9 +282,6 @@ Changed the NuGet package name from "CenterCLR.NamingFormatter" to "NamingFormat
   {
     Hash: {
       HashCode: e38a3bac2919b87483eaf547d75681a9a5faa42a
-    },
-    TreeRoot: {
-      HashCode: 3327b41da41b5463f40e802d01c31aa4b56d3251
     },
     Author: {
       Name: Kouji Matsui,
@@ -416,11 +295,6 @@ Changed the NuGet package name from "CenterCLR.NamingFormatter" to "NamingFormat
       Date: 2020-12-17 18:56:09 +9,
       RawFormat: Kouji Matsui <k@kekyo.net> 1608198969 0900
     },
-    Parents: [
-      {
-        HashCode: 181610580108195ae804f34315f798f5a19510d3
-      }
-    ],
     Message:
 Update readme.
 
@@ -429,9 +303,6 @@ Update readme.
     Hash: {
       HashCode: 181610580108195ae804f34315f798f5a19510d3
     },
-    TreeRoot: {
-      HashCode: 5e4099e7fd7d63cb68fcb65832bddbb9ef5578fc
-    },
     Author: {
       Name: Kouji Matsui,
       MailAddress: k@kekyo.net,
@@ -444,11 +315,6 @@ Update readme.
       Date: 2020-12-17 18:51:39 +9,
       RawFormat: Kouji Matsui <k@kekyo.net> 1608198699 0900
     },
-    Parents: [
-      {
-        HashCode: f275f5fae17d41a08cb12cdc2c377bf769bd1731
-      }
-    ],
     Message:
 Update packing script.
 
@@ -457,9 +323,6 @@ Update packing script.
     Hash: {
       HashCode: f275f5fae17d41a08cb12cdc2c377bf769bd1731
     },
-    TreeRoot: {
-      HashCode: 10f201899a725a031a197f3581f1a95dc3cf0fb4
-    },
     Author: {
       Name: Kouji Matsui,
       MailAddress: k@kekyo.net,
@@ -472,11 +335,6 @@ Update packing script.
       Date: 2020-12-17 18:47:37 +9,
       RawFormat: Kouji Matsui <k@kekyo.net> 1608198457 0900
     },
-    Parents: [
-      {
-        HashCode: 5f590c6c53bb74c6341c829a0d2551f7aad1e6d4
-      }
-    ],
     Message:
 Reenable building by dotnet command.
 
@@ -485,9 +343,6 @@ Reenable building by dotnet command.
     Hash: {
       HashCode: 5f590c6c53bb74c6341c829a0d2551f7aad1e6d4
     },
-    TreeRoot: {
-      HashCode: 5986c9564cf451795e393129c40f0360d67a2b30
-    },
     Author: {
       Name: Kouji Matsui,
       MailAddress: k@kekyo.net,
@@ -500,11 +355,6 @@ Reenable building by dotnet command.
       Date: 2020-12-17 18:40:09 +9,
       RawFormat: Kouji Matsui <k@kekyo.net> 1608198009 0900
     },
-    Parents: [
-      {
-        HashCode: a79e0ca884b0f6fac5dc13585395c93f2ad9c422
-      }
-    ],
     Message:
 Bit changed (WIP).
 
@@ -513,9 +363,6 @@ Bit changed (WIP).
     Hash: {
       HashCode: a79e0ca884b0f6fac5dc13585395c93f2ad9c422
     },
-    TreeRoot: {
-      HashCode: 38d331d6c99cd24d77ca03b12dd96c987ee841df
-    },
     Author: {
       Name: Kouji Matsui,
       MailAddress: k@kekyo.net,
@@ -528,11 +375,6 @@ Bit changed (WIP).
       Date: 2020-12-17 18:32:21 +9,
       RawFormat: Kouji Matsui <k@kekyo.net> 1608197541 0900
     },
-    Parents: [
-      {
-        HashCode: 3a8bd55cc0b5453e53777c2d841d65e4efa3a2d7
-      }
-    ],
     Message:
 Bit changed (WIP).
 
@@ -541,9 +383,6 @@ Bit changed (WIP).
     Hash: {
       HashCode: 3a8bd55cc0b5453e53777c2d841d65e4efa3a2d7
     },
-    TreeRoot: {
-      HashCode: f2097148caaa1b58e4d71562a1a9a355218ed909
-    },
     Author: {
       Name: Kouji Matsui,
       MailAddress: k@kekyo.net,
@@ -556,11 +395,6 @@ Bit changed (WIP).
       Date: 2020-12-17 18:22:42 +9,
       RawFormat: Kouji Matsui <k@kekyo.net> 1608196962 0900
     },
-    Parents: [
-      {
-        HashCode: f2aef5e90c511b0d7e262f16ceb88dd05e489cfd
-      }
-    ],
     Message:
 Bit changed (WIP).
 
@@ -569,9 +403,6 @@ Bit changed (WIP).
     Hash: {
       HashCode: f2aef5e90c511b0d7e262f16ceb88dd05e489cfd
     },
-    TreeRoot: {
-      HashCode: 4ea749a103e1ff5d5f32072b51def7b980ed48c3
-    },
     Author: {
       Name: Kouji Matsui,
       MailAddress: k@kekyo.net,
@@ -584,11 +415,6 @@ Bit changed (WIP).
       Date: 2020-12-17 18:12:45 +9,
       RawFormat: Kouji Matsui <k@kekyo.net> 1608196365 0900
     },
-    Parents: [
-      {
-        HashCode: 0c6ebe23102e7f62636bd5053cd55dabb5eae621
-      }
-    ],
     Message:
 Bit changed (WIP).
 
@@ -597,9 +423,6 @@ Bit changed (WIP).
     Hash: {
       HashCode: 0c6ebe23102e7f62636bd5053cd55dabb5eae621
     },
-    TreeRoot: {
-      HashCode: d705948a8c8948ed00e51ebc26a8c2bf22787fe1
-    },
     Author: {
       Name: Kouji Matsui,
       MailAddress: k@kekyo.net,
@@ -612,11 +435,6 @@ Bit changed (WIP).
       Date: 2020-12-17 18:04:03 +9,
       RawFormat: Kouji Matsui <k@kekyo.net> 1608195843 0900
     },
-    Parents: [
-      {
-        HashCode: 527ac45276dd0622c42d098ab48b64609422c06c
-      }
-    ],
     Message:
 Bit changed (WIP).
 
@@ -625,9 +443,6 @@ Bit changed (WIP).
     Hash: {
       HashCode: 527ac45276dd0622c42d098ab48b64609422c06c
     },
-    TreeRoot: {
-      HashCode: a1e7c5f7f334784506363db5ecbbd7357fab0215
-    },
     Author: {
       Name: Kouji Matsui,
       MailAddress: k@kekyo.net,
@@ -640,11 +455,6 @@ Bit changed (WIP).
       Date: 2020-12-17 17:50:57 +9,
       RawFormat: Kouji Matsui <k@kekyo.net> 1608195057 0900
     },
-    Parents: [
-      {
-        HashCode: 8a6b3634ed7ace23972921461189e72ab9f20718
-      }
-    ],
     Message:
 Bit changed (WIP).
 
@@ -653,9 +463,6 @@ Bit changed (WIP).
     Hash: {
       HashCode: 8a6b3634ed7ace23972921461189e72ab9f20718
     },
-    TreeRoot: {
-      HashCode: 6950a7d0499cc9330b18b5e2f5485732baea6467
-    },
     Author: {
       Name: Kouji Matsui,
       MailAddress: k@kekyo.net,
@@ -668,11 +475,6 @@ Bit changed (WIP).
       Date: 2020-12-17 17:47:05 +9,
       RawFormat: Kouji Matsui <k@kekyo.net> 1608194825 0900
     },
-    Parents: [
-      {
-        HashCode: 6fbb4b17e447429a4a5c244b89297f2496897b80
-      }
-    ],
     Message:
 Added GitHub Actions script and omit older.
 
@@ -681,9 +483,6 @@ Added GitHub Actions script and omit older.
     Hash: {
       HashCode: 6fbb4b17e447429a4a5c244b89297f2496897b80
     },
-    TreeRoot: {
-      HashCode: 492900e5e99d8f6d5a5a1e6e1b3115017cd64a4c
-    },
     Author: {
       Name: Kouji Matsui,
       MailAddress: k@kekyo.net,
@@ -696,11 +495,6 @@ Added GitHub Actions script and omit older.
       Date: 2020-12-17 17:28:51 +9,
       RawFormat: Kouji Matsui <k@kekyo.net> 1608193731 0900
     },
-    Parents: [
-      {
-        HashCode: f64de5e3ad34528757207109e68f626bf8cc1a31
-      }
-    ],
     Message:
 Added supports net5.0, net35-client and net40-client.
 
@@ -708,9 +502,6 @@ Added supports net5.0, net35-client and net40-client.
   {
     Hash: {
       HashCode: f64de5e3ad34528757207109e68f626bf8cc1a31
-    },
-    TreeRoot: {
-      HashCode: e76c74b542c9b9246670481b4c13ea3acd009d3b
     },
     Author: {
       Name: Kouji Matsui,
@@ -724,11 +515,6 @@ Added supports net5.0, net35-client and net40-client.
       Date: 2019-02-01 17:50:32 +9,
       RawFormat: Kouji Matsui <k@kekyo.net> 1549011032 0900
     },
-    Parents: [
-      {
-        HashCode: a47f27183eec5a969785f514f1693195a60bb6d6
-      }
-    ],
     Message:
 Upgraded new MSBuild format and omit PCL versions.
 
@@ -737,9 +523,6 @@ Upgraded new MSBuild format and omit PCL versions.
     Hash: {
       HashCode: a47f27183eec5a969785f514f1693195a60bb6d6
     },
-    TreeRoot: {
-      HashCode: 0ec343c6ebb66a972b916ac174b2365a8c475140
-    },
     Author: {
       Name: Kouji Matsui,
       MailAddress: k@kekyo.net,
@@ -752,20 +535,12 @@ Upgraded new MSBuild format and omit PCL versions.
       Date: 2016-06-10 09:32:16 +9,
       RawFormat: Kouji Matsui <k@kekyo.net> 1465518736 0900
     },
-    Parents: [
-      {
-        HashCode: adf749ec8e52e339597f478d70c12bec8bdf6e40
-      }
-    ],
     Message: CI test.
   },
   {
     Hash: {
       HashCode: adf749ec8e52e339597f478d70c12bec8bdf6e40
     },
-    TreeRoot: {
-      HashCode: bae623c4cd3d8f786129ce8ab48c934575d08be3
-    },
     Author: {
       Name: Kouji Matsui,
       MailAddress: k@kekyo.net,
@@ -778,20 +553,12 @@ Upgraded new MSBuild format and omit PCL versions.
       Date: 2016-02-23 11:42:13 +9,
       RawFormat: Kouji Matsui <k@kekyo.net> 1456195333 0900
     },
-    Parents: [
-      {
-        HashCode: 6961a50ef3ad4e43ed9774daffd8457d32cf5e75
-      }
-    ],
     Message: Bit changed.
   },
   {
     Hash: {
       HashCode: 6961a50ef3ad4e43ed9774daffd8457d32cf5e75
     },
-    TreeRoot: {
-      HashCode: 24af17d5d3a1125c0330f23c1426fbf29a808173
-    },
     Author: {
       Name: Kouji Matsui,
       MailAddress: k@kekyo.net,
@@ -804,23 +571,12 @@ Upgraded new MSBuild format and omit PCL versions.
       Date: 2016-02-23 11:21:15 +9,
       RawFormat: Kouji Matsui <k@kekyo.net> 1456194075 0900
     },
-    Parents: [
-      {
-        HashCode: d53bc0fa81fc8b2a4cd57d7e327a115ff338bb0c
-      },
-      {
-        HashCode: 0a064ec9cd2199e1ecf879496b55d5e956e546ac
-      }
-    ],
     Message: Merge branch 'appveyor'
   },
   {
     Hash: {
       HashCode: d53bc0fa81fc8b2a4cd57d7e327a115ff338bb0c
     },
-    TreeRoot: {
-      HashCode: e65d64eede2412078409236a8db645fcdc98fe8b
-    },
     Author: {
       Name: Kouji Matsui,
       MailAddress: k@kekyo.net,
@@ -833,20 +589,12 @@ Upgraded new MSBuild format and omit PCL versions.
       Date: 2016-02-22 13:44:39 +9,
       RawFormat: Kouji Matsui <k@kekyo.net> 1456116279 0900
     },
-    Parents: [
-      {
-        HashCode: dc45301eeb49ec94ee043755124802497d0079ec
-      }
-    ],
     Message: Bit changed.
   },
   {
     Hash: {
       HashCode: dc45301eeb49ec94ee043755124802497d0079ec
     },
-    TreeRoot: {
-      HashCode: b411c831083f7b736c17c60db19f43fd8b58b3f3
-    },
     Author: {
       Name: Kouji Matsui,
       MailAddress: k@kekyo.net,
@@ -859,23 +607,12 @@ Upgraded new MSBuild format and omit PCL versions.
       Date: 2016-02-22 13:38:49 +9,
       RawFormat: Kouji Matsui <k@kekyo.net> 1456115929 0900
     },
-    Parents: [
-      {
-        HashCode: 440f99adb667cc652ecb7601cc802e563458dd86
-      },
-      {
-        HashCode: f690f0e7bf703582a1fad7e6f1c2d1586390f43d
-      }
-    ],
     Message: Merge branch 'netcore'
   },
   {
     Hash: {
       HashCode: 440f99adb667cc652ecb7601cc802e563458dd86
     },
-    TreeRoot: {
-      HashCode: 5c1c741deb63af67a094bc46abe4ef646e2acf7d
-    },
     Author: {
       Name: Kouji Matsui,
       MailAddress: k@kekyo.net,
@@ -888,20 +625,12 @@ Upgraded new MSBuild format and omit PCL versions.
       Date: 2016-02-08 15:49:28 +9,
       RawFormat: Kouji Matsui <k@kekyo.net> 1454914168 0900
     },
-    Parents: [
-      {
-        HashCode: 4b208e358d7af9f02a3607e1cac7eeda2a7352b8
-      }
-    ],
     Message: Bit changed.
   },
   {
     Hash: {
       HashCode: 4b208e358d7af9f02a3607e1cac7eeda2a7352b8
     },
-    TreeRoot: {
-      HashCode: 999bf70c9f9cbb19c2fae2b6655e2e48d641086d
-    },
     Author: {
       Name: Kouji Matsui,
       MailAddress: k@kekyo.net,
@@ -914,20 +643,12 @@ Upgraded new MSBuild format and omit PCL versions.
       Date: 2016-02-08 15:48:04 +9,
       RawFormat: Kouji Matsui <k@kekyo.net> 1454914084 0900
     },
-    Parents: [
-      {
-        HashCode: 964cd08750becd18e1a43927cced4698bbec6ede
-      }
-    ],
     Message: Add badge.
   },
   {
     Hash: {
       HashCode: 964cd08750becd18e1a43927cced4698bbec6ede
     },
-    TreeRoot: {
-      HashCode: d9f12caa0025484a32bb16ad125620d3d40f696b
-    },
     Author: {
       Name: Kouji Matsui,
       MailAddress: k@kekyo.net,
@@ -940,20 +661,12 @@ Upgraded new MSBuild format and omit PCL versions.
       Date: 2016-02-08 13:53:48 +9,
       RawFormat: Kouji Matsui <k@kekyo.net> 1454907228 0900
     },
-    Parents: [
-      {
-        HashCode: 3b0431e8764dbb627a44aeaca55bd41336c3b4a7
-      }
-    ],
     Message: Add badge.
   },
   {
     Hash: {
       HashCode: 3b0431e8764dbb627a44aeaca55bd41336c3b4a7
     },
-    TreeRoot: {
-      HashCode: be48b9c02b5b763eaebda083061a014f96c8c020
-    },
     Author: {
       Name: Kouji Matsui,
       MailAddress: k@kekyo.net,
@@ -966,20 +679,12 @@ Upgraded new MSBuild format and omit PCL versions.
       Date: 2016-02-01 22:32:03 +9,
       RawFormat: Kouji Matsui <k@kekyo.net> 1454333523 0900
     },
-    Parents: [
-      {
-        HashCode: 819ad16b1d3b7ffa0f315dd417eb61e4b7264c53
-      }
-    ],
     Message: Omit IFormatProvider method extension attribute.
   },
   {
     Hash: {
       HashCode: 819ad16b1d3b7ffa0f315dd417eb61e4b7264c53
     },
-    TreeRoot: {
-      HashCode: ff2d5429c6d0455bf2724e10bda07d0575067910
-    },
     Author: {
       Name: Kouji Matsui,
       MailAddress: k@kekyo.net,
@@ -992,22 +697,11 @@ Upgraded new MSBuild format and omit PCL versions.
       Date: 2016-01-30 20:27:39 +9,
       RawFormat: Kouji Matsui <k@kekyo.net> 1454153259 0900
     },
-    Parents: [
-      {
-        HashCode: 8f37599aed21ad44da6301b72395a2aea2b38e05
-      },
-      {
-        HashCode: 6b7fe206653544060c5d8025895533fe77ca552f
-      }
-    ],
     Message: Merge commit '6b7fe206653544060c5d8025895533fe77ca552f'
   },
   {
     Hash: {
       HashCode: 8f37599aed21ad44da6301b72395a2aea2b38e05
-    },
-    TreeRoot: {
-      HashCode: ff2d5429c6d0455bf2724e10bda07d0575067910
     },
     Author: {
       Name: Kouji Matsui,
@@ -1021,20 +715,12 @@ Upgraded new MSBuild format and omit PCL versions.
       Date: 2016-01-30 20:26:56 +9,
       RawFormat: Kouji Matsui <k@kekyo.net> 1454153216 0900
     },
-    Parents: [
-      {
-        HashCode: 5d790aa5fa7ea664b85323295104cce14e0dd3c2
-      }
-    ],
     Message: Fixed alignment format.
   },
   {
     Hash: {
       HashCode: 5d790aa5fa7ea664b85323295104cce14e0dd3c2
     },
-    TreeRoot: {
-      HashCode: 1e6d259c5f0d1c52696658c7068815f690ab8dec
-    },
     Author: {
       Name: Kouji Matsui,
       MailAddress: k@kekyo.net,
@@ -1047,20 +733,12 @@ Upgraded new MSBuild format and omit PCL versions.
       Date: 2016-01-30 00:05:08 +9,
       RawFormat: Kouji Matsui <k@kekyo.net> 1454079908 0900
     },
-    Parents: [
-      {
-        HashCode: 2875072f2b0e45c2447e211d09d11797e68da468
-      }
-    ],
     Message: Bit changed.
   },
   {
     Hash: {
       HashCode: 2875072f2b0e45c2447e211d09d11797e68da468
     },
-    TreeRoot: {
-      HashCode: 850cc81dd6ab8f8efc215b86614636e09d694fc8
-    },
     Author: {
       Name: Kouji Matsui,
       MailAddress: k@kekyo.net,
@@ -1073,20 +751,12 @@ Upgraded new MSBuild format and omit PCL versions.
       Date: 2016-01-29 23:58:46 +9,
       RawFormat: Kouji Matsui <k@kekyo.net> 1454079526 0900
     },
-    Parents: [
-      {
-        HashCode: a7187601f4b4b9dacc3c78895397bb2911d190d6
-      }
-    ],
     Message: Bit changed.
   },
   {
     Hash: {
       HashCode: a7187601f4b4b9dacc3c78895397bb2911d190d6
     },
-    TreeRoot: {
-      HashCode: 1106afe303141dfdefc7642ff4e197c31fe163e6
-    },
     Author: {
       Name: Kouji Matsui,
       MailAddress: k@kekyo.net,
@@ -1099,20 +769,12 @@ Upgraded new MSBuild format and omit PCL versions.
       Date: 2016-01-29 23:43:57 +9,
       RawFormat: Kouji Matsui <k@kekyo.net> 1454078637 0900
     },
-    Parents: [
-      {
-        HashCode: b9f583ce2f3bce0a1dd16128d0f050888d7328d7
-      }
-    ],
     Message: Use RelaxVersioner on .NET2/35
   },
   {
     Hash: {
       HashCode: b9f583ce2f3bce0a1dd16128d0f050888d7328d7
     },
-    TreeRoot: {
-      HashCode: 853afb048784d6474ce6f0db6698a0ce0b7b0236
-    },
     Author: {
       Name: Kouji Matsui,
       MailAddress: k@kekyo.net,
@@ -1125,20 +787,12 @@ Upgraded new MSBuild format and omit PCL versions.
       Date: 2016-01-29 23:13:53 +9,
       RawFormat: Kouji Matsui <k@kekyo.net> 1454076833 0900
     },
-    Parents: [
-      {
-        HashCode: 63723bd7bc1321ffdd2b72c3bc743fa57455d137
-      }
-    ],
     Message: Bit changed
   },
   {
     Hash: {
       HashCode: 63723bd7bc1321ffdd2b72c3bc743fa57455d137
     },
-    TreeRoot: {
-      HashCode: 1834a196e71fefdb28e6d6f049b4f1935babd676
-    },
     Author: {
       Name: Kouji Matsui,
       MailAddress: k@kekyo.net,
@@ -1151,20 +805,12 @@ Upgraded new MSBuild format and omit PCL versions.
       Date: 2016-01-29 23:10:44 +9,
       RawFormat: Kouji Matsui <k@kekyo.net> 1454076644 0900
     },
-    Parents: [
-      {
-        HashCode: 7a95e0c5cb9b3c3bd4bae0a43526c6c74d1e30da
-      }
-    ],
     Message: Add nuget package, Support structual-key, Support .NET 2/.NET 3.5.
   },
   {
     Hash: {
       HashCode: 7a95e0c5cb9b3c3bd4bae0a43526c6c74d1e30da
     },
-    TreeRoot: {
-      HashCode: 5a1dcf491e2c3b495007adee29282c31f13789e9
-    },
     Author: {
       Name: Kouji Matsui,
       MailAddress: k@kekyo.net,
@@ -1177,19 +823,11 @@ Upgraded new MSBuild format and omit PCL versions.
       Date: 2016-01-28 23:47:51 +9,
       RawFormat: Kouji Matsui <k@kekyo.net> 1453992471 0900
     },
-    Parents: [
-      {
-        HashCode: 72fdee3e858dfd04d7ae6439c1da3f76b985d861
-      }
-    ],
     Message: Use RelaxVersioner
   },
   {
     Hash: {
       HashCode: 72fdee3e858dfd04d7ae6439c1da3f76b985d861
-    },
-    TreeRoot: {
-      HashCode: c64f84148d67d15d3f1578b9e17eddd4ffeaf19d
     },
     Author: {
       Name: Kouji Matsui,

@@ -1,6 +1,6 @@
 ﻿////////////////////////////////////////////////////////////////////////////
 //
-// GitReader - Lightweight Git local repository exploration library.
+// GitReader - Lightweight Git local repository traversal library.
 // Copyright (c) Kouji Matsui (@kozy_kekyo, @kekyo@mastodon.cloud)
 //
 // Licensed under Apache-v2: https://opensource.org/licenses/Apache-2.0
@@ -29,39 +29,39 @@ public readonly struct Commit : IEquatable<Commit>
         Hash[] parents,
         string message)
     {
-        Hash = hash;
-        TreeRoot = treeRoot;
-        Author = author;
-        Committer = committer;
-        Parents = parents;
-        Message = message;
+        this.Hash = hash;
+        this.TreeRoot = treeRoot;
+        this.Author = author;
+        this.Committer = committer;
+        this.Parents = parents;
+        this.Message = message;
     }
 
     public bool Equals(Commit rhs) =>
-        Hash.Equals(rhs.Hash) &&
-        TreeRoot.Equals(rhs.TreeRoot) &&
-        Author.Equals(rhs.Author) &&
-        Committer.Equals(rhs.Committer) &&
-        Parents.SequenceEqual(rhs.Parents) &&
-        Message.Equals(rhs.Message);
+        this.Hash.Equals(rhs.Hash) &&
+        this.TreeRoot.Equals(rhs.TreeRoot) &&
+        this.Author.Equals(rhs.Author) &&
+        this.Committer.Equals(rhs.Committer) &&
+        this.Parents.SequenceEqual(rhs.Parents) &&
+        this.Message.Equals(rhs.Message);
 
     bool IEquatable<Commit>.Equals(Commit rhs) =>
-        Equals(rhs);
+        this.Equals(rhs);
 
     public override bool Equals(object? obj) =>
-        obj is Commit rhs && Equals(rhs);
+        obj is Commit rhs && this.Equals(rhs);
 
     public override int GetHashCode() =>
-        Parents.Aggregate(
-            Hash.GetHashCode() ^
-            TreeRoot.GetHashCode() ^
-            Author.GetHashCode() ^
-            Committer.GetHashCode() ^
-            Message.GetHashCode(),
+        this.Parents.Aggregate(
+            this.Hash.GetHashCode() ^
+            this.TreeRoot.GetHashCode() ^
+            this.Author.GetHashCode() ^
+            this.Committer.GetHashCode() ^
+            this.Message.GetHashCode(),
             (agg, v) => agg ^ v.GetHashCode());
 
     public override string ToString() =>
-        $"{Hash}: {Author}: {Message}";
+        $"{this.Hash}: {this.Author}: {this.Message}";
 
     public void Deconstruct(
         out Hash hash,
@@ -71,12 +71,12 @@ public readonly struct Commit : IEquatable<Commit>
         out Hash[] parents,
         out string message)
     {
-        hash = Hash;
-        treeRoot = TreeRoot;
-        author = Author;
-        committer = Committer;
-        parents = Parents;
-        message = Message;
+        hash = this.Hash;
+        treeRoot = this.TreeRoot;
+        author = this.Author;
+        committer = this.Committer;
+        parents = this.Parents;
+        message = this.Message;
     }
 
     public static implicit operator Hash(Commit commit) =>

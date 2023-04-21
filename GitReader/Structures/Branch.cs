@@ -7,36 +7,29 @@
 //
 ////////////////////////////////////////////////////////////////////////////
 
-namespace GitReader.Primitive;
+namespace GitReader.Structures;
 
-public readonly struct Reference
+public sealed class Branch
 {
     public readonly string Name;
-    public readonly Hash Target;
+    public readonly Commit Head;
 
-    private Reference(
+    internal Branch(
         string name,
-        Hash target)
+        Commit head)
     {
         this.Name = name;
-        this.Target = target;
+        this.Head = head;
     }
 
     public override string ToString() =>
-        $"{this.Name}: {this.Target}";
+        $"{this.Head.Hash}: {this.Name}";
 
     public void Deconstruct(
-        out string name, out Hash target)
+        out string name,
+        out Commit head)
     {
         name = this.Name;
-        target = this.Target;
+        head = this.Head;
     }
-
-    public static implicit operator Hash(Reference reference) =>
-        reference.Target;
-
-    public static Reference Create(
-        string name,
-        Hash target) =>
-        new(name, target);
 }
