@@ -8,7 +8,7 @@ Lightweight Git local repository traversal library.
 
 [![Project Status: WIP – Initial development is in progress, but there has not yet been a stable, usable release suitable for the public.](https://www.repostatus.org/badges/latest/wip.svg)](https://www.repostatus.org/#wip)
 
-[![NuGet GitReader](https://img.shields.io/nuget/v/RelaxVersioner.svg?style=flat)](https://www.nuget.org/packages/RelaxVersioner) | [![MyGet RelaxVersioner (devel)](https://img.shields.io/myget/kekyo/v/RelaxVersioner.svg?style=flat&label=myget)](https://www.myget.org/feed/kekyo/package/nuget/RelaxVersioner)
+[![NuGet GitReader](https://img.shields.io/nuget/v/GitReader.svg?style=flat)](https://www.nuget.org/packages/GitReader)
 
 ## What is this?
 
@@ -39,7 +39,7 @@ Target .NET platforms are (Almost all!):
 
 ## How to use
 
-Install [GitReader]() from NuGet.
+Install [GitReader](https://www.nuget.org/packages/GitReader) from NuGet.
 
 GitReader has high-level interfaces and primitive interfaces.
 
@@ -248,3 +248,7 @@ while (true)
 
 Apache-v2
 
+## History
+
+* 0.1.0:
+  * Initial release.
