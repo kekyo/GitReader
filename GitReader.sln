@@ -16,6 +16,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GitReader.Tests", "GitReader.Tests\GitReader.Tests.csproj", "{4DA97FC6-C235-42EA-BAB5-781F3717C012}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GitReader.Core", "GitReader.Core\GitReader.Core.csproj", "{5265519E-4119-494E-A4E1-CA2AA2AEE95A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -30,6 +32,10 @@ Global
 		{4DA97FC6-C235-42EA-BAB5-781F3717C012}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4DA97FC6-C235-42EA-BAB5-781F3717C012}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4DA97FC6-C235-42EA-BAB5-781F3717C012}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5265519E-4119-494E-A4E1-CA2AA2AEE95A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5265519E-4119-494E-A4E1-CA2AA2AEE95A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5265519E-4119-494E-A4E1-CA2AA2AEE95A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5265519E-4119-494E-A4E1-CA2AA2AEE95A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
