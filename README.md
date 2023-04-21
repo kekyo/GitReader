@@ -1,6 +1,6 @@
 # GitReader
 
-Lightweight Git local repository exploration library.
+Lightweight Git local repository traversal library.
 
 ![GitReader](Images/GitReader.128.png)
 
@@ -12,24 +12,23 @@ Lightweight Git local repository exploration library.
 
 ## What is this?
 
-GitReader is a read-only, Git local repository exploration library for a wide range of .NET environments.
-It is lightweight, has a concise, easy-to-use interface, does not depend on other libraries, and does not contain native libraries,
+GitReader is a fully-managed Git local repository traversal library for a wide range of .NET environments.
+It is lightweight, has a concise, easy-to-use interface, does not depend any other libraries, and does not contain native libraries,
 making it suitable for any environment.
 
 It has the following features:
 
-* Very lightweight.
-* Only for local repositories.
 * It provides information on Git branches, tags, and commits.
-* branch tree traversal.
-* Independent of any external libraries other than the BCL and its compliant libraries.
-* Reliable zlib compression decompression using the .NET standard deflate.
-* There is no access to remote repositories or the ability to say check out or commit.
+* Branch tree traversal.
+* Read only interface makes immutability.
+* Primitive and high-level interfaces ready.
+* Only contains 100% managed code. Independent of any external libraries other than the BCL and its compliant libraries.
+* Reliable zlib decompression using the .NET standard deflate implementation.
 
 This library was designed from the ground up to replace `libgit2sharp`, on which [RelaxVersioner](https://github.com/kekyo/CenterCLR.RelaxVersioner) depended.
 It primarily fits the purpose of easily extracting commit information from a Git repository.
 
-Target .NET platforms are:
+Target .NET platforms are (Almost all!):
 
 * .NET 7.0 to 5.0
 * .NET Core 3.1 to 2.0
@@ -42,10 +41,10 @@ Target .NET platforms are:
 
 Install [GitReader]() from NuGet.
 
-GitReader has a high-level interface and a primitive interface.
+GitReader has high-level interfaces and primitive interfaces.
 
 * The high-level interface is an interface that abstracts the Git repository,
-  making it easy to explore branches and commits.
+  making it easy to explore branches, tags and commits.
 * The primitive interface is an interface that exposes the internal structure of the Git repository as it is,
   It is easy to handle and will be make high-performance with asynchronous operations
   if you know the structure knowledge.
@@ -63,10 +62,10 @@ TODO:
 using GitReader;
 using GitReader.Primitive;
 
-using Repository repository = await Repository.OpenAsync(
+using Repository repository = await Repository.Factory.OpenAsync(
     "/home/kekyo/Projects/YourOwnLocalGitRepo");
 
-Reference head = await repository.GetCurrentHeadAsync();
+Reference head = await repository.GetCurrentHeadReferenceAsync();
 Commit commit = await repository.GetCommitAsync(head);
 
 Console.WriteLine($"Hash: {commit.Hash}");
@@ -78,7 +77,7 @@ Console.WriteLine($"Message: {commit.Message}");
 ### Read a branch head commit
 
 ```csharp
-Reference head = await repository.GetBranchHeadAsync("develop");
+Reference head = await repository.GetBranchHeadReferenceAsync("develop");
 Commit commit = await repository.GetCommitAsync(head);
 
 Console.WriteLine($"Hash: {commit.Hash}");
@@ -90,7 +89,7 @@ Console.WriteLine($"Message: {commit.Message}");
 ### Enumerate branches
 
 ```csharp
-Reference[] branches = await repository.GetBranchHeadsAsync();
+Reference[] branches = await repository.GetBranchHeadReferencesAsync();
 
 foreach (Reference branch in branches)
 {
@@ -102,19 +101,24 @@ foreach (Reference branch in branches)
 ### Enumerate tags
 
 ```csharp
-Reference[] tags = await repository.GetTagsAsync();
+Reference[] tagReferences = await repository.GetTagReferencesAsync();
 
-foreach (Reference tag in tags)
+foreach (Reference tagReference in tagReferences)
 {
+    Tag tag = await repository.GetTagAsync(tagReference);
+
+    Console.WriteLine($"Hash: {tag.Hash}");
+    Console.WriteLine($"Type: {tag.Type}");
     Console.WriteLine($"Name: {tag.Name}");
-    Console.WriteLine($"Commit: {tag.Commit}");
+    Console.WriteLine($"Tagger: {tag.Tagger}");
+    Console.WriteLine($"Message: {tag.Message}");
 }
 ```
 
 ### Traverse a branch through primary commits
 
 ```csharp
-Reference branch = await repository.GetBranchHeadAsync("develop");
+Reference branch = await repository.GetBranchHeadReferenceAsync("develop");
 Commit commit = await repository.GetCommitAsync(branch);
 
 while (true)

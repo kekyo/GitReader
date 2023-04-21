@@ -1,6 +1,6 @@
 ﻿////////////////////////////////////////////////////////////////////////////
 //
-// GitReader - Lightweight Git local repository exploration library.
+// GitReader - Lightweight Git local repository traversal library.
 // Copyright (c) Kouji Matsui (@kozy_kekyo, @kekyo@mastodon.cloud)
 //
 // Licensed under Apache-v2: https://opensource.org/licenses/Apache-2.0
@@ -14,12 +14,12 @@ namespace GitReader.Primitive;
 
 public readonly struct Hash : IEquatable<Hash>
 {
-    private static readonly int byteSize;
+    public static readonly int Size;
 
     static Hash()
     {
         using var sha1 = SHA1.Create();
-        byteSize = sha1.HashSize / 8;
+        Size = sha1.HashSize / 8;
     }
 
     public readonly byte[] HashCode;
@@ -80,7 +80,7 @@ public readonly struct Hash : IEquatable<Hash>
 
     public static Hash Create(byte[] hashCode)
     {
-        if (hashCode.Length != byteSize)
+        if (hashCode.Length != Size)
         {
             throw new ArgumentException("Invalid hash size.");
         }
@@ -90,12 +90,12 @@ public readonly struct Hash : IEquatable<Hash>
 
     public static Hash Parse(string hashString)
     {
-        if (hashString.Length != byteSize * 2)
+        if (hashString.Length != Size * 2)
         {
             throw new ArgumentException(nameof(hashString));
         }
 
-        var hashCode = new byte[byteSize];
+        var hashCode = new byte[Size];
         for (var index = 0; index < hashCode.Length; index++)
         {
             hashCode[index] = Convert.ToByte(

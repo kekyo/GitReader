@@ -1,6 +1,6 @@
 ﻿////////////////////////////////////////////////////////////////////////////
 //
-// GitReader - Lightweight Git local repository exploration library.
+// GitReader - Lightweight Git local repository traversal library.
 // Copyright (c) Kouji Matsui (@kozy_kekyo, @kekyo@mastodon.cloud)
 //
 // Licensed under Apache-v2: https://opensource.org/licenses/Apache-2.0
@@ -10,7 +10,9 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -48,6 +50,27 @@ internal static class Utilities
         new(date.Year, date.Month, date.Day, date.Hour, date.Minute, date.Second, date.Offset);
 
 #if NET35
+    public static bool TryParse<TEnum>(string str, bool ignoreCase, out TEnum value)
+        where TEnum : struct, Enum
+    {
+        try
+        {
+            value = (TEnum)Enum.Parse(typeof(TEnum), str, ignoreCase);
+            return true;
+        }
+        catch
+        {
+            value = default;
+            return false;
+        }
+    }
+#else
+    public static bool TryParse<TEnum>(string str, bool ignoreCase, out TEnum value)
+        where TEnum : struct, Enum =>
+        Enum.TryParse(str, ignoreCase, out value);
+#endif
+
+#if NET35
     public static IEnumerable<string> EnumerateFiles(string basePath, string match) =>
         Directory.GetFiles(basePath, match, SearchOption.AllDirectories);
 #else
@@ -62,6 +85,15 @@ internal static class Utilities
     public static string Combine(params string[] paths) =>
         Path.Combine(paths);
 #endif
+
+    public static string GetDirectoryPath(string path) =>
+        Path.GetDirectoryName(path) switch
+        {
+            // Not accurate in Windows, but a compromise...
+            null => Path.DirectorySeparatorChar.ToString(),
+            "" => string.Empty,
+            var dp => dp,
+        };
 
     public static void MakeBigEndian(
         byte[] buffer, int index, int size)
@@ -79,6 +111,28 @@ internal static class Utilities
     public static Task<T[]> WhenAll<T>(IEnumerable<Task<T>> tasks) =>
         Task.WhenAll(tasks);
 #endif
+
+    public readonly struct Pair<T0, T1>
+    {
+        public readonly T0 Item0;
+        public readonly T1 Item1;
+
+        public Pair(T0 item0, T1 item1)
+        {
+            this.Item0 = item0;
+            this.Item1 = item1;
+        }
+
+        public void Deconstruct(out T0 item0, out T1 item1)
+        {
+            item0 = this.Item0;
+            item1 = this.Item1;
+        }
+    }
+
+    public static async Task<Pair<T0, T1>> WhenAll<T0, T1>(
+        Task<T0> task0, Task<T1> task1) =>
+        new(await task0, await task1);
 
 #if NET35 || NET40
     public static Task<T> FromResult<T>(T result) =>
@@ -163,8 +217,11 @@ internal static class Utilities
 #if NET35 || NET40
     public static Task<int> ReadAsync(
         this Stream stream,
-        byte[] buffer, int offset, int count) =>
-        Task.Factory.StartNew(() => stream.Read(buffer, offset, count));
+        byte[] buffer, int offset, int count, CancellationToken ct)
+    {
+        ct.ThrowIfCancellationRequested();
+        return Task.Factory.StartNew(() => stream.Read(buffer, offset, count));
+    }
 #endif
 
 #if NET35 || NET40
@@ -197,4 +254,39 @@ internal static class Utilities
 #else
         Process.GetCurrentProcess().Id;
 #endif
+
+    public static async Task<Stream> CreateZLibStreamAsync(
+        Stream parent, CancellationToken ct)
+    {
+        void Throw(int step) =>
+            throw new InvalidDataException(
+                $"Could not parse zlib stream. Step={step}");
+
+        var buffer = new byte[2];
+        var read = await parent.ReadAsync(buffer, 0, buffer.Length, ct);
+
+        if (read < 2)
+        {
+            Throw(1);
+        }
+
+        if (buffer[0] != 0x78)
+        {
+            Throw(2);
+        }
+
+        switch (buffer[1])
+        {
+            case 0x01:
+            case 0x5e:
+            case 0x9c:
+            case 0xda:
+                break;
+            default:
+                Throw(3);
+                break;
+        }
+
+        return new DeflateStream(parent, CompressionMode.Decompress, false);
+    }
 }

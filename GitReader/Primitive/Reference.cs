@@ -1,6 +1,6 @@
 ﻿////////////////////////////////////////////////////////////////////////////
 //
-// GitReader - Lightweight Git local repository exploration library.
+// GitReader - Lightweight Git local repository traversal library.
 // Copyright (c) Kouji Matsui (@kozy_kekyo, @kekyo@mastodon.cloud)
 //
 // Licensed under Apache-v2: https://opensource.org/licenses/Apache-2.0
@@ -18,8 +18,8 @@ public readonly struct Reference
         string name,
         Hash target)
     {
-        Name = name;
-        Target = target;
+        this.Name = name;
+        this.Target = target;
     }
 
     public override string ToString() =>
