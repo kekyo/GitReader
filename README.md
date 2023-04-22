@@ -8,7 +8,10 @@ Lightweight Git local repository traversal library.
 
 [![Project Status: WIP – Initial development is in progress, but there has not yet been a stable, usable release suitable for the public.](https://www.repostatus.org/badges/latest/wip.svg)](https://www.repostatus.org/#wip)
 
-[![NuGet GitReader](https://img.shields.io/nuget/v/GitReader.svg?style=flat)](https://www.nuget.org/packages/GitReader)
+|Type|Pakcage|
+|:----|:----|
+|Standard|[![NuGet GitReader](https://img.shields.io/nuget/v/GitReader.svg?style=flat)](https://www.nuget.org/packages/GitReader)|
+|F# binding|[![NuGet FSharp.GitReader](https://img.shields.io/nuget/v/FSharp.GitReader.svg?style=flat)](https://www.nuget.org/packages/FSharp.GitReader)|
 
 ## What is this?
 
@@ -29,18 +32,30 @@ It has the following features:
 This library was designed from the ground up to replace `libgit2sharp`, on which [RelaxVersioner](https://github.com/kekyo/CenterCLR.RelaxVersioner) depended.
 It primarily fits the purpose of easily extracting commit information from a Git repository.
 
-Target .NET platforms are (Almost all!):
+## Target .NET platforms
 
 * .NET 7.0 to 5.0
 * .NET Core 3.1 to 2.0
 * .NET Standard 2.1 to 1.6
 * .NET Framework 4.8.1 to 3.5
 
+## F# specialized binding
+
+F# 6.0 or upper, it contains F# friendly signature definition.
+
+* .NET 7.0 to 5.0
+* .NET Core 3.1 to 2.0
+* .NET Standard 2.1, 2.0
+* .NET Framework 4.8.1 to 4.6.1
+
 ----
 
 ## How to use
 
 Install [GitReader](https://www.nuget.org/packages/GitReader) from NuGet.
+
+* Install [FSharp.GitReader](https://www.nuget.org/packages/FSharp.GitReader) when you need to use with F#.
+  It has F# friendly signature definition.
 
 GitReader has high-level interfaces and primitive interfaces.
 
@@ -65,12 +80,14 @@ using Repository repository =
         "/home/kekyo/Projects/YourOwnLocalGitRepo");
 
 // Found current head
-if (repository.Head is { } head)
+if (repository.Head is Branch head)
 {
-    Console.WriteLine($"Hash: {head.Hash}");
-    Console.WriteLine($"Author: {head.Author}");
-    Console.WriteLine($"Committer: {head.Committer}");
-    Console.WriteLine($"Message: {head.Message}");
+    Console.WriteLine($"Name: {head.Name}");
+
+    Console.WriteLine($"Hash: {head.Head.Hash}");
+    Console.WriteLine($"Author: {head.Head.Author}");
+    Console.WriteLine($"Committer: {head.Head.Committer}");
+    Console.WriteLine($"Message: {head.Head.Message}");
 }
 ```
 
@@ -326,7 +343,6 @@ if (await repository.GetCommitAsync(
 
 * Supported tree/file accessors.
 * Supported CRC32 verifier.
-* Supported F# bindings.
 
 ----
 
@@ -336,6 +352,9 @@ Apache-v2
 
 ## History
 
+* 0.4.0:
+  * Added F# binding.
+  * Fixed lack for head branch name.
 * 0.3.0:
   * Supported ability for not found detection.
 * 0.2.0:
