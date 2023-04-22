@@ -336,6 +336,8 @@ Apache-v2
 
 ## History
 
+* 0.3.0:
+  * Supported ability for not found detection.
 * 0.2.0:
   * The shape of the public interfaces are almost fixed.
   * Improved high-level interfaces.
