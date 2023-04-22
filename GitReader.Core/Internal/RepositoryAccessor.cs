@@ -124,11 +124,22 @@ internal static class RepositoryAccessor
         return sb.ToString();
     }
 
+    private static ObjectAccessor GetObjectAccessor(
+        Repository repository)
+    {
+        if (repository.accessor == null)
+        {
+            throw new InvalidOperationException(
+                "The repository already discarded.");
+        }
+        return repository.accessor;
+    }
+
     public static async Task<Commit> ReadCommitAsync(
         Repository repository,
         Hash hash, CancellationToken ct)
     {
-        var streamResult = await repository.accessor.OpenAsync(hash, ct);
+        var streamResult = await GetObjectAccessor(repository).OpenAsync(hash, ct);
 
         try
         {
@@ -209,7 +220,7 @@ internal static class RepositoryAccessor
         Repository repository,
         Hash hash, CancellationToken ct)
     {
-        var streamResult = await repository.accessor.OpenAsync(hash, ct);
+        var streamResult = await GetObjectAccessor(repository).OpenAsync(hash, ct);
 
         try
         {
