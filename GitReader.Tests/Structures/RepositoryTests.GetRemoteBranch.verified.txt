@@ -18,6 +18,7 @@
     },
     Message:
 Updates test nuget refs.
-
+,
+    RemoteBranches: []
   }
 }

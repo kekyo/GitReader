@@ -17,7 +17,20 @@
     },
     Message:
 Added installation .NET 6 SDK on GitHub Actions.
-
+,
+    Branches: [
+      {
+        Name: master
+      }
+    ],
+    RemoteBranches: [
+      {
+        Name: origin/HEAD
+      },
+      {
+        Name: origin/master
+      }
+    ]
   },
   {
     Hash: {
@@ -37,7 +50,16 @@ Added installation .NET 6 SDK on GitHub Actions.
     },
     Message:
 Upgraded .NET 6.0.
-
+,
+    Tags: [
+      {
+        Hash: {
+          HashCode: 30aaea993cc0a3cb1dad2968d3e5f4d90a287e25
+        },
+        Type: Commit,
+        Name: 2.1.0
+      }
+    ]
   },
   {
     Hash: {
@@ -77,7 +99,16 @@ Update badge.
     },
     Message:
 Update readmes.
-
+,
+    Tags: [
+      {
+        Hash: {
+          HashCode: 3195237679829c06b3ca764484b0554ccb67562a
+        },
+        Type: Commit,
+        Name: 2.0.22
+      }
+    ]
   },
   {
     Hash: {
@@ -117,7 +148,12 @@ Added fallback delegate features.
     },
     Message:
 Updates test nuget refs.
-
+,
+    RemoteBranches: [
+      {
+        Name: origin/devel
+      }
+    ]
   },
   {
     Hash: {
@@ -157,7 +193,16 @@ Updated readme.
     },
     Message:
 Merge branch 'devel'
-
+,
+    Tags: [
+      {
+        Hash: {
+          HashCode: 1205dc34ce48bda28fc543daaf9525a9bb6e6d10
+        },
+        Type: Commit,
+        Name: 2.0.18
+      }
+    ]
   },
   {
     Hash: {
@@ -177,7 +222,16 @@ Merge branch 'devel'
     },
     Message:
 Merge branch 'devel'
-
+,
+    Tags: [
+      {
+        Hash: {
+          HashCode: 0fad4e52989d259eea5c68afc74516b5b8358bc7
+        },
+        Type: Commit,
+        Name: 2.0.17
+      }
+    ]
   },
   {
     Hash: {
@@ -197,7 +251,16 @@ Merge branch 'devel'
     },
     Message:
 Updated packing script.
-
+,
+    Tags: [
+      {
+        Hash: {
+          HashCode: 001ea63de0c2967a898a0ef96caff6ee8f7c6b52
+        },
+        Type: Commit,
+        Name: 2.0.16
+      }
+    ]
   },
   {
     Hash: {
@@ -217,7 +280,16 @@ Updated packing script.
     },
     Message:
 Updated namespace name.
-
+,
+    Tags: [
+      {
+        Hash: {
+          HashCode: 828bfa5f9794d78ebc58af03500e8bfeed8f8dda
+        },
+        Type: Commit,
+        Name: 2.0.15
+      }
+    ]
   },
   {
     Hash: {
@@ -277,7 +349,16 @@ Updated readme.
     },
     Message:
 Changed the NuGet package name from "CenterCLR.NamingFormatter" to "NamingFormatter".
-
+,
+    Tags: [
+      {
+        Hash: {
+          HashCode: d852c9b28e21cfd6d32fda05bc316528c6805ce7
+        },
+        Type: Commit,
+        Name: 2.0.12
+      }
+    ]
   },
   {
     Hash: {
@@ -517,7 +598,16 @@ Added supports net5.0, net35-client and net40-client.
     },
     Message:
 Upgraded new MSBuild format and omit PCL versions.
-
+,
+    Tags: [
+      {
+        Hash: {
+          HashCode: f64de5e3ad34528757207109e68f626bf8cc1a31
+        },
+        Type: Commit,
+        Name: 2.0.0
+      }
+    ]
   },
   {
     Hash: {

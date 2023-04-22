@@ -7,12 +7,14 @@
 //
 ////////////////////////////////////////////////////////////////////////////
 
-namespace GitReader.Primitive;
+using System.Collections.Generic;
 
-public enum ObjectTypes
+namespace GitReader.Collections;
+
+public static class DictionaryExtension
 {
-    Commit = 1,
-    Tree,
-    Blob,
-    Tag,
+    public static ReadOnlyDictionary<TKey, TValue> AsReadOnly<TKey, TValue>(
+        this Dictionary<TKey, TValue> dictionary)
+        where TKey : notnull =>
+        new(dictionary);
 }

@@ -16,5 +16,18 @@
   },
   Message:
 Added installation .NET 6 SDK on GitHub Actions.
-
+,
+  Branches: [
+    {
+      Name: master
+    }
+  ],
+  RemoteBranches: [
+    {
+      Name: origin/HEAD
+    },
+    {
+      Name: origin/master
+    }
+  ]
 }

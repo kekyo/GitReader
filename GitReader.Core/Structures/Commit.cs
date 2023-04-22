@@ -7,6 +7,7 @@
 //
 ////////////////////////////////////////////////////////////////////////////
 
+using GitReader.Internal;
 using System;
 using System.Linq;
 
@@ -14,20 +15,24 @@ namespace GitReader.Structures;
 
 public sealed class Commit : IEquatable<Commit?>
 {
-    internal readonly Repository repository;
-    internal readonly Primitive.Hash treeRoot;
-    internal readonly Primitive.Hash[] parents;
+    internal readonly WeakReference rwr;
+    internal readonly Hash treeRoot;
+    internal readonly Hash[] parents;
 
-    public readonly Primitive.Hash Hash;
-    public readonly Primitive.Signature Author;
-    public readonly Primitive.Signature Committer;
+    private Branch[]? branches;
+    private Branch[]? remoteBranches;
+    private Tag[]? tags;
+
+    public readonly Hash Hash;
+    public readonly Signature Author;
+    public readonly Signature Committer;
     public readonly string Message;
 
     internal Commit(
-        Repository repository,
+        WeakReference rwr,
         Primitive.Commit commit)
     {
-        this.repository = repository;
+        this.rwr = rwr;
         this.treeRoot = commit.TreeRoot;
         this.parents = commit.Parents;
 
@@ -35,6 +40,48 @@ public sealed class Commit : IEquatable<Commit?>
         this.Author = commit.Author;
         this.Committer = commit.Committer;
         this.Message = commit.Message;
+    }
+
+    public Branch[] Branches
+    {
+        get
+        {
+            if (this.branches == null)
+            {
+                // Beginning of race condition section,
+                // but will discard dict later silently.
+                this.branches = RepositoryFacade.GetRelatedBranches(this);
+            }
+            return this.branches;
+        }
+    }
+
+    public Branch[] RemoteBranches
+    {
+        get
+        {
+            if (this.remoteBranches == null)
+            {
+                // Beginning of race condition section,
+                // but will discard dict later silently.
+                this.remoteBranches = RepositoryFacade.GetRelatedRemoteBranches(this);
+            }
+            return this.remoteBranches;
+        }
+    }
+
+    public Tag[] Tags
+    {
+        get
+        {
+            if (this.tags == null)
+            {
+                // Beginning of race condition section,
+                // but will discard dict later silently.
+                this.tags = RepositoryFacade.GetRelatedTags(this);
+            }
+            return this.tags;
+        }
     }
 
     public bool Equals(Commit rhs) =>
@@ -64,9 +111,9 @@ public sealed class Commit : IEquatable<Commit?>
         $"{this.Hash}: {this.Author}: {this.Message}";
 
     public void Deconstruct(
-        out Primitive.Hash hash,
-        out Primitive.Signature author,
-        out Primitive.Signature committer,
+        out Hash hash,
+        out Signature author,
+        out Signature committer,
         out string message)
     {
         hash = this.Hash;

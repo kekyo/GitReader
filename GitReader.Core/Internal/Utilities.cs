@@ -10,7 +10,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Globalization;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
@@ -18,6 +17,71 @@ using System.Threading;
 using System.Threading.Tasks;
 
 namespace GitReader.Internal;
+
+internal readonly struct PairResult<T0, T1>
+{
+    public readonly T0 Item0;
+    public readonly T1 Item1;
+
+    public PairResult(T0 item0, T1 item1)
+    {
+        this.Item0 = item0;
+        this.Item1 = item1;
+    }
+
+    public void Deconstruct(out T0 item0, out T1 item1)
+    {
+        item0 = this.Item0;
+        item1 = this.Item1;
+    }
+}
+
+internal readonly struct PairResult<T0, T1, T2>
+{
+    public readonly T0 Item0;
+    public readonly T1 Item1;
+    public readonly T2 Item2;
+
+    public PairResult(T0 item0, T1 item1, T2 item2)
+    {
+        this.Item0 = item0;
+        this.Item1 = item1;
+        this.Item2 = item2;
+    }
+
+    public void Deconstruct(out T0 item0, out T1 item1, out T2 item2)
+    {
+        item0 = this.Item0;
+        item1 = this.Item1;
+        item2 = this.Item2;
+    }
+}
+
+internal readonly struct PairResult<T0, T1, T2, T3>
+{
+    public readonly T0 Item0;
+    public readonly T1 Item1;
+    public readonly T2 Item2;
+    public readonly T3 Item3;
+
+    public PairResult(
+        T0 item0, T1 item1, T2 item2, T3 item3)
+    {
+        this.Item0 = item0;
+        this.Item1 = item1;
+        this.Item2 = item2;
+        this.Item3 = item3;
+    }
+
+    public void Deconstruct(
+        out T0 item0, out T1 item1, out T2 item2, out T3 item3)
+    {
+        item0 = this.Item0;
+        item1 = this.Item1;
+        item2 = this.Item2;
+        item3 = this.Item3;
+    }
+}
 
 internal static class Utilities
 {
@@ -104,6 +168,19 @@ internal static class Utilities
         }
     }
 
+    public static IEnumerable<U> Collect<T, U>(
+        this IEnumerable<T> enumerable,
+        Func<T, U?> selector)
+    {
+        foreach (var item in enumerable)
+        {
+            if (selector(item) is U selected)
+            {
+                yield return selected;
+            }
+        }
+    }
+
 #if NET35 || NET40
     public static Task<T[]> WhenAll<T>(IEnumerable<Task<T>> tasks) =>
         TaskEx.WhenAll(tasks);
@@ -112,27 +189,17 @@ internal static class Utilities
         Task.WhenAll(tasks);
 #endif
 
-    public readonly struct Pair<T0, T1>
-    {
-        public readonly T0 Item0;
-        public readonly T1 Item1;
-
-        public Pair(T0 item0, T1 item1)
-        {
-            this.Item0 = item0;
-            this.Item1 = item1;
-        }
-
-        public void Deconstruct(out T0 item0, out T1 item1)
-        {
-            item0 = this.Item0;
-            item1 = this.Item1;
-        }
-    }
-
-    public static async Task<Pair<T0, T1>> WhenAll<T0, T1>(
+    public static async Task<PairResult<T0, T1>> WhenAll<T0, T1>(
         Task<T0> task0, Task<T1> task1) =>
         new(await task0, await task1);
+
+    public static async Task<PairResult<T0, T1, T2>> WhenAll<T0, T1, T2>(
+        Task<T0> task0, Task<T1> task1, Task<T2> task2) =>
+        new(await task0, await task1, await task2);
+
+    public static async Task<PairResult<T0, T1, T2, T3>> WhenAll<T0, T1, T2, T3>(
+        Task<T0> task0, Task<T1> task1, Task<T2> task2, Task<T3> task3) =>
+        new(await task0, await task1, await task2, await task3);
 
 #if NET35 || NET40
     public static Task<T> FromResult<T>(T result) =>

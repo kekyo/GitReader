@@ -22,6 +22,7 @@ It has the following features:
 * Branch tree traversal.
 * Read only interface makes immutability.
 * Primitive and high-level interfaces ready.
+* Fully asynchronous operation.
 * Only contains 100% managed code. Independent of any external libraries other than the BCL and its compliant libraries.
 * Reliable zlib decompression using the .NET standard deflate implementation.
 
@@ -33,7 +34,7 @@ Target .NET platforms are (Almost all!):
 * .NET 7.0 to 5.0
 * .NET Core 3.1 to 2.0
 * .NET Standard 2.1 to 1.6
-* .NET Framework 4.8 to 3.5
+* .NET Framework 4.8.1 to 3.5
 
 ----
 
@@ -53,27 +54,40 @@ GitReader has high-level interfaces and primitive interfaces.
 
 ## Samples (High-level interfaces)
 
-### Read current head commit
+### Get current head commit
 
 ```csharp
 using GitReader;
 using GitReader.Structures;
 
-using Repository repository = await Repository.Factory.OpenAsync(
-    "/home/kekyo/Projects/YourOwnLocalGitRepo");
+using Repository repository =
+    await Repository.Factory.OpenStructureAsync(
+        "/home/kekyo/Projects/YourOwnLocalGitRepo");
 
-Commit commit = await repository.GetCurrentHeadAsync();
+Commit head = repository.Head;
 
-Console.WriteLine($"Hash: {commit.Hash}");
-Console.WriteLine($"Author: {commit.Author}");
-Console.WriteLine($"Committer: {commit.Committer}");
-Console.WriteLine($"Message: {commit.Message}");
+Console.WriteLine($"Hash: {head.Hash}");
+Console.WriteLine($"Author: {head.Author}");
+Console.WriteLine($"Committer: {head.Committer}");
+Console.WriteLine($"Message: {head.Message}");
 ```
 
-### Read a branch head commit
+### Get a commit directly
 
 ```csharp
-Branch branch = await repository.GetBranchAsync("develop");
+Commit head = await repository.GetCommitAsync(
+    "1205dc34ce48bda28fc543daaf9525a9bb6e6d10");
+
+Console.WriteLine($"Hash: {head.Hash}");
+Console.WriteLine($"Author: {head.Author}");
+Console.WriteLine($"Committer: {head.Committer}");
+Console.WriteLine($"Message: {head.Message}");
+```
+
+### Get a branch head commit
+
+```csharp
+Branch branch = repository.Branches["develop"];
 
 Console.WriteLine($"Name: {branch.Name}");
 
@@ -83,10 +97,10 @@ Console.WriteLine($"Committer: {branch.Head.Committer}");
 Console.WriteLine($"Message: {branch.Head.Message}");
 ```
 
-### Read a remote branch head commit
+### Get a remote branch head commit
 
 ```csharp
-Branch branch = await repository.GetRemoteBranchAsync("origin/develop");
+Branch branch = repository.RemoteBranches["origin/develop"];
 
 Console.WriteLine($"Name: {branch.Name}");
 
@@ -94,14 +108,36 @@ Console.WriteLine($"Hash: {branch.Head.Hash}");
 Console.WriteLine($"Author: {branch.Head.Author}");
 Console.WriteLine($"Committer: {branch.Head.Committer}");
 Console.WriteLine($"Message: {branch.Head.Message}");
+```
+
+### Get a tag
+
+```csharp
+Tag tag = repository.Tags["1.2.3"];
+
+Console.WriteLine($"Name: {tag.Name}");
+
+Console.WriteLine($"Hash: {tag.Hash}");
+Console.WriteLine($"Author: {tag.Author}");
+Console.WriteLine($"Committer: {tag.Committer}");
+Console.WriteLine($"Message: {tag.Message}");
+```
+
+### Get related branches and tags from a commit
+
+```csharp
+Commit commit = await repository.GetCommitAsync(
+    "1205dc34ce48bda28fc543daaf9525a9bb6e6d10");
+
+Branch[] branches = commit.Branches;
+Branch[] remoteBranches = commit.RemoteBranches;
+Tags[] tags = commit.Tags;
 ```
 
 ### Enumerate branches
 
 ```csharp
-Branch[] branches = await repository.GetBranchesAsync();
-
-foreach (Branch branch in branches)
+foreach (Branch branch in repository.Branches.Values)
 {
     Console.WriteLine($"Name: {branch.Name}");
 
@@ -115,9 +151,7 @@ foreach (Branch branch in branches)
 ### Enumerate tags
 
 ```csharp
-Tag[] tags = await repository.GetTagsAsync();
-
-foreach (Tag tag in tags)
+foreach (Tag tag in repository.Tags.Values)
 {
     Console.WriteLine($"Name: {tag.Name}");
 
@@ -125,6 +159,23 @@ foreach (Tag tag in tags)
     Console.WriteLine($"Author: {tag.Author}");
     Console.WriteLine($"Committer: {tag.Committer}");
     Console.WriteLine($"Message: {tag.Message}");
+}
+```
+
+### Get parent commits
+
+```csharp
+Commit commit = await repository.GetCommitAsync(
+    "6961a50ef3ad4e43ed9774daffd8457d32cf5e75");
+
+Commit[] parents = await commit.GetParentCommitsAsync();
+
+foreach (Commit parent in parents)
+{
+    Console.WriteLine($"Hash: {parent.Hash}");
+    Console.WriteLine($"Author: {parent.Author}");
+    Console.WriteLine($"Committer: {parent.Committer}");
+    Console.WriteLine($"Message: {parent.Message}");
 }
 ```
 
@@ -143,14 +194,14 @@ while (true)
     Console.WriteLine($"Committer: {current.Committer}");
     Console.WriteLine($"Message: {current.Message}");
 
-    // Bottom of branch.
-    if (current.GetParentCount() == 0)
+    // Get primary parent commit.
+    if (await current.GetPrimaryParentCommitAsync() is not { } parent)
     {
+        // Bottom of branch.
         break;
     }
 
-    // Get primary parent.
-    current = await current.GetParentAsync(0);
+    current = parent;
 }
 ```
 
@@ -164,8 +215,9 @@ while (true)
 using GitReader;
 using GitReader.Primitive;
 
-using Repository repository = await Repository.Factory.OpenAsync(
-    "/home/kekyo/Projects/YourOwnLocalGitRepo");
+using Repository repository =
+    await Repository.Factory.OpenPrimitiveAsync(
+        "/home/kekyo/Projects/YourOwnLocalGitRepo");
 
 Reference head = await repository.GetCurrentHeadReferenceAsync();
 Commit commit = await repository.GetCommitAsync(head);
@@ -174,6 +226,18 @@ Console.WriteLine($"Hash: {commit.Hash}");
 Console.WriteLine($"Author: {commit.Author}");
 Console.WriteLine($"Committer: {commit.Committer}");
 Console.WriteLine($"Message: {commit.Message}");
+```
+
+### Read a commit directly
+
+```csharp
+Commit head = await repository.GetCommitAsync(
+    "1205dc34ce48bda28fc543daaf9525a9bb6e6d10");
+
+Console.WriteLine($"Hash: {head.Hash}");
+Console.WriteLine($"Author: {head.Author}");
+Console.WriteLine($"Committer: {head.Committer}");
+Console.WriteLine($"Message: {head.Message}");
 ```
 
 ### Read a branch head commit
@@ -247,8 +311,6 @@ while (true)
 ## TODO
 
 * Supported tree/file accessors.
-* Supported synchronously accessors.
-* Supported rich-collection based accessors.
 * Supported CRC32 verifier.
 * Supported F# bindings.
 
@@ -260,5 +322,9 @@ Apache-v2
 
 ## History
 
+* 0.2.0:
+  * The shape of the public interfaces are almost fixed.
+  * Improved high-level interfaces.
+  * Splitted core library (Preparation for F# binding)
 * 0.1.0:
   * Initial release.

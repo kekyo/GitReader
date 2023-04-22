@@ -10,7 +10,7 @@
 using System;
 using System.Security.Cryptography;
 
-namespace GitReader.Primitive;
+namespace GitReader;
 
 public readonly struct Hash : IEquatable<Hash>
 {

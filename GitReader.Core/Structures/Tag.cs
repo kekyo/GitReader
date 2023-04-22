@@ -13,10 +13,10 @@ namespace GitReader.Structures;
 
 public sealed class Tag : IEquatable<Tag?>
 {
-    public readonly Primitive.Hash Hash;
-    public readonly Primitive.ObjectTypes Type;
+    public readonly Hash Hash;
+    public readonly ObjectTypes Type;
     public readonly string Name;
-    public readonly Primitive.Signature? Tagger;
+    public readonly Signature? Tagger;
     public readonly string? Message;
 
     internal Tag(Primitive.Tag tag)
@@ -29,7 +29,7 @@ public sealed class Tag : IEquatable<Tag?>
     }
 
     internal Tag(
-        Primitive.Hash hash, Primitive.ObjectTypes type, string name)
+        Hash hash, ObjectTypes type, string name)
     {
         this.Hash = hash;
         this.Type = type;
@@ -60,10 +60,10 @@ public sealed class Tag : IEquatable<Tag?>
         $"{this.Name}: {this.Type}: {this.Hash}";
 
     public void Deconstruct(
-        out Primitive.Hash hash,
-        out Primitive.ObjectTypes type,
+        out Hash hash,
+        out ObjectTypes type,
         out string name,
-        out Primitive.Signature? tagger,
+        out Signature? tagger,
         out string? message)
     {
         hash = this.Hash;
