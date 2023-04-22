@@ -168,6 +168,19 @@ internal static class Utilities
         }
     }
 
+    public static IEnumerable<U> Collect<T, U>(
+        this IEnumerable<T> enumerable,
+        Func<T, U?> selector)
+    {
+        foreach (var item in enumerable)
+        {
+            if (selector(item) is U selected)
+            {
+                yield return selected;
+            }
+        }
+    }
+
 #if NET35 || NET40
     public static Task<T[]> WhenAll<T>(IEnumerable<Task<T>> tasks) =>
         TaskEx.WhenAll(tasks);

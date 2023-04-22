@@ -7,6 +7,7 @@
 //
 ////////////////////////////////////////////////////////////////////////////
 
+using GitReader.Internal;
 using System;
 using System.Linq;
 
@@ -17,6 +18,10 @@ public sealed class Commit : IEquatable<Commit?>
     internal readonly WeakReference rwr;
     internal readonly Hash treeRoot;
     internal readonly Hash[] parents;
+
+    private Branch[]? branches;
+    private Branch[]? remoteBranches;
+    private Tag[]? tags;
 
     public readonly Hash Hash;
     public readonly Signature Author;
@@ -35,6 +40,48 @@ public sealed class Commit : IEquatable<Commit?>
         this.Author = commit.Author;
         this.Committer = commit.Committer;
         this.Message = commit.Message;
+    }
+
+    public Branch[] Branches
+    {
+        get
+        {
+            if (this.branches == null)
+            {
+                // Beginning of race condition section,
+                // but will discard dict later silently.
+                this.branches = RepositoryFacade.GetRelatedBranches(this);
+            }
+            return this.branches;
+        }
+    }
+
+    public Branch[] RemoteBranches
+    {
+        get
+        {
+            if (this.remoteBranches == null)
+            {
+                // Beginning of race condition section,
+                // but will discard dict later silently.
+                this.remoteBranches = RepositoryFacade.GetRelatedBranches(this);
+            }
+            return this.remoteBranches;
+        }
+    }
+
+    public Tag[] Tags
+    {
+        get
+        {
+            if (this.tags == null)
+            {
+                // Beginning of race condition section,
+                // but will discard dict later silently.
+                this.tags = RepositoryFacade.GetRelatedTags(this);
+            }
+            return this.tags;
+        }
     }
 
     public bool Equals(Commit rhs) =>

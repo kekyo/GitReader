@@ -15,7 +15,7 @@ namespace GitReader.Primitive;
 
 public static class RepositoryFactoryExtension
 {
-    public static Task<Repository> OpenAsync(
+    public static Task<Repository> OpenPrimitiveAsync(
         this RepositoryFactory _,
         string path, CancellationToken ct = default, bool forceUnlock = false) =>
         RepositoryFacade.OpenPrimitiveAsync(path, ct, forceUnlock);

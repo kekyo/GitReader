@@ -20,11 +20,11 @@ public sealed class RepositoryTests
     [Test]
     public async Task GetCommitDirectly()
     {
-        using var repository = await Repository.Factory.OpenAsync(
+        using var repository = await Repository.Factory.OpenPrimitiveAsync(
             RepositoryTestsSetUp.BasePath);
 
         var commit = await repository.GetCommitAsync(
-            Hash.Parse("1205dc34ce48bda28fc543daaf9525a9bb6e6d10"));
+            "1205dc34ce48bda28fc543daaf9525a9bb6e6d10");
 
         await Verifier.Verify(commit);
     }
@@ -32,7 +32,7 @@ public sealed class RepositoryTests
     [Test]
     public async Task GetCurrentHead()
     {
-        using var repository = await Repository.Factory.OpenAsync(
+        using var repository = await Repository.Factory.OpenPrimitiveAsync(
             RepositoryTestsSetUp.BasePath);
 
         var head = await repository.GetCurrentHeadReferenceAsync();
@@ -44,7 +44,7 @@ public sealed class RepositoryTests
     [Test]
     public async Task GetBranchHead()
     {
-        using var repository = await Repository.Factory.OpenAsync(
+        using var repository = await Repository.Factory.OpenPrimitiveAsync(
             RepositoryTestsSetUp.BasePath);
 
         var head = await repository.GetBranchHeadReferenceAsync("master");
@@ -56,7 +56,7 @@ public sealed class RepositoryTests
     [Test]
     public async Task GetRemoteBranchHead()
     {
-        using var repository = await Repository.Factory.OpenAsync(
+        using var repository = await Repository.Factory.OpenPrimitiveAsync(
             RepositoryTestsSetUp.BasePath);
 
         var head = await repository.GetRemoteBranchHeadReferenceAsync("origin/devel");
@@ -68,7 +68,7 @@ public sealed class RepositoryTests
     [Test]
     public async Task GetTag()
     {
-        using var repository = await Repository.Factory.OpenAsync(
+        using var repository = await Repository.Factory.OpenPrimitiveAsync(
             RepositoryTestsSetUp.BasePath);
 
         var tagref = await repository.GetTagReferenceAsync("2.0.0");
@@ -80,7 +80,7 @@ public sealed class RepositoryTests
     [Test]
     public async Task GetTag2()
     {
-        using var repository = await Repository.Factory.OpenAsync(
+        using var repository = await Repository.Factory.OpenPrimitiveAsync(
             RepositoryTestsSetUp.BasePath);
 
         var tagref = await repository.GetTagReferenceAsync("0.9.6");
@@ -92,7 +92,7 @@ public sealed class RepositoryTests
     [Test]
     public async Task GetBranchHeads()
     {
-        using var repository = await Repository.Factory.OpenAsync(
+        using var repository = await Repository.Factory.OpenPrimitiveAsync(
             RepositoryTestsSetUp.BasePath);
 
         var branches = await repository.GetBranchHeadReferencesAsync();
@@ -103,7 +103,7 @@ public sealed class RepositoryTests
     [Test]
     public async Task GetRemoteBranchHeads()
     {
-        using var repository = await Repository.Factory.OpenAsync(
+        using var repository = await Repository.Factory.OpenPrimitiveAsync(
             RepositoryTestsSetUp.BasePath);
 
         var branches = await repository.GetRemoteBranchHeadReferencesAsync();
@@ -114,7 +114,7 @@ public sealed class RepositoryTests
     [Test]
     public async Task GetTags()
     {
-        using var repository = await Repository.Factory.OpenAsync(
+        using var repository = await Repository.Factory.OpenPrimitiveAsync(
             RepositoryTestsSetUp.BasePath);
 
         var tagReferences = await repository.GetTagReferencesAsync();
@@ -127,7 +127,7 @@ public sealed class RepositoryTests
     [Test]
     public async Task TraverseBranchCommits()
     {
-        using var repository = await Repository.Factory.OpenAsync(
+        using var repository = await Repository.Factory.OpenPrimitiveAsync(
             RepositoryTestsSetUp.BasePath);
 
         var branch = await repository.GetBranchHeadReferenceAsync("master");

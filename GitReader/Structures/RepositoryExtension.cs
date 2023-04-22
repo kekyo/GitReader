@@ -15,6 +15,11 @@ namespace GitReader.Structures;
 
 public static class RepositoryExtension
 {
+    public static Task<Commit> GetCommitAsync(
+        this StructuredRepository repository,
+        Hash commit, CancellationToken ct = default) =>
+        RepositoryFacade.GetCommitDirectlyAsync(repository, commit, ct);
+
     public static Task<Commit[]> GetParentsAsync(
         this Commit commit,
         CancellationToken ct = default) =>

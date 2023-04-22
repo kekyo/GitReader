@@ -165,9 +165,18 @@ internal static class RepositoryFacade
         }
     }
 
-    public static Task<Structures.Commit[]> GetParentsAsync(
-        Structures.Commit commit,
+    public static async Task<Structures.Commit> GetCommitDirectlyAsync(
+        Structures.StructuredRepository repository,
+        Hash hash,
         CancellationToken ct)
+    {
+        var commit = await RepositoryAccessor.ReadCommitAsync(
+            repository, hash, ct);
+        return new(new(repository), commit);
+    }
+
+    private static Structures.StructuredRepository GetRepositoryFrom(
+        Structures.Commit commit)
     {
         if (commit.rwr.Target is not Structures.StructuredRepository repository ||
             repository.accessor == null)
@@ -175,6 +184,14 @@ internal static class RepositoryFacade
             throw new InvalidOperationException(
                 "The repository already discarded.");
         }
+        return repository;
+    }
+
+    public static Task<Structures.Commit[]> GetParentsAsync(
+        Structures.Commit commit,
+        CancellationToken ct)
+    {
+        var repository = GetRepositoryFrom(commit);
 
         return Utilities.WhenAll(
             commit.parents.Select(async parent =>
@@ -183,5 +200,23 @@ internal static class RepositoryFacade
                     repository, parent, ct);
                 return new Structures.Commit(commit.rwr, pc);
             }));
+    }
+
+    public static Structures.Branch[] GetRelatedBranches(Structures.Commit commit)
+    {
+        var repository = GetRepositoryFrom(commit);
+        return repository.Branches.Values.
+            Collect(branch => branch.Head.Equals(commit) ? branch : null).
+            ToArray();
+    }
+
+    public static Structures.Tag[] GetRelatedTags(Structures.Commit commit)
+    {
+        var repository = GetRepositoryFrom(commit);
+        return repository.Tags.Values.
+            Collect(tag =>
+                (tag.Type == ObjectTypes.Commit &&
+                 tag.Hash.Equals(commit.Hash)) ? tag : null).
+            ToArray();
     }
 }
