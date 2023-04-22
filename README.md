@@ -53,7 +53,7 @@ GitReader has high-level interfaces and primitive interfaces.
 
 ## Samples (High-level interfaces)
 
-### Read current head commit
+### Get current head commit
 
 ```csharp
 using GitReader;
@@ -62,18 +62,18 @@ using GitReader.Structures;
 using Repository repository = await Repository.Factory.OpenAsync(
     "/home/kekyo/Projects/YourOwnLocalGitRepo");
 
-Commit commit = await repository.GetCurrentHeadAsync();
+Commit head = repository.Head;
 
-Console.WriteLine($"Hash: {commit.Hash}");
-Console.WriteLine($"Author: {commit.Author}");
-Console.WriteLine($"Committer: {commit.Committer}");
-Console.WriteLine($"Message: {commit.Message}");
+Console.WriteLine($"Hash: {head.Hash}");
+Console.WriteLine($"Author: {head.Author}");
+Console.WriteLine($"Committer: {head.Committer}");
+Console.WriteLine($"Message: {head.Message}");
 ```
 
-### Read a branch head commit
+### Get a branch head commit
 
 ```csharp
-Branch branch = await repository.GetBranchAsync("develop");
+Branch branch = repository.Branches["develop"];
 
 Console.WriteLine($"Name: {branch.Name}");
 
@@ -83,10 +83,10 @@ Console.WriteLine($"Committer: {branch.Head.Committer}");
 Console.WriteLine($"Message: {branch.Head.Message}");
 ```
 
-### Read a remote branch head commit
+### Get a remote branch head commit
 
 ```csharp
-Branch branch = await repository.GetRemoteBranchAsync("origin/develop");
+Branch branch = repository.RemoteBranches["origin/develop"];
 
 Console.WriteLine($"Name: {branch.Name}");
 
@@ -94,14 +94,25 @@ Console.WriteLine($"Hash: {branch.Head.Hash}");
 Console.WriteLine($"Author: {branch.Head.Author}");
 Console.WriteLine($"Committer: {branch.Head.Committer}");
 Console.WriteLine($"Message: {branch.Head.Message}");
+```
+
+### Get a tag
+
+```csharp
+Tag tag = repository.Tags["1.2.3"];
+
+Console.WriteLine($"Name: {tag.Name}");
+
+Console.WriteLine($"Hash: {tag.Hash}");
+Console.WriteLine($"Author: {tag.Author}");
+Console.WriteLine($"Committer: {tag.Committer}");
+Console.WriteLine($"Message: {tag.Message}");
 ```
 
 ### Enumerate branches
 
 ```csharp
-Branch[] branches = await repository.GetBranchesAsync();
-
-foreach (Branch branch in branches)
+foreach (Branch branch in repository.Branches.Values)
 {
     Console.WriteLine($"Name: {branch.Name}");
 
@@ -115,9 +126,7 @@ foreach (Branch branch in branches)
 ### Enumerate tags
 
 ```csharp
-Tag[] tags = await repository.GetTagsAsync();
-
-foreach (Tag tag in tags)
+foreach (Tag tag in repository.Tags.Values)
 {
     Console.WriteLine($"Name: {tag.Name}");
 

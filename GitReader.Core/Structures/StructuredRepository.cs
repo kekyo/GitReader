@@ -8,14 +8,29 @@
 ////////////////////////////////////////////////////////////////////////////
 
 using GitReader.Internal;
+using System.Collections.Generic;
 
 namespace GitReader.Structures;
 
 public sealed class StructuredRepository : Repository
 {
+    internal Commit head = null!;
+    internal ReadOnlyDictionary<string, Branch> branches = null!;
+    internal ReadOnlyDictionary<string, Branch> remoteBranches = null!;
+    internal ReadOnlyDictionary<string, Tag> tags = null!;
+
     internal StructuredRepository(
         string repositoryPath, TemporaryFile locker) :
         base(repositoryPath, locker)
     {
     }
+
+    public Commit Head =>
+        this.head;
+    public ReadOnlyDictionary<string, Branch> Branches =>
+        this.branches;
+    public ReadOnlyDictionary<string, Branch> RemoteBranches =>
+        this.remoteBranches;
+    public ReadOnlyDictionary<string, Tag> Tags =>
+        this.tags;
 }

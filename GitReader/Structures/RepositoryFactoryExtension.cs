@@ -8,8 +8,6 @@
 ////////////////////////////////////////////////////////////////////////////
 
 using GitReader.Internal;
-using System;
-using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -17,21 +15,8 @@ namespace GitReader.Structures;
 
 public static class RepositoryFactoryExtension
 {
-    public static async Task<StructuredRepository> OpenAsync(
+    public static Task<StructuredRepository> OpenAsync(
         this RepositoryFactory _,
-        string path, CancellationToken ct = default, bool forceUnlock = false)
-    {
-        var repositoryPath = Path.GetFileName(path) != ".git" ?
-            Utilities.Combine(path, ".git") : path;
-
-        if (!Directory.Exists(repositoryPath))
-        {
-            throw new ArgumentException("Repository does not exist.");
-        }
-
-        var lockPath = Utilities.Combine(repositoryPath, "index.lock");
-        var locker = await TemporaryFile.CreateLockFileAsync(lockPath, ct, forceUnlock);
-
-        return new(repositoryPath, locker);
-    }
+        string path, CancellationToken ct = default, bool forceUnlock = false) =>
+        RepositoryAccessor.OpenStructuredAsync(path, ct, forceUnlock);
 }

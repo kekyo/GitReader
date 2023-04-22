@@ -23,7 +23,7 @@ public sealed class RepositoryTests
         using var repository = await Repository.Factory.OpenAsync(
             RepositoryTestsSetUp.BasePath);
 
-        var commit = await repository.GetCurrentHeadAsync();
+        var commit = repository.Head;
 
         await Verifier.Verify(commit);
     }
@@ -34,7 +34,7 @@ public sealed class RepositoryTests
         using var repository = await Repository.Factory.OpenAsync(
             RepositoryTestsSetUp.BasePath);
 
-        var branch = await repository.GetBranchAsync("master");
+        var branch = repository.Branches["master"];
 
         await Verifier.Verify(branch);
     }
@@ -45,7 +45,7 @@ public sealed class RepositoryTests
         using var repository = await Repository.Factory.OpenAsync(
             RepositoryTestsSetUp.BasePath);
 
-        var branch = await repository.GetRemoteBranchAsync("origin/devel");
+        var branch = repository.RemoteBranches["origin/devel"];
 
         await Verifier.Verify(branch);
     }
@@ -56,7 +56,7 @@ public sealed class RepositoryTests
         using var repository = await Repository.Factory.OpenAsync(
             RepositoryTestsSetUp.BasePath);
 
-        var tag = await repository.GetTagAsync("2.0.0");
+        var tag = repository.Tags["2.0.0"];
 
         await Verifier.Verify(tag);
     }
@@ -67,42 +67,9 @@ public sealed class RepositoryTests
         using var repository = await Repository.Factory.OpenAsync(
             RepositoryTestsSetUp.BasePath);
 
-        var tag = await repository.GetTagAsync("0.9.6");
+        var tag = repository.Tags["0.9.6"];
 
         await Verifier.Verify(tag);
-    }
-
-    [Test]
-    public async Task GetBranches()
-    {
-        using var repository = await Repository.Factory.OpenAsync(
-            RepositoryTestsSetUp.BasePath);
-
-        var branches = await repository.GetBranchesAsync();
-
-        await Verifier.Verify(branches);
-    }
-
-    [Test]
-    public async Task GetRemoteBranches()
-    {
-        using var repository = await Repository.Factory.OpenAsync(
-            RepositoryTestsSetUp.BasePath);
-
-        var branches = await repository.GetRemoteBranchesAsync();
-
-        await Verifier.Verify(branches);
-    }
-
-    [Test]
-    public async Task GetTags()
-    {
-        using var repository = await Repository.Factory.OpenAsync(
-            RepositoryTestsSetUp.BasePath);
-
-        var tags = await repository.GetTagsAsync();
-
-        await Verifier.Verify(tags);
     }
 
     [Test]
@@ -111,7 +78,7 @@ public sealed class RepositoryTests
         using var repository = await Repository.Factory.OpenAsync(
             RepositoryTestsSetUp.BasePath);
 
-        var branch = await repository.GetBranchAsync("master");
+        var branch = repository.Branches["master"];
 
         Console.WriteLine($"Name: {branch.Name}");
 
