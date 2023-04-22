@@ -88,14 +88,17 @@ public sealed class RepositoryTests
         {
             commits.Add(current);
 
+            // Get parent commits.
+            var parents = await current.GetParentsAsync();
+
             // Bottom of branch.
-            if (current.GetParentCount() == 0)
+            if (parents.Length == 0)
             {
                 break;
             }
 
             // Get primary parent.
-            current = await current.GetParentAsync(0);
+            current = parents[0];
         }
 
         await Verifier.Verify(commits.ToArray());

@@ -15,16 +15,8 @@ namespace GitReader.Structures;
 
 public static class RepositoryExtension
 {
-    public static int GetParentCount(
-        this Commit commit) =>
-        commit.parents.Length;
-
-    public static async Task<Commit> GetParentAsync(
+    public static Task<Commit[]> GetParentsAsync(
         this Commit commit,
-        int index, CancellationToken ct = default)
-    {
-        var parent = await RepositoryAccessor.ReadCommitAsync(
-            commit.repository, commit.parents[index], ct);
-        return new(commit.repository, parent);
-    }
+        CancellationToken ct = default) =>
+        RepositoryFacade.GetParentsAsync(commit, ct);
 }

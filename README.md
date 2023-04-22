@@ -152,14 +152,17 @@ while (true)
     Console.WriteLine($"Committer: {current.Committer}");
     Console.WriteLine($"Message: {current.Message}");
 
+    // Get parent commits.
+    Commit[] parents = await current.GetParentsAsync();
+
     // Bottom of branch.
-    if (current.GetParentCount() == 0)
+    if (parents.Length == 0)
     {
         break;
     }
 
     // Get primary parent.
-    current = await current.GetParentAsync(0);
+    current = parents[0];
 }
 ```
 

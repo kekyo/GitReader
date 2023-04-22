@@ -81,7 +81,7 @@ internal static class RepositoryFacade
             repository, "HEAD", ct);
         var commit = await RepositoryAccessor.ReadCommitAsync(
             repository, results.Hash, ct);
-        return new(repository, commit);
+        return new(new(repository), commit);
     }
 
     private static async Task<ReadOnlyDictionary<string, Structures.Branch>> GetStructuredBranchesAsync(
@@ -101,7 +101,7 @@ internal static class RepositoryFacade
             }));
         return entries.ToDictionary(
             entry => entry.Name,
-            entry => new Structures.Branch(entry.Name, new(repository, entry.Head))).
+            entry => new Structures.Branch(entry.Name, new(new(repository), entry.Head))).
             AsReadOnly();
     }
 
@@ -163,5 +163,25 @@ internal static class RepositoryFacade
             locker.Dispose();
             throw;
         }
+    }
+
+    public static Task<Structures.Commit[]> GetParentsAsync(
+        Structures.Commit commit,
+        CancellationToken ct)
+    {
+        if (commit.rwr.Target is not Structures.StructuredRepository repository ||
+            repository.accessor == null)
+        {
+            throw new InvalidOperationException(
+                "The repository already discarded.");
+        }
+
+        return Utilities.WhenAll(
+            commit.parents.Select(async parent =>
+            {
+                var pc = await RepositoryAccessor.ReadCommitAsync(
+                    repository, parent, ct);
+                return new Structures.Commit(commit.rwr, pc);
+            }));
     }
 }

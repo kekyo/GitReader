@@ -14,7 +14,7 @@ namespace GitReader.Structures;
 
 public sealed class Commit : IEquatable<Commit?>
 {
-    internal readonly StructuredRepository repository;
+    internal readonly WeakReference rwr;
     internal readonly Hash treeRoot;
     internal readonly Hash[] parents;
 
@@ -24,10 +24,10 @@ public sealed class Commit : IEquatable<Commit?>
     public readonly string Message;
 
     internal Commit(
-        StructuredRepository repository,
+        WeakReference rwr,
         Primitive.Commit commit)
     {
-        this.repository = repository;
+        this.rwr = rwr;
         this.treeRoot = commit.TreeRoot;
         this.parents = commit.Parents;
 
