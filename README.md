@@ -65,12 +65,14 @@ using Repository repository =
         "/home/kekyo/Projects/YourOwnLocalGitRepo");
 
 // Found current head
-if (repository.Head is { } head)
+if (repository.Head is Branch head)
 {
-    Console.WriteLine($"Hash: {head.Hash}");
-    Console.WriteLine($"Author: {head.Author}");
-    Console.WriteLine($"Committer: {head.Committer}");
-    Console.WriteLine($"Message: {head.Message}");
+    Console.WriteLine($"Name: {head.Name}");
+
+    Console.WriteLine($"Hash: {head.Head.Hash}");
+    Console.WriteLine($"Author: {head.Head.Author}");
+    Console.WriteLine($"Committer: {head.Head.Committer}");
+    Console.WriteLine($"Message: {head.Head.Message}");
 }
 ```
 

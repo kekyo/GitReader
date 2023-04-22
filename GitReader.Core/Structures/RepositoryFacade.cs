@@ -19,7 +19,7 @@ namespace GitReader.Structures;
 
 internal static class RepositoryFacade
 {
-    private static async Task<Commit?> GetCurrentHeadAsync(
+    private static async Task<Branch?> GetCurrentHeadAsync(
         StructuredRepository repository,
         CancellationToken ct)
     {
@@ -29,7 +29,7 @@ internal static class RepositoryFacade
             var commit = await RepositoryAccessor.ReadCommitAsync(
                 repository, results.Hash, ct);
             return commit is { } c ?
-                new(new(repository), c) :
+                new(results.Names.Last(), new(new(repository), c)) :
                 throw new InvalidDataException(
                     $"Could not find a commit: {results.Hash}");
         }

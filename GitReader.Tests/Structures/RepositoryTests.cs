@@ -23,9 +23,9 @@ public sealed class RepositoryTests
         using var repository = await Repository.Factory.OpenStructureAsync(
             RepositoryTestsSetUp.BasePath);
 
-        var commit = repository.Head;
+        var head = repository.Head;
 
-        await Verifier.Verify(commit);
+        await Verifier.Verify(head);
     }
 
     [Test]
