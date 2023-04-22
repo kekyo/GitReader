@@ -8,7 +8,6 @@
 ////////////////////////////////////////////////////////////////////////////
 
 using GitReader.Internal;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -16,41 +15,25 @@ namespace GitReader.Primitive;
 
 public static class RepositoryExtension
 {
-    public static async Task<Reference> GetCurrentHeadReferenceAsync(
+    public static Task<Reference> GetCurrentHeadReferenceAsync(
         this Repository repository,
-        CancellationToken ct = default)
-    {
-        var results = await RepositoryAccessor.ReadHashAsync(
-            repository, "HEAD", ct);
-        return Reference.Create(results.Names.Last(), results.Hash);
-    }
+        CancellationToken ct = default) =>
+        RepositoryFacade.GetCurrentHeadReferenceAsync(repository, ct);
 
-    public static async Task<Reference> GetBranchHeadReferenceAsync(
+    public static Task<Reference> GetBranchHeadReferenceAsync(
         this Repository repository,
-        string branchName, CancellationToken ct = default)
-    {
-        var results = await RepositoryAccessor.ReadHashAsync(
-            repository, $"refs/heads/{branchName}", ct);
-        return Reference.Create(branchName, results.Hash);
-    }
+        string branchName, CancellationToken ct = default) =>
+        RepositoryFacade.GetBranchHeadReferenceAsync(repository, branchName, ct);
 
-    public static async Task<Reference> GetRemoteBranchHeadReferenceAsync(
+    public static Task<Reference> GetRemoteBranchHeadReferenceAsync(
         this Repository repository,
-        string branchName, CancellationToken ct = default)
-    {
-        var results = await RepositoryAccessor.ReadHashAsync(
-            repository, $"refs/remotes/{branchName}", ct);
-        return Reference.Create(branchName, results.Hash);
-    }
+        string branchName, CancellationToken ct = default) =>
+        RepositoryFacade.GetRemoteBranchHeadReferenceAsync(repository, branchName, ct);
 
-    public static async Task<Reference> GetTagReferenceAsync(
+    public static Task<Reference> GetTagReferenceAsync(
         this Repository repository,
-        string tagName, CancellationToken ct = default)
-    {
-        var results = await RepositoryAccessor.ReadHashAsync(
-            repository, $"refs/tags/{tagName}", ct);
-        return Reference.Create(tagName, results.Hash);
-    }
+        string tagName, CancellationToken ct = default) =>
+        RepositoryFacade.GetTagReferenceAsync(repository, tagName, ct);
 
     public static Task<Commit> GetCommitAsync(
         this Repository repository,

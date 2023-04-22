@@ -7,7 +7,6 @@
 //
 ////////////////////////////////////////////////////////////////////////////
 
-using GitReader.Collections;
 using GitReader.Primitive;
 using System;
 using System.Collections.Generic;
@@ -33,117 +32,6 @@ internal readonly struct HashResults
 
 internal static class RepositoryAccessor
 {
-    public static async Task<Repository> OpenPrimitiveAsync(
-        string path, CancellationToken ct, bool forceUnlock)
-    {
-        var repositoryPath = Path.GetFileName(path) != ".git" ?
-            Utilities.Combine(path, ".git") : path;
-
-        if (!Directory.Exists(repositoryPath))
-        {
-            throw new ArgumentException("Repository does not exist.");
-        }
-
-        var lockPath = Utilities.Combine(repositoryPath, "index.lock");
-        var locker = await TemporaryFile.CreateLockFileAsync(lockPath, ct, forceUnlock);
-
-        return new(repositoryPath, locker);
-    }
-
-    private static async Task<Structures.Commit> GetCurrentHeadAsync(
-        Structures.StructuredRepository repository,
-        CancellationToken ct)
-    {
-        var results = await ReadHashAsync(
-            repository, "HEAD", ct);
-        var commit = await ReadCommitAsync(
-            repository, results.Hash, ct);
-        return new(repository, commit);
-    }
-
-    private static async Task<ReadOnlyDictionary<string, Structures.Branch>> GetStructuredBranchesAsync(
-        Structures.StructuredRepository repository,
-        string baseName,
-        CancellationToken ct)
-    {
-        var references = await ReadReferencesAsync(
-            repository, baseName, ct);
-        var entries = await Utilities.WhenAll(
-            references.Select(async reference =>
-            new
-            {
-                Name = reference.Name,
-                Head = await ReadCommitAsync(
-                    repository, reference.Target, ct)
-            }));
-        return entries.ToDictionary(
-            entry => entry.Name,
-            entry => new Structures.Branch(entry.Name, new(repository, entry.Head))).
-            AsReadOnly();
-    }
-
-    private static async Task<ReadOnlyDictionary<string, Structures.Tag>> GetStructuredTagsAsync(
-        Structures.StructuredRepository repository,
-        CancellationToken ct)
-    {
-        var references = await ReadReferencesAsync(
-            repository, "tags", ct);
-        var entries = await Utilities.WhenAll(
-            references.Select(async reference =>
-            new
-            {
-                Name = reference.Name,
-                Tag = (await ReadTagAsync(
-                    repository, reference.Target, ct)) is { } tag ?
-                        new Structures.Tag(tag) :
-                        new Structures.Tag(reference.Target, ObjectTypes.Commit, reference.Name),
-            }));
-        return entries.ToDictionary(
-            entry => entry.Name,
-            entry => entry.Tag).
-            AsReadOnly();
-    }
-
-    public static async Task<Structures.StructuredRepository> OpenStructuredAsync(
-        string path, CancellationToken ct, bool forceUnlock)
-    {
-        var repositoryPath = Path.GetFileName(path) != ".git" ?
-            Utilities.Combine(path, ".git") : path;
-
-        if (!Directory.Exists(repositoryPath))
-        {
-            throw new ArgumentException("Repository does not exist.");
-        }
-
-        var lockPath = Utilities.Combine(repositoryPath, "index.lock");
-        var locker = await TemporaryFile.CreateLockFileAsync(lockPath, ct, forceUnlock);
-
-        try
-        {
-            var repository = new Structures.StructuredRepository(repositoryPath, locker);
-
-            var (head, branches, remoteBranches, tags) = await Utilities.WhenAll(
-                GetCurrentHeadAsync(repository, ct),
-                GetStructuredBranchesAsync(repository, "heads", ct),
-                GetStructuredBranchesAsync(repository, "remotes", ct),
-                GetStructuredTagsAsync(repository, ct));
-
-            repository.head = head;
-            repository.branches = branches;
-            repository.remoteBranches = remoteBranches;
-            repository.tags = tags;
-
-            return repository;
-        }
-        catch
-        {
-            locker.Dispose();
-            throw;
-        }
-    }
-
-    //////////////////////////////////////////////////////////////////////////
-
     public static async Task<Reference[]> ReadReferencesAsync(
         Repository repository,
         string type,

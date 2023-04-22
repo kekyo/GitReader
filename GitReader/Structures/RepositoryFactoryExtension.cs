@@ -18,5 +18,5 @@ public static class RepositoryFactoryExtension
     public static Task<StructuredRepository> OpenAsync(
         this RepositoryFactory _,
         string path, CancellationToken ct = default, bool forceUnlock = false) =>
-        RepositoryAccessor.OpenStructuredAsync(path, ct, forceUnlock);
+        RepositoryFacade.OpenStructuredAsync(path, ct, forceUnlock);
 }
