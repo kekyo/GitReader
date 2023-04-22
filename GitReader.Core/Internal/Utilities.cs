@@ -168,9 +168,36 @@ internal static class Utilities
         }
     }
 
+#if NET35 || NET40 || NET45
+    private static class ArrayEmpty<T>
+    {
+        public static readonly T[] Empty = new T[0];
+    }
+
+    public static T[] Empty<T>() =>
+        ArrayEmpty<T>.Empty;
+#else
+    public static T[] Empty<T>() =>
+        Array.Empty<T>();
+#endif
+
     public static IEnumerable<U> Collect<T, U>(
         this IEnumerable<T> enumerable,
         Func<T, U?> selector)
+    {
+        foreach (var item in enumerable)
+        {
+            if (selector(item) is U selected)
+            {
+                yield return selected;
+            }
+        }
+    }
+
+    public static IEnumerable<U> CollectValue<T, U>(
+        this IEnumerable<T> enumerable,
+        Func<T, U?> selector)
+        where U : struct
     {
         foreach (var item in enumerable)
         {

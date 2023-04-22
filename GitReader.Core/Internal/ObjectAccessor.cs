@@ -357,16 +357,21 @@ internal sealed class ObjectAccessor : IDisposable
 
                         try
                         {
+                            if (objectEntry is not { } oe)
+                            {
+                                throw new InvalidDataException();
+                            }
+
                             var deltaDecodedStream = await DeltaDecodedStream.CreateAsync(
-                                objectEntry.Stream,
+                                oe.Stream,
                                 new RangedStream(zlibStream, (long)objectSize),
                                 ct);
-                            return new(deltaDecodedStream, objectEntry.Type);
+                            return new(deltaDecodedStream, oe.Type);
                         }
                         catch
                         {
                             zlibStream.Dispose();
-                            objectEntry.Stream.Dispose();
+                            objectEntry?.Stream.Dispose();
                             throw;
                         }
                     }
@@ -397,7 +402,7 @@ internal sealed class ObjectAccessor : IDisposable
         }
     }
 
-    private async Task<ObjectStreamResult> OpenFromPackedAsync(
+    private async Task<ObjectStreamResult?> OpenFromPackedAsync(
         Hash hash, CancellationToken ct)
     {
         var entries = await Utilities.WhenAll(
@@ -410,7 +415,7 @@ internal sealed class ObjectAccessor : IDisposable
             new { indexEntry.BaseFileName, ObjectEntry = objectEntry } : null).
             FirstOrDefault(entry => entry != null) is not { } entry)
         {
-            throw new InvalidDataException($"Could not find an object: {hash}");
+            return null;
         }
 
         var packedFilePath = Utilities.Combine(
@@ -437,7 +442,7 @@ internal sealed class ObjectAccessor : IDisposable
 
     //////////////////////////////////////////////////////////////////////////
 
-    public Task<ObjectStreamResult> OpenAsync(
+    public async Task<ObjectStreamResult?> OpenAsync(
         Hash hash, CancellationToken ct)
     {
         var objectPath = Utilities.Combine(
@@ -447,11 +452,11 @@ internal sealed class ObjectAccessor : IDisposable
 
         if (File.Exists(objectPath))
         {
-            return this.OpenFromObjectFileAsync(objectPath, hash, ct);
+            return await this.OpenFromObjectFileAsync(objectPath, hash, ct);
         }
         else
         {
-            return this.OpenFromPackedAsync(hash, ct);
+            return await this.OpenFromPackedAsync(hash, ct);
         }
     }
 }

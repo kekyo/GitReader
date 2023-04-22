@@ -7,7 +7,6 @@
 //
 ////////////////////////////////////////////////////////////////////////////
 
-using GitReader.Internal;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -15,7 +14,7 @@ namespace GitReader.Structures;
 
 public static class RepositoryExtension
 {
-    public static Task<Commit> GetCommitAsync(
+    public static Task<Commit?> GetCommitAsync(
         this StructuredRepository repository,
         Hash commit, CancellationToken ct = default) =>
         RepositoryFacade.GetCommitDirectlyAsync(repository, commit, ct);

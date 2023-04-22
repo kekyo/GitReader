@@ -32,29 +32,7 @@ internal readonly struct HashResults
 
 internal static class RepositoryAccessor
 {
-    public static async Task<Reference[]> ReadReferencesAsync(
-        Repository repository,
-        string type,
-        CancellationToken ct)
-    {
-        var headsPath = Utilities.Combine(
-            repository.Path, "refs", type);
-        var branches = await Utilities.WhenAll(
-            Utilities.EnumerateFiles(headsPath, "*").
-            Select(async path =>
-            {
-                var results = await ReadHashAsync(
-                    repository,
-                    path.Substring(repository.Path.Length + 1),
-                    ct);
-                return Reference.Create(
-                    path.Substring(headsPath.Length + 1).Replace(Path.DirectorySeparatorChar, '/'),
-                    results.Hash);
-            }));
-        return branches;
-    }
-
-    public static async Task<HashResults> ReadHashAsync(
+    public static async Task<HashResults?> ReadHashAsync(
         Repository repository,
         string relativePath,
         CancellationToken ct)
@@ -72,11 +50,19 @@ internal static class RepositoryAccessor
 
             var path = Utilities.Combine(
                 repository.Path,
-                currentPath.Replace('/', System.IO.Path.DirectorySeparatorChar));
+                currentPath.Replace('/', Path.DirectorySeparatorChar));
             if (!File.Exists(path))
             {
-                throw new InvalidDataException(
-                    $"Could not find {currentPath}.");
+                // Invalid reference pointer.
+                if (names.Count >= 2)
+                {
+                    throw new InvalidDataException(
+                        $"Could not find {currentPath}.");
+                }
+                else
+                {
+                    return null;
+                }
             }
 
             using var fs = new FileStream(
@@ -97,6 +83,35 @@ internal static class RepositoryAccessor
 
             currentPath = line.Substring(5);
         }
+    }
+
+    public static async Task<Reference[]> ReadReferencesAsync(
+        Repository repository,
+        string type,
+        CancellationToken ct)
+    {
+        var headsPath = Utilities.Combine(
+            repository.Path, "refs", type);
+        var references = await Utilities.WhenAll(
+            Utilities.EnumerateFiles(headsPath, "*").
+            Select(async path =>
+            {
+                if (await ReadHashAsync(
+                    repository,
+                    path.Substring(repository.Path.Length + 1),
+                    ct) is not { } results)
+                {
+                    return default(Reference?);
+                }
+                else
+                {
+                    return Reference.Create(
+                        path.Substring(headsPath.Length + 1).Replace(Path.DirectorySeparatorChar, '/'),
+                        results.Hash);
+                }
+            }));
+        return references.CollectValue(reference => reference).
+            ToArray();
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -135,11 +150,15 @@ internal static class RepositoryAccessor
         return repository.accessor;
     }
 
-    public static async Task<Commit> ReadCommitAsync(
+    public static async Task<Commit?> ReadCommitAsync(
         Repository repository,
         Hash hash, CancellationToken ct)
     {
-        var streamResult = await GetObjectAccessor(repository).OpenAsync(hash, ct);
+        var accessor = GetObjectAccessor(repository);
+        if (await accessor.OpenAsync(hash, ct) is not { } streamResult)
+        {
+            return null;
+        }
 
         try
         {
@@ -220,7 +239,11 @@ internal static class RepositoryAccessor
         Repository repository,
         Hash hash, CancellationToken ct)
     {
-        var streamResult = await GetObjectAccessor(repository).OpenAsync(hash, ct);
+        var accessor = GetObjectAccessor(repository);
+        if (await accessor.OpenAsync(hash, ct) is not { } streamResult)
+        {
+            return null;
+        }
 
         try
         {

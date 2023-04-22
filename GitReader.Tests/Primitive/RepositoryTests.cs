@@ -30,13 +30,25 @@ public sealed class RepositoryTests
     }
 
     [Test]
+    public async Task CommitNotFound()
+    {
+        using var repository = await Repository.Factory.OpenPrimitiveAsync(
+            RepositoryTestsSetUp.BasePath);
+
+        var commit = await repository.GetCommitAsync(
+            "0000000000000000000000000000000000000000");
+
+        await Verifier.Verify(commit);
+    }
+
+    [Test]
     public async Task GetCurrentHead()
     {
         using var repository = await Repository.Factory.OpenPrimitiveAsync(
             RepositoryTestsSetUp.BasePath);
 
-        var head = await repository.GetCurrentHeadReferenceAsync();
-        var commit = await repository.GetCommitAsync(head);
+        var headref = await repository.GetCurrentHeadReferenceAsync();
+        var commit = await repository.GetCommitAsync(headref.Value);
 
         await Verifier.Verify(commit);
     }
@@ -47,8 +59,8 @@ public sealed class RepositoryTests
         using var repository = await Repository.Factory.OpenPrimitiveAsync(
             RepositoryTestsSetUp.BasePath);
 
-        var head = await repository.GetBranchHeadReferenceAsync("master");
-        var commit = await repository.GetCommitAsync(head);
+        var headref = await repository.GetBranchHeadReferenceAsync("master");
+        var commit = await repository.GetCommitAsync(headref);
 
         await Verifier.Verify(commit);
     }
@@ -59,8 +71,8 @@ public sealed class RepositoryTests
         using var repository = await Repository.Factory.OpenPrimitiveAsync(
             RepositoryTestsSetUp.BasePath);
 
-        var head = await repository.GetRemoteBranchHeadReferenceAsync("origin/devel");
-        var commit = await repository.GetCommitAsync(head);
+        var headref = await repository.GetRemoteBranchHeadReferenceAsync("origin/devel");
+        var commit = await repository.GetCommitAsync(headref);
 
         await Verifier.Verify(commit);
     }
@@ -95,9 +107,9 @@ public sealed class RepositoryTests
         using var repository = await Repository.Factory.OpenPrimitiveAsync(
             RepositoryTestsSetUp.BasePath);
 
-        var branches = await repository.GetBranchHeadReferencesAsync();
+        var branchrefs = await repository.GetBranchHeadReferencesAsync();
 
-        await Verifier.Verify(branches);
+        await Verifier.Verify(branchrefs);
     }
 
     [Test]
@@ -106,9 +118,9 @@ public sealed class RepositoryTests
         using var repository = await Repository.Factory.OpenPrimitiveAsync(
             RepositoryTestsSetUp.BasePath);
 
-        var branches = await repository.GetRemoteBranchHeadReferencesAsync();
+        var branchrefs = await repository.GetRemoteBranchHeadReferencesAsync();
 
-        await Verifier.Verify(branches);
+        await Verifier.Verify(branchrefs);
     }
 
     [Test]
@@ -117,9 +129,9 @@ public sealed class RepositoryTests
         using var repository = await Repository.Factory.OpenPrimitiveAsync(
             RepositoryTestsSetUp.BasePath);
 
-        var tagReferences = await repository.GetTagReferencesAsync();
+        var tagrefs = await repository.GetTagReferencesAsync();
         var tags = await Task.WhenAll(
-            tagReferences.Select(tagReference => repository.GetTagAsync(tagReference)));
+            tagrefs.Select(tagReference => repository.GetTagAsync(tagReference)));
 
         await Verifier.Verify(tags);
     }
@@ -130,8 +142,8 @@ public sealed class RepositoryTests
         using var repository = await Repository.Factory.OpenPrimitiveAsync(
             RepositoryTestsSetUp.BasePath);
 
-        var branch = await repository.GetBranchHeadReferenceAsync("master");
-        var commit = await repository.GetCommitAsync(branch);
+        var branchref = await repository.GetBranchHeadReferenceAsync("master");
+        var commit = (await repository.GetCommitAsync(branchref))!.Value;
 
         var commits = new List<Commit>();
         while (true)
@@ -146,7 +158,7 @@ public sealed class RepositoryTests
 
             // Get primary parent.
             var primary = commit.Parents[0];
-            commit = await repository.GetCommitAsync(primary);
+            commit = (await repository.GetCommitAsync(primary))!.Value;
         }
 
         await Verifier.Verify(commits.ToArray());

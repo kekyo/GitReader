@@ -15,7 +15,7 @@ namespace GitReader.Primitive;
 
 public static class RepositoryExtension
 {
-    public static Task<Reference> GetCurrentHeadReferenceAsync(
+    public static Task<Reference?> GetCurrentHeadReferenceAsync(
         this Repository repository,
         CancellationToken ct = default) =>
         RepositoryFacade.GetCurrentHeadReferenceAsync(repository, ct);
@@ -35,7 +35,7 @@ public static class RepositoryExtension
         string tagName, CancellationToken ct = default) =>
         RepositoryFacade.GetTagReferenceAsync(repository, tagName, ct);
 
-    public static Task<Commit> GetCommitAsync(
+    public static Task<Commit?> GetCommitAsync(
         this Repository repository,
         Hash commit, CancellationToken ct = default) =>
         RepositoryAccessor.ReadCommitAsync(repository, commit, ct);

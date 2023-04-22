@@ -34,8 +34,20 @@ public sealed class RepositoryTests
         using var repository = await Repository.Factory.OpenStructureAsync(
             RepositoryTestsSetUp.BasePath);
 
-        var commit = repository.GetCommitAsync(
+        var commit = await repository.GetCommitAsync(
             "1205dc34ce48bda28fc543daaf9525a9bb6e6d10");
+
+        await Verifier.Verify(commit);
+    }
+
+    [Test]
+    public async Task CommitNotFound()
+    {
+        using var repository = await Repository.Factory.OpenStructureAsync(
+            RepositoryTestsSetUp.BasePath);
+
+        var commit = await repository.GetCommitAsync(
+            "0000000000000000000000000000000000000000");
 
         await Verifier.Verify(commit);
     }
@@ -92,7 +104,7 @@ public sealed class RepositoryTests
 
         var commit = await repository.GetCommitAsync(
             "9bb78d13405cab568d3e213130f31beda1ce21d1");
-        var branches = commit.Branches;
+        var branches = commit!.Branches;
 
         await Verifier.Verify(branches);
     }
@@ -105,7 +117,7 @@ public sealed class RepositoryTests
 
         var commit = await repository.GetCommitAsync(
             "f64de5e3ad34528757207109e68f626bf8cc1a31");
-        var tags = commit.Tags;
+        var tags = commit!.Tags;
 
         await Verifier.Verify(tags);
     }
@@ -118,7 +130,7 @@ public sealed class RepositoryTests
 
         var commit = await repository.GetCommitAsync(
             "f690f0e7bf703582a1fad7e6f1c2d1586390f43d");
-        var branches = commit.RemoteBranches;
+        var branches = commit!.RemoteBranches;
 
         await Verifier.Verify(branches);
     }
@@ -131,7 +143,7 @@ public sealed class RepositoryTests
 
         var commit = await repository.GetCommitAsync(
             "dc45301eeb49ec94ee043755124802497d0079ec");
-        var parents = await commit.GetParentCommitsAsync();
+        var parents = await commit!.GetParentCommitsAsync();
 
         await Verifier.Verify(parents);
     }
@@ -146,20 +158,15 @@ public sealed class RepositoryTests
 
         Console.WriteLine($"Name: {branch.Name}");
 
-        var current = branch.Head;
         var commits = new List<Commit>();
-        while (true)
+        var current = branch.Head;
+
+        while (current != null)
         {
             commits.Add(current);
 
             // Get primary parent commit.
-            if (await current.GetPrimaryParentCommitAsync() is not { } parent)
-            {
-                // Bottom of branch.
-                break;
-            }
-
-            current = parent;
+            current = await current.GetPrimaryParentCommitAsync();
         }
 
         await Verifier.Verify(commits.ToArray());

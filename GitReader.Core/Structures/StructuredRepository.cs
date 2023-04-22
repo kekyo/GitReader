@@ -14,7 +14,7 @@ namespace GitReader.Structures;
 
 public sealed class StructuredRepository : Repository
 {
-    internal Commit head = null!;
+    internal Commit? head;
     internal ReadOnlyDictionary<string, Branch> branches = null!;
     internal ReadOnlyDictionary<string, Branch> remoteBranches = null!;
     internal ReadOnlyDictionary<string, Tag> tags = null!;
@@ -25,7 +25,7 @@ public sealed class StructuredRepository : Repository
     {
     }
 
-    public Commit Head =>
+    public Commit? Head =>
         this.head;
     public ReadOnlyDictionary<string, Branch> Branches =>
         this.branches;
