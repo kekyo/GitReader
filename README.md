@@ -64,24 +64,27 @@ using Repository repository =
     await Repository.Factory.OpenStructureAsync(
         "/home/kekyo/Projects/YourOwnLocalGitRepo");
 
-Commit head = repository.Head;
-
-Console.WriteLine($"Hash: {head.Hash}");
-Console.WriteLine($"Author: {head.Author}");
-Console.WriteLine($"Committer: {head.Committer}");
-Console.WriteLine($"Message: {head.Message}");
+// Found current head
+if (repository.Head is { } head)
+{
+    Console.WriteLine($"Hash: {head.Hash}");
+    Console.WriteLine($"Author: {head.Author}");
+    Console.WriteLine($"Committer: {head.Committer}");
+    Console.WriteLine($"Message: {head.Message}");
+}
 ```
 
 ### Get a commit directly
 
 ```csharp
-Commit head = await repository.GetCommitAsync(
-    "1205dc34ce48bda28fc543daaf9525a9bb6e6d10");
-
-Console.WriteLine($"Hash: {head.Hash}");
-Console.WriteLine($"Author: {head.Author}");
-Console.WriteLine($"Committer: {head.Committer}");
-Console.WriteLine($"Message: {head.Message}");
+if (await repository.GetCommitAsync(
+    "1205dc34ce48bda28fc543daaf9525a9bb6e6d10") is Commit commit)
+{
+    Console.WriteLine($"Hash: {commit.Hash}");
+    Console.WriteLine($"Author: {commit.Author}");
+    Console.WriteLine($"Committer: {commit.Committer}");
+    Console.WriteLine($"Message: {commit.Message}");
+}
 ```
 
 ### Get a branch head commit
@@ -126,12 +129,15 @@ Console.WriteLine($"Message: {tag.Message}");
 ### Get related branches and tags from a commit
 
 ```csharp
-Commit commit = await repository.GetCommitAsync(
-    "1205dc34ce48bda28fc543daaf9525a9bb6e6d10");
+if (await repository.GetCommitAsync(
+    "1205dc34ce48bda28fc543daaf9525a9bb6e6d10") is Commit commit)
+{
+    Branch[] branches = commit.Branches;
+    Branch[] remoteBranches = commit.RemoteBranches;
+    Tags[] tags = commit.Tags;
 
-Branch[] branches = commit.Branches;
-Branch[] remoteBranches = commit.RemoteBranches;
-Tags[] tags = commit.Tags;
+    // ...
+}
 ```
 
 ### Enumerate branches
@@ -165,29 +171,31 @@ foreach (Tag tag in repository.Tags.Values)
 ### Get parent commits
 
 ```csharp
-Commit commit = await repository.GetCommitAsync(
-    "6961a50ef3ad4e43ed9774daffd8457d32cf5e75");
-
-Commit[] parents = await commit.GetParentCommitsAsync();
-
-foreach (Commit parent in parents)
+if (await repository.GetCommitAsync(
+    "6961a50ef3ad4e43ed9774daffd8457d32cf5e75") is Command commit)
 {
-    Console.WriteLine($"Hash: {parent.Hash}");
-    Console.WriteLine($"Author: {parent.Author}");
-    Console.WriteLine($"Committer: {parent.Committer}");
-    Console.WriteLine($"Message: {parent.Message}");
+    Commit[] parents = await commit.GetParentCommitsAsync();
+
+    foreach (Commit parent in parents)
+    {
+        Console.WriteLine($"Hash: {parent.Hash}");
+        Console.WriteLine($"Author: {parent.Author}");
+        Console.WriteLine($"Committer: {parent.Committer}");
+        Console.WriteLine($"Message: {parent.Message}");
+    }
 }
 ```
 
 ### Traverse a branch through primary commits
 
 ```csharp
-Branch branch = await repository.GetBranchAsync("develop");
+Branch branch = repository.Branches["develop"];
 
 Console.WriteLine($"Name: {branch.Name}");
 
-Commit current = branch.Head;
-while (true)
+Commit? current = branch.Head;
+
+while (current != null)
 {
     Console.WriteLine($"Hash: {current.Hash}");
     Console.WriteLine($"Author: {current.Author}");
@@ -195,13 +203,7 @@ while (true)
     Console.WriteLine($"Message: {current.Message}");
 
     // Get primary parent commit.
-    if (await current.GetPrimaryParentCommitAsync() is not { } parent)
-    {
-        // Bottom of branch.
-        break;
-    }
-
-    current = parent;
+    current = await current.GetPrimaryParentCommitAsync();
 }
 ```
 
@@ -219,37 +221,43 @@ using Repository repository =
     await Repository.Factory.OpenPrimitiveAsync(
         "/home/kekyo/Projects/YourOwnLocalGitRepo");
 
-Reference head = await repository.GetCurrentHeadReferenceAsync();
-Commit commit = await repository.GetCommitAsync(head);
-
-Console.WriteLine($"Hash: {commit.Hash}");
-Console.WriteLine($"Author: {commit.Author}");
-Console.WriteLine($"Committer: {commit.Committer}");
-Console.WriteLine($"Message: {commit.Message}");
+if (await repository.GetCurrentHeadReferenceAsync() is Reference head)
+{
+    if (await repository.GetCommitAsync(head) is Commit commit)
+    {
+        Console.WriteLine($"Hash: {commit.Hash}");
+        Console.WriteLine($"Author: {commit.Author}");
+        Console.WriteLine($"Committer: {commit.Committer}");
+        Console.WriteLine($"Message: {commit.Message}");
+    }
+}
 ```
 
 ### Read a commit directly
 
 ```csharp
-Commit head = await repository.GetCommitAsync(
-    "1205dc34ce48bda28fc543daaf9525a9bb6e6d10");
-
-Console.WriteLine($"Hash: {head.Hash}");
-Console.WriteLine($"Author: {head.Author}");
-Console.WriteLine($"Committer: {head.Committer}");
-Console.WriteLine($"Message: {head.Message}");
+if (await repository.GetCommitAsync(
+    "1205dc34ce48bda28fc543daaf9525a9bb6e6d10") is Commit commit)
+{
+    Console.WriteLine($"Hash: {commit.Hash}");
+    Console.WriteLine($"Author: {commit.Author}");
+    Console.WriteLine($"Committer: {commit.Committer}");
+    Console.WriteLine($"Message: {commit.Message}");
+}
 ```
 
 ### Read a branch head commit
 
 ```csharp
 Reference head = await repository.GetBranchHeadReferenceAsync("develop");
-Commit commit = await repository.GetCommitAsync(head);
 
-Console.WriteLine($"Hash: {commit.Hash}");
-Console.WriteLine($"Author: {commit.Author}");
-Console.WriteLine($"Committer: {commit.Committer}");
-Console.WriteLine($"Message: {commit.Message}");
+if (await repository.GetCommitAsync(head) is Commit commit)
+{
+    Console.WriteLine($"Hash: {commit.Hash}");
+    Console.WriteLine($"Author: {commit.Author}");
+    Console.WriteLine($"Committer: {commit.Committer}");
+    Console.WriteLine($"Message: {commit.Message}");
+}
 ```
 
 ### Enumerate branches
@@ -281,28 +289,34 @@ foreach (Reference tagReference in tagReferences)
 }
 ```
 
-### Traverse a branch through primary commits
+### Traverse a commit through primary commits
 
 ```csharp
-Reference branch = await repository.GetBranchHeadReferenceAsync("develop");
-Commit commit = await repository.GetCommitAsync(branch);
-
-while (true)
+if (await repository.GetCommitAsync(
+    "1205dc34ce48bda28fc543daaf9525a9bb6e6d10") is Commit commit)
 {
-    Console.WriteLine($"Hash: {commit.Hash}");
-    Console.WriteLine($"Author: {commit.Author}");
-    Console.WriteLine($"Committer: {commit.Committer}");
-    Console.WriteLine($"Message: {commit.Message}");
-
-    // Bottom of branch.
-    if (commit.Parents.Length == 0)
+    while (true)
     {
-        break;
-    }
+        Console.WriteLine($"Hash: {commit.Hash}");
+        Console.WriteLine($"Author: {commit.Author}");
+        Console.WriteLine($"Committer: {commit.Committer}");
+        Console.WriteLine($"Message: {commit.Message}");
 
-    // Get primary parent.
-    Hash primary = commit.Parents[0];
-    commit = await repository.GetCommitAsync(primary);
+        // Bottom of branch.
+        if (commit.Parents.Length == 0)
+        {
+            break;
+        }
+
+        // Get primary parent.
+        Hash primary = commit.Parents[0];
+        if (await repository.GetCommitAsync(primary) is not Commit parent)
+        {
+            throw new Exception();
+        }
+
+        current = parent;
+    }
 }
 ```
 
@@ -322,6 +336,8 @@ Apache-v2
 
 ## History
 
+* 0.3.0:
+  * Supported ability for not found detection.
 * 0.2.0:
   * The shape of the public interfaces are almost fixed.
   * Improved high-level interfaces.
