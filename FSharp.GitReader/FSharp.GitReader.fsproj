@@ -6,6 +6,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Update="FSharp.Core" Version="5.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Compile Include="Utilities.fs" />
     <Compile Include="Primitive/*.fs" />
     <Compile Include="Structures/*.fs" />

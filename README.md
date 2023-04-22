@@ -8,9 +8,9 @@ Lightweight Git local repository traversal library.
 
 [![Project Status: WIP – Initial development is in progress, but there has not yet been a stable, usable release suitable for the public.](https://www.repostatus.org/badges/latest/wip.svg)](https://www.repostatus.org/#wip)
 
-|Type|Pakcage|
+|Target|Pakcage|
 |:----|:----|
-|Standard|[![NuGet GitReader](https://img.shields.io/nuget/v/GitReader.svg?style=flat)](https://www.nuget.org/packages/GitReader)|
+|Any|[![NuGet GitReader](https://img.shields.io/nuget/v/GitReader.svg?style=flat)](https://www.nuget.org/packages/GitReader)|
 |F# binding|[![NuGet FSharp.GitReader](https://img.shields.io/nuget/v/FSharp.GitReader.svg?style=flat)](https://www.nuget.org/packages/FSharp.GitReader)|
 
 ## What is this?
@@ -41,7 +41,7 @@ It primarily fits the purpose of easily extracting commit information from a Git
 
 ## F# specialized binding
 
-F# 6.0 or upper, it contains F# friendly signature definition.
+F# 5.0 or upper, it contains F# friendly signature definition.
 
 * .NET 7.0 to 5.0
 * .NET Core 3.1 to 2.0
@@ -352,6 +352,8 @@ Apache-v2
 
 ## History
 
+* 0.5.0:
+  * Downgraded at least F# version 5.
 * 0.4.0:
   * Added F# binding.
   * Fixed lack for head branch name.
