@@ -20,7 +20,12 @@ public static class RepositoryExtension
         Hash commit, CancellationToken ct = default) =>
         RepositoryFacade.GetCommitDirectlyAsync(repository, commit, ct);
 
-    public static Task<Commit[]> GetParentsAsync(
+    public static Task<Commit?> GetPrimaryParentCommitAsync(
+        this Commit commit,
+        CancellationToken ct = default) =>
+        RepositoryFacade.GetPrimaryParentAsync(commit, ct);
+
+    public static Task<Commit[]> GetParentCommitsAsync(
         this Commit commit,
         CancellationToken ct = default) =>
         RepositoryFacade.GetParentsAsync(commit, ct);

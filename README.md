@@ -22,6 +22,7 @@ It has the following features:
 * Branch tree traversal.
 * Read only interface makes immutability.
 * Primitive and high-level interfaces ready.
+* Fully asynchronous operation.
 * Only contains 100% managed code. Independent of any external libraries other than the BCL and its compliant libraries.
 * Reliable zlib decompression using the .NET standard deflate implementation.
 
@@ -161,6 +162,23 @@ foreach (Tag tag in repository.Tags.Values)
 }
 ```
 
+### Get parent commits
+
+```csharp
+Commit commit = await repository.GetCommitAsync(
+    "6961a50ef3ad4e43ed9774daffd8457d32cf5e75");
+
+Commit[] parents = await commit.GetParentCommitsAsync();
+
+foreach (Commit parent in parents)
+{
+    Console.WriteLine($"Hash: {parent.Hash}");
+    Console.WriteLine($"Author: {parent.Author}");
+    Console.WriteLine($"Committer: {parent.Committer}");
+    Console.WriteLine($"Message: {parent.Message}");
+}
+```
+
 ### Traverse a branch through primary commits
 
 ```csharp
@@ -176,17 +194,14 @@ while (true)
     Console.WriteLine($"Committer: {current.Committer}");
     Console.WriteLine($"Message: {current.Message}");
 
-    // Get parent commits.
-    Commit[] parents = await current.GetParentsAsync();
-
-    // Bottom of branch.
-    if (parents.Length == 0)
+    // Get primary parent commit.
+    if (await current.GetPrimaryParentCommitAsync() is not { } parent)
     {
+        // Bottom of branch.
         break;
     }
 
-    // Get primary parent.
-    current = parents[0];
+    current = parent;
 }
 ```
 
@@ -296,7 +311,6 @@ while (true)
 ## TODO
 
 * Supported tree/file accessors.
-* Supported synchronously accessors.
 * Supported CRC32 verifier.
 * Supported F# bindings.
 
@@ -309,6 +323,7 @@ Apache-v2
 ## History
 
 * 0.2.0:
+  * The shape of the public interfaces are almost fixed.
   * Improved high-level interfaces.
   * Splitted core library (Preparation for F# binding)
 * 0.1.0:

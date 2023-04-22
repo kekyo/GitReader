@@ -187,6 +187,21 @@ internal static class RepositoryFacade
         return repository;
     }
 
+    public static async Task<Structures.Commit?> GetPrimaryParentAsync(
+        Structures.Commit commit,
+        CancellationToken ct)
+    {
+        if (commit.parents.Length == 0)
+        {
+            return null;
+        }
+
+        var repository = GetRepositoryFrom(commit);
+        var pc = await RepositoryAccessor.ReadCommitAsync(
+            repository, commit.parents[0], ct);
+        return new(commit.rwr, pc);
+    }
+
     public static Task<Structures.Commit[]> GetParentsAsync(
         Structures.Commit commit,
         CancellationToken ct)
@@ -206,6 +221,14 @@ internal static class RepositoryFacade
     {
         var repository = GetRepositoryFrom(commit);
         return repository.Branches.Values.
+            Collect(branch => branch.Head.Equals(commit) ? branch : null).
+            ToArray();
+    }
+
+    public static Structures.Branch[] GetRelatedRemoteBranches(Structures.Commit commit)
+    {
+        var repository = GetRepositoryFrom(commit);
+        return repository.RemoteBranches.Values.
             Collect(branch => branch.Head.Equals(commit) ? branch : null).
             ToArray();
     }

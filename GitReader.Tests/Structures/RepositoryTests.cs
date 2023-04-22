@@ -124,6 +124,19 @@ public sealed class RepositoryTests
     }
 
     [Test]
+    public async Task GetParentCommits()
+    {
+        using var repository = await Repository.Factory.OpenStructureAsync(
+            RepositoryTestsSetUp.BasePath);
+
+        var commit = await repository.GetCommitAsync(
+            "dc45301eeb49ec94ee043755124802497d0079ec");
+        var parents = await commit.GetParentCommitsAsync();
+
+        await Verifier.Verify(parents);
+    }
+
+    [Test]
     public async Task TraverseBranchCommits()
     {
         using var repository = await Repository.Factory.OpenStructureAsync(
@@ -139,17 +152,14 @@ public sealed class RepositoryTests
         {
             commits.Add(current);
 
-            // Get parent commits.
-            var parents = await current.GetParentsAsync();
-
-            // Bottom of branch.
-            if (parents.Length == 0)
+            // Get primary parent commit.
+            if (await current.GetPrimaryParentCommitAsync() is not { } parent)
             {
+                // Bottom of branch.
                 break;
             }
 
-            // Get primary parent.
-            current = parents[0];
+            current = parent;
         }
 
         await Verifier.Verify(commits.ToArray());

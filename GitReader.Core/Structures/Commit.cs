@@ -64,7 +64,7 @@ public sealed class Commit : IEquatable<Commit?>
             {
                 // Beginning of race condition section,
                 // but will discard dict later silently.
-                this.remoteBranches = RepositoryFacade.GetRelatedBranches(this);
+                this.remoteBranches = RepositoryFacade.GetRelatedRemoteBranches(this);
             }
             return this.remoteBranches;
         }
