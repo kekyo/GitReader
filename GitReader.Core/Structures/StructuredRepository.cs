@@ -7,8 +7,8 @@
 //
 ////////////////////////////////////////////////////////////////////////////
 
+using GitReader.Collections;
 using GitReader.Internal;
-using System.Collections.Generic;
 
 namespace GitReader.Structures;
 

@@ -7,6 +7,7 @@
 //
 ////////////////////////////////////////////////////////////////////////////
 
+using GitReader.Collections;
 using GitReader.Primitive;
 using System;
 using System.Collections.Generic;
@@ -60,12 +61,7 @@ internal static class RepositoryAccessor
         return new(repository, commit);
     }
 
-    private static Structures.ReadOnlyDictionary<TKey, TValue> AsReadOnly<TKey, TValue>(
-        this Dictionary<TKey, TValue> dictionary)
-        where TKey : notnull =>
-        new(dictionary);
-
-    private static async Task<Structures.ReadOnlyDictionary<string, Structures.Branch>> GetStructuredBranchesAsync(
+    private static async Task<ReadOnlyDictionary<string, Structures.Branch>> GetStructuredBranchesAsync(
         Structures.StructuredRepository repository,
         string baseName,
         CancellationToken ct)
@@ -86,7 +82,7 @@ internal static class RepositoryAccessor
             AsReadOnly();
     }
 
-    private static async Task<Structures.ReadOnlyDictionary<string, Structures.Tag>> GetStructuredTagsAsync(
+    private static async Task<ReadOnlyDictionary<string, Structures.Tag>> GetStructuredTagsAsync(
         Structures.StructuredRepository repository,
         CancellationToken ct)
     {

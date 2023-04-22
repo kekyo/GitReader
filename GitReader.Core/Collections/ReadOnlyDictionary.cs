@@ -11,7 +11,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 
-namespace GitReader.Structures;
+namespace GitReader.Collections;
 
 public sealed class ReadOnlyDictionary<TKey, TValue> :
     IDictionary<TKey, TValue>
