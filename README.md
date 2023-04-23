@@ -8,9 +8,9 @@ Lightweight Git local repository traversal library.
 
 [![Project Status: WIP – Initial development is in progress, but there has not yet been a stable, usable release suitable for the public.](https://www.repostatus.org/badges/latest/wip.svg)](https://www.repostatus.org/#wip)
 
-|Type|Pakcage|
+|Target|Pakcage|
 |:----|:----|
-|Standard|[![NuGet GitReader](https://img.shields.io/nuget/v/GitReader.svg?style=flat)](https://www.nuget.org/packages/GitReader)|
+|Any|[![NuGet GitReader](https://img.shields.io/nuget/v/GitReader.svg?style=flat)](https://www.nuget.org/packages/GitReader)|
 |F# binding|[![NuGet FSharp.GitReader](https://img.shields.io/nuget/v/FSharp.GitReader.svg?style=flat)](https://www.nuget.org/packages/FSharp.GitReader)|
 
 ## What is this?
@@ -32,21 +32,23 @@ It has the following features:
 This library was designed from the ground up to replace `libgit2sharp`, on which [RelaxVersioner](https://github.com/kekyo/CenterCLR.RelaxVersioner) depended.
 It primarily fits the purpose of easily extracting commit information from a Git repository.
 
-## Target .NET platforms
+### Target .NET platforms
 
 * .NET 7.0 to 5.0
 * .NET Core 3.1 to 2.0
 * .NET Standard 2.1 to 1.6
 * .NET Framework 4.8.1 to 3.5
 
-## F# specialized binding
+### F# specialized binding
 
-F# 6.0 or upper, it contains F# friendly signature definition.
+F# 5.0 or upper, it contains F# friendly signature definition.
 
 * .NET 7.0 to 5.0
 * .NET Core 3.1 to 2.0
 * .NET Standard 2.1, 2.0
 * .NET Framework 4.8.1 to 4.6.1
+
+Note: All target framework variations are tested only newest it.
 
 ----
 
@@ -80,7 +82,7 @@ using Repository repository =
         "/home/kekyo/Projects/YourOwnLocalGitRepo");
 
 // Found current head
-if (repository.Head is Branch head)
+if (repository.GetHead() is Branch head)
 {
     Console.WriteLine($"Name: {head.Name}");
 
@@ -352,6 +354,9 @@ Apache-v2
 
 ## History
 
+* 0.5.0:
+  * Supported deconstructor by F# active patterns.
+  * Downgraded at least F# version 5.
 * 0.4.0:
   * Added F# binding.
   * Fixed lack for head branch name.

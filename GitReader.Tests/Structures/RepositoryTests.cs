@@ -8,8 +8,8 @@
 ////////////////////////////////////////////////////////////////////////////
 
 using NUnit.Framework;
-using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using VerifyNUnit;
 
@@ -23,7 +23,7 @@ public sealed class RepositoryTests
         using var repository = await Repository.Factory.OpenStructureAsync(
             RepositoryTestsSetUp.BasePath);
 
-        var head = repository.Head;
+        var head = repository.GetHead();
 
         await Verifier.Verify(head);
     }
@@ -106,7 +106,7 @@ public sealed class RepositoryTests
             "9bb78d13405cab568d3e213130f31beda1ce21d1");
         var branches = commit!.Branches;
 
-        await Verifier.Verify(branches);
+        await Verifier.Verify(branches.OrderBy(b => b.Name).ToArray());
     }
 
     [Test]
@@ -119,7 +119,7 @@ public sealed class RepositoryTests
             "f64de5e3ad34528757207109e68f626bf8cc1a31");
         var tags = commit!.Tags;
 
-        await Verifier.Verify(tags);
+        await Verifier.Verify(tags.OrderBy(t => t.Name).ToArray());
     }
 
     [Test]
@@ -132,7 +132,7 @@ public sealed class RepositoryTests
             "f690f0e7bf703582a1fad7e6f1c2d1586390f43d");
         var branches = commit!.RemoteBranches;
 
-        await Verifier.Verify(branches);
+        await Verifier.Verify(branches.OrderBy(br => br.Name).ToArray());
     }
 
     [Test]
@@ -155,8 +155,6 @@ public sealed class RepositoryTests
             RepositoryTestsSetUp.BasePath);
 
         var branch = repository.Branches["master"];
-
-        Console.WriteLine($"Name: {branch.Name}");
 
         var commits = new List<Commit>();
         var current = branch.Head;

@@ -108,16 +108,4 @@ public sealed class Commit : IEquatable<Commit?>
 
     public override string ToString() =>
         $"{this.Hash}: {this.Author}: {this.Message}";
-
-    public void Deconstruct(
-        out Hash hash,
-        out Signature author,
-        out Signature committer,
-        out string message)
-    {
-        hash = this.Hash;
-        author = this.Author;
-        committer = this.Committer;
-        message = this.Message;
-    }
 }

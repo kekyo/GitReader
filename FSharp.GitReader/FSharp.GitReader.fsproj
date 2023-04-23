@@ -6,14 +6,19 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="Utilities.fs" />
-    <Compile Include="Primitive/*.fs" />
-    <Compile Include="Structures/*.fs" />
-    <None Include="../Images/GitReader.100.png" Pack="true" PackagePath="" />
+    <PackageReference Update="FSharp.Core" Version="5.0.0" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\GitReader.Core\GitReader.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="Utilities.fs" />
+    <Compile Include="Collections/*.fs" />
+    <Compile Include="Primitive/*.fs" />
+    <Compile Include="Structures/*.fs" />
+    <None Include="../Images/GitReader.100.png" Pack="true" PackagePath="" />
   </ItemGroup>
 
 </Project>

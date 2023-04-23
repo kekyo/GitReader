@@ -63,22 +63,6 @@ public readonly struct Commit : IEquatable<Commit>
     public override string ToString() =>
         $"{this.Hash}: {this.Author}: {this.Message}";
 
-    public void Deconstruct(
-        out Hash hash,
-        out Hash treeRoot,
-        out Signature author,
-        out Signature committer,
-        out Hash[] parents,
-        out string message)
-    {
-        hash = this.Hash;
-        treeRoot = this.TreeRoot;
-        author = this.Author;
-        committer = this.Committer;
-        parents = this.Parents;
-        message = this.Message;
-    }
-
     public static implicit operator Hash(Commit commit) =>
         commit.Hash;
 

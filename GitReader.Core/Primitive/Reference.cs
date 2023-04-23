@@ -25,13 +25,6 @@ public readonly struct Reference
     public override string ToString() =>
         $"{this.Name}: {this.Target}";
 
-    public void Deconstruct(
-        out string name, out Hash target)
-    {
-        name = this.Name;
-        target = this.Target;
-    }
-
     public static implicit operator Hash(Reference reference) =>
         reference.Target;
 

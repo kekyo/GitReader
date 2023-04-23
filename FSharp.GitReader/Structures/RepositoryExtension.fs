@@ -16,12 +16,49 @@ open System.Threading
 module public RepositoryExtension =
 
     type StructuredRepository with
-        member repository.getCommit(commit: Hash, ?ct: CancellationToken) =
-            RepositoryFacade.GetCommitDirectlyAsync(
-                repository, commit, unwrap ct) |> Async.AwaitTask
+        member repository.getHead() =
+            match repository.head with
+            | null -> None
+            | _ -> Some repository.head
+        member repository.getCommit(commit: Hash, ?ct: CancellationToken) = async {
+            let! c = RepositoryFacade.GetCommitDirectlyAsync(
+                repository, commit, unwrapCT ct) |> Async.AwaitTask
+            return match c with
+                   | null -> None
+                   | _ -> Some c
+        }
 
     type Commit with
-        member commit.getPrimaryParentCommit(?ct: CancellationToken) =
-            RepositoryFacade.GetPrimaryParentAsync(commit, unwrap ct) |> Async.AwaitTask
+        member commit.getPrimaryParentCommit(?ct: CancellationToken) = async {
+            let! c = RepositoryFacade.GetPrimaryParentAsync(
+                commit, unwrapCT ct) |> Async.AwaitTask
+            return match c with
+                   | null -> None
+                   | _ -> Some c
+        }
         member commit.getParentCommits(?ct: CancellationToken) =
-            RepositoryFacade.GetParentsAsync(commit, unwrap ct) |> Async.AwaitTask
+            RepositoryFacade.GetParentsAsync(commit, unwrapCT ct) |> Async.AwaitTask
+
+    let (|Repository|) (repository: StructuredRepository) =
+        (repository.Path,
+         (match repository.head with
+          | null -> None
+          | _ -> Some repository.head),
+         repository.branches,
+         repository.remoteBranches,
+         repository.tags)
+
+    let (|Branch|) (branch: Branch) =
+        (branch.Name, branch.Head)
+
+    let (|Commit|) (commit: Commit) =
+        (commit.Hash, commit.Author, commit.Committer, commit.Message)
+
+    let (|Tag|) (tag: Tag) =
+        (tag.Hash, tag.Type, tag.Name,
+         (match tag.Tagger.HasValue with
+          | false -> None
+          | _ -> Some tag.Tagger.Value),
+         (match tag.Message with
+          | null -> None
+          | _ -> Some tag.Message))
