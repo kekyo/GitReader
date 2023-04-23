@@ -85,7 +85,7 @@ type public PrimitiveRepositoryTests() =
         use! repository = Repository.Factory.openPrimitive(
             RepositoryTestsSetUp.BasePath)
         let! branchrefs = repository.getBranchHeadReferences()
-        do! verify(branchrefs)
+        do! verify(branchrefs |> Array.sortBy(fun br -> br.Name))
     }
 
     [<Test>]
@@ -93,7 +93,7 @@ type public PrimitiveRepositoryTests() =
         use! repository = Repository.Factory.openPrimitive(
             RepositoryTestsSetUp.BasePath)
         let! branchrefs = repository.getRemoteBranchHeadReferences()
-        do! verify(branchrefs)
+        do! verify(branchrefs |> Array.sortBy(fun br -> br.Name))
     }
     
     [<Test>]
@@ -104,7 +104,7 @@ type public PrimitiveRepositoryTests() =
         let! tags = Task.WhenAll(
             tagrefs |>
             Seq.map (fun tagReference -> repository.getTag(tagReference) |> Async.StartImmediateAsTask))
-        do! verify(tags)
+        do! verify(tags |> Array.sortBy(fun t -> t.Name))
     }
 
     [<Test>]

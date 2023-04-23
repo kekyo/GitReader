@@ -12,7 +12,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using VerifyNUnit;
-using VerifyTests;
 
 namespace GitReader.Primitive;
 
@@ -110,7 +109,7 @@ public sealed class RepositoryTests
 
         var branchrefs = await repository.GetBranchHeadReferencesAsync();
 
-        await Verifier.Verify(branchrefs);
+        await Verifier.Verify(branchrefs.OrderBy(br => br.Name).ToArray());
     }
 
     [Test]
@@ -121,7 +120,7 @@ public sealed class RepositoryTests
 
         var branchrefs = await repository.GetRemoteBranchHeadReferencesAsync();
 
-        await Verifier.Verify(branchrefs);
+        await Verifier.Verify(branchrefs.OrderBy(br => br.Name).ToArray());
     }
 
     [Test]
@@ -134,7 +133,7 @@ public sealed class RepositoryTests
         var tags = await Task.WhenAll(
             tagrefs.Select(tagReference => repository.GetTagAsync(tagReference)));
 
-        await Verifier.Verify(tags);
+        await Verifier.Verify(tags.OrderBy(tag => tag.Name).ToArray());
     }
 
     [Test]
