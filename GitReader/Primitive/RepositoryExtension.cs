@@ -60,4 +60,52 @@ public static class RepositoryExtension
         this Repository repository,
         CancellationToken ct = default) =>
         RepositoryAccessor.ReadReferencesAsync(repository, "tags", ct);
+
+    public static void Deconstruct(
+        this Repository repository,
+        out string path)
+    {
+        path = repository.Path;
+    }
+
+    public static void Deconstruct(
+        this Reference reference,
+        out string name,
+        out Hash target)
+    {
+        name = reference.Name;
+        target = reference.Target;
+    }
+
+    public static void Deconstruct(
+        this Commit commit,
+        out Hash hash,
+        out Hash treeRoot,
+        out Signature author,
+        out Signature committer,
+        out Hash[] parents,
+        out string message)
+    {
+        hash = commit.Hash;
+        treeRoot = commit.TreeRoot;
+        author = commit.Author;
+        committer = commit.Committer;
+        parents = commit.Parents;
+        message = commit.Message;
+    }
+
+    public static void Deconstruct(
+        this Tag tag,
+        out Hash hash,
+        out ObjectTypes type,
+        out string name,
+        out Signature? tagger,
+        out string? message)
+    {
+        hash = tag.Hash;
+        type = tag.Type;
+        name = tag.Name;
+        tagger = tag.Tagger;
+        message = tag.Message;
+    }
 }

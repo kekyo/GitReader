@@ -7,21 +7,13 @@
 //
 ////////////////////////////////////////////////////////////////////////////
 
-namespace GitReader.Structures;
+namespace GitReader.Collections
 
-public sealed class Branch
-{
-    public readonly string Name;
-    public readonly Commit Head;
+[<AutoOpen>]
+module public ReadOnlyDictionaryExtension =
 
-    internal Branch(
-        string name,
-        Commit head)
-    {
-        this.Name = name;
-        this.Head = head;
-    }
-
-    public override string ToString() =>
-        $"{this.Head.Hash}: {this.Name}";
-}
+    type ReadOnlyDictionary<'TKey, 'TValue> with
+        member dict.getValue(key: 'TKey) =
+            match dict.TryGetValue(key) with
+            | (true, value) -> Some value
+            | _ -> None

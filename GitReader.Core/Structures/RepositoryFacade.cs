@@ -54,12 +54,11 @@ internal static class RepositoryFacade
                 Head = await RepositoryAccessor.ReadCommitAsync(
                     repository, reference.Target, ct)
             }));
-        return entries.
+        return new(entries.
             Where(entry => entry.Head.HasValue).
             ToDictionary(
                 entry => entry.Name,
-                entry => new Branch(entry.Name, new(new(repository), entry.Head!.Value))).
-            AsReadOnly();
+                entry => new Branch(entry.Name, new(new(repository), entry.Head!.Value))));
     }
 
     private static async Task<ReadOnlyDictionary<string, Tag>> GetStructuredTagsAsync(
@@ -78,10 +77,9 @@ internal static class RepositoryFacade
                         new Tag(tag) :
                         new Tag(reference.Target, ObjectTypes.Commit, reference.Name),
             }));
-        return entries.ToDictionary(
+        return new(entries.ToDictionary(
             entry => entry.Name,
-            entry => entry.Tag).
-            AsReadOnly();
+            entry => entry.Tag));
     }
 
     public static async Task<StructuredRepository> OpenStructuredAsync(

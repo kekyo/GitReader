@@ -7,6 +7,7 @@
 //
 ////////////////////////////////////////////////////////////////////////////
 
+using GitReader.Collections;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -32,4 +33,56 @@ public static class RepositoryExtension
         this Commit commit,
         CancellationToken ct = default) =>
         RepositoryFacade.GetParentsAsync(commit, ct);
+
+    public static void Deconstruct(
+        this StructuredRepository repository,
+        out string path,
+        out Branch? head,
+        out ReadOnlyDictionary<string, Branch> branches,
+        out ReadOnlyDictionary<string, Branch> remoteBranches,
+        out ReadOnlyDictionary<string, Tag> tags)
+    {
+        path = repository.Path;
+        head = repository.head;
+        branches = repository.branches;
+        remoteBranches = repository.remoteBranches;
+        tags = repository.tags;
+    }
+
+    public static void Deconstruct(
+        this Branch branch,
+        out string name,
+        out Commit head)
+    {
+        name = branch.Name;
+        head = branch.Head;
+    }
+
+    public static void Deconstruct(
+        this Commit commit,
+        out Hash hash,
+        out Signature author,
+        out Signature committer,
+        out string message)
+    {
+        hash = commit.Hash;
+        author = commit.Author;
+        committer = commit.Committer;
+        message = commit.Message;
+    }
+
+    public static void Deconstruct(
+        this Tag tag,
+        out Hash hash,
+        out ObjectTypes type,
+        out string name,
+        out Signature? tagger,
+        out string? message)
+    {
+        hash = tag.Hash;
+        type = tag.Type;
+        name = tag.Name;
+        tagger = tag.Tagger;
+        message = tag.Message;
+    }
 }

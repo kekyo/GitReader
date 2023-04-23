@@ -7,21 +7,14 @@
 //
 ////////////////////////////////////////////////////////////////////////////
 
-namespace GitReader.Structures;
+namespace GitReader;
 
-public sealed class Branch
+public static class RepositoryExtension
 {
-    public readonly string Name;
-    public readonly Commit Head;
-
-    internal Branch(
-        string name,
-        Commit head)
+    public static void Deconstruct(
+        this Repository repository,
+        out string path)
     {
-        this.Name = name;
-        this.Head = head;
+        path = repository.Path;
     }
-
-    public override string ToString() =>
-        $"{this.Head.Hash}: {this.Name}";
 }

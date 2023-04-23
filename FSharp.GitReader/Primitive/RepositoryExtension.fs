@@ -52,3 +52,15 @@ module public RepositoryExtension =
 
         member repository.getTagReferences(?ct: CancellationToken) =
             RepositoryAccessor.ReadReferencesAsync(repository, "tags", unwrapCT ct) |> Async.AwaitTask
+
+    let (|Repository|) (repository: Repository) =
+        (repository.Path)
+
+    let (|Reference|) (reference: Reference) =
+        (reference.Name, reference.Target)
+
+    let (|Commit|) (commit: Commit) =
+        (commit.Hash, commit.TreeRoot, commit.Author, commit.Committer, commit.Parents, commit.Message)
+
+    let (|Tag|) (tag: Tag) =
+        (tag.Hash, tag.Type, tag.Name, tag.Tagger, tag.Message)

@@ -58,18 +58,4 @@ public sealed class Tag : IEquatable<Tag?>
 
     public override string ToString() =>
         $"{this.Name}: {this.Type}: {this.Hash}";
-
-    public void Deconstruct(
-        out Hash hash,
-        out ObjectTypes type,
-        out string name,
-        out Signature? tagger,
-        out string? message)
-    {
-        hash = this.Hash;
-        type = this.Type;
-        name = this.Name;
-        tagger = this.Tagger;
-        message = this.Message;
-    }
 }

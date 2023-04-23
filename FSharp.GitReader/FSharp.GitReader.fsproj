@@ -15,6 +15,7 @@
 
   <ItemGroup>
     <Compile Include="Utilities.fs" />
+    <Compile Include="Collections/*.fs" />
     <Compile Include="Primitive/*.fs" />
     <Compile Include="Structures/*.fs" />
     <None Include="../Images/GitReader.100.png" Pack="true" PackagePath="" />

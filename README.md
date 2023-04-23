@@ -355,6 +355,7 @@ Apache-v2
 ## History
 
 * 0.5.0:
+  * Supported deconstructor by F# active patterns.
   * Downgraded at least F# version 5.
 * 0.4.0:
   * Added F# binding.
