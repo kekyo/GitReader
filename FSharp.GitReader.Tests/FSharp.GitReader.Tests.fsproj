@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <AssemblyName>GitReader.Tests</AssemblyName>
+    <AssemblyName>FSharp.GitReader.Tests</AssemblyName>
     <TargetFrameworks>net48;net5.0;net6.0;net7.0</TargetFrameworks>
   </PropertyGroup>
 
@@ -13,17 +13,20 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\GitReader\GitReader.csproj" />
+    <PackageReference Update="FSharp.Core" Version="6.0.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="artifacts\" />
+    <ProjectReference Include="..\FSharp.GitReader\FSharp.GitReader.fsproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="artifacts\test1.zip">
+    <None Include="..\GitReader.Tests\artifacts\test1.zip" LinkBase="artifacts/">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <Compile Include="Utilities.fs" />
+    <Compile Include="PrimitiveRepositoryTests.fs" />
+    <Compile Include="StructuredRepositoryTests.fs" />
   </ItemGroup>
 
 </Project>

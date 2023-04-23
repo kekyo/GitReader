@@ -8,7 +8,6 @@
 ////////////////////////////////////////////////////////////////////////////
 
 using NUnit.Framework;
-using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using VerifyNUnit;
@@ -23,7 +22,7 @@ public sealed class RepositoryTests
         using var repository = await Repository.Factory.OpenStructureAsync(
             RepositoryTestsSetUp.BasePath);
 
-        var head = repository.Head;
+        var head = repository.GetHead();
 
         await Verifier.Verify(head);
     }
@@ -155,8 +154,6 @@ public sealed class RepositoryTests
             RepositoryTestsSetUp.BasePath);
 
         var branch = repository.Branches["master"];
-
-        Console.WriteLine($"Name: {branch.Name}");
 
         var commits = new List<Commit>();
         var current = branch.Head;

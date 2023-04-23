@@ -7,7 +7,6 @@
 //
 ////////////////////////////////////////////////////////////////////////////
 
-using NUnit.Framework;
 using System;
 using System.IO;
 using System.IO.Compression;
@@ -15,12 +14,8 @@ using VerifyTests;
 
 namespace GitReader;
 
-[SetUpFixture]
 public sealed class RepositoryTestsSetUp
 {
-    public static readonly string BasePath =
-        Path.Combine("tests", $"{DateTime.Now:yyyyMMdd_HHmmss}");
-
     private sealed class ByteDataConverter :
         WriteOnlyJsonConverter<byte[]>
     {
@@ -29,8 +24,10 @@ public sealed class RepositoryTestsSetUp
                 BitConverter.ToString(data).Replace("-", string.Empty).ToLowerInvariant());
     }
 
-    [OneTimeSetUp]
-    public void RunBeforeAnyTests()
+    public static readonly string BasePath =
+        Path.Combine("tests", $"{DateTime.Now:yyyyMMdd_HHmmss}");
+
+    static RepositoryTestsSetUp()
     {
         VerifierSettings.DontScrubDateTimes();
         VerifierSettings.AddExtraSettings(setting =>

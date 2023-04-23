@@ -1,0 +1,24 @@
+﻿{
+  Name: origin/devel,
+  Head: {
+    Hash: {
+      HashCode: f2f51b6fe6076ca630ca66c5c9f451217762652a
+    },
+    Author: {
+      Name: Kouji Matsui,
+      MailAddress: k@kekyo.net,
+      Date: 2020-12-24 17:15:37 +9,
+      RawFormat: Kouji Matsui <k@kekyo.net> 1608797737 0900
+    },
+    Committer: {
+      Name: Kouji Matsui,
+      MailAddress: k@kekyo.net,
+      Date: 2020-12-24 17:21:02 +9,
+      RawFormat: Kouji Matsui <k@kekyo.net> 1608798062 0900
+    },
+    Message:
+Updates test nuget refs.
+,
+    RemoteBranches: []
+  }
+}

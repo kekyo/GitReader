@@ -10,14 +10,14 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\GitReader.Core\GitReader.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Compile Include="Utilities.fs" />
     <Compile Include="Primitive/*.fs" />
     <Compile Include="Structures/*.fs" />
     <None Include="../Images/GitReader.100.png" Pack="true" PackagePath="" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\GitReader.Core\GitReader.Core.csproj" />
   </ItemGroup>
 
 </Project>

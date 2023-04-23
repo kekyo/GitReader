@@ -20,35 +20,35 @@ module public RepositoryExtension =
     type Repository with
         member repository.getCurrentHeadReference(?ct: CancellationToken) =
             RepositoryFacade.GetCurrentHeadReferenceAsync(
-                repository, unwrap ct) |> asAsync
+                repository, unwrapCT ct) |> asAsync
 
         member repository.getBranchHeadReference(branchName: string, ?ct: CancellationToken) =
             RepositoryFacade.GetBranchHeadReferenceAsync(
-                repository, branchName, unwrap ct) |> Async.AwaitTask
+                repository, branchName, unwrapCT ct) |> Async.AwaitTask
 
         member repository.getRemoteBranchHeadReference(branchName: string, ?ct: CancellationToken) =
             RepositoryFacade.GetRemoteBranchHeadReferenceAsync(
-                repository, branchName, unwrap ct) |> Async.AwaitTask
+                repository, branchName, unwrapCT ct) |> Async.AwaitTask
 
         member repository.getTagReference(tagName: string, ?ct: CancellationToken) =
             RepositoryFacade.GetTagReferenceAsync(
-                repository, tagName, unwrap ct) |> Async.AwaitTask
+                repository, tagName, unwrapCT ct) |> Async.AwaitTask
 
         member repository.getCommit(commit: Hash, ?ct: CancellationToken) =
-            RepositoryAccessor.ReadCommitAsync(repository, commit, unwrap ct) |> asAsync
+            RepositoryAccessor.ReadCommitAsync(repository, commit, unwrapCT ct) |> asAsync
 
         member repository.getTag(tag: Reference, ?ct: CancellationToken) = async {
-            let! t = RepositoryAccessor.ReadTagAsync(repository, tag, unwrap ct) |> asAsync
+            let! t = RepositoryAccessor.ReadTagAsync(repository, tag, unwrapCT ct) |> asAsync
             return match t with
                    | Some t -> t
                    | None -> Tag.Create(tag, ObjectTypes.Commit, tag.Name, Nullable(), null)
         }
 
         member repository.getBranchHeadReferences(?ct: CancellationToken) =
-            RepositoryAccessor.ReadReferencesAsync(repository, "heads", unwrap ct) |> Async.AwaitTask
+            RepositoryAccessor.ReadReferencesAsync(repository, "heads", unwrapCT ct) |> Async.AwaitTask
 
         member repository.getRemoteBranchHeadReferences(?ct: CancellationToken) =
-            RepositoryAccessor.ReadReferencesAsync(repository, "remotes", unwrap ct) |> Async.AwaitTask
+            RepositoryAccessor.ReadReferencesAsync(repository, "remotes", unwrapCT ct) |> Async.AwaitTask
 
         member repository.getTagReferences(?ct: CancellationToken) =
-            RepositoryAccessor.ReadReferencesAsync(repository, "tags", unwrap ct) |> Async.AwaitTask
+            RepositoryAccessor.ReadReferencesAsync(repository, "tags", unwrapCT ct) |> Async.AwaitTask

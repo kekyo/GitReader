@@ -14,6 +14,10 @@ namespace GitReader.Structures;
 
 public static class RepositoryExtension
 {
+    public static Branch? GetHead(
+        this StructuredRepository repository) =>
+        repository.head;
+
     public static Task<Commit?> GetCommitAsync(
         this StructuredRepository repository,
         Hash commit, CancellationToken ct = default) =>

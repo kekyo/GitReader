@@ -25,8 +25,6 @@ public sealed class StructuredRepository : Repository
     {
     }
 
-    public Branch? Head =>
-        this.head;
     public ReadOnlyDictionary<string, Branch> Branches =>
         this.branches;
     public ReadOnlyDictionary<string, Branch> RemoteBranches =>

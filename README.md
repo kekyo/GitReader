@@ -32,14 +32,14 @@ It has the following features:
 This library was designed from the ground up to replace `libgit2sharp`, on which [RelaxVersioner](https://github.com/kekyo/CenterCLR.RelaxVersioner) depended.
 It primarily fits the purpose of easily extracting commit information from a Git repository.
 
-## Target .NET platforms
+### Target .NET platforms
 
 * .NET 7.0 to 5.0
 * .NET Core 3.1 to 2.0
 * .NET Standard 2.1 to 1.6
 * .NET Framework 4.8.1 to 3.5
 
-## F# specialized binding
+### F# specialized binding
 
 F# 5.0 or upper, it contains F# friendly signature definition.
 
@@ -47,6 +47,8 @@ F# 5.0 or upper, it contains F# friendly signature definition.
 * .NET Core 3.1 to 2.0
 * .NET Standard 2.1, 2.0
 * .NET Framework 4.8.1 to 4.6.1
+
+Note: All target framework variations are tested only newest it.
 
 ----
 
@@ -80,7 +82,7 @@ using Repository repository =
         "/home/kekyo/Projects/YourOwnLocalGitRepo");
 
 // Found current head
-if (repository.Head is Branch head)
+if (repository.GetHead() is Branch head)
 {
     Console.WriteLine($"Name: {head.Name}");
 

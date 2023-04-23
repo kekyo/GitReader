@@ -16,12 +16,12 @@ open System.Threading.Tasks
 [<AutoOpen>]
 module internal Utilities =
 
-    let unwrap(ct: CancellationToken option) =
+    let inline unwrapCT(ct: CancellationToken option) =
         match ct with
         | Some ct -> ct
         | None -> CancellationToken()
 
-    let asAsync(task: Task<Nullable<'T>>) = async {
+    let inline asAsync(task: Task<Nullable<'T>>) = async {
         let! result = task |> Async.AwaitTask
         if result.HasValue then
             return Some result.Value

@@ -20,6 +20,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GitReader.Core", "GitReader
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.GitReader", "FSharp.GitReader\FSharp.GitReader.fsproj", "{FA2A9745-F102-4231-84E0-2E2F05D5FEC5}"
 EndProject
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.GitReader.Tests", "FSharp.GitReader.Tests\FSharp.GitReader.Tests.fsproj", "{D6710037-0781-4BA0-804E-C267A3D2E0E1}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -42,6 +44,10 @@ Global
 		{FA2A9745-F102-4231-84E0-2E2F05D5FEC5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FA2A9745-F102-4231-84E0-2E2F05D5FEC5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FA2A9745-F102-4231-84E0-2E2F05D5FEC5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D6710037-0781-4BA0-804E-C267A3D2E0E1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D6710037-0781-4BA0-804E-C267A3D2E0E1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D6710037-0781-4BA0-804E-C267A3D2E0E1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D6710037-0781-4BA0-804E-C267A3D2E0E1}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
