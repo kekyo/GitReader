@@ -4,6 +4,10 @@
     <AssemblyName>FSharp.GitReader.Tests</AssemblyName>
     <TargetFrameworks>net48;net5.0;net6.0;net7.0</TargetFrameworks>
   </PropertyGroup>
+    
+  <ItemGroup Condition="'$(TargetFramework)' == 'net48'">
+    <Reference Include="System.IO.Compression" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.5.0" />
