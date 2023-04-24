@@ -10,6 +10,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
@@ -383,4 +384,18 @@ internal static class Utilities
 
         return new DeflateStream(parent, CompressionMode.Decompress, false);
     }
+
+    public static string ToGitDateString(
+        DateTimeOffset date)
+    {
+        var zone = date.Offset.TotalSeconds > 0 ?
+            string.Format(CultureInfo.InvariantCulture, "+{0:hhmm}", date.Offset) :
+            string.Format(CultureInfo.InvariantCulture, "{0:hhmm}", date.Offset);
+        return string.Format(CultureInfo.InvariantCulture, "{0:ddd MMM d HH:mm:ss yyyy} {1}", date, zone);
+    }
+
+    public static string ToGitAuthorString(
+        Signature signature) =>
+        signature.MailAddress is { } mailAddress ?
+            $"{signature.Name} <{mailAddress}>" : signature.Name;
 }

@@ -30,12 +30,10 @@ public readonly struct Signature : IEquatable<Signature>
     }
 
     private string RawDate =>
-            $"{this.Date.ToUnixTimeSeconds()} {this.Date.Offset:hh}{this.Date.Offset:mm}";
+        $"{this.Date.ToUnixTimeSeconds()} {this.Date.Offset:hhmm}";
 
     public string RawFormat =>
-        this.MailAddress is { } mailAddress ?
-            $"{this.Name} <{mailAddress}> {this.RawDate}" :
-            $"{this.Name} {this.RawDate}";
+        $"{Utilities.ToGitAuthorString(this)} {this.RawDate}";
 
     public bool Equals(Signature rhs) =>
         this.Name == rhs.Name &&
@@ -54,17 +52,7 @@ public readonly struct Signature : IEquatable<Signature>
         this.Date.GetHashCode();
 
     public override string ToString() =>
-        this.MailAddress is { } mailAddress ?
-            $"{this.Name} <{mailAddress}> {this.Date}" :
-            $"{this.Name} {this.Date}";
-
-    public void Deconstruct(
-        out string name, out string? mailAddress, out DateTimeOffset date)
-    {
-        name = this.Name;
-        mailAddress = this.MailAddress;
-        date = this.Date;
-    }
+        $"{Utilities.ToGitAuthorString(this)} {Utilities.ToGitDateString(this.Date)}";
 
     public static Signature Create(
         string name,

@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "gitlog": {
+      "commandName": "Project",
+      "commandLineArgs": "D:\\Projects\\CenterCLR.NamingFormatter"
+    }
+  }
+}
