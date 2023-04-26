@@ -7,9 +7,11 @@
 //
 ////////////////////////////////////////////////////////////////////////////
 
+using GitReader.Collections;
 using GitReader.Primitive;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -17,6 +19,28 @@ using System.Threading;
 using System.Threading.Tasks;
 
 namespace GitReader.Internal;
+
+internal sealed class RemoteReferenceCache
+{
+    public readonly ReadOnlyDictionary<Uri, string> Remotes;
+
+    public RemoteReferenceCache(ReadOnlyDictionary<Uri, string> remotes) =>
+        this.Remotes = remotes;
+}
+
+internal sealed class FetchHeadCache
+{
+    public readonly ReadOnlyDictionary<string, Hash> RemoteBranches;
+    public readonly ReadOnlyDictionary<string, Hash> Tags;
+
+    public FetchHeadCache(
+        ReadOnlyDictionary<string, Hash> remoteBranches,
+        ReadOnlyDictionary<string, Hash> tags)
+    {
+        this.RemoteBranches = remoteBranches;
+        this.Tags = tags;
+    }
+}
 
 internal readonly struct HashResults
 {
@@ -32,37 +56,226 @@ internal readonly struct HashResults
 
 internal static class RepositoryAccessor
 {
+    private static async Task<RemoteReferenceCache> GetRemotesAsync(
+        Repository repository,
+        CancellationToken ct)
+    {
+        var path = Utilities.Combine(repository.Path, "config");
+        if (!File.Exists(path))
+        {
+            return new(new(new()));
+        }
+
+        using var fs = new FileStream(
+            path, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, true);
+        var tr = new StreamReader(fs, Encoding.UTF8, true);
+
+        var remotes = new Dictionary<Uri, string>();
+        var remoteName = default(string);
+
+        while (true)
+        {
+            var line = await tr.ReadLineAsync().WaitAsync(ct);
+            if (line == null)
+            {
+                break;
+            }
+
+            line = line.Trim();
+
+            switch (remoteName)
+            {
+                case null:
+                    if (line.StartsWith("[") && line.EndsWith("]"))
+                    {
+                        var sectionName = line.Substring(1, line.Length - 2).Trim();
+                        if (sectionName.Length >= 1)
+                        {
+                            if (sectionName.StartsWith("remote "))
+                            {
+                                var startIndex = sectionName.IndexOf('"', 7);
+                                if (startIndex >= 0)
+                                {
+                                    var endIndex = sectionName.IndexOf('"', startIndex + 1);
+                                    if (endIndex >= 0)
+                                    {
+                                        var name = sectionName.Substring(
+                                            startIndex + 1, endIndex - startIndex - 1);
+                                        if (name.Length >= 1)
+                                        {
+                                            remoteName = name;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    break;
+                default:
+                    if (line.StartsWith("url"))
+                    {
+                        if (line.Split('=').ElementAtOrDefault(1)?.Trim() is { } urlString &&
+                            Uri.TryCreate(urlString, UriKind.Absolute, out var url))
+                        {
+                            remotes[url] = remoteName;
+                        }
+                    }
+                    break;
+            }
+        }
+
+        return new(remotes);
+    }
+
+    private static async Task<FetchHeadCache> GetFetchHeadsAsync(
+        Repository repository,
+        CancellationToken ct)
+    {
+        var remoteReferenceCache = repository.remoteReferenceCache;
+
+        Debug.Assert(remoteReferenceCache != null);
+
+        var path = Utilities.Combine(repository.Path, "FETCH_HEAD");
+        if (!File.Exists(path))
+        {
+            return new(new(new()), new(new()));
+        }
+
+        using var fs = new FileStream(
+            path, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, true);
+        var tr = new StreamReader(fs, Encoding.UTF8, true);
+
+        var branches = new Dictionary<string, Hash>();
+        var tags = new Dictionary<string, Hash>();
+
+        while (true)
+        {
+            var line = await tr.ReadLineAsync().WaitAsync(ct);
+            if (line == null)
+            {
+                break;
+            }
+
+            var columns = line.Split('\t');
+            if (columns.Length < 3)
+            {
+                continue;
+            }
+
+            var hashCodeString = columns[0].Trim();
+            var descriptorString = columns[2].Trim();
+
+            if (!Hash.TryParse(hashCodeString, out var hash))
+            {
+                continue;
+            }
+
+            var column0Separator = descriptorString.IndexOfAny(new[] { ' ', '\t' });
+            if (column0Separator < 0)
+            {
+                continue;
+            }
+
+            var typeString = descriptorString.Substring(0, column0Separator);
+            if (typeString != "branch" && typeString != "tag")
+            {
+                continue;
+            }
+
+            // FETCH_HEAD file is a file log, so will be overwrite dictionary entry.
+
+            descriptorString = descriptorString.Substring(column0Separator + 1);
+            if (descriptorString.StartsWith("\'"))
+            {
+                var qi = descriptorString.IndexOf('\'', 1);
+                if (qi < 0)
+                {
+                    continue;
+                }
+
+                var name = descriptorString.Substring(1, qi - 1);
+
+                if (typeString == "branch")
+                {
+                    var urlString = descriptorString.Split(' ').Last();
+                    if (Uri.TryCreate(urlString, UriKind.Absolute, out var url) &&
+                        remoteReferenceCache!.Remotes.TryGetValue(url, out var remoteName))
+                    {
+                        branches[$"{remoteName}/{name}"] = hash;
+                    }
+                }
+                else
+                {
+                    tags[name] = hash;
+                }
+            }
+            else
+            {
+                if (typeString == "branch")
+                {
+                    branches[descriptorString] = hash;
+                }
+                else
+                {
+                    tags[descriptorString] = hash;
+                }
+            }
+        }
+
+        return new(branches, tags);
+    }
+
     public static async Task<HashResults?> ReadHashAsync(
         Repository repository,
         string relativePath,
         CancellationToken ct)
     {
-        var currentPath = relativePath;
+        var currentLocation = relativePath.
+            Replace(Path.DirectorySeparatorChar, '/');
         var names = new List<string>();
 
         while (true)
         {
-            var name = string.Join("/", currentPath.Split(
-                new[] { '/' }, StringSplitOptions.RemoveEmptyEntries).
-                Skip(2).
-                ToArray());
+            var name = currentLocation.
+                Replace("refs/heads/", string.Empty).
+                Replace("refs/remotes/", string.Empty).
+                Replace("refs/tags/", string.Empty);
             names.Add(name);
 
             var path = Utilities.Combine(
                 repository.Path,
-                currentPath.Replace('/', Path.DirectorySeparatorChar));
+                currentLocation.Replace('/', Path.DirectorySeparatorChar));
             if (!File.Exists(path))
             {
-                // Invalid reference pointer.
-                if (names.Count >= 2)
+                // Read remotes from config file.
+                if (repository.remoteReferenceCache == null)
                 {
-                    throw new InvalidDataException(
-                        $"Could not find {currentPath}.");
+                    repository.remoteReferenceCache = await GetRemotesAsync(repository, ct);
                 }
-                else
+
+                // Lookup by FETCH_HEAD cache.
+                var fetchHeadCache = repository.fetchHeadCache;
+                if (fetchHeadCache == null)
                 {
-                    return null;
+                    repository.fetchHeadCache = await GetFetchHeadsAsync(repository, ct);
+                    fetchHeadCache = repository.fetchHeadCache;
                 }
+
+                if (currentLocation.StartsWith("refs/remotes/"))
+                {
+                    if (fetchHeadCache.RemoteBranches.TryGetValue(name, out var branchHash))
+                    {
+                        return new(branchHash, names.ToArray());
+                    }
+                }
+                else if (currentLocation.StartsWith("refs/tags/") &&
+                    fetchHeadCache.Tags.TryGetValue(name, out var tagHash))
+                {
+                    return new(tagHash, names.ToArray());
+                }
+
+                // Not found.
+                return null;
             }
 
             using var fs = new FileStream(
@@ -73,7 +286,7 @@ internal static class RepositoryAccessor
             if (line == null)
             {
                 throw new InvalidDataException(
-                    $"Could not parse {currentPath}.");
+                    $"Could not parse {currentLocation}.");
             }
 
             if (!line.StartsWith("ref: "))
@@ -81,7 +294,7 @@ internal static class RepositoryAccessor
                 return new(Hash.Parse(line.Trim()), names.ToArray());
             }
 
-            currentPath = line.Substring(5);
+            currentLocation = line.Substring(5);
         }
     }
 

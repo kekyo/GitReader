@@ -9,14 +9,67 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using GitReader.Structures;
+
+#if DEBUG
+using Lepracaun;
+#endif
 
 namespace GitReader;
 
 public static class Program
 {
+    private static async Task FixLogAsync(string logPath)
+    {
+        using var fs = File.Open(logPath, FileMode.Open);
+        var tr = new StreamReader(fs);
+
+        Task? writeTask = null;
+        while (true)
+        {
+            var line = await tr.ReadLineAsync();
+            if (line == null)
+            {
+                break;
+            }
+
+            if (line.StartsWith("commit "))
+            {
+                var startIndex = line.IndexOf('(');
+                if (startIndex >= 0)
+                {
+                    var endIndex = line.IndexOf(')', startIndex + 1);
+                    if (endIndex > startIndex)
+                    {
+                        var before = line.Substring(0, startIndex - 1);
+                        var names = line.Substring(startIndex + 1, endIndex - startIndex - 1).
+                            Split(',').
+                            Select(name => name.Trim()).
+                            OrderBy(name => name, StringComparer.Ordinal).  // deterministic
+                            ToArray();
+
+                        writeTask = Console.Out.WriteLineAsync(
+                            $"{before} ({string.Join(", ", names)})");
+                        continue;
+                    }
+                }
+            }
+
+            writeTask = Console.Out.WriteLineAsync(line);
+        }
+
+        if (writeTask != null)
+        {
+            await writeTask;
+        }
+
+        await Console.Out.FlushAsync();
+    }
+
     private static async Task WriteLogAsync(string repositoryPath)
     {
         using var repository = await Repository.Factory.OpenStructureAsync(repositoryPath);
@@ -37,11 +90,10 @@ public static class Program
             var refs = string.Join(", ",
                 commit.Tags.
                 Select(t => $"tag: {t.Name}").
-                OrderBy(name => name).
                 Concat(commit.RemoteBranches.
                     Concat(commit.Branches).
-                    Select(b => head?.Name == b.Name ? $"HEAD -> {b.Name}" : b.Name).
-                    OrderBy(name => name)).
+                    Select(b => head?.Name == b.Name ? $"HEAD -> {b.Name}" : b.Name)).
+                OrderBy(name => name, StringComparer.Ordinal).  // deterministic
                 ToArray());
 
             if (refs.Length >= 1)
@@ -88,32 +140,7 @@ public static class Program
         }
     }
 
-    private static async Task FixLogAsync(string logPath)
-    {
-        while (true)
-        {
-            var line = await Console.In.ReadLineAsync();
-            if (line == null)
-            {
-                break;
-            }
-
-            if (line.StartsWith("commit "))
-            {
-                var startIndex = line.IndexOf('(');
-                if (startIndex >= 0)
-                {
-
-                }
-            }
-            else
-            {
-                await Console.Out.WriteLineAsync(line);
-            }
-        }
-    }
-
-    public static Task Main(string[] args)
+    private static Task MainAsync(string[] args)
     {
         if (args.Length == 2)
         {
@@ -130,4 +157,17 @@ public static class Program
         Console.WriteLine("usage: gitlogtest [-f|-w] <path>");
         return Task.CompletedTask;
     }
+
+#if DEBUG
+    public static void Main(string[] args)
+    {
+        var sc = new SingleThreadedSynchronizationContext();
+        SynchronizationContext.SetSynchronizationContext(sc);
+
+        sc.Run(MainAsync(args));
+    }
+#else
+    public static Task Main(string[] args) =>
+        MainAsync(args);
+#endif
 }

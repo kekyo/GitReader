@@ -9,6 +9,7 @@
 
 using GitReader.Internal;
 using System;
+using System.Collections.Generic;
 using System.Threading;
 
 namespace GitReader;
@@ -17,6 +18,8 @@ public class Repository : IDisposable
 {
     private TemporaryFile locker;
     internal ObjectAccessor accessor;
+    internal RemoteReferenceCache? remoteReferenceCache;
+    internal FetchHeadCache? fetchHeadCache;
 
     internal Repository(
         string repositoryPath, TemporaryFile locker)

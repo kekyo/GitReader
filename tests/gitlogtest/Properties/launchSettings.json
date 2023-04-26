@@ -1,8 +1,9 @@
 {
   "profiles": {
     "gitlog": {
-      "commandName": "Project",
-      "commandLineArgs": "D:\\Projects\\CenterCLR.NamingFormatter"
+        "commandName": "Project",
+        "commandLineArgs": "-w .",
+        "workingDirectory": "D:\\Projects\\GitReader\\tests\\CenterCLR.RelaxVersioner"
     }
   }
 }

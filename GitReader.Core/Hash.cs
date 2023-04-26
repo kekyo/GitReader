@@ -88,11 +88,16 @@ public readonly struct Hash : IEquatable<Hash>
         return new(hashCode);
     }
 
-    public static Hash Parse(string hashString)
+    public static Hash Parse(string hashString) =>
+        TryParse(hashString, out var hash) ?
+            hash : throw new ArgumentException(nameof(hashString));
+
+    public static bool TryParse(string hashString, out Hash hash)
     {
         if (hashString.Length != Size * 2)
         {
-            throw new ArgumentException(nameof(hashString));
+            hash = default;
+            return false;
         }
 
         var hashCode = new byte[Size];
@@ -102,7 +107,7 @@ public readonly struct Hash : IEquatable<Hash>
                 hashString.Substring(index * 2, 2), 16);
         }
 
-        return new(hashCode);
+        hash = new(hashCode);
+        return true;
     }
 }
-

@@ -389,8 +389,10 @@ internal static class Utilities
         DateTimeOffset date)
     {
         var zone = date.Offset.TotalSeconds > 0 ?
-            string.Format(CultureInfo.InvariantCulture, "+{0:hhmm}", date.Offset) :
-            string.Format(CultureInfo.InvariantCulture, "{0:hhmm}", date.Offset);
+                string.Format(CultureInfo.InvariantCulture, "+{0:hhmm}", date.Offset) :
+            date.Offset.TotalSeconds < 0 ?
+                string.Format(CultureInfo.InvariantCulture, "-{0:hhmm}", date.Offset) :
+                string.Format(CultureInfo.InvariantCulture, "{0:hhmm}", date.Offset);
         return string.Format(CultureInfo.InvariantCulture, "{0:ddd MMM d HH:mm:ss yyyy} {1}", date, zone);
     }
 
