@@ -7,6 +7,7 @@
 //
 ////////////////////////////////////////////////////////////////////////////
 
+using GitReader.Collections;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -237,6 +238,11 @@ internal static class Utilities
             }
         }
     }
+
+    public static ReadOnlyDictionary<TKey, TValue> AsReadOnly<TKey, TValue>(
+        this Dictionary<TKey, TValue> dictionary)
+        where TKey : notnull =>
+        new(dictionary);
 
 #if NET35 || NET40
     public static Task<T[]> WhenAll<T>(IEnumerable<Task<T>> tasks) =>

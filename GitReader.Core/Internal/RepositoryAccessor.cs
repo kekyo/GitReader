@@ -182,7 +182,7 @@ internal static class RepositoryAccessor
                 continue;
             }
 
-            // FETCH_HEAD file is a file log, so will be overwrite dictionary entry.
+            // FETCH_HEAD file is a log file, so will be overwrite dictionary entry.
 
             descriptorString = descriptorString.Substring(column0Separator + 1);
             if (descriptorString.StartsWith("\'"))

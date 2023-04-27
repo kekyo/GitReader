@@ -50,6 +50,8 @@ internal static class RepositoryFacade
         }
     }
 
+    //////////////////////////////////////////////////////////////////////////
+
     public static async Task<Reference?> GetCurrentHeadReferenceAsync(
         Repository repository,
         CancellationToken ct)
