@@ -84,6 +84,35 @@ internal readonly struct PairResult<T0, T1, T2, T3>
     }
 }
 
+internal readonly struct PairResult<T0, T1, T2, T3, T4>
+{
+    public readonly T0 Item0;
+    public readonly T1 Item1;
+    public readonly T2 Item2;
+    public readonly T3 Item3;
+    public readonly T4 Item4;
+
+    public PairResult(
+        T0 item0, T1 item1, T2 item2, T3 item3, T4 item4)
+    {
+        this.Item0 = item0;
+        this.Item1 = item1;
+        this.Item2 = item2;
+        this.Item3 = item3;
+        this.Item4 = item4;
+    }
+
+    public void Deconstruct(
+        out T0 item0, out T1 item1, out T2 item2, out T3 item3, out T4 item4)
+    {
+        item0 = this.Item0;
+        item1 = this.Item1;
+        item2 = this.Item2;
+        item3 = this.Item3;
+        item4 = this.Item4;
+    }
+}
+
 internal static class Utilities
 {
     // Imported from corefx.
@@ -228,6 +257,10 @@ internal static class Utilities
     public static async Task<PairResult<T0, T1, T2, T3>> WhenAll<T0, T1, T2, T3>(
         Task<T0> task0, Task<T1> task1, Task<T2> task2, Task<T3> task3) =>
         new(await task0, await task1, await task2, await task3);
+
+    public static async Task<PairResult<T0, T1, T2, T3, T4>> WhenAll<T0, T1, T2, T3, T4>(
+        Task<T0> task0, Task<T1> task1, Task<T2> task2, Task<T3> task3, Task<T4> task4) =>
+        new(await task0, await task1, await task2, await task3, await task4);
 
 #if NET35 || NET40
     public static Task<T> FromResult<T>(T result) =>

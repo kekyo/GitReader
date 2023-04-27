@@ -94,8 +94,18 @@ internal static class RepositoryFacade
         }
 
         var repository = new StructuredRepository(repositoryPath);
+
         try
         {
+            // Read remote references from config file.
+            repository.remoteReferenceCache =
+                await RepositoryAccessor.GetRemoteReferencesAsync(repository, ct);
+
+            // Read FETCH_HEAD.
+            repository.fetchHeadCache =
+                await RepositoryAccessor.GetFetchHeadsAsync(repository, ct);
+
+            // Read all other requirements.
             var (head, branches, remoteBranches, tags) = await Utilities.WhenAll(
                 GetCurrentHeadAsync(repository, ct),
                 GetStructuredBranchesAsync(repository, "heads", ct),

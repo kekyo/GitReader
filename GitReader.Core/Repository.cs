@@ -9,7 +9,6 @@
 
 using GitReader.Internal;
 using System;
-using System.Collections.Generic;
 using System.Threading;
 
 namespace GitReader;
@@ -17,8 +16,8 @@ namespace GitReader;
 public class Repository : IDisposable
 {
     internal ObjectAccessor accessor;
-    internal RemoteReferenceCache? remoteReferenceCache;
-    internal FetchHeadCache? fetchHeadCache;
+    internal RemoteReferenceCache remoteReferenceCache;
+    internal FetchHeadCache fetchHeadCache;
 
     internal Repository(
         string repositoryPath)

@@ -20,7 +20,7 @@ using System.Threading.Tasks;
 
 namespace GitReader.Internal;
 
-internal sealed class RemoteReferenceCache
+internal readonly struct RemoteReferenceCache
 {
     public readonly ReadOnlyDictionary<Uri, string> Remotes;
 
@@ -28,7 +28,7 @@ internal sealed class RemoteReferenceCache
         this.Remotes = remotes;
 }
 
-internal sealed class FetchHeadCache
+internal readonly struct FetchHeadCache
 {
     public readonly ReadOnlyDictionary<string, Hash> RemoteBranches;
     public readonly ReadOnlyDictionary<string, Hash> Tags;
@@ -56,7 +56,7 @@ internal readonly struct HashResults
 
 internal static class RepositoryAccessor
 {
-    private static async Task<RemoteReferenceCache> GetRemotesAsync(
+    public static async Task<RemoteReferenceCache> GetRemoteReferencesAsync(
         Repository repository,
         CancellationToken ct)
     {
@@ -127,13 +127,13 @@ internal static class RepositoryAccessor
         return new(remotes);
     }
 
-    private static async Task<FetchHeadCache> GetFetchHeadsAsync(
+    public static async Task<FetchHeadCache> GetFetchHeadsAsync(
         Repository repository,
         CancellationToken ct)
     {
         var remoteReferenceCache = repository.remoteReferenceCache;
 
-        Debug.Assert(remoteReferenceCache != null);
+        Debug.Assert(remoteReferenceCache.Remotes != null);
 
         var path = Utilities.Combine(repository.Path, "FETCH_HEAD");
         if (!File.Exists(path))
@@ -199,7 +199,7 @@ internal static class RepositoryAccessor
                 {
                     var urlString = descriptorString.Split(' ').Last();
                     if (Uri.TryCreate(urlString, UriKind.Absolute, out var url) &&
-                        remoteReferenceCache!.Remotes.TryGetValue(url, out var remoteName))
+                        remoteReferenceCache.Remotes!.TryGetValue(url, out var remoteName))
                     {
                         branches[$"{remoteName}/{name}"] = hash;
                     }
@@ -225,6 +225,8 @@ internal static class RepositoryAccessor
         return new(branches, tags);
     }
 
+    //////////////////////////////////////////////////////////////////////////
+
     public static async Task<HashResults?> ReadHashAsync(
         Repository repository,
         string relativePath,
@@ -247,29 +249,15 @@ internal static class RepositoryAccessor
                 currentLocation.Replace('/', Path.DirectorySeparatorChar));
             if (!File.Exists(path))
             {
-                // Read remotes from config file.
-                if (repository.remoteReferenceCache == null)
-                {
-                    repository.remoteReferenceCache = await GetRemotesAsync(repository, ct);
-                }
-
-                // Lookup by FETCH_HEAD cache.
-                var fetchHeadCache = repository.fetchHeadCache;
-                if (fetchHeadCache == null)
-                {
-                    repository.fetchHeadCache = await GetFetchHeadsAsync(repository, ct);
-                    fetchHeadCache = repository.fetchHeadCache;
-                }
-
                 if (currentLocation.StartsWith("refs/remotes/"))
                 {
-                    if (fetchHeadCache.RemoteBranches.TryGetValue(name, out var branchHash))
+                    if (repository.fetchHeadCache.RemoteBranches.TryGetValue(name, out var branchHash))
                     {
                         return new(branchHash, names.ToArray());
                     }
                 }
                 else if (currentLocation.StartsWith("refs/tags/") &&
-                    fetchHeadCache.Tags.TryGetValue(name, out var tagHash))
+                    repository.fetchHeadCache.Tags.TryGetValue(name, out var tagHash))
                 {
                     return new(tagHash, names.ToArray());
                 }
