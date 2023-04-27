@@ -11,6 +11,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using GitReader.Structures;
@@ -129,7 +130,7 @@ public static class Program
             {
                 var merge = string.Join(" ",
                     parents.
-                    Select(p => p.Hash.ToString().Substring(0, 7)).
+                    Select(p => p.Hash.ToString()).
                     ToArray());
 
                 Console.WriteLine($"Merge: {merge}");
@@ -145,7 +146,26 @@ public static class Program
                 lines.LastOrDefault()?.Length == 0 ?
                     lines.Take(lines.Length - 1) : lines)
             {
-                Console.WriteLine("    " + line);
+                // Expand tabs.
+                var sb = new StringBuilder();
+                for (var index = 0; index < line.Length; index++)
+                {
+                    if (line[index] == '\t')
+                    {
+                        var remains = 8 - index % 8;
+                        while (remains > 0)
+                        {
+                            sb.Append(' ');
+                            remains--;
+                        }
+                    }
+                    else
+                    {
+                        sb.Append(line[index]);
+                    }
+                }
+
+                Console.WriteLine("    " + sb);
             }
 
             commits.Remove(commit);
