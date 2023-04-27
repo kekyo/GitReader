@@ -354,6 +354,11 @@ Apache-v2
 
 ## History
 
+* 0.6.0:
+  * Supported both FETCH_HEAD and packed_refs parser.
+  * Removed index locker.
+  * Fixed contains invalid hash on annotated commit tag.
+  * Added gitlogtest project for widely larger repository testing.
 * 0.5.0:
   * Supported deconstructor by F# active patterns.
   * Downgraded at least F# version 5.
