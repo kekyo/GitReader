@@ -50,7 +50,7 @@ internal static class RepositoryFacade
         Debug.Assert(object.ReferenceEquals(rwr.Target, repository));
 
         var references = await RepositoryAccessor.ReadReferencesAsync(
-            repository, "heads", ct);
+            repository, ReferenceTypes.Branches, ct);
         var entries = await Utilities.WhenAll(
             references.Select(async reference =>
             new
@@ -77,7 +77,7 @@ internal static class RepositoryFacade
         Debug.Assert(object.ReferenceEquals(rwr.Target, repository));
 
         var references = await RepositoryAccessor.ReadReferencesAsync(
-            repository, "remotes", ct);
+            repository, ReferenceTypes.RemoteBranches, ct);
         var entries = await Utilities.WhenAll(
             references.Select(async reference =>
             new
@@ -87,33 +87,13 @@ internal static class RepositoryFacade
                     repository, reference.Target, ct)
             }));
 
-        var branches = entries.
+        return entries.
             Where(entry => entry.Head.HasValue).
             ToDictionary(
                 entry => entry.Name,
                 entry => new Branch(
                     entry.Name,
                     new Commit(rwr, entry.Head!.Value)));
-
-        // Remote branches may not all be placed in `refs/remotes/`.
-        // Therefore, information obtained from FETCH_HEAD is also covered.
-        foreach (var branch in await Utilities.WhenAll(
-            repository.fetchHeadCache.RemoteBranches.
-            Where(entry => !branches.ContainsKey(entry.Key)).
-            Select(async entry =>
-                // Unlike tags processing, it is more complex
-                // because it requires the Commit information to be filled in.
-                await RepositoryAccessor.ReadCommitAsync(
-                    repository, entry.Value, ct) is { } commit ?
-                    new Branch(entry.Key, new Commit(rwr, commit)) : null)))
-        {
-            if (branch != null)
-            {
-                branches.Add(branch.Name, branch);
-            }
-        }
-
-        return branches;
     }
 
     private static async Task<ReadOnlyDictionary<string, Tag>> GetStructuredTagsAsync(
@@ -121,7 +101,7 @@ internal static class RepositoryFacade
         CancellationToken ct)
     {
         var references = await RepositoryAccessor.ReadReferencesAsync(
-            repository, "tags", ct);
+            repository, ReferenceTypes.Tags, ct);
         var entries = await Utilities.WhenAll(
             references.Select(async reference =>
             new
@@ -133,23 +113,9 @@ internal static class RepositoryFacade
                         new Tag(reference.Target, ObjectTypes.Commit, reference.Name),
             }));
 
-        var tags = entries.ToDictionary(
+        return entries.ToDictionary(
             entry => entry.Name,
             entry => entry.Tag);
-
-        // Remote tags may not all be placed in `refs/tags/`.
-        // Therefore, information obtained from FETCH_HEAD is also covered.
-        foreach (var entry in repository.fetchHeadCache.Tags)
-        {
-            if (!tags.ContainsKey(entry.Key))
-            {
-                tags.Add(
-                    entry.Key,
-                    new Tag(entry.Value, ObjectTypes.Commit, entry.Key));
-            }
-        }
-
-        return tags.AsReadOnly();
     }
 
     //////////////////////////////////////////////////////////////////////////

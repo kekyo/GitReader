@@ -20,6 +20,13 @@ using System.Threading.Tasks;
 
 namespace GitReader.Internal;
 
+internal enum ReferenceTypes
+{
+    Branches,
+    RemoteBranches,
+    Tags,
+}
+
 internal readonly struct RemoteReferenceCache
 {
     public readonly ReadOnlyDictionary<Uri, string> Remotes;
@@ -56,6 +63,15 @@ internal readonly struct HashResults
 
 internal static class RepositoryAccessor
 {
+    public static string GetReferenceTypeName(ReferenceTypes type) =>
+        type switch
+        {
+            ReferenceTypes.Branches => "heads",
+            ReferenceTypes.RemoteBranches => "remotes",
+            ReferenceTypes.Tags => "tags",
+            _ => throw new ArgumentException(),
+        };
+
     public static async Task<RemoteReferenceCache> GetRemoteReferencesAsync(
         Repository repository,
         CancellationToken ct)
@@ -288,12 +304,12 @@ internal static class RepositoryAccessor
 
     public static async Task<Reference[]> ReadReferencesAsync(
         Repository repository,
-        string type,
+        ReferenceTypes type,
         CancellationToken ct)
     {
         var headsPath = Utilities.Combine(
-            repository.Path, "refs", type);
-        var references = await Utilities.WhenAll(
+            repository.Path, "refs", GetReferenceTypeName(type));
+        var references = (await Utilities.WhenAll(
             Utilities.EnumerateFiles(headsPath, "*").
             Select(async path =>
             {
@@ -310,15 +326,46 @@ internal static class RepositoryAccessor
                         path.Substring(headsPath.Length + 1).Replace(Path.DirectorySeparatorChar, '/'),
                         results.Hash);
                 }
-            }));
-        return references.CollectValue(reference => reference).
-            ToArray();
+            }))).
+            CollectValue(reference => reference).
+            ToDictionary(reference => reference.Name);
+
+        // Remote branches and tags may not all be placed in `refs/*/`.
+        // Therefore, information obtained from FETCH_HEAD is also covered.
+        switch (type)
+        {
+            case ReferenceTypes.RemoteBranches:
+                foreach (var entry in repository.fetchHeadCache.RemoteBranches)
+                {
+                    if (!references.ContainsKey(entry.Key))
+                    {
+                        references.Add(
+                            entry.Key,
+                            Reference.Create(entry.Key, entry.Value));
+                    }
+                }
+                break;
+            case ReferenceTypes.Tags:
+                foreach (var entry in repository.fetchHeadCache.Tags)
+                {
+                    if (!references.ContainsKey(entry.Key))
+                    {
+                        references.Add(
+                            entry.Key,
+                            Reference.Create(entry.Key, entry.Value));
+                    }
+                }
+                break;
+        }
+
+        return references.Values.ToArray();
     }
 
     //////////////////////////////////////////////////////////////////////////
 
     private static async Task<string> GetMessageAsync(
-        TextReader tr, CancellationToken ct)
+        TextReader tr,
+        CancellationToken ct)
     {
         var sb = new StringBuilder();
 
@@ -438,7 +485,8 @@ internal static class RepositoryAccessor
 
     public static async Task<Tag?> ReadTagAsync(
         Repository repository,
-        Hash hash, CancellationToken ct)
+        Hash hash,
+        CancellationToken ct)
     {
         var accessor = GetObjectAccessor(repository);
         if (await accessor.OpenAsync(hash, ct) is not { } streamResult)
