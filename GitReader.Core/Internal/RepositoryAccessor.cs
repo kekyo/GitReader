@@ -666,7 +666,7 @@ internal static class RepositoryAccessor
             {
                 var message = await GetMessageAsync(tr, ct);
 
-                return Tag.Create(hash, ot, tn, tg, message);
+                return Tag.Create(o, ot, tn, tg, message);
             }
             else
             {
