@@ -18,8 +18,8 @@ namespace GitReader.Primitive;
 
 internal static class RepositoryFacade
 {
-    public static async Task<Repository> OpenPrimitiveAsync(
-        string path, CancellationToken ct, bool forceUnlock)
+    public static Task<Repository> OpenPrimitiveAsync(
+        string path, CancellationToken ct)
     {
         var repositoryPath = Path.GetFileName(path) != ".git" ?
             Utilities.Combine(path, ".git") : path;
@@ -29,10 +29,7 @@ internal static class RepositoryFacade
             throw new ArgumentException("Repository does not exist.");
         }
 
-        var lockPath = Utilities.Combine(repositoryPath, "index.lock");
-        var locker = await TemporaryFile.CreateLockFileAsync(lockPath, ct, forceUnlock);
-
-        return new(repositoryPath, locker);
+        return Utilities.FromResult(new Repository(repositoryPath));
     }
 
     public static async Task<Reference?> GetCurrentHeadReferenceAsync(

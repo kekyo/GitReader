@@ -16,17 +16,15 @@ namespace GitReader;
 
 public class Repository : IDisposable
 {
-    private TemporaryFile locker;
     internal ObjectAccessor accessor;
     internal RemoteReferenceCache? remoteReferenceCache;
     internal FetchHeadCache? fetchHeadCache;
 
     internal Repository(
-        string repositoryPath, TemporaryFile locker)
+        string repositoryPath)
     {
         this.Path = repositoryPath;
         this.accessor = new(repositoryPath);
-        this.locker = locker;
     }
 
     public void Dispose()
@@ -34,10 +32,6 @@ public class Repository : IDisposable
         if (Interlocked.Exchange(ref this.accessor, null!) is { } accessor)
         {
             accessor.Dispose();
-        }
-        if (Interlocked.Exchange(ref this.locker, null!) is { } locker)
-        {
-            locker.Dispose();
         }
     }
 

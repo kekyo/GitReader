@@ -83,7 +83,7 @@ internal static class RepositoryFacade
     }
 
     public static async Task<StructuredRepository> OpenStructuredAsync(
-        string path, CancellationToken ct, bool forceUnlock)
+        string path, CancellationToken ct)
     {
         var repositoryPath = Path.GetFileName(path) != ".git" ?
             Utilities.Combine(path, ".git") : path;
@@ -93,14 +93,9 @@ internal static class RepositoryFacade
             throw new ArgumentException("Repository does not exist.");
         }
 
-        var lockPath = Utilities.Combine(repositoryPath, "index.lock");
-        var locker = await TemporaryFile.CreateLockFileAsync(
-            lockPath, ct, forceUnlock);
-
+        var repository = new StructuredRepository(repositoryPath);
         try
         {
-            var repository = new StructuredRepository(repositoryPath, locker);
-
             var (head, branches, remoteBranches, tags) = await Utilities.WhenAll(
                 GetCurrentHeadAsync(repository, ct),
                 GetStructuredBranchesAsync(repository, "heads", ct),
@@ -116,7 +111,7 @@ internal static class RepositoryFacade
         }
         catch
         {
-            locker.Dispose();
+            repository.Dispose();
             throw;
         }
     }

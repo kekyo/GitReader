@@ -16,9 +16,6 @@ open System.Threading
 module public RepositoryFactoryExtension =
 
     type RepositoryFactory with
-        member _.openStructured(path: string, ?ct: CancellationToken, ?forceUnlock: bool) =
+        member _.openStructured(path: string, ?ct: CancellationToken) =
             RepositoryFacade.OpenStructuredAsync(
-                path, unwrapCT ct,
-                match forceUnlock with
-                | Some f -> f
-                | None -> false) |> Async.AwaitTask
+                path, unwrapCT ct) |> Async.AwaitTask
