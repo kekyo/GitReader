@@ -27,25 +27,42 @@ internal enum ReferenceTypes
     Tags,
 }
 
-internal readonly struct RemoteReferenceCache
+internal readonly struct RemoteReferenceUrlCache
 {
     public readonly ReadOnlyDictionary<Uri, string> Remotes;
 
-    public RemoteReferenceCache(ReadOnlyDictionary<Uri, string> remotes) =>
+    public RemoteReferenceUrlCache(ReadOnlyDictionary<Uri, string> remotes) =>
         this.Remotes = remotes;
 }
 
-internal readonly struct FetchHeadCache
+internal readonly struct ReferenceCache
 {
     public readonly ReadOnlyDictionary<string, Hash> RemoteBranches;
     public readonly ReadOnlyDictionary<string, Hash> Tags;
 
-    public FetchHeadCache(
+    public ReferenceCache(
         ReadOnlyDictionary<string, Hash> remoteBranches,
         ReadOnlyDictionary<string, Hash> tags)
     {
         this.RemoteBranches = remoteBranches;
         this.Tags = tags;
+    }
+
+    public ReferenceCache Combine(ReferenceCache rhs)
+    {
+        var remoteBranches = this.RemoteBranches.Clone();
+        var tags = this.Tags.Clone();
+
+        foreach (var entry in rhs.RemoteBranches)
+        {
+            remoteBranches[entry.Key] = entry.Value;
+        }
+        foreach (var entry in rhs.Tags)
+        {
+            tags[entry.Key] = entry.Value;
+        }
+
+        return new(remoteBranches, tags);
     }
 }
 
@@ -72,7 +89,7 @@ internal static class RepositoryAccessor
             _ => throw new ArgumentException(),
         };
 
-    public static async Task<RemoteReferenceCache> GetRemoteReferencesAsync(
+    public static async Task<RemoteReferenceUrlCache> ReadRemoteReferencesAsync(
         Repository repository,
         CancellationToken ct)
     {
@@ -143,11 +160,11 @@ internal static class RepositoryAccessor
         return new(remotes);
     }
 
-    public static async Task<FetchHeadCache> GetFetchHeadsAsync(
-        Repository repository,
-        CancellationToken ct)
+    public static async Task<ReferenceCache> ReadFetchHeadsAsync(
+       Repository repository,
+       CancellationToken ct)
     {
-        var remoteReferenceCache = repository.remoteReferenceCache;
+        var remoteReferenceCache = repository.remoteReferenceUrlCache;
 
         Debug.Assert(remoteReferenceCache.Remotes != null);
 
@@ -241,14 +258,100 @@ internal static class RepositoryAccessor
         return new(branches, tags);
     }
 
+    public static async Task<ReferenceCache> ReadPackedRefsAsync(
+        Repository repository,
+        CancellationToken ct)
+    {
+        var path = Utilities.Combine(repository.Path, "packed-refs");
+        if (!File.Exists(path))
+        {
+            return new(new(new()), new(new()));
+        }
+
+        using var fs = new FileStream(
+            path, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, true);
+        var tr = new StreamReader(fs, Encoding.UTF8, true);
+
+        var branches = new Dictionary<string, Hash>();
+        var tags = new Dictionary<string, Hash>();
+
+        var lastTagEntry = default(KeyValuePair<string, Hash>?);
+        var separators = new[] { ' ' };
+
+        while (true)
+        {
+            var line = await tr.ReadLineAsync().WaitAsync(ct);
+            if (line == null)
+            {
+                break;
+            }
+
+            var columns = line.Split(separators, StringSplitOptions.RemoveEmptyEntries);
+            if (columns.Length >= 3)
+            {
+                continue;
+            }
+
+            var hashCodeString = columns[0];
+
+            // Peeled tag entry.
+            if (columns.Length == 1 &&
+                hashCodeString.StartsWith("^") &&
+                lastTagEntry is { } le)
+            {
+                if (!Hash.TryParse(hashCodeString.Substring(1), out var hash2))
+                {
+                    continue;
+                }
+
+                // Take peeled tag hash.
+                tags[le.Key] = hash2;
+                lastTagEntry = default;
+            }
+
+            if (columns.Length != 2 ||
+                !Hash.TryParse(hashCodeString, out var hash))
+            {
+                continue;
+            }
+
+            // Exhaust last tag entry.
+            if (lastTagEntry is { } le2)
+            {
+                tags[le2.Key] = le2.Value;
+                lastTagEntry = default;
+            }
+
+            var referenceString = columns[1];
+            if (referenceString.StartsWith("refs/remotes/"))
+            {
+                var name = referenceString.Substring(13);
+                branches[name] = hash;
+            }
+            else if (referenceString.StartsWith("refs/tags/"))
+            {
+                var name = referenceString.Substring(10);
+                lastTagEntry = new(name, hash);    // Saved.
+            }
+        }
+
+        // Exhaust last tag entry.
+        if (lastTagEntry is { } le3)
+        {
+            tags[le3.Key] = le3.Value;
+        }
+
+        return new(branches, tags);
+    }
+
     //////////////////////////////////////////////////////////////////////////
 
     public static async Task<HashResults?> ReadHashAsync(
         Repository repository,
-        string relativePath,
+        string relativePathOrLocation,
         CancellationToken ct)
     {
-        var currentLocation = relativePath.
+        var currentLocation = relativePathOrLocation.
             Replace(Path.DirectorySeparatorChar, '/');
         var names = new List<string>();
 
@@ -267,13 +370,13 @@ internal static class RepositoryAccessor
             {
                 if (currentLocation.StartsWith("refs/remotes/"))
                 {
-                    if (repository.fetchHeadCache.RemoteBranches.TryGetValue(name, out var branchHash))
+                    if (repository.referenceCache.RemoteBranches.TryGetValue(name, out var branchHash))
                     {
                         return new(branchHash, names.ToArray());
                     }
                 }
                 else if (currentLocation.StartsWith("refs/tags/") &&
-                    repository.fetchHeadCache.Tags.TryGetValue(name, out var tagHash))
+                    repository.referenceCache.Tags.TryGetValue(name, out var tagHash))
                 {
                     return new(tagHash, names.ToArray());
                 }
@@ -335,7 +438,7 @@ internal static class RepositoryAccessor
         switch (type)
         {
             case ReferenceTypes.RemoteBranches:
-                foreach (var entry in repository.fetchHeadCache.RemoteBranches)
+                foreach (var entry in repository.referenceCache.RemoteBranches)
                 {
                     if (!references.ContainsKey(entry.Key))
                     {
@@ -346,7 +449,7 @@ internal static class RepositoryAccessor
                 }
                 break;
             case ReferenceTypes.Tags:
-                foreach (var entry in repository.fetchHeadCache.Tags)
+                foreach (var entry in repository.referenceCache.Tags)
                 {
                     if (!references.ContainsKey(entry.Key))
                     {

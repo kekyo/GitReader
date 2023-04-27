@@ -84,6 +84,9 @@ public sealed class ReadOnlyDictionary<TKey, TValue> :
     void ICollection<KeyValuePair<TKey, TValue>>.CopyTo(KeyValuePair<TKey, TValue>[] array, int arrayIndex) =>
         ((ICollection<KeyValuePair<TKey, TValue>>)this.parent).CopyTo(array, arrayIndex);
 
+    public Dictionary<TKey, TValue> Clone() =>
+        new(this.parent);
+
     public static implicit operator ReadOnlyDictionary<TKey, TValue>(Dictionary<TKey, TValue> dict) =>
         new(dict);
 

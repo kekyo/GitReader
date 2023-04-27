@@ -136,12 +136,14 @@ internal static class RepositoryFacade
         try
         {
             // Read remote references from config file.
-            repository.remoteReferenceCache =
-                await RepositoryAccessor.GetRemoteReferencesAsync(repository, ct);
+            repository.remoteReferenceUrlCache =
+                await RepositoryAccessor.ReadRemoteReferencesAsync(repository, ct);
 
-            // Read FETCH_HEAD.
-            repository.fetchHeadCache =
-                await RepositoryAccessor.GetFetchHeadsAsync(repository, ct);
+            // Read FETCH_HEAD and packed-refs.
+            var (fhc1, fhc2) = await Utilities.WhenAll(
+                RepositoryAccessor.ReadFetchHeadsAsync(repository, ct),
+                RepositoryAccessor.ReadPackedRefsAsync(repository, ct));
+            repository.referenceCache = fhc1.Combine(fhc2);
 
             // Read all other requirements.
             var rwr = new WeakReference(repository);

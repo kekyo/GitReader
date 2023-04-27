@@ -16,8 +16,8 @@ namespace GitReader;
 public class Repository : IDisposable
 {
     internal ObjectAccessor accessor;
-    internal RemoteReferenceCache remoteReferenceCache;
-    internal FetchHeadCache fetchHeadCache;
+    internal RemoteReferenceUrlCache remoteReferenceUrlCache;
+    internal ReferenceCache referenceCache;
 
     internal Repository(
         string repositoryPath)
