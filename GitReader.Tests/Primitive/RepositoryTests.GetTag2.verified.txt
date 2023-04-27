@@ -1,6 +1,6 @@
 ﻿{
   Hash: {
-    HashCode: 907b533f97fe2a5cefb51d73d856953872efc51c
+    HashCode: a7187601f4b4b9dacc3c78895397bb2911d190d6
   },
   Type: Commit,
   Name: 0.9.6,

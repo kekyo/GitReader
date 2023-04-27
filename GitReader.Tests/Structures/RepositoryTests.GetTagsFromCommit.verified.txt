@@ -1,9 +1,30 @@
 ﻿[
   {
+    Commit: {
+      Hash: {
+        HashCode: f64de5e3ad34528757207109e68f626bf8cc1a31
+      },
+      Author: {
+        Name: Kouji Matsui,
+        MailAddress: k@kekyo.net,
+        Date: 2019-02-01 17:35:08 +9,
+        RawFormat: Kouji Matsui <k@kekyo.net> 1549010108 0900
+      },
+      Committer: {
+        Name: Kouji Matsui,
+        MailAddress: k@kekyo.net,
+        Date: 2019-02-01 17:50:32 +9,
+        RawFormat: Kouji Matsui <k@kekyo.net> 1549011032 0900
+      },
+      Message:
+Upgraded new MSBuild format and omit PCL versions.
+,
+      Tags: []
+    },
     Hash: {
       HashCode: f64de5e3ad34528757207109e68f626bf8cc1a31
     },
-    Type: Commit,
-    Name: 2.0.0
+    Name: 2.0.0,
+    Type: Commit
   }
 ]

@@ -11,35 +11,28 @@ using System;
 
 namespace GitReader.Structures;
 
-public sealed class Tag : IEquatable<Tag?>
+public abstract class Tag : IEquatable<Tag?>
 {
     public readonly Hash Hash;
-    public readonly ObjectTypes Type;
     public readonly string Name;
     public readonly Signature? Tagger;
     public readonly string? Message;
 
-    internal Tag(Primitive.Tag tag)
-    {
-        this.Hash = tag.Hash;
-        this.Type = tag.Type;
-        this.Name = tag.Name;
-        this.Tagger = tag.Tagger;
-        this.Message = tag.Message;
-    }
-
-    internal Tag(
-        Hash hash, ObjectTypes type, string name)
+    private protected Tag(
+        Hash hash, string name, Signature? tagger, string? message)
     {
         this.Hash = hash;
-        this.Type = type;
         this.Name = name;
+        this.Tagger = tagger;
+        this.Message = message;
     }
 
-    public bool Equals(Primitive.Tag rhs) =>
+    public abstract ObjectTypes Type { get; }
+
+    public bool Equals(Tag rhs) =>
         this.Hash.Equals(rhs.Hash) &&
-        this.Type.Equals(rhs.Type) &&
         this.Name.Equals(rhs.Name) &&
+        this.Type == rhs.Type &&
         this.Tagger.Equals(rhs.Tagger) &&
         this.Message == rhs.Message;
 
@@ -51,11 +44,25 @@ public sealed class Tag : IEquatable<Tag?>
 
     public override int GetHashCode() =>
         this.Hash.GetHashCode() ^
-        this.Type.GetHashCode() ^
         this.Name.GetHashCode() ^
+        this.Type.GetHashCode() ^
         this.Tagger.GetHashCode() ^
         (this.Message?.GetHashCode() ?? 0);
 
     public override string ToString() =>
         $"{this.Name}: {this.Type}: {this.Hash}";
+}
+
+public sealed class CommitTag : Tag
+{
+    public readonly Commit Commit;
+
+    internal CommitTag(
+        Hash hash, string name, Signature? tagger, string? message,
+        Commit commit) :
+        base(hash, name, tagger, message) =>
+        this.Commit = commit;
+
+    public override ObjectTypes Type =>
+        ObjectTypes.Commit;
 }

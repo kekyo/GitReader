@@ -2,7 +2,7 @@
   "profiles": {
     "gitlog": {
         "commandName": "Project",
-        "commandLineArgs": "-w .",
+        "commandLineArgs": "--log .",
         "workingDirectory": "D:\\Projects\\GitReader\\tests\\CenterCLR.RelaxVersioner"
     }
   }

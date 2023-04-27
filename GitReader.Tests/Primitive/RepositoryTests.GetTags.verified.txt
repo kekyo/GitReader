@@ -1,7 +1,7 @@
 ﻿[
   {
     Hash: {
-      HashCode: 3ef21313178355e27bd787db51ed86c190236760
+      HashCode: 63723bd7bc1321ffdd2b72c3bc743fa57455d137
     },
     Type: Commit,
     Name: 0.9.5,
@@ -15,7 +15,7 @@
   },
   {
     Hash: {
-      HashCode: 907b533f97fe2a5cefb51d73d856953872efc51c
+      HashCode: a7187601f4b4b9dacc3c78895397bb2911d190d6
     },
     Type: Commit,
     Name: 0.9.6,
@@ -29,7 +29,7 @@
   },
   {
     Hash: {
-      HashCode: 6f0ea23fc9acf42ba547fa7886d1a57f7724c24e
+      HashCode: 819ad16b1d3b7ffa0f315dd417eb61e4b7264c53
     },
     Type: Commit,
     Name: 0.9.7,
@@ -43,7 +43,7 @@
   },
   {
     Hash: {
-      HashCode: f64b3080ed198060dc4878d86085111b49e36df8
+      HashCode: 3b0431e8764dbb627a44aeaca55bd41336c3b4a7
     },
     Type: Commit,
     Name: 1.0.0,
@@ -57,7 +57,7 @@
   },
   {
     Hash: {
-      HashCode: f690a87062ac0f833e7c250db8ba30ccbc130f15
+      HashCode: d53bc0fa81fc8b2a4cd57d7e327a115ff338bb0c
     },
     Type: Commit,
     Name: 1.1.0,
@@ -71,7 +71,7 @@
   },
   {
     Hash: {
-      HashCode: 8641a1e6608d72aec10bedf62b937d585f6d746a
+      HashCode: 6961a50ef3ad4e43ed9774daffd8457d32cf5e75
     },
     Type: Commit,
     Name: 1.1.1,

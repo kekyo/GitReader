@@ -98,24 +98,48 @@ internal static class RepositoryFacade
 
     private static async Task<ReadOnlyDictionary<string, Tag>> GetStructuredTagsAsync(
         StructuredRepository repository,
+        WeakReference rwr,
         CancellationToken ct)
     {
         var references = await RepositoryAccessor.ReadReferencesAsync(
             repository, ReferenceTypes.Tags, ct);
-        var entries = await Utilities.WhenAll(
+        var tags = await Utilities.WhenAll(
             references.Select(async reference =>
-            new
             {
-                Name = reference.Name,
-                Tag = (await RepositoryAccessor.ReadTagAsync(
-                    repository, reference.Target, ct)) is { } tag ?
-                        new Tag(tag) :
-                        new Tag(reference.Target, ObjectTypes.Commit, reference.Name),
+                // Tag object is read.
+                if (await RepositoryAccessor.ReadTagAsync(
+                    repository, reference.Target, ct) is { } tag)
+                {
+                    // TODO: Currently does not support any other tag types.
+                    if (tag.Type == ObjectTypes.Commit)
+                    {
+                        // Target commit object is read.
+                        if (await RepositoryAccessor.ReadCommitAsync(
+                            repository, tag.Hash, ct) is { } commit)
+                        {
+                            return (Tag)new CommitTag(
+                                tag.Hash, tag.Name, tag.Tagger, tag.Message,
+                                new(rwr, commit));
+                        }
+                    }
+                }
+                else
+                {
+                    // Target commit object is read.
+                    if (await RepositoryAccessor.ReadCommitAsync(
+                        repository, reference.Target, ct) is { } commit)
+                    {
+                        return (Tag)new CommitTag(
+                            reference.Target, reference.Name, null, null,
+                            new(rwr, commit));
+                    }
+                }
+                return null;
             }));
 
-        return entries.ToDictionary(
-            entry => entry.Name,
-            entry => entry.Tag);
+        return tags.
+            Where(tag => tag != null).
+            ToDictionary(tag => tag!.Name, tag => tag!);
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -151,7 +175,7 @@ internal static class RepositoryFacade
                 GetCurrentHeadAsync(repository, ct),
                 GetStructuredBranchesAsync(repository, rwr, ct),
                 GetStructuredRemoteBranchesAsync(repository, rwr, ct),
-                GetStructuredTagsAsync(repository, ct));
+                GetStructuredTagsAsync(repository, rwr, ct));
 
             repository.head = head;
             repository.branches = branches;
@@ -249,7 +273,7 @@ internal static class RepositoryFacade
         var repository = GetRelatedRepository(commit);
         return repository.Tags.Values.
             Collect(tag =>
-                (tag.Type == ObjectTypes.Commit &&
+                (tag is CommitTag &&
                  tag.Hash.Equals(commit.Hash)) ? tag : null).
             ToArray();
     }

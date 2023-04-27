@@ -74,8 +74,17 @@ public static class Program
     {
         using var repository = await Repository.Factory.OpenStructureAsync(repositoryPath);
 
+        var commits = new HashSet<Commit>(
+            repository.RemoteBranches.Values.Select(branch => branch.Head));
+
+        foreach (var tag in repository.Tags.Values.
+            Select(tag => tag is CommitTag ct ? ct.Commit : null).
+            Where(tag => tag != null))
+        {
+            commits.Add(tag!);
+        }
+
         var head = repository.GetHead();
-        var commits = new HashSet<Commit>();
         if (head?.Head is { } c)
         {
             commits.Add(c);
@@ -144,23 +153,24 @@ public static class Program
     {
         if (args.Length == 2)
         {
-            if (args[0] == "-f")
+            if (args[0] == "--fix")
             {
                 return FixLogAsync(args[1]);
             }
-            else
+            else if (args[0] == "--log")
             {
                 return WriteLogAsync(args[1]);
             }
         }
 
-        Console.WriteLine("usage: gitlogtest [-f|-w] <path>");
+        Console.WriteLine("usage: gitlogtest [--fix|--log] <path>");
         return Task.CompletedTask;
     }
 
 #if DEBUG
     public static void Main(string[] args)
     {
+        // Single-threaded for easier debugging of asynchronous operations.
         var sc = new SingleThreadedSynchronizationContext();
         SynchronizationContext.SetSynchronizationContext(sc);
 

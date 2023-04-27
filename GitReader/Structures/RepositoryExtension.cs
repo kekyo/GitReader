@@ -74,15 +74,43 @@ public static class RepositoryExtension
     public static void Deconstruct(
         this Tag tag,
         out Hash hash,
-        out ObjectTypes type,
         out string name,
         out Signature? tagger,
         out string? message)
     {
         hash = tag.Hash;
-        type = tag.Type;
         name = tag.Name;
         tagger = tag.Tagger;
         message = tag.Message;
+    }
+
+    public static void Deconstruct(
+        this Tag tag,
+        out Hash hash,
+        out string name,
+        out ObjectTypes type,
+        out Signature? tagger,
+        out string? message)
+    {
+        hash = tag.Hash;
+        name = tag.Name;
+        type = tag.Type;
+        tagger = tag.Tagger;
+        message = tag.Message;
+    }
+
+    public static void Deconstruct(
+        this CommitTag tag,
+        out Hash hash,
+        out string name,
+        out Signature? tagger,
+        out string? message,
+        out Commit commit)
+    {
+        hash = tag.Hash;
+        name = tag.Name;
+        tagger = tag.Tagger;
+        message = tag.Message;
+        commit = tag.Commit;
     }
 }

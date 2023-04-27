@@ -22,8 +22,8 @@ Merge branch 'devel'
       Hash: {
         HashCode: 1205dc34ce48bda28fc543daaf9525a9bb6e6d10
       },
-      Type: Commit,
-      Name: 2.0.18
+      Name: 2.0.18,
+      Type: Commit
     }
   ]
 }
