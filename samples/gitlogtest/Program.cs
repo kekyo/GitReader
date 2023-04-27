@@ -90,6 +90,7 @@ public static class Program
             commits.Add(c);
         }
 
+        var first = true;
         while (commits.Count >= 1)
         {
             var commit = commits.OrderBy(c => c.Committer.Date).Last();
@@ -104,6 +105,15 @@ public static class Program
                     Select(b => head?.Name == b.Name ? $"HEAD -> {b.Name}" : b.Name)).
                 OrderBy(name => name, StringComparer.Ordinal).  // deterministic
                 ToArray());
+
+            if (first)
+            {
+                first = false;
+            }
+            else
+            {
+                Console.WriteLine();
+            }
 
             if (refs.Length >= 1)
             {
@@ -137,8 +147,6 @@ public static class Program
             {
                 Console.WriteLine("    " + line);
             }
-
-            Console.WriteLine();
 
             commits.Remove(commit);
 
