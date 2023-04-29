@@ -444,30 +444,6 @@ internal static class RepositoryAccessor
 
     //////////////////////////////////////////////////////////////////////////
 
-    private static async Task<string> GetMessageAsync(
-        TextReader tr,
-        CancellationToken ct)
-    {
-        var sb = new StringBuilder();
-
-        while (true)
-        {
-            var line = await tr.ReadLineAsync().WaitAsync(ct);
-            if (line == null)
-            {
-                break;
-            }
-
-            if (sb.Length >= 1)
-            {
-                sb.Append('\n');   // Make deterministic
-            }
-            sb.Append(line);
-        }
-
-        return sb.ToString();
-    }
-
     private static ObjectAccessor GetObjectAccessor(
         Repository repository)
     {
@@ -479,9 +455,12 @@ internal static class RepositoryAccessor
         return repository.accessor;
     }
 
-    public static async Task<Commit?> ReadCommitAsync(
+    private static async Task<string?> ParseObjectBodyAsync(
         Repository repository,
-        Hash hash, CancellationToken ct)
+        Hash hash,
+        Func<ObjectTypes, bool> validateType,
+        Action<string, string> gotLine,
+        CancellationToken ct)
     {
         var accessor = GetObjectAccessor(repository);
         if (await accessor.OpenAsync(hash, ct) is not { } streamResult)
@@ -491,44 +470,83 @@ internal static class RepositoryAccessor
 
         try
         {
-            if (streamResult.Type != ObjectTypes.Commit)
+            if (!validateType(streamResult.Type))
             {
-                throw new InvalidDataException(
-                    $"It isn't commit object: {hash}");
+                return null;
             }
 
             var tr = new StreamReader(streamResult.Stream, Encoding.UTF8, true);
+            var body = await tr.ReadToEndAsync().WaitAsync(ct);
 
-            var tree = default(Hash?);
-            var parents = new List<Hash>();
-            var author = default(Signature?);
-            var committer = default(Signature?);
+            var start = 0;
+            var index = 0;
 
             while (true)
             {
-                var line = await tr.ReadLineAsync().WaitAsync(ct);
-                if (line == null)
+                if (index >= body.Length)
                 {
                     throw new InvalidDataException(
-                        "Invalid commit object format: Step=1");
+                        $"Invalid {streamResult.Type.ToString().ToLowerInvariant()} object format: Step=1");
                 }
 
-                if (line.Length == 0)
+                var ch = body[index++];
+                if (ch != '\n')
+                {
+                    continue;
+                }
+
+                var length = index - start - 1;
+                if (length == 0)
                 {
                     break;
                 }
+
+                var line = body.Substring(start, length);
 
                 var separatorIndex = line.IndexOf(' ');
                 if (separatorIndex == -1)
                 {
                     throw new InvalidDataException(
-                        "Invalid commit object format: Step=2");
+                        $"Invalid {streamResult.Type.ToString().ToLowerInvariant()} object format: Step=2");
                 }
 
-                var type = line.Substring(0, separatorIndex);
-                var operand = line.Substring(separatorIndex + 1);
+                gotLine(
+                    line.Substring(0, separatorIndex),
+                    line.Substring(separatorIndex + 1));
 
-                switch (type)
+                start = index;
+            }
+
+            return body.Substring(index);
+        }
+        finally
+        {
+            streamResult.Stream.Dispose();
+        }
+    }
+
+
+    public static async Task<Commit?> ReadCommitAsync(
+        Repository repository,
+        Hash hash, CancellationToken ct)
+    {
+        var tree = default(Hash?);
+        var parents = new List<Hash>();
+        var author = default(Signature?);
+        var committer = default(Signature?);
+
+        if (await ParseObjectBodyAsync(
+            repository,
+            hash,
+            type => type switch
+            {
+                ObjectTypes.Commit => true,
+                _ => throw new InvalidDataException(
+                    $"It isn't commit object: {hash}"),
+            },
+            (key, operand) =>
+            {
+                switch (key)
                 {
                     case "tree":
                         tree = Hash.Parse(operand);
@@ -543,23 +561,20 @@ internal static class RepositoryAccessor
                         committer = Signature.Parse(operand);
                         break;
                 }
-
-            }
-
-            if (tree is { } t && author is { } a && committer is { } c)
-            {
-                var message = await GetMessageAsync(tr, ct);
-                return Commit.Create(hash, t, a, c, parents.ToArray(), message);
-            }
-            else
-            {
-                throw new InvalidDataException(
-                    "Invalid commit object format: Step=3");
-            }
-        }
-        finally
+            },
+            ct) is not { } message)
         {
-            streamResult.Stream.Dispose();
+            return null;
+        }
+
+        if (tree is { } t && author is { } a && committer is { } c)
+        {
+            return Commit.Create(hash, t, a, c, parents.ToArray(), message);
+        }
+        else
+        {
+            throw new InvalidDataException(
+                "Invalid commit object format: Step=3");
         }
     }
 
@@ -568,58 +583,24 @@ internal static class RepositoryAccessor
         Hash hash,
         CancellationToken ct)
     {
-        var accessor = GetObjectAccessor(repository);
-        if (await accessor.OpenAsync(hash, ct) is not { } streamResult)
-        {
-            return null;
-        }
+        var obj = default(Hash?);
+        var objectType = default(ObjectTypes?);
+        var tagName = default(string);
+        var tagger = default(Signature?);
 
-        try
-        {
-            // Lightweight tag
-            if (streamResult.Type == ObjectTypes.Commit)
+        if (await ParseObjectBodyAsync(
+            repository,
+            hash,
+            type => type switch
             {
-                return null;
-            }
-
-            if (streamResult.Type != ObjectTypes.Tag)
+                ObjectTypes.Commit => false,
+                ObjectTypes.Tag => true,
+                _ => throw new InvalidDataException(
+                    $"It isn't tag object: {hash}")
+            },
+            (key, operand) =>
             {
-                throw new InvalidDataException(
-                    $"It isn't tag object: {hash}");
-            }
-
-            var tr = new StreamReader(streamResult.Stream, Encoding.UTF8, true);
-
-            var obj = default(Hash?);
-            var objectType = default(ObjectTypes?);
-            var tagName = default(string);
-            var tagger = default(Signature?);
-
-            while (true)
-            {
-                var line = await tr.ReadLineAsync().WaitAsync(ct);
-                if (line == null)
-                {
-                    throw new InvalidDataException(
-                        "Invalid tag object format: Step=1");
-                }
-
-                if (line.Length == 0)
-                {
-                    break;
-                }
-
-                var separatorIndex = line.IndexOf(' ');
-                if (separatorIndex == -1)
-                {
-                    throw new InvalidDataException(
-                        "Invalid tag object format: Step=2");
-                }
-
-                var type = line.Substring(0, separatorIndex);
-                var operand = line.Substring(separatorIndex + 1);
-
-                switch (type)
+                switch (key)
                 {
                     case "object":
                         obj = Hash.Parse(operand);
@@ -636,23 +617,20 @@ internal static class RepositoryAccessor
                         tagger = Signature.Parse(operand);
                         break;
                 }
-
-            }
-
-            if (obj is { } o && objectType is { } ot && tagName is { } tn)
-            {
-                var message = await GetMessageAsync(tr, ct);
-                return Tag.Create(o, ot, tn, tagger, message);
-            }
-            else
-            {
-                throw new InvalidDataException(
-                    "Invalid commit object format: Step=3");
-            }
-        }
-        finally
+            },
+            ct) is not { } message)
         {
-            streamResult.Stream.Dispose();
+            return null;
+        }
+
+        if (obj is { } o && objectType is { } ot && tagName is { } tn)
+        {
+            return Tag.Create(o, ot, tn, tagger, message);
+        }
+        else
+        {
+            throw new InvalidDataException(
+                "Invalid tag object format: Step=3");
         }
     }
 }

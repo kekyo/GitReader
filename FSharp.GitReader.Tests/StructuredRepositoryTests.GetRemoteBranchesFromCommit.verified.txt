@@ -17,7 +17,8 @@
         Date: 2016-02-22 13:38:28 +9,
         RawFormat: Kouji Matsui <k@kekyo.net> 1456115908 0900
       },
-      Message: Add UWP and .NETCore test projects.,
+      Subject: Add UWP and .NETCore test projects.,
+      Body: ,
       RemoteBranches: []
     }
   }

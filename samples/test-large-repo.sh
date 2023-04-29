@@ -9,11 +9,10 @@ rm -rf CenterCLR.RelaxVersioner
 git clone https://github.com/kekyo/CenterCLR.RelaxVersioner.git
 cd CenterCLR.RelaxVersioner
 echo "Dump by git log..."
-git log --abbrev-commit --abbrev=40 --decorate --all > gitlog1.txt
-dotnet ../gitlogtest/bin/Release/net6.0/gitlogtest.dll --fix gitlog1.txt > gitlog2.txt
+git log --date-order --date=iso --pretty=tformat:"# %H %P [%an <%ae> %ad] [%cn <%ce> %cd] %s %b" --all > gitlog.txt
 echo "Dump by gitlogtest..."
-dotnet ../gitlogtest/bin/Release/net6.0/gitlogtest.dll --log . > output.txt
-diff -u gitlog2.txt output.txt
+dotnet ../gitlogtest/bin/Release/net6.0/gitlogtest.dll . > output.txt
+diff -Z -u gitlog.txt output.txt
 cd ..
 
 echo "Done."
@@ -26,11 +25,10 @@ rm -rf IL2C
 git clone https://github.com/kekyo/IL2C.git
 cd IL2C
 echo "Dump by git log..."
-git log --abbrev-commit --abbrev=40 --decorate --all > gitlog1.txt
-dotnet ../gitlogtest/bin/Release/net6.0/gitlogtest.dll --fix gitlog1.txt > gitlog2.txt
+git log --date-order --date=iso --pretty=tformat:"# %H %P [%an <%ae> %ad] [%cn <%ce> %cd] %s %b" --all > gitlog.txt
 echo "Dump by gitlogtest..."
-dotnet ../gitlogtest/bin/Release/net6.0/gitlogtest.dll --log . > output.txt
-diff -u gitlog2.txt output.txt
+dotnet ../gitlogtest/bin/Release/net6.0/gitlogtest.dll . > output.txt
+diff -Z -u gitlog.txt output.txt
 cd ..
 
 echo "Done."
@@ -43,11 +41,10 @@ rm -rf git
 git clone https://github.com/git/git.git
 cd git
 echo "Dump by git log..."
-git log --abbrev-commit --abbrev=40 --decorate --all > gitlog1.txt
-dotnet ../gitlogtest/bin/Release/net6.0/gitlogtest.dll --fix gitlog1.txt > gitlog2.txt
+git log --date-order --date=iso --pretty=tformat:"# %H %P [%an <%ae> %ad] [%cn <%ce> %cd] %s %b" --all > gitlog.txt
 echo "Dump by gitlogtest..."
-dotnet ../gitlogtest/bin/Release/net6.0/gitlogtest.dll --log . > output.txt
-diff -u gitlog2.txt output.txt
+dotnet ../gitlogtest/bin/Release/net6.0/gitlogtest.dll . > output.txt
+diff -Z -u gitlog.txt output.txt
 cd ..
 
 echo "Done."

@@ -14,9 +14,8 @@
     Date: 2020-12-24 13:27:23 +9,
     RawFormat: Kouji Matsui <k@kekyo.net> 1608784043 0900
   },
-  Message:
-Merge branch 'devel'
-,
+  Subject: Merge branch 'devel',
+  Body: ,
   Tags: [
     {
       Hash: {

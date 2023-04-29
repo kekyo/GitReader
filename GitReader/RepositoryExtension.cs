@@ -18,6 +18,10 @@ public static class RepositoryExtension
         this DateTimeOffset date) =>
         Utilities.ToGitDateString(date);
 
+    public static string ToGitIsoDateString(
+        this DateTimeOffset date) =>
+        Utilities.ToGitIsoDateString(date);
+
     public static string ToGitAuthorString(
         this Signature signature) =>
         Utilities.ToGitAuthorString(signature);

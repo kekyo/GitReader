@@ -35,6 +35,10 @@ public static class RepositoryExtension
         CancellationToken ct = default) =>
         RepositoryFacade.GetParentsAsync(commit, ct);
 
+    public static string GetMessage(
+        this Commit commit) =>
+        commit.message;
+
     public static void Deconstruct(
         this StructuredRepository repository,
         out string path,
@@ -64,12 +68,27 @@ public static class RepositoryExtension
         out Hash hash,
         out Signature author,
         out Signature committer,
+        out string subject,
+        out string body)
+    {
+        hash = commit.Hash;
+        author = commit.Author;
+        committer = commit.Committer;
+        subject = commit.Subject;
+        body = commit.Body;
+    }
+
+    public static void Deconstruct(
+        this Commit commit,
+        out Hash hash,
+        out Signature author,
+        out Signature committer,
         out string message)
     {
         hash = commit.Hash;
         author = commit.Author;
         committer = commit.Committer;
-        message = commit.Message;
+        message = commit.message;
     }
 
     public static void Deconstruct(
@@ -114,11 +133,4 @@ public static class RepositoryExtension
         message = tag.Message;
         commit = tag.Commit;
     }
-
-    public static Task<Commit[]> PrettyPrintAsync(
-        this Commit commit,
-        TextWriter tw,
-        Branch? head = default,
-        CancellationToken ct = default) =>
-        RepositoryFacade.PrettyPrintAsync(commit, tw, head, ct);
 }

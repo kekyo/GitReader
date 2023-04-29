@@ -18,6 +18,8 @@ module public RepositoryExtension =
     type DateTimeOffset with
         member date.toGitDateString() =
             Utilities.ToGitDateString(date)
+        member date.toGitIsoDateString() =
+            Utilities.ToGitIsoDateString(date)
 
     type Signature with
         member signature.toGitAuthorString() =

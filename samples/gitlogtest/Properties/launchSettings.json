@@ -2,8 +2,8 @@
   "profiles": {
     "gitlog": {
         "commandName": "Project",
-        "commandLineArgs": "--log .",
-        "workingDirectory": "C:\\Projects\\GitReader\\samples\\git"
+        "commandLineArgs": ".",
+        "workingDirectory": "C:\\Projects\\GitReader\\samples\\CenterCLR.RelaxVersioner"
     }
   }
 }

@@ -26,6 +26,7 @@
     Message:
 Added installation .NET 6 SDK on GitHub Actions.
 
+
   },
   {
     Hash: {
@@ -53,6 +54,7 @@ Added installation .NET 6 SDK on GitHub Actions.
     ],
     Message:
 Upgraded .NET 6.0.
+
 
   },
   {
@@ -82,6 +84,7 @@ Upgraded .NET 6.0.
     Message:
 Update badge.
 
+
   },
   {
     Hash: {
@@ -109,6 +112,7 @@ Update badge.
     ],
     Message:
 Update readmes.
+
 
   },
   {
@@ -138,6 +142,7 @@ Update readmes.
     Message:
 Added fallback delegate features.
 
+
   },
   {
     Hash: {
@@ -166,6 +171,7 @@ Added fallback delegate features.
     Message:
 Updates test nuget refs.
 
+
   },
   {
     Hash: {
@@ -193,6 +199,7 @@ Updates test nuget refs.
     ],
     Message:
 Updated readme.
+
 
   },
   {
@@ -225,6 +232,7 @@ Updated readme.
     Message:
 Merge branch 'devel'
 
+
   },
   {
     Hash: {
@@ -256,6 +264,7 @@ Merge branch 'devel'
     Message:
 Merge branch 'devel'
 
+
   },
   {
     Hash: {
@@ -283,6 +292,7 @@ Merge branch 'devel'
     ],
     Message:
 Updated packing script.
+
 
   },
   {
@@ -312,6 +322,7 @@ Updated packing script.
     Message:
 Updated namespace name.
 
+
   },
   {
     Hash: {
@@ -339,6 +350,7 @@ Updated namespace name.
     ],
     Message:
 Updated readme.
+
 
   },
   {
@@ -368,6 +380,7 @@ Updated readme.
     Message:
 Updated readme.
 
+
   },
   {
     Hash: {
@@ -395,6 +408,7 @@ Updated readme.
     ],
     Message:
 Changed the NuGet package name from "CenterCLR.NamingFormatter" to "NamingFormatter".
+
 
   },
   {
@@ -424,6 +438,7 @@ Changed the NuGet package name from "CenterCLR.NamingFormatter" to "NamingFormat
     Message:
 Update readme.
 
+
   },
   {
     Hash: {
@@ -451,6 +466,7 @@ Update readme.
     ],
     Message:
 Update packing script.
+
 
   },
   {
@@ -480,6 +496,7 @@ Update packing script.
     Message:
 Reenable building by dotnet command.
 
+
   },
   {
     Hash: {
@@ -507,6 +524,7 @@ Reenable building by dotnet command.
     ],
     Message:
 Bit changed (WIP).
+
 
   },
   {
@@ -536,6 +554,7 @@ Bit changed (WIP).
     Message:
 Bit changed (WIP).
 
+
   },
   {
     Hash: {
@@ -563,6 +582,7 @@ Bit changed (WIP).
     ],
     Message:
 Bit changed (WIP).
+
 
   },
   {
@@ -592,6 +612,7 @@ Bit changed (WIP).
     Message:
 Bit changed (WIP).
 
+
   },
   {
     Hash: {
@@ -619,6 +640,7 @@ Bit changed (WIP).
     ],
     Message:
 Bit changed (WIP).
+
 
   },
   {
@@ -648,6 +670,7 @@ Bit changed (WIP).
     Message:
 Bit changed (WIP).
 
+
   },
   {
     Hash: {
@@ -675,6 +698,7 @@ Bit changed (WIP).
     ],
     Message:
 Added GitHub Actions script and omit older.
+
 
   },
   {
@@ -704,6 +728,7 @@ Added GitHub Actions script and omit older.
     Message:
 Added supports net5.0, net35-client and net40-client.
 
+
   },
   {
     Hash: {
@@ -732,6 +757,7 @@ Added supports net5.0, net35-client and net40-client.
     Message:
 Upgraded new MSBuild format and omit PCL versions.
 
+
   },
   {
     Hash: {
@@ -757,7 +783,9 @@ Upgraded new MSBuild format and omit PCL versions.
         HashCode: adf749ec8e52e339597f478d70c12bec8bdf6e40
       }
     ],
-    Message: CI test.
+    Message:
+CI test.
+
   },
   {
     Hash: {
@@ -783,7 +811,9 @@ Upgraded new MSBuild format and omit PCL versions.
         HashCode: 6961a50ef3ad4e43ed9774daffd8457d32cf5e75
       }
     ],
-    Message: Bit changed.
+    Message:
+Bit changed.
+
   },
   {
     Hash: {
@@ -812,7 +842,9 @@ Upgraded new MSBuild format and omit PCL versions.
         HashCode: 0a064ec9cd2199e1ecf879496b55d5e956e546ac
       }
     ],
-    Message: Merge branch 'appveyor'
+    Message:
+Merge branch 'appveyor'
+
   },
   {
     Hash: {
@@ -838,7 +870,9 @@ Upgraded new MSBuild format and omit PCL versions.
         HashCode: dc45301eeb49ec94ee043755124802497d0079ec
       }
     ],
-    Message: Bit changed.
+    Message:
+Bit changed.
+
   },
   {
     Hash: {
@@ -867,7 +901,9 @@ Upgraded new MSBuild format and omit PCL versions.
         HashCode: f690f0e7bf703582a1fad7e6f1c2d1586390f43d
       }
     ],
-    Message: Merge branch 'netcore'
+    Message:
+Merge branch 'netcore'
+
   },
   {
     Hash: {
@@ -893,7 +929,9 @@ Upgraded new MSBuild format and omit PCL versions.
         HashCode: 4b208e358d7af9f02a3607e1cac7eeda2a7352b8
       }
     ],
-    Message: Bit changed.
+    Message:
+Bit changed.
+
   },
   {
     Hash: {
@@ -919,7 +957,9 @@ Upgraded new MSBuild format and omit PCL versions.
         HashCode: 964cd08750becd18e1a43927cced4698bbec6ede
       }
     ],
-    Message: Add badge.
+    Message:
+Add badge.
+
   },
   {
     Hash: {
@@ -945,7 +985,9 @@ Upgraded new MSBuild format and omit PCL versions.
         HashCode: 3b0431e8764dbb627a44aeaca55bd41336c3b4a7
       }
     ],
-    Message: Add badge.
+    Message:
+Add badge.
+
   },
   {
     Hash: {
@@ -971,7 +1013,9 @@ Upgraded new MSBuild format and omit PCL versions.
         HashCode: 819ad16b1d3b7ffa0f315dd417eb61e4b7264c53
       }
     ],
-    Message: Omit IFormatProvider method extension attribute.
+    Message:
+Omit IFormatProvider method extension attribute.
+
   },
   {
     Hash: {
@@ -1000,7 +1044,9 @@ Upgraded new MSBuild format and omit PCL versions.
         HashCode: 6b7fe206653544060c5d8025895533fe77ca552f
       }
     ],
-    Message: Merge commit '6b7fe206653544060c5d8025895533fe77ca552f'
+    Message:
+Merge commit '6b7fe206653544060c5d8025895533fe77ca552f'
+
   },
   {
     Hash: {
@@ -1026,7 +1072,9 @@ Upgraded new MSBuild format and omit PCL versions.
         HashCode: 5d790aa5fa7ea664b85323295104cce14e0dd3c2
       }
     ],
-    Message: Fixed alignment format.
+    Message:
+Fixed alignment format.
+
   },
   {
     Hash: {
@@ -1052,7 +1100,9 @@ Upgraded new MSBuild format and omit PCL versions.
         HashCode: 2875072f2b0e45c2447e211d09d11797e68da468
       }
     ],
-    Message: Bit changed.
+    Message:
+Bit changed.
+
   },
   {
     Hash: {
@@ -1078,7 +1128,9 @@ Upgraded new MSBuild format and omit PCL versions.
         HashCode: a7187601f4b4b9dacc3c78895397bb2911d190d6
       }
     ],
-    Message: Bit changed.
+    Message:
+Bit changed.
+
   },
   {
     Hash: {
@@ -1104,7 +1156,9 @@ Upgraded new MSBuild format and omit PCL versions.
         HashCode: b9f583ce2f3bce0a1dd16128d0f050888d7328d7
       }
     ],
-    Message: Use RelaxVersioner on .NET2/35
+    Message:
+Use RelaxVersioner on .NET2/35
+
   },
   {
     Hash: {
@@ -1130,7 +1184,9 @@ Upgraded new MSBuild format and omit PCL versions.
         HashCode: 63723bd7bc1321ffdd2b72c3bc743fa57455d137
       }
     ],
-    Message: Bit changed
+    Message:
+Bit changed
+
   },
   {
     Hash: {
@@ -1156,7 +1212,9 @@ Upgraded new MSBuild format and omit PCL versions.
         HashCode: 7a95e0c5cb9b3c3bd4bae0a43526c6c74d1e30da
       }
     ],
-    Message: Add nuget package, Support structual-key, Support .NET 2/.NET 3.5.
+    Message:
+Add nuget package, Support structual-key, Support .NET 2/.NET 3.5.
+
   },
   {
     Hash: {
@@ -1182,7 +1240,9 @@ Upgraded new MSBuild format and omit PCL versions.
         HashCode: 72fdee3e858dfd04d7ae6439c1da3f76b985d861
       }
     ],
-    Message: Use RelaxVersioner
+    Message:
+Use RelaxVersioner
+
   },
   {
     Hash: {
@@ -1203,6 +1263,8 @@ Upgraded new MSBuild format and omit PCL versions.
       Date: 2016-01-27 00:23:36 +9,
       RawFormat: Kouji Matsui <k@kekyo.net> 1453821816 0900
     },
-    Message: Initial commit.
+    Message:
+Initial commit.
+
   }
 ]

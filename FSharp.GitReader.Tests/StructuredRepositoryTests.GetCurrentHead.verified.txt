@@ -16,9 +16,8 @@
       Date: 2021-11-11 09:40:12 +9,
       RawFormat: Kouji Matsui <k@kekyo.net> 1636591212 0900
     },
-    Message:
-Added installation .NET 6 SDK on GitHub Actions.
-,
+    Subject: Added installation .NET 6 SDK on GitHub Actions.,
+    Body: ,
     Branches: [
       {
         Name: master

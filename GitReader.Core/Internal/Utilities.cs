@@ -455,6 +455,15 @@ internal static class Utilities
         return string.Format(CultureInfo.InvariantCulture, "{0:ddd MMM d HH:mm:ss yyyy} {1}", date, zone);
     }
 
+    public static string ToGitIsoDateString(
+        DateTimeOffset date)
+    {
+        var zone = date.Offset.TotalSeconds >= 0 ?
+                string.Format(CultureInfo.InvariantCulture, "+{0:hhmm}", date.Offset) :
+                string.Format(CultureInfo.InvariantCulture, "-{0:hhmm}", date.Offset);
+        return string.Format(CultureInfo.InvariantCulture, "{0:yyyy-MM-dd HH:mm:ss} {1}", date, zone);
+    }
+
     public static string ToGitAuthorString(
         Signature signature) =>
         signature.MailAddress is { } mailAddress ?
