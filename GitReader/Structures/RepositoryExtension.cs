@@ -8,6 +8,7 @@
 ////////////////////////////////////////////////////////////////////////////
 
 using GitReader.Collections;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -113,4 +114,11 @@ public static class RepositoryExtension
         message = tag.Message;
         commit = tag.Commit;
     }
+
+    public static Task<Commit[]> PrettyPrintAsync(
+        this Commit commit,
+        TextWriter tw,
+        Branch? head = default,
+        CancellationToken ct = default) =>
+        RepositoryFacade.PrettyPrintAsync(commit, tw, head, ct);
 }

@@ -10,6 +10,7 @@
 namespace GitReader.Structures
 
 open GitReader
+open System.IO
 open System.Threading
 
 [<AutoOpen>]
@@ -37,7 +38,11 @@ module public RepositoryExtension =
                    | _ -> Some c
         }
         member commit.getParentCommits(?ct: CancellationToken) =
-            RepositoryFacade.GetParentsAsync(commit, unwrapCT ct) |> Async.AwaitTask
+            RepositoryFacade.GetParentsAsync(
+                commit, unwrapCT ct) |> Async.AwaitTask
+        member commit.prettyPrint(tw: TextWriter, ?head: Branch, ?ct: CancellationToken) =
+            RepositoryFacade.PrettyPrintAsync(
+                commit, tw, unwrapOption head, unwrapCT ct) |> Async.AwaitTask
 
     let (|Repository|) (repository: StructuredRepository) =
         (repository.Path,

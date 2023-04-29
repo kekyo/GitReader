@@ -16,6 +16,10 @@ open System.Threading.Tasks
 [<AutoOpen>]
 module internal Utilities =
 
+    let unwrapOption(v: 'T option) =
+        match v with
+        | None -> Unchecked.defaultof<'T>
+        | Some v -> v
     let inline unwrapCT(ct: CancellationToken option) =
         match ct with
         | Some ct -> ct

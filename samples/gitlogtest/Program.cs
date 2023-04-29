@@ -96,77 +96,17 @@ public static class Program
         {
             var commit = commits.OrderBy(c => c.Committer.Date).Last();
 
-            var parentsTask = commit.GetParentCommitsAsync();
-
-            var refs = string.Join(", ",
-                commit.Tags.
-                Select(t => $"tag: {t.Name}").
-                Concat(commit.RemoteBranches.
-                    Concat(commit.Branches).
-                    Select(b => head?.Name == b.Name ? $"HEAD -> {b.Name}" : b.Name)).
-                OrderBy(name => name, StringComparer.Ordinal).  // deterministic
-                ToArray());
-
             if (first)
             {
                 first = false;
             }
             else
             {
-                Console.WriteLine();
+                Console.Out.WriteLine();
             }
 
-            if (refs.Length >= 1)
-            {
-                Console.WriteLine($"commit {commit.Hash} ({refs})");
-            }
-            else
-            {
-                Console.WriteLine($"commit {commit.Hash}");
-            }
-
-            var parents = await parentsTask;
-            if (parents.Length >= 2)
-            {
-                var merge = string.Join(" ",
-                    parents.
-                    Select(p => p.Hash.ToString()).
-                    ToArray());
-
-                Console.WriteLine($"Merge: {merge}");
-            }
-
-            Console.WriteLine($"Author: {commit.Author.ToGitAuthorString()}");
-            Console.WriteLine($"Date:   {commit.Author.Date.ToGitDateString()}");
-
-            Console.WriteLine();
-
-            var lines = commit.Message.Split('\n');
-            foreach (var line in
-                lines.LastOrDefault()?.Length == 0 ?
-                    lines.Take(lines.Length - 1) : lines)
-            {
-                // Expand tabs.
-                var sb = new StringBuilder();
-                for (var index = 0; index < line.Length; index++)
-                {
-                    if (line[index] == '\t')
-                    {
-                        var remains = 8 - index % 8;
-                        while (remains > 0)
-                        {
-                            sb.Append(' ');
-                            remains--;
-                        }
-                    }
-                    else
-                    {
-                        sb.Append(line[index]);
-                    }
-                }
-
-                Console.WriteLine("    " + sb);
-            }
+            var parents = await commit.PrettyPrintAsync(
+                Console.Out, head, default);
 
             commits.Remove(commit);
 
