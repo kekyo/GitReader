@@ -139,6 +139,7 @@ internal static class RepositoryFacade
 
         return tags.
             Where(tag => tag != null).
+            DistinctBy(tag => tag!.Name).
             ToDictionary(tag => tag!.Name, tag => tag!);
     }
 

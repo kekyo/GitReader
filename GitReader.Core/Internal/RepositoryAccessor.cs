@@ -275,7 +275,6 @@ internal static class RepositoryAccessor
         var branches = new Dictionary<string, Hash>();
         var tags = new Dictionary<string, Hash>();
 
-        var lastTagEntry = default(KeyValuePair<string, Hash>?);
         var separators = new[] { ' ' };
 
         while (true)
@@ -294,32 +293,17 @@ internal static class RepositoryAccessor
 
             var hashCodeString = columns[0];
 
-            // Peeled tag entry.
+            // Ignored peeled tag entry.
             if (columns.Length == 1 &&
-                hashCodeString.StartsWith("^") &&
-                lastTagEntry is { } le)
+                hashCodeString.StartsWith("^"))
             {
-                if (!Hash.TryParse(hashCodeString.Substring(1), out var hash2))
-                {
-                    continue;
-                }
-
-                // Take peeled tag hash.
-                tags[le.Key] = hash2;
-                lastTagEntry = default;
+                continue;
             }
 
             if (columns.Length != 2 ||
                 !Hash.TryParse(hashCodeString, out var hash))
             {
                 continue;
-            }
-
-            // Exhaust last tag entry.
-            if (lastTagEntry is { } le2)
-            {
-                tags[le2.Key] = le2.Value;
-                lastTagEntry = default;
             }
 
             var referenceString = columns[1];
@@ -331,14 +315,8 @@ internal static class RepositoryAccessor
             else if (referenceString.StartsWith("refs/tags/"))
             {
                 var name = referenceString.Substring(10);
-                lastTagEntry = new(name, hash);    // Saved.
+                tags[name] = hash;
             }
-        }
-
-        // Exhaust last tag entry.
-        if (lastTagEntry is { } le3)
-        {
-            tags[le3.Key] = le3.Value;
         }
 
         return new(branches, tags);
@@ -571,7 +549,6 @@ internal static class RepositoryAccessor
             if (tree is { } t && author is { } a && committer is { } c)
             {
                 var message = await GetMessageAsync(tr, ct);
-
                 return Commit.Create(hash, t, a, c, parents.ToArray(), message);
             }
             else
@@ -662,11 +639,10 @@ internal static class RepositoryAccessor
 
             }
 
-            if (obj is { } o && objectType is { } ot && tagName is { } tn && tagger is { } tg)
+            if (obj is { } o && objectType is { } ot && tagName is { } tn)
             {
                 var message = await GetMessageAsync(tr, ct);
-
-                return Tag.Create(o, ot, tn, tg, message);
+                return Tag.Create(o, ot, tn, tagger, message);
             }
             else
             {

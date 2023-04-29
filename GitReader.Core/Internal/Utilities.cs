@@ -239,6 +239,28 @@ internal static class Utilities
         }
     }
 
+#if !NET6_0_OR_GREATER
+    private sealed class DistinctKeyComparer<T, TKey> : IEqualityComparer<T>
+    {
+        private readonly Func<T, TKey> selector;
+
+        public DistinctKeyComparer(Func<T, TKey> selector) =>
+            this.selector = selector;
+
+        public bool Equals(T? x, T? y) =>
+            x is { } && y is { } &&
+            this.selector(x)!.Equals(this.selector(y));
+
+        public int GetHashCode(T? obj) =>
+            obj is { } ?
+                this.selector(obj)!.GetHashCode() : 0;
+    }
+
+    public static IEnumerable<T> DistinctBy<T, TKey>(
+        this IEnumerable<T> enumerable, Func<T, TKey> selector) =>
+        enumerable.Distinct(new DistinctKeyComparer<T, TKey>(selector));
+#endif
+
     public static ReadOnlyDictionary<TKey, TValue> AsReadOnly<TKey, TValue>(
         this Dictionary<TKey, TValue> dictionary)
         where TKey : notnull =>

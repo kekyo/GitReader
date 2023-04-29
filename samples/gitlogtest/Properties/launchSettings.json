@@ -3,7 +3,7 @@
     "gitlog": {
         "commandName": "Project",
         "commandLineArgs": "--log .",
-        "workingDirectory": "D:\\Projects\\GitReader\\tests\\CenterCLR.RelaxVersioner"
+        "workingDirectory": "C:\\Projects\\GitReader\\samples\\git"
     }
   }
 }

@@ -7,7 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Lepracaun" Version="0.4.0" />
+    <PackageReference Include="Lepracaun" Version="1.0.0" />
   </ItemGroup>
 
   <ItemGroup>
