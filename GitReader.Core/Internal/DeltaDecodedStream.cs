@@ -39,7 +39,7 @@ internal sealed class DeltaDecodedStream : Stream
             this.Size = size;
     }
 
-    private const int preloadBufferSize = 8192;
+    private const int preloadBufferSize = 65536;
     private const int memoizeToFileSize = 1024 * 1024;
 
     private MemoizedStream baseObjectStream;

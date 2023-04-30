@@ -107,6 +107,15 @@ internal sealed class AsyncLock
 
     private void Unlock()
     {
+#if true
+        ThreadPool.QueueUserWorkItem(_ =>
+        {
+            lock (this.queue)
+            {
+                this.InternalUnlock();
+            }
+        });
+#else
         try
         {
             // Will cause stack overflow when a lot of continuation queued and ran it series.
@@ -130,6 +139,7 @@ internal sealed class AsyncLock
         {
             counter.Value--;
         }
+#endif
     }
 
     public sealed class Disposer : IDisposable

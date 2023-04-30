@@ -33,7 +33,7 @@ internal readonly struct ObjectStreamResult
 
 internal sealed class ObjectAccessor : IDisposable
 {
-    private const int preloadBufferSize = 8192;
+    private const int preloadBufferSize = 65536;
 
     private readonly string objectsBasePath;
     private readonly string packedBasePath;

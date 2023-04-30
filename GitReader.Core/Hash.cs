@@ -8,59 +8,68 @@
 ////////////////////////////////////////////////////////////////////////////
 
 using System;
-using System.Security.Cryptography;
+using System.Runtime.InteropServices;
 
 namespace GitReader;
 
-public readonly struct Hash : IEquatable<Hash>
+[StructLayout(LayoutKind.Sequential, Pack = 1)]
+public unsafe struct Hash : IEquatable<Hash>
 {
-    public static readonly int Size;
+    public static readonly int Size = 20;
 
-    static Hash()
+    private long hashCode0;
+    private long hashCode8;
+    private int hashCode16;
+
+    private Hash(byte[] hashCode)
     {
-        using var sha1 = SHA1.Create();
-        Size = sha1.HashSize / 8;
+        fixed (void* pl = &this.hashCode0)
+        {
+            Marshal.Copy(hashCode, 0, (nint)pl, 20);
+        }
     }
 
-    public readonly byte[] HashCode;
-
-    private Hash(byte[] hashCode) =>
-        this.HashCode = hashCode;
-
-    public bool Equals(Hash rhs)
+    private Hash(string hashString)
     {
-        if (rhs.HashCode == null)
+        fixed (void* pl_ = &this.hashCode0)
         {
-            return false;
-        }
-
-        for (var index = 0; index < this.HashCode.Length; index++)
-        {
-            if (this.HashCode[index] != rhs.HashCode[index])
+            var pl = (byte*)pl_;
+            for (var index = 0; index < 20; index++)
             {
-                return false;
+                *(pl + index) = Convert.ToByte(
+                    hashString.Substring(index * 2, 2), 16);
             }
         }
-        return true;
     }
+
+    public byte[] HashCode
+    {
+        get
+        {
+            var hashCode = new byte[20];
+            fixed (void* p = &this.hashCode0)
+            {
+                Marshal.Copy((nint)p, hashCode, 0, 20);
+            }
+            return hashCode;
+        }
+    }
+
+    public bool Equals(Hash rhs) =>
+        this.hashCode0 == rhs.hashCode0 &&
+        this.hashCode8 == rhs.hashCode8 &&
+        this.hashCode16 == rhs.hashCode16;
 
     bool IEquatable<Hash>.Equals(Hash rhs) =>
-        Equals(rhs);
+        this.Equals(rhs);
 
     public override bool Equals(object? obj) =>
-        obj is Hash rhs && Equals(rhs);
+        obj is Hash rhs && this.Equals(rhs);
 
-    public override int GetHashCode()
-    {
-        var sum = 0;
-        var index = 0;
-        while (index < (this.HashCode?.Length ?? 0))
-        {
-            sum ^= BitConverter.ToInt32(this.HashCode!, index);
-            index += 4;
-        }
-        return sum;
-    }
+    public override int GetHashCode() =>
+        this.hashCode0.GetHashCode() ^
+        this.hashCode8.GetHashCode() ^
+        this.hashCode16;
 
     public override string ToString() =>
         BitConverter.ToString(this.HashCode).
@@ -94,20 +103,13 @@ public readonly struct Hash : IEquatable<Hash>
 
     public static bool TryParse(string hashString, out Hash hash)
     {
-        if (hashString.Length != Size * 2)
+        if (hashString.Length != (20 * 2))
         {
             hash = default;
             return false;
         }
 
-        var hashCode = new byte[Size];
-        for (var index = 0; index < hashCode.Length; index++)
-        {
-            hashCode[index] = Convert.ToByte(
-                hashString.Substring(index * 2, 2), 16);
-        }
-
-        hash = new(hashCode);
+        hash = new(hashString);
         return true;
     }
 }
