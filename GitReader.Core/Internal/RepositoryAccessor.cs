@@ -7,9 +7,11 @@
 //
 ////////////////////////////////////////////////////////////////////////////
 
+using GitReader.Collections;
 using GitReader.Primitive;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -17,6 +19,52 @@ using System.Threading;
 using System.Threading.Tasks;
 
 namespace GitReader.Internal;
+
+internal enum ReferenceTypes
+{
+    Branches,
+    RemoteBranches,
+    Tags,
+}
+
+internal readonly struct RemoteReferenceUrlCache
+{
+    public readonly ReadOnlyDictionary<Uri, string> Remotes;
+
+    public RemoteReferenceUrlCache(ReadOnlyDictionary<Uri, string> remotes) =>
+        this.Remotes = remotes;
+}
+
+internal readonly struct ReferenceCache
+{
+    public readonly ReadOnlyDictionary<string, Hash> RemoteBranches;
+    public readonly ReadOnlyDictionary<string, Hash> Tags;
+
+    public ReferenceCache(
+        ReadOnlyDictionary<string, Hash> remoteBranches,
+        ReadOnlyDictionary<string, Hash> tags)
+    {
+        this.RemoteBranches = remoteBranches;
+        this.Tags = tags;
+    }
+
+    public ReferenceCache Combine(ReferenceCache rhs)
+    {
+        var remoteBranches = this.RemoteBranches.Clone();
+        var tags = this.Tags.Clone();
+
+        foreach (var entry in rhs.RemoteBranches)
+        {
+            remoteBranches[entry.Key] = entry.Value;
+        }
+        foreach (var entry in rhs.Tags)
+        {
+            tags[entry.Key] = entry.Value;
+        }
+
+        return new(remoteBranches, tags);
+    }
+}
 
 internal readonly struct HashResults
 {
@@ -32,37 +80,287 @@ internal readonly struct HashResults
 
 internal static class RepositoryAccessor
 {
-    public static async Task<HashResults?> ReadHashAsync(
+    public static string GetReferenceTypeName(ReferenceTypes type) =>
+        type switch
+        {
+            ReferenceTypes.Branches => "heads",
+            ReferenceTypes.RemoteBranches => "remotes",
+            ReferenceTypes.Tags => "tags",
+            _ => throw new ArgumentException(),
+        };
+
+    public static async Task<RemoteReferenceUrlCache> ReadRemoteReferencesAsync(
         Repository repository,
-        string relativePath,
         CancellationToken ct)
     {
-        var currentPath = relativePath;
+        var path = Utilities.Combine(repository.Path, "config");
+        if (!File.Exists(path))
+        {
+            return new(new(new()));
+        }
+
+        using var fs = new FileStream(
+            path, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, true);
+        var tr = new StreamReader(fs, Encoding.UTF8, true);
+
+        var remotes = new Dictionary<Uri, string>();
+        var remoteName = default(string);
+
+        while (true)
+        {
+            var line = await tr.ReadLineAsync().WaitAsync(ct);
+            if (line == null)
+            {
+                break;
+            }
+
+            line = line.Trim();
+
+            switch (remoteName)
+            {
+                case null:
+                    if (line.StartsWith("[") && line.EndsWith("]"))
+                    {
+                        var sectionName = line.Substring(1, line.Length - 2).Trim();
+                        if (sectionName.Length >= 1)
+                        {
+                            if (sectionName.StartsWith("remote "))
+                            {
+                                var startIndex = sectionName.IndexOf('"', 7);
+                                if (startIndex >= 0)
+                                {
+                                    var endIndex = sectionName.IndexOf('"', startIndex + 1);
+                                    if (endIndex >= 0)
+                                    {
+                                        var name = sectionName.Substring(
+                                            startIndex + 1, endIndex - startIndex - 1);
+                                        if (name.Length >= 1)
+                                        {
+                                            remoteName = name;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    break;
+                default:
+                    if (line.StartsWith("url"))
+                    {
+                        if (line.Split('=').ElementAtOrDefault(1)?.Trim() is { } urlString &&
+                            Uri.TryCreate(urlString, UriKind.Absolute, out var url))
+                        {
+                            remotes[url] = remoteName;
+                        }
+                    }
+                    break;
+            }
+        }
+
+        return new(remotes);
+    }
+
+    public static async Task<ReferenceCache> ReadFetchHeadsAsync(
+       Repository repository,
+       CancellationToken ct)
+    {
+        var remoteReferenceCache = repository.remoteReferenceUrlCache;
+
+        Debug.Assert(remoteReferenceCache.Remotes != null);
+
+        var path = Utilities.Combine(repository.Path, "FETCH_HEAD");
+        if (!File.Exists(path))
+        {
+            return new(new(new()), new(new()));
+        }
+
+        using var fs = new FileStream(
+            path, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, true);
+        var tr = new StreamReader(fs, Encoding.UTF8, true);
+
+        var branches = new Dictionary<string, Hash>();
+        var tags = new Dictionary<string, Hash>();
+
+        while (true)
+        {
+            var line = await tr.ReadLineAsync().WaitAsync(ct);
+            if (line == null)
+            {
+                break;
+            }
+
+            var columns = line.Split('\t');
+            if (columns.Length < 3)
+            {
+                continue;
+            }
+
+            var hashCodeString = columns[0].Trim();
+            var descriptorString = columns[2].Trim();
+
+            if (!Hash.TryParse(hashCodeString, out var hash))
+            {
+                continue;
+            }
+
+            var column0Separator = descriptorString.IndexOfAny(new[] { ' ', '\t' });
+            if (column0Separator < 0)
+            {
+                continue;
+            }
+
+            var typeString = descriptorString.Substring(0, column0Separator);
+            if (typeString != "branch" && typeString != "tag")
+            {
+                continue;
+            }
+
+            // FETCH_HEAD file is a log file, so will be overwrite dictionary entry.
+
+            descriptorString = descriptorString.Substring(column0Separator + 1);
+            if (descriptorString.StartsWith("\'"))
+            {
+                var qi = descriptorString.IndexOf('\'', 1);
+                if (qi < 0)
+                {
+                    continue;
+                }
+
+                var name = descriptorString.Substring(1, qi - 1);
+
+                if (typeString == "branch")
+                {
+                    var urlString = descriptorString.Split(' ').Last();
+                    if (Uri.TryCreate(urlString, UriKind.Absolute, out var url) &&
+                        remoteReferenceCache.Remotes!.TryGetValue(url, out var remoteName))
+                    {
+                        branches[$"{remoteName}/{name}"] = hash;
+                    }
+                }
+                else
+                {
+                    tags[name] = hash;
+                }
+            }
+            else
+            {
+                if (typeString == "branch")
+                {
+                    branches[descriptorString] = hash;
+                }
+                else
+                {
+                    tags[descriptorString] = hash;
+                }
+            }
+        }
+
+        return new(branches, tags);
+    }
+
+    public static async Task<ReferenceCache> ReadPackedRefsAsync(
+        Repository repository,
+        CancellationToken ct)
+    {
+        var path = Utilities.Combine(repository.Path, "packed-refs");
+        if (!File.Exists(path))
+        {
+            return new(new(new()), new(new()));
+        }
+
+        using var fs = new FileStream(
+            path, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, true);
+        var tr = new StreamReader(fs, Encoding.UTF8, true);
+
+        var branches = new Dictionary<string, Hash>();
+        var tags = new Dictionary<string, Hash>();
+
+        var separators = new[] { ' ' };
+
+        while (true)
+        {
+            var line = await tr.ReadLineAsync().WaitAsync(ct);
+            if (line == null)
+            {
+                break;
+            }
+
+            var columns = line.Split(separators, StringSplitOptions.RemoveEmptyEntries);
+            if (columns.Length >= 3)
+            {
+                continue;
+            }
+
+            var hashCodeString = columns[0];
+
+            // Ignored peeled tag entry.
+            if (columns.Length == 1 &&
+                hashCodeString.StartsWith("^"))
+            {
+                continue;
+            }
+
+            if (columns.Length != 2 ||
+                !Hash.TryParse(hashCodeString, out var hash))
+            {
+                continue;
+            }
+
+            var referenceString = columns[1];
+            if (referenceString.StartsWith("refs/remotes/"))
+            {
+                var name = referenceString.Substring(13);
+                branches[name] = hash;
+            }
+            else if (referenceString.StartsWith("refs/tags/"))
+            {
+                var name = referenceString.Substring(10);
+                tags[name] = hash;
+            }
+        }
+
+        return new(branches, tags);
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+
+    public static async Task<HashResults?> ReadHashAsync(
+        Repository repository,
+        string relativePathOrLocation,
+        CancellationToken ct)
+    {
+        var currentLocation = relativePathOrLocation.
+            Replace(Path.DirectorySeparatorChar, '/');
         var names = new List<string>();
 
         while (true)
         {
-            var name = string.Join("/", currentPath.Split(
-                new[] { '/' }, StringSplitOptions.RemoveEmptyEntries).
-                Skip(2).
-                ToArray());
+            var name = currentLocation.
+                Replace("refs/heads/", string.Empty).
+                Replace("refs/remotes/", string.Empty).
+                Replace("refs/tags/", string.Empty);
             names.Add(name);
 
             var path = Utilities.Combine(
                 repository.Path,
-                currentPath.Replace('/', Path.DirectorySeparatorChar));
+                currentLocation.Replace('/', Path.DirectorySeparatorChar));
             if (!File.Exists(path))
             {
-                // Invalid reference pointer.
-                if (names.Count >= 2)
+                if (currentLocation.StartsWith("refs/remotes/"))
                 {
-                    throw new InvalidDataException(
-                        $"Could not find {currentPath}.");
+                    if (repository.referenceCache.RemoteBranches.TryGetValue(name, out var branchHash))
+                    {
+                        return new(branchHash, names.ToArray());
+                    }
                 }
-                else
+                else if (currentLocation.StartsWith("refs/tags/") &&
+                    repository.referenceCache.Tags.TryGetValue(name, out var tagHash))
                 {
-                    return null;
+                    return new(tagHash, names.ToArray());
                 }
+
+                // Not found.
+                return null;
             }
 
             using var fs = new FileStream(
@@ -73,7 +371,7 @@ internal static class RepositoryAccessor
             if (line == null)
             {
                 throw new InvalidDataException(
-                    $"Could not parse {currentPath}.");
+                    $"Could not parse {currentLocation}.");
             }
 
             if (!line.StartsWith("ref: "))
@@ -81,18 +379,18 @@ internal static class RepositoryAccessor
                 return new(Hash.Parse(line.Trim()), names.ToArray());
             }
 
-            currentPath = line.Substring(5);
+            currentLocation = line.Substring(5);
         }
     }
 
     public static async Task<Reference[]> ReadReferencesAsync(
         Repository repository,
-        string type,
+        ReferenceTypes type,
         CancellationToken ct)
     {
         var headsPath = Utilities.Combine(
-            repository.Path, "refs", type);
-        var references = await Utilities.WhenAll(
+            repository.Path, "refs", GetReferenceTypeName(type));
+        var references = (await Utilities.WhenAll(
             Utilities.EnumerateFiles(headsPath, "*").
             Select(async path =>
             {
@@ -109,35 +407,42 @@ internal static class RepositoryAccessor
                         path.Substring(headsPath.Length + 1).Replace(Path.DirectorySeparatorChar, '/'),
                         results.Hash);
                 }
-            }));
-        return references.CollectValue(reference => reference).
-            ToArray();
+            }))).
+            CollectValue(reference => reference).
+            ToDictionary(reference => reference.Name);
+
+        // Remote branches and tags may not all be placed in `refs/*/`.
+        // Therefore, information obtained from FETCH_HEAD is also covered.
+        switch (type)
+        {
+            case ReferenceTypes.RemoteBranches:
+                foreach (var entry in repository.referenceCache.RemoteBranches)
+                {
+                    if (!references.ContainsKey(entry.Key))
+                    {
+                        references.Add(
+                            entry.Key,
+                            Reference.Create(entry.Key, entry.Value));
+                    }
+                }
+                break;
+            case ReferenceTypes.Tags:
+                foreach (var entry in repository.referenceCache.Tags)
+                {
+                    if (!references.ContainsKey(entry.Key))
+                    {
+                        references.Add(
+                            entry.Key,
+                            Reference.Create(entry.Key, entry.Value));
+                    }
+                }
+                break;
+        }
+
+        return references.Values.ToArray();
     }
 
     //////////////////////////////////////////////////////////////////////////
-
-    private static async Task<string> GetMessageAsync(
-        TextReader tr, CancellationToken ct)
-    {
-        var sb = new StringBuilder();
-
-        while (true)
-        {
-            var line = await tr.ReadLineAsync().WaitAsync(ct);
-            if (line == null)
-            {
-                break;
-            }
-
-            if (sb.Length >= 1)
-            {
-                sb.Append('\n');   // Make deterministic
-            }
-            sb.Append(line);
-        }
-
-        return sb.ToString();
-    }
 
     private static ObjectAccessor GetObjectAccessor(
         Repository repository)
@@ -150,9 +455,12 @@ internal static class RepositoryAccessor
         return repository.accessor;
     }
 
-    public static async Task<Commit?> ReadCommitAsync(
+    private static async Task<string?> ParseObjectBodyAsync(
         Repository repository,
-        Hash hash, CancellationToken ct)
+        Hash hash,
+        Func<ObjectTypes, bool> validateType,
+        Action<string, string> gotLine,
+        CancellationToken ct)
     {
         var accessor = GetObjectAccessor(repository);
         if (await accessor.OpenAsync(hash, ct) is not { } streamResult)
@@ -162,44 +470,83 @@ internal static class RepositoryAccessor
 
         try
         {
-            if (streamResult.Type != ObjectTypes.Commit)
+            if (!validateType(streamResult.Type))
             {
-                throw new InvalidDataException(
-                    $"It isn't commit object: {hash}");
+                return null;
             }
 
             var tr = new StreamReader(streamResult.Stream, Encoding.UTF8, true);
+            var body = await tr.ReadToEndAsync().WaitAsync(ct);
 
-            var tree = default(Hash?);
-            var parents = new List<Hash>();
-            var author = default(Signature?);
-            var committer = default(Signature?);
+            var start = 0;
+            var index = 0;
 
             while (true)
             {
-                var line = await tr.ReadLineAsync().WaitAsync(ct);
-                if (line == null)
+                if (index >= body.Length)
                 {
                     throw new InvalidDataException(
-                        "Invalid commit object format: Step=1");
+                        $"Invalid {streamResult.Type.ToString().ToLowerInvariant()} object format: Step=1");
                 }
 
-                if (line.Length == 0)
+                var ch = body[index++];
+                if (ch != '\n')
+                {
+                    continue;
+                }
+
+                var length = index - start - 1;
+                if (length == 0)
                 {
                     break;
                 }
+
+                var line = body.Substring(start, length);
 
                 var separatorIndex = line.IndexOf(' ');
                 if (separatorIndex == -1)
                 {
                     throw new InvalidDataException(
-                        "Invalid commit object format: Step=2");
+                        $"Invalid {streamResult.Type.ToString().ToLowerInvariant()} object format: Step=2");
                 }
 
-                var type = line.Substring(0, separatorIndex);
-                var operand = line.Substring(separatorIndex + 1);
+                gotLine(
+                    line.Substring(0, separatorIndex),
+                    line.Substring(separatorIndex + 1));
 
-                switch (type)
+                start = index;
+            }
+
+            return body.Substring(index);
+        }
+        finally
+        {
+            streamResult.Stream.Dispose();
+        }
+    }
+
+
+    public static async Task<Commit?> ReadCommitAsync(
+        Repository repository,
+        Hash hash, CancellationToken ct)
+    {
+        var tree = default(Hash?);
+        var parents = new List<Hash>();
+        var author = default(Signature?);
+        var committer = default(Signature?);
+
+        if (await ParseObjectBodyAsync(
+            repository,
+            hash,
+            type => type switch
+            {
+                ObjectTypes.Commit => true,
+                _ => throw new InvalidDataException(
+                    $"It isn't commit object: {hash}"),
+            },
+            (key, operand) =>
+            {
+                switch (key)
                 {
                     case "tree":
                         tree = Hash.Parse(operand);
@@ -214,83 +561,46 @@ internal static class RepositoryAccessor
                         committer = Signature.Parse(operand);
                         break;
                 }
-
-            }
-
-            if (tree is { } t && author is { } a && committer is { } c)
-            {
-                var message = await GetMessageAsync(tr, ct);
-
-                return Commit.Create(hash, t, a, c, parents.ToArray(), message);
-            }
-            else
-            {
-                throw new InvalidDataException(
-                    "Invalid commit object format: Step=3");
-            }
-        }
-        finally
+            },
+            ct) is not { } message)
         {
-            streamResult.Stream.Dispose();
+            return null;
+        }
+
+        if (tree is { } t && author is { } a && committer is { } c)
+        {
+            return Commit.Create(hash, t, a, c, parents.ToArray(), message);
+        }
+        else
+        {
+            throw new InvalidDataException(
+                "Invalid commit object format: Step=3");
         }
     }
 
     public static async Task<Tag?> ReadTagAsync(
         Repository repository,
-        Hash hash, CancellationToken ct)
+        Hash hash,
+        CancellationToken ct)
     {
-        var accessor = GetObjectAccessor(repository);
-        if (await accessor.OpenAsync(hash, ct) is not { } streamResult)
-        {
-            return null;
-        }
+        var obj = default(Hash?);
+        var objectType = default(ObjectTypes?);
+        var tagName = default(string);
+        var tagger = default(Signature?);
 
-        try
-        {
-            // Lightweight tag
-            if (streamResult.Type == ObjectTypes.Commit)
+        if (await ParseObjectBodyAsync(
+            repository,
+            hash,
+            type => type switch
             {
-                return null;
-            }
-
-            if (streamResult.Type != ObjectTypes.Tag)
+                ObjectTypes.Commit => false,
+                ObjectTypes.Tag => true,
+                _ => throw new InvalidDataException(
+                    $"It isn't tag object: {hash}")
+            },
+            (key, operand) =>
             {
-                throw new InvalidDataException(
-                    $"It isn't tag object: {hash}");
-            }
-
-            var tr = new StreamReader(streamResult.Stream, Encoding.UTF8, true);
-
-            var obj = default(Hash?);
-            var objectType = default(ObjectTypes?);
-            var tagName = default(string);
-            var tagger = default(Signature?);
-
-            while (true)
-            {
-                var line = await tr.ReadLineAsync().WaitAsync(ct);
-                if (line == null)
-                {
-                    throw new InvalidDataException(
-                        "Invalid tag object format: Step=1");
-                }
-
-                if (line.Length == 0)
-                {
-                    break;
-                }
-
-                var separatorIndex = line.IndexOf(' ');
-                if (separatorIndex == -1)
-                {
-                    throw new InvalidDataException(
-                        "Invalid tag object format: Step=2");
-                }
-
-                var type = line.Substring(0, separatorIndex);
-                var operand = line.Substring(separatorIndex + 1);
-
-                switch (type)
+                switch (key)
                 {
                     case "object":
                         obj = Hash.Parse(operand);
@@ -307,24 +617,20 @@ internal static class RepositoryAccessor
                         tagger = Signature.Parse(operand);
                         break;
                 }
-
-            }
-
-            if (obj is { } o && objectType is { } ot && tagName is { } tn && tagger is { } tg)
-            {
-                var message = await GetMessageAsync(tr, ct);
-
-                return Tag.Create(hash, ot, tn, tg, message);
-            }
-            else
-            {
-                throw new InvalidDataException(
-                    "Invalid commit object format: Step=3");
-            }
-        }
-        finally
+            },
+            ct) is not { } message)
         {
-            streamResult.Stream.Dispose();
+            return null;
+        }
+
+        if (obj is { } o && objectType is { } ot && tagName is { } tn)
+        {
+            return Tag.Create(o, ot, tn, tagger, message);
+        }
+        else
+        {
+            throw new InvalidDataException(
+                "Invalid tag object format: Step=3");
         }
     }
 }

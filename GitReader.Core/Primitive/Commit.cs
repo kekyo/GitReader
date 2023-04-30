@@ -61,7 +61,7 @@ public readonly struct Commit : IEquatable<Commit>
             (agg, v) => agg ^ v.GetHashCode());
 
     public override string ToString() =>
-        $"{this.Hash}: {this.Author}: {this.Message}";
+        $"{this.Hash}: {this.Author}: {this.Message.Replace('\n', ' ')}";
 
     public static implicit operator Hash(Commit commit) =>
         commit.Hash;

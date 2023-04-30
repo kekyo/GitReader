@@ -89,7 +89,8 @@ if (repository.GetHead() is Branch head)
     Console.WriteLine($"Hash: {head.Head.Hash}");
     Console.WriteLine($"Author: {head.Head.Author}");
     Console.WriteLine($"Committer: {head.Head.Committer}");
-    Console.WriteLine($"Message: {head.Head.Message}");
+    Console.WriteLine($"Subject: {head.Head.Subject}");
+    Console.WriteLine($"Body: {head.Head.Body}");
 }
 ```
 
@@ -102,7 +103,8 @@ if (await repository.GetCommitAsync(
     Console.WriteLine($"Hash: {commit.Hash}");
     Console.WriteLine($"Author: {commit.Author}");
     Console.WriteLine($"Committer: {commit.Committer}");
-    Console.WriteLine($"Message: {commit.Message}");
+    Console.WriteLine($"Subject: {commit.Subject}");
+    Console.WriteLine($"Body: {commit.Body}");
 }
 ```
 
@@ -116,7 +118,8 @@ Console.WriteLine($"Name: {branch.Name}");
 Console.WriteLine($"Hash: {branch.Head.Hash}");
 Console.WriteLine($"Author: {branch.Head.Author}");
 Console.WriteLine($"Committer: {branch.Head.Committer}");
-Console.WriteLine($"Message: {branch.Head.Message}");
+Console.WriteLine($"Subject: {branch.Head.Subject}");
+Console.WriteLine($"Body: {branch.Head.Body}");
 ```
 
 ### Get a remote branch head commit
@@ -129,7 +132,8 @@ Console.WriteLine($"Name: {branch.Name}");
 Console.WriteLine($"Hash: {branch.Head.Hash}");
 Console.WriteLine($"Author: {branch.Head.Author}");
 Console.WriteLine($"Committer: {branch.Head.Committer}");
-Console.WriteLine($"Message: {branch.Head.Message}");
+Console.WriteLine($"Subject: {branch.Head.Subject}");
+Console.WriteLine($"Body: {branch.Head.Body}");
 ```
 
 ### Get a tag
@@ -169,7 +173,8 @@ foreach (Branch branch in repository.Branches.Values)
     Console.WriteLine($"Hash: {branch.Head.Hash}");
     Console.WriteLine($"Author: {branch.Head.Author}");
     Console.WriteLine($"Committer: {branch.Head.Committer}");
-    Console.WriteLine($"Message: {branch.Head.Message}");
+    Console.WriteLine($"Subject: {branch.Head.Subject}");
+    Console.WriteLine($"Body: {branch.Head.Body}");
 }
 ```
 
@@ -200,7 +205,8 @@ if (await repository.GetCommitAsync(
         Console.WriteLine($"Hash: {parent.Hash}");
         Console.WriteLine($"Author: {parent.Author}");
         Console.WriteLine($"Committer: {parent.Committer}");
-        Console.WriteLine($"Message: {parent.Message}");
+        Console.WriteLine($"Subject: {parent.Subject}");
+        Console.WriteLine($"Body: {parent.Body}");
     }
 }
 ```
@@ -219,7 +225,8 @@ while (current != null)
     Console.WriteLine($"Hash: {current.Hash}");
     Console.WriteLine($"Author: {current.Author}");
     Console.WriteLine($"Committer: {current.Committer}");
-    Console.WriteLine($"Message: {current.Message}");
+    Console.WriteLine($"Subject: {current.Subject}");
+    Console.WriteLine($"Body: {current.Body}");
 
     // Get primary parent commit.
     current = await current.GetPrimaryParentCommitAsync();
@@ -354,6 +361,14 @@ Apache-v2
 
 ## History
 
+* 0.6.0:
+  * Improved message handling on high-level interfaces.
+  * Re-implemented delta compression decoder.
+  * Supported both FETCH_HEAD and packed_refs parser.
+  * Improved performance.
+  * Removed index locker.
+  * Fixed contains invalid hash on annotated commit tag.
+  * Improved minor interface features.
 * 0.5.0:
   * Supported deconstructor by F# active patterns.
   * Downgraded at least F# version 5.

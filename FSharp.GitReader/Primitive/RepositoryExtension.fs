@@ -45,13 +45,16 @@ module public RepositoryExtension =
         }
 
         member repository.getBranchHeadReferences(?ct: CancellationToken) =
-            RepositoryAccessor.ReadReferencesAsync(repository, "heads", unwrapCT ct) |> Async.AwaitTask
+            RepositoryAccessor.ReadReferencesAsync(
+                repository, ReferenceTypes.Branches, unwrapCT ct) |> Async.AwaitTask
 
         member repository.getRemoteBranchHeadReferences(?ct: CancellationToken) =
-            RepositoryAccessor.ReadReferencesAsync(repository, "remotes", unwrapCT ct) |> Async.AwaitTask
+            RepositoryAccessor.ReadReferencesAsync(
+                repository, ReferenceTypes.RemoteBranches, unwrapCT ct) |> Async.AwaitTask
 
         member repository.getTagReferences(?ct: CancellationToken) =
-            RepositoryAccessor.ReadReferencesAsync(repository, "tags", unwrapCT ct) |> Async.AwaitTask
+            RepositoryAccessor.ReadReferencesAsync(
+                repository, ReferenceTypes.Tags, unwrapCT ct) |> Async.AwaitTask
 
     let (|Repository|) (repository: Repository) =
         (repository.Path)

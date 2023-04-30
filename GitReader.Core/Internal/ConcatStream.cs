@@ -75,7 +75,7 @@ internal sealed class ConcatStream : Stream
     }
 
 #if !NET35 && !NET40
-    public override async Task<int> ReadAsync(
+    private async Task<int> InternalReadAsync(
         byte[] buffer, int offset, int count, CancellationToken ct)
     {
         var read = 0;
@@ -96,6 +96,19 @@ internal sealed class ConcatStream : Stream
             }
         }
         return read;
+    }
+
+    public override Task<int> ReadAsync(
+        byte[] buffer, int offset, int count, CancellationToken ct)
+    {
+        if (count >= 1 && this.streamIndex < this.streams.Length)
+        {
+            return this.InternalReadAsync(buffer, offset, count, ct);
+        }
+        else
+        {
+            return Utilities.FromResult(0);
+        }
     }
 #endif
 

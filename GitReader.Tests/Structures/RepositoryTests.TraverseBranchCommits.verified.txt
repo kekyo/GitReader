@@ -15,9 +15,8 @@
       Date: 2021-11-11 09:40:12 +9,
       RawFormat: Kouji Matsui <k@kekyo.net> 1636591212 0900
     },
-    Message:
-Added installation .NET 6 SDK on GitHub Actions.
-,
+    Subject: Added installation .NET 6 SDK on GitHub Actions.,
+    Body: ,
     Branches: [
       {
         Name: master
@@ -48,16 +47,15 @@ Added installation .NET 6 SDK on GitHub Actions.
       Date: 2021-11-10 22:50:12 +9,
       RawFormat: Kouji Matsui <k@kekyo.net> 1636552212 0900
     },
-    Message:
-Upgraded .NET 6.0.
-,
+    Subject: Upgraded .NET 6.0.,
+    Body: ,
     Tags: [
       {
         Hash: {
           HashCode: 30aaea993cc0a3cb1dad2968d3e5f4d90a287e25
         },
-        Type: Commit,
-        Name: 2.1.0
+        Name: 2.1.0,
+        Type: Commit
       }
     ]
   },
@@ -77,9 +75,8 @@ Upgraded .NET 6.0.
       Date: 2021-01-21 00:21:32 +9,
       RawFormat: Kouji Matsui <k@kekyo.net> 1611156092 0900
     },
-    Message:
-Update badge.
-
+    Subject: Update badge.,
+    Body: 
   },
   {
     Hash: {
@@ -97,16 +94,15 @@ Update badge.
       Date: 2021-01-21 00:12:21 +9,
       RawFormat: Kouji Matsui <k@kekyo.net> 1611155541 0900
     },
-    Message:
-Update readmes.
-,
+    Subject: Update readmes.,
+    Body: ,
     Tags: [
       {
         Hash: {
           HashCode: 3195237679829c06b3ca764484b0554ccb67562a
         },
-        Type: Commit,
-        Name: 2.0.22
+        Name: 2.0.22,
+        Type: Commit
       }
     ]
   },
@@ -126,9 +122,8 @@ Update readmes.
       Date: 2021-01-21 00:00:48 +9,
       RawFormat: Kouji Matsui <k@kekyo.net> 1611154848 0900
     },
-    Message:
-Added fallback delegate features.
-
+    Subject: Added fallback delegate features.,
+    Body: 
   },
   {
     Hash: {
@@ -146,9 +141,8 @@ Added fallback delegate features.
       Date: 2020-12-24 17:21:02 +9,
       RawFormat: Kouji Matsui <k@kekyo.net> 1608798062 0900
     },
-    Message:
-Updates test nuget refs.
-,
+    Subject: Updates test nuget refs.,
+    Body: ,
     RemoteBranches: [
       {
         Name: origin/devel
@@ -171,9 +165,8 @@ Updates test nuget refs.
       Date: 2020-12-24 13:52:29 +9,
       RawFormat: Kouji Matsui <k@kekyo.net> 1608785549 0900
     },
-    Message:
-Updated readme.
-
+    Subject: Updated readme.,
+    Body: 
   },
   {
     Hash: {
@@ -191,16 +184,15 @@ Updated readme.
       Date: 2020-12-24 13:27:23 +9,
       RawFormat: Kouji Matsui <k@kekyo.net> 1608784043 0900
     },
-    Message:
-Merge branch 'devel'
-,
+    Subject: Merge branch 'devel',
+    Body: ,
     Tags: [
       {
         Hash: {
           HashCode: 1205dc34ce48bda28fc543daaf9525a9bb6e6d10
         },
-        Type: Commit,
-        Name: 2.0.18
+        Name: 2.0.18,
+        Type: Commit
       }
     ]
   },
@@ -220,16 +212,15 @@ Merge branch 'devel'
       Date: 2020-12-21 22:17:52 +9,
       RawFormat: Kouji Matsui <k@kekyo.net> 1608556672 0900
     },
-    Message:
-Merge branch 'devel'
-,
+    Subject: Merge branch 'devel',
+    Body: ,
     Tags: [
       {
         Hash: {
           HashCode: 0fad4e52989d259eea5c68afc74516b5b8358bc7
         },
-        Type: Commit,
-        Name: 2.0.17
+        Name: 2.0.17,
+        Type: Commit
       }
     ]
   },
@@ -249,16 +240,15 @@ Merge branch 'devel'
       Date: 2020-12-18 09:32:28 +9,
       RawFormat: Kouji Matsui <k@kekyo.net> 1608251548 0900
     },
-    Message:
-Updated packing script.
-,
+    Subject: Updated packing script.,
+    Body: ,
     Tags: [
       {
         Hash: {
           HashCode: 001ea63de0c2967a898a0ef96caff6ee8f7c6b52
         },
-        Type: Commit,
-        Name: 2.0.16
+        Name: 2.0.16,
+        Type: Commit
       }
     ]
   },
@@ -278,16 +268,15 @@ Updated packing script.
       Date: 2020-12-18 09:16:07 +9,
       RawFormat: Kouji Matsui <k@kekyo.net> 1608250567 0900
     },
-    Message:
-Updated namespace name.
-,
+    Subject: Updated namespace name.,
+    Body: ,
     Tags: [
       {
         Hash: {
           HashCode: 828bfa5f9794d78ebc58af03500e8bfeed8f8dda
         },
-        Type: Commit,
-        Name: 2.0.15
+        Name: 2.0.15,
+        Type: Commit
       }
     ]
   },
@@ -307,9 +296,8 @@ Updated namespace name.
       Date: 2020-12-18 08:51:06 +9,
       RawFormat: Kouji Matsui <k@kekyo.net> 1608249066 0900
     },
-    Message:
-Updated readme.
-
+    Subject: Updated readme.,
+    Body: 
   },
   {
     Hash: {
@@ -327,9 +315,8 @@ Updated readme.
       Date: 2020-12-17 19:16:53 +9,
       RawFormat: Kouji Matsui <k@kekyo.net> 1608200213 0900
     },
-    Message:
-Updated readme.
-
+    Subject: Updated readme.,
+    Body: 
   },
   {
     Hash: {
@@ -347,16 +334,15 @@ Updated readme.
       Date: 2020-12-17 19:07:59 +9,
       RawFormat: Kouji Matsui <k@kekyo.net> 1608199679 0900
     },
-    Message:
-Changed the NuGet package name from "CenterCLR.NamingFormatter" to "NamingFormatter".
-,
+    Subject: Changed the NuGet package name from "CenterCLR.NamingFormatter" to "NamingFormatter".,
+    Body: ,
     Tags: [
       {
         Hash: {
           HashCode: d852c9b28e21cfd6d32fda05bc316528c6805ce7
         },
-        Type: Commit,
-        Name: 2.0.12
+        Name: 2.0.12,
+        Type: Commit
       }
     ]
   },
@@ -376,9 +362,8 @@ Changed the NuGet package name from "CenterCLR.NamingFormatter" to "NamingFormat
       Date: 2020-12-17 18:56:09 +9,
       RawFormat: Kouji Matsui <k@kekyo.net> 1608198969 0900
     },
-    Message:
-Update readme.
-
+    Subject: Update readme.,
+    Body: 
   },
   {
     Hash: {
@@ -396,9 +381,8 @@ Update readme.
       Date: 2020-12-17 18:51:39 +9,
       RawFormat: Kouji Matsui <k@kekyo.net> 1608198699 0900
     },
-    Message:
-Update packing script.
-
+    Subject: Update packing script.,
+    Body: 
   },
   {
     Hash: {
@@ -416,9 +400,8 @@ Update packing script.
       Date: 2020-12-17 18:47:37 +9,
       RawFormat: Kouji Matsui <k@kekyo.net> 1608198457 0900
     },
-    Message:
-Reenable building by dotnet command.
-
+    Subject: Reenable building by dotnet command.,
+    Body: 
   },
   {
     Hash: {
@@ -436,9 +419,8 @@ Reenable building by dotnet command.
       Date: 2020-12-17 18:40:09 +9,
       RawFormat: Kouji Matsui <k@kekyo.net> 1608198009 0900
     },
-    Message:
-Bit changed (WIP).
-
+    Subject: Bit changed (WIP).,
+    Body: 
   },
   {
     Hash: {
@@ -456,9 +438,8 @@ Bit changed (WIP).
       Date: 2020-12-17 18:32:21 +9,
       RawFormat: Kouji Matsui <k@kekyo.net> 1608197541 0900
     },
-    Message:
-Bit changed (WIP).
-
+    Subject: Bit changed (WIP).,
+    Body: 
   },
   {
     Hash: {
@@ -476,9 +457,8 @@ Bit changed (WIP).
       Date: 2020-12-17 18:22:42 +9,
       RawFormat: Kouji Matsui <k@kekyo.net> 1608196962 0900
     },
-    Message:
-Bit changed (WIP).
-
+    Subject: Bit changed (WIP).,
+    Body: 
   },
   {
     Hash: {
@@ -496,9 +476,8 @@ Bit changed (WIP).
       Date: 2020-12-17 18:12:45 +9,
       RawFormat: Kouji Matsui <k@kekyo.net> 1608196365 0900
     },
-    Message:
-Bit changed (WIP).
-
+    Subject: Bit changed (WIP).,
+    Body: 
   },
   {
     Hash: {
@@ -516,9 +495,8 @@ Bit changed (WIP).
       Date: 2020-12-17 18:04:03 +9,
       RawFormat: Kouji Matsui <k@kekyo.net> 1608195843 0900
     },
-    Message:
-Bit changed (WIP).
-
+    Subject: Bit changed (WIP).,
+    Body: 
   },
   {
     Hash: {
@@ -536,9 +514,8 @@ Bit changed (WIP).
       Date: 2020-12-17 17:50:57 +9,
       RawFormat: Kouji Matsui <k@kekyo.net> 1608195057 0900
     },
-    Message:
-Bit changed (WIP).
-
+    Subject: Bit changed (WIP).,
+    Body: 
   },
   {
     Hash: {
@@ -556,9 +533,8 @@ Bit changed (WIP).
       Date: 2020-12-17 17:47:05 +9,
       RawFormat: Kouji Matsui <k@kekyo.net> 1608194825 0900
     },
-    Message:
-Added GitHub Actions script and omit older.
-
+    Subject: Added GitHub Actions script and omit older.,
+    Body: 
   },
   {
     Hash: {
@@ -576,9 +552,8 @@ Added GitHub Actions script and omit older.
       Date: 2020-12-17 17:28:51 +9,
       RawFormat: Kouji Matsui <k@kekyo.net> 1608193731 0900
     },
-    Message:
-Added supports net5.0, net35-client and net40-client.
-
+    Subject: Added supports net5.0, net35-client and net40-client.,
+    Body: 
   },
   {
     Hash: {
@@ -596,16 +571,15 @@ Added supports net5.0, net35-client and net40-client.
       Date: 2019-02-01 17:50:32 +9,
       RawFormat: Kouji Matsui <k@kekyo.net> 1549011032 0900
     },
-    Message:
-Upgraded new MSBuild format and omit PCL versions.
-,
+    Subject: Upgraded new MSBuild format and omit PCL versions.,
+    Body: ,
     Tags: [
       {
         Hash: {
           HashCode: f64de5e3ad34528757207109e68f626bf8cc1a31
         },
-        Type: Commit,
-        Name: 2.0.0
+        Name: 2.0.0,
+        Type: Commit
       }
     ]
   },
@@ -625,7 +599,8 @@ Upgraded new MSBuild format and omit PCL versions.
       Date: 2016-06-10 09:32:16 +9,
       RawFormat: Kouji Matsui <k@kekyo.net> 1465518736 0900
     },
-    Message: CI test.
+    Subject: CI test.,
+    Body: 
   },
   {
     Hash: {
@@ -643,7 +618,8 @@ Upgraded new MSBuild format and omit PCL versions.
       Date: 2016-02-23 11:42:13 +9,
       RawFormat: Kouji Matsui <k@kekyo.net> 1456195333 0900
     },
-    Message: Bit changed.
+    Subject: Bit changed.,
+    Body: 
   },
   {
     Hash: {
@@ -661,7 +637,24 @@ Upgraded new MSBuild format and omit PCL versions.
       Date: 2016-02-23 11:21:15 +9,
       RawFormat: Kouji Matsui <k@kekyo.net> 1456194075 0900
     },
-    Message: Merge branch 'appveyor'
+    Subject: Merge branch 'appveyor',
+    Body: ,
+    Tags: [
+      {
+        Hash: {
+          HashCode: 6961a50ef3ad4e43ed9774daffd8457d32cf5e75
+        },
+        Name: 1.1.1,
+        Tagger: {
+          Name: Kouji Matsui,
+          MailAddress: k@kekyo.net,
+          Date: 2016-02-23 11:21:54 +9,
+          RawFormat: Kouji Matsui <k@kekyo.net> 1456194114 0900
+        },
+        Message: ,
+        Type: Commit
+      }
+    ]
   },
   {
     Hash: {
@@ -679,7 +672,24 @@ Upgraded new MSBuild format and omit PCL versions.
       Date: 2016-02-22 13:44:39 +9,
       RawFormat: Kouji Matsui <k@kekyo.net> 1456116279 0900
     },
-    Message: Bit changed.
+    Subject: Bit changed.,
+    Body: ,
+    Tags: [
+      {
+        Hash: {
+          HashCode: d53bc0fa81fc8b2a4cd57d7e327a115ff338bb0c
+        },
+        Name: 1.1.0,
+        Tagger: {
+          Name: Kouji Matsui,
+          MailAddress: k@kekyo.net,
+          Date: 2016-02-22 13:44:46 +9,
+          RawFormat: Kouji Matsui <k@kekyo.net> 1456116286 0900
+        },
+        Message: ,
+        Type: Commit
+      }
+    ]
   },
   {
     Hash: {
@@ -697,7 +707,8 @@ Upgraded new MSBuild format and omit PCL versions.
       Date: 2016-02-22 13:38:49 +9,
       RawFormat: Kouji Matsui <k@kekyo.net> 1456115929 0900
     },
-    Message: Merge branch 'netcore'
+    Subject: Merge branch 'netcore',
+    Body: 
   },
   {
     Hash: {
@@ -715,7 +726,8 @@ Upgraded new MSBuild format and omit PCL versions.
       Date: 2016-02-08 15:49:28 +9,
       RawFormat: Kouji Matsui <k@kekyo.net> 1454914168 0900
     },
-    Message: Bit changed.
+    Subject: Bit changed.,
+    Body: 
   },
   {
     Hash: {
@@ -733,7 +745,8 @@ Upgraded new MSBuild format and omit PCL versions.
       Date: 2016-02-08 15:48:04 +9,
       RawFormat: Kouji Matsui <k@kekyo.net> 1454914084 0900
     },
-    Message: Add badge.
+    Subject: Add badge.,
+    Body: 
   },
   {
     Hash: {
@@ -751,7 +764,8 @@ Upgraded new MSBuild format and omit PCL versions.
       Date: 2016-02-08 13:53:48 +9,
       RawFormat: Kouji Matsui <k@kekyo.net> 1454907228 0900
     },
-    Message: Add badge.
+    Subject: Add badge.,
+    Body: 
   },
   {
     Hash: {
@@ -769,7 +783,24 @@ Upgraded new MSBuild format and omit PCL versions.
       Date: 2016-02-01 22:32:03 +9,
       RawFormat: Kouji Matsui <k@kekyo.net> 1454333523 0900
     },
-    Message: Omit IFormatProvider method extension attribute.
+    Subject: Omit IFormatProvider method extension attribute.,
+    Body: ,
+    Tags: [
+      {
+        Hash: {
+          HashCode: 3b0431e8764dbb627a44aeaca55bd41336c3b4a7
+        },
+        Name: 1.0.0,
+        Tagger: {
+          Name: Kouji Matsui,
+          MailAddress: k@kekyo.net,
+          Date: 2016-02-01 22:32:12 +9,
+          RawFormat: Kouji Matsui <k@kekyo.net> 1454333532 0900
+        },
+        Message: ,
+        Type: Commit
+      }
+    ]
   },
   {
     Hash: {
@@ -787,7 +818,24 @@ Upgraded new MSBuild format and omit PCL versions.
       Date: 2016-01-30 20:27:39 +9,
       RawFormat: Kouji Matsui <k@kekyo.net> 1454153259 0900
     },
-    Message: Merge commit '6b7fe206653544060c5d8025895533fe77ca552f'
+    Subject: Merge commit '6b7fe206653544060c5d8025895533fe77ca552f',
+    Body: ,
+    Tags: [
+      {
+        Hash: {
+          HashCode: 819ad16b1d3b7ffa0f315dd417eb61e4b7264c53
+        },
+        Name: 0.9.7,
+        Tagger: {
+          Name: Kouji Matsui,
+          MailAddress: k@kekyo.net,
+          Date: 2016-01-30 20:28:13 +9,
+          RawFormat: Kouji Matsui <k@kekyo.net> 1454153293 0900
+        },
+        Message: ,
+        Type: Commit
+      }
+    ]
   },
   {
     Hash: {
@@ -805,7 +853,8 @@ Upgraded new MSBuild format and omit PCL versions.
       Date: 2016-01-30 20:26:56 +9,
       RawFormat: Kouji Matsui <k@kekyo.net> 1454153216 0900
     },
-    Message: Fixed alignment format.
+    Subject: Fixed alignment format.,
+    Body: 
   },
   {
     Hash: {
@@ -823,7 +872,8 @@ Upgraded new MSBuild format and omit PCL versions.
       Date: 2016-01-30 00:05:08 +9,
       RawFormat: Kouji Matsui <k@kekyo.net> 1454079908 0900
     },
-    Message: Bit changed.
+    Subject: Bit changed.,
+    Body: 
   },
   {
     Hash: {
@@ -841,7 +891,8 @@ Upgraded new MSBuild format and omit PCL versions.
       Date: 2016-01-29 23:58:46 +9,
       RawFormat: Kouji Matsui <k@kekyo.net> 1454079526 0900
     },
-    Message: Bit changed.
+    Subject: Bit changed.,
+    Body: 
   },
   {
     Hash: {
@@ -859,7 +910,24 @@ Upgraded new MSBuild format and omit PCL versions.
       Date: 2016-01-29 23:43:57 +9,
       RawFormat: Kouji Matsui <k@kekyo.net> 1454078637 0900
     },
-    Message: Use RelaxVersioner on .NET2/35
+    Subject: Use RelaxVersioner on .NET2/35,
+    Body: ,
+    Tags: [
+      {
+        Hash: {
+          HashCode: a7187601f4b4b9dacc3c78895397bb2911d190d6
+        },
+        Name: 0.9.6,
+        Tagger: {
+          Name: Kouji Matsui,
+          MailAddress: k@kekyo.net,
+          Date: 2016-01-29 23:44:10 +9,
+          RawFormat: Kouji Matsui <k@kekyo.net> 1454078650 0900
+        },
+        Message: ,
+        Type: Commit
+      }
+    ]
   },
   {
     Hash: {
@@ -877,7 +945,8 @@ Upgraded new MSBuild format and omit PCL versions.
       Date: 2016-01-29 23:13:53 +9,
       RawFormat: Kouji Matsui <k@kekyo.net> 1454076833 0900
     },
-    Message: Bit changed
+    Subject: Bit changed,
+    Body: 
   },
   {
     Hash: {
@@ -895,7 +964,24 @@ Upgraded new MSBuild format and omit PCL versions.
       Date: 2016-01-29 23:10:44 +9,
       RawFormat: Kouji Matsui <k@kekyo.net> 1454076644 0900
     },
-    Message: Add nuget package, Support structual-key, Support .NET 2/.NET 3.5.
+    Subject: Add nuget package, Support structual-key, Support .NET 2/.NET 3.5.,
+    Body: ,
+    Tags: [
+      {
+        Hash: {
+          HashCode: 63723bd7bc1321ffdd2b72c3bc743fa57455d137
+        },
+        Name: 0.9.5,
+        Tagger: {
+          Name: Kouji Matsui,
+          MailAddress: k@kekyo.net,
+          Date: 2016-01-29 23:10:56 +9,
+          RawFormat: Kouji Matsui <k@kekyo.net> 1454076656 0900
+        },
+        Message: ,
+        Type: Commit
+      }
+    ]
   },
   {
     Hash: {
@@ -913,7 +999,8 @@ Upgraded new MSBuild format and omit PCL versions.
       Date: 2016-01-28 23:47:51 +9,
       RawFormat: Kouji Matsui <k@kekyo.net> 1453992471 0900
     },
-    Message: Use RelaxVersioner
+    Subject: Use RelaxVersioner,
+    Body: 
   },
   {
     Hash: {
@@ -931,6 +1018,7 @@ Upgraded new MSBuild format and omit PCL versions.
       Date: 2016-01-27 00:23:36 +9,
       RawFormat: Kouji Matsui <k@kekyo.net> 1453821816 0900
     },
-    Message: Initial commit.
+    Subject: Initial commit.,
+    Body: 
   }
 ]

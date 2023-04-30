@@ -8,7 +8,6 @@
 ////////////////////////////////////////////////////////////////////////////
 
 using GitReader.Collections;
-using GitReader.Internal;
 
 namespace GitReader.Structures;
 
@@ -20,8 +19,8 @@ public sealed class StructuredRepository : Repository
     internal ReadOnlyDictionary<string, Tag> tags = null!;
 
     internal StructuredRepository(
-        string repositoryPath, TemporaryFile locker) :
-        base(repositoryPath, locker)
+        string repositoryPath) :
+        base(repositoryPath)
     {
     }
 

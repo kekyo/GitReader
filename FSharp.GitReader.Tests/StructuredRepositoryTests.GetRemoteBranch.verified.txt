@@ -16,9 +16,8 @@
       Date: 2020-12-24 17:21:02 +9,
       RawFormat: Kouji Matsui <k@kekyo.net> 1608798062 0900
     },
-    Message:
-Updates test nuget refs.
-,
+    Subject: Updates test nuget refs.,
+    Body: ,
     RemoteBranches: []
   }
 }

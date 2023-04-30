@@ -23,6 +23,13 @@ Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.GitReader", "FSharp.
 EndProject
 Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "FSharp.GitReader.Tests", "FSharp.GitReader.Tests\FSharp.GitReader.Tests.fsproj", "{D6710037-0781-4BA0-804E-C267A3D2E0E1}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "samples", "samples", "{6C0A2BF1-2E5A-4040-9617-9438F1A8BBDD}"
+	ProjectSection(SolutionItems) = preProject
+		samples\test-large-repo.sh = samples\test-large-repo.sh
+	EndProjectSection
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "gitlogtest", "samples\gitlogtest\gitlogtest.csproj", "{FF7B385B-02F2-40F6-A4CE-80CD8690481B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -49,9 +56,16 @@ Global
 		{D6710037-0781-4BA0-804E-C267A3D2E0E1}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D6710037-0781-4BA0-804E-C267A3D2E0E1}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D6710037-0781-4BA0-804E-C267A3D2E0E1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FF7B385B-02F2-40F6-A4CE-80CD8690481B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FF7B385B-02F2-40F6-A4CE-80CD8690481B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FF7B385B-02F2-40F6-A4CE-80CD8690481B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FF7B385B-02F2-40F6-A4CE-80CD8690481B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{FF7B385B-02F2-40F6-A4CE-80CD8690481B} = {6C0A2BF1-2E5A-4040-9617-9438F1A8BBDD}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {AD39B2E0-9F24-4605-A51C-FF43CCA98564}

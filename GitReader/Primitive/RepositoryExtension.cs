@@ -49,17 +49,17 @@ public static class RepositoryExtension
     public static Task<Reference[]> GetBranchHeadReferencesAsync(
         this Repository repository,
         CancellationToken ct = default) =>
-        RepositoryAccessor.ReadReferencesAsync(repository, "heads", ct);
+        RepositoryAccessor.ReadReferencesAsync(repository, ReferenceTypes.Branches, ct);
 
     public static Task<Reference[]> GetRemoteBranchHeadReferencesAsync(
         this Repository repository,
         CancellationToken ct = default) =>
-        RepositoryAccessor.ReadReferencesAsync(repository, "remotes", ct);
+        RepositoryAccessor.ReadReferencesAsync(repository, ReferenceTypes.RemoteBranches, ct);
 
     public static Task<Reference[]> GetTagReferencesAsync(
         this Repository repository,
         CancellationToken ct = default) =>
-        RepositoryAccessor.ReadReferencesAsync(repository, "tags", ct);
+        RepositoryAccessor.ReadReferencesAsync(repository, ReferenceTypes.Tags, ct);
 
     public static void Deconstruct(
         this Repository repository,

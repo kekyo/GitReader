@@ -14,6 +14,7 @@ namespace GitReader.Structures;
 
 public sealed class Commit : IEquatable<Commit?>
 {
+    internal readonly string message;
     internal readonly WeakReference rwr;
     internal readonly Hash treeRoot;
     internal readonly Hash[] parents;
@@ -25,7 +26,6 @@ public sealed class Commit : IEquatable<Commit?>
     public readonly Hash Hash;
     public readonly Signature Author;
     public readonly Signature Committer;
-    public readonly string Message;
 
     internal Commit(
         WeakReference rwr,
@@ -38,7 +38,25 @@ public sealed class Commit : IEquatable<Commit?>
         this.Hash = commit.Hash;
         this.Author = commit.Author;
         this.Committer = commit.Committer;
-        this.Message = commit.Message;
+        this.message = commit.Message;
+    }
+
+    public string Subject
+    {
+        get
+        {
+            var index = this.message.IndexOf("\n\n");
+            return ((index >= 0) ? this.message.Substring(0, index) : this.message).Trim('\n').Replace('\n', ' ');
+        }
+    }
+
+    public string Body
+    {
+        get
+        {
+            var index = this.message.IndexOf("\n\n");
+            return (index >= 0) ? this.message.Substring(index + 2) : string.Empty;
+        }
     }
 
     public Branch[] Branches
@@ -89,7 +107,7 @@ public sealed class Commit : IEquatable<Commit?>
         this.Author.Equals(rhs.Author) &&
         this.Committer.Equals(rhs.Committer) &&
         this.parents.SequenceEqual(rhs.parents) &&
-        this.Message.Equals(rhs.Message);
+        this.message.Equals(rhs.message);
 
     bool IEquatable<Commit?>.Equals(Commit? rhs) =>
         rhs is { } && this.Equals(rhs);
@@ -103,9 +121,9 @@ public sealed class Commit : IEquatable<Commit?>
             this.treeRoot.GetHashCode() ^
             this.Author.GetHashCode() ^
             this.Committer.GetHashCode() ^
-            this.Message.GetHashCode(),
+            this.message.GetHashCode(),
             (agg, v) => agg ^ v.GetHashCode());
 
     public override string ToString() =>
-        $"{this.Hash}: {this.Author}: {this.Message}";
+        $"{this.Hash}: {this.Author}: {this.Subject.Replace('\n', ' ')}";
 }

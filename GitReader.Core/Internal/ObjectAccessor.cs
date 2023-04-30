@@ -33,10 +33,11 @@ internal readonly struct ObjectStreamResult
 
 internal sealed class ObjectAccessor : IDisposable
 {
-    private const int preloadBufferSize = 8192;
+    private const int preloadBufferSize = 65536;
 
     private readonly string objectsBasePath;
     private readonly string packedBasePath;
+    private readonly AsyncLock locker = new();
     private readonly Dictionary<string, WeakReference> indexCache = new();
 
     public ObjectAccessor(string repositoryPath)
@@ -51,10 +52,8 @@ internal sealed class ObjectAccessor : IDisposable
 
     public void Dispose()
     {
-        lock (this.indexCache)
-        {
-            this.indexCache.Clear();
-        }
+        using var _ = this.locker.Lock();
+        this.indexCache.Clear();
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -155,17 +154,13 @@ internal sealed class ObjectAccessor : IDisposable
     private async Task<IndexEntry> GetOrCacheIndexEntryAsync(
         string indexFileRelativePath, CancellationToken ct)
     {
-        lock (this.indexCache)
-        {
-            if (this.indexCache.TryGetValue(indexFileRelativePath, out var wr) &&
-                wr.Target is IndexEntry cachedEntry)
-            {
-                return cachedEntry;
-            }
-        }
+        using var _ = await this.locker.LockAsync(ct);
 
-        // Beginning of race condition section,
-        // but will discard dict later silently.
+        if (this.indexCache.TryGetValue(indexFileRelativePath, out var wr) &&
+            wr.Target is IndexEntry cachedEntry)
+        {
+            return cachedEntry;
+        }
 
         var dict = await IndexReader.ReadIndexAsync(
             Utilities.Combine(this.packedBasePath, indexFileRelativePath), ct);
@@ -175,10 +170,7 @@ internal sealed class ObjectAccessor : IDisposable
                 Path.GetFileNameWithoutExtension(indexFileRelativePath)),
             dict);
 
-        lock (this.indexCache)
-        {
-            this.indexCache[indexFileRelativePath] = new(entry);
-        }
+        this.indexCache[indexFileRelativePath] = new(entry);
 
         return entry;
     }

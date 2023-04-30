@@ -8,6 +8,7 @@
 ////////////////////////////////////////////////////////////////////////////
 
 using GitReader.Collections;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -33,6 +34,10 @@ public static class RepositoryExtension
         this Commit commit,
         CancellationToken ct = default) =>
         RepositoryFacade.GetParentsAsync(commit, ct);
+
+    public static string GetMessage(
+        this Commit commit) =>
+        commit.message;
 
     public static void Deconstruct(
         this StructuredRepository repository,
@@ -63,26 +68,69 @@ public static class RepositoryExtension
         out Hash hash,
         out Signature author,
         out Signature committer,
+        out string subject,
+        out string body)
+    {
+        hash = commit.Hash;
+        author = commit.Author;
+        committer = commit.Committer;
+        subject = commit.Subject;
+        body = commit.Body;
+    }
+
+    public static void Deconstruct(
+        this Commit commit,
+        out Hash hash,
+        out Signature author,
+        out Signature committer,
         out string message)
     {
         hash = commit.Hash;
         author = commit.Author;
         committer = commit.Committer;
-        message = commit.Message;
+        message = commit.message;
     }
 
     public static void Deconstruct(
         this Tag tag,
         out Hash hash,
-        out ObjectTypes type,
         out string name,
         out Signature? tagger,
         out string? message)
     {
         hash = tag.Hash;
-        type = tag.Type;
         name = tag.Name;
         tagger = tag.Tagger;
         message = tag.Message;
+    }
+
+    public static void Deconstruct(
+        this Tag tag,
+        out Hash hash,
+        out string name,
+        out ObjectTypes type,
+        out Signature? tagger,
+        out string? message)
+    {
+        hash = tag.Hash;
+        name = tag.Name;
+        type = tag.Type;
+        tagger = tag.Tagger;
+        message = tag.Message;
+    }
+
+    public static void Deconstruct(
+        this CommitTag tag,
+        out Hash hash,
+        out string name,
+        out Signature? tagger,
+        out string? message,
+        out Commit commit)
+    {
+        hash = tag.Hash;
+        name = tag.Name;
+        tagger = tag.Tagger;
+        message = tag.Message;
+        commit = tag.Commit;
     }
 }

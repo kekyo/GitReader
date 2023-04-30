@@ -88,40 +88,4 @@ internal sealed class TemporaryFile :
 
         return new TemporaryFile(path, stream);
     }
-
-    public static async Task<TemporaryFile> CreateLockFileAsync(
-        string lockPath, CancellationToken ct, bool forceUnlock)
-    {
-        var delay = TimeSpan.FromMilliseconds(100);
-        while (true)
-        {
-            try
-            {
-                if (!File.Exists(lockPath))
-                {
-                    var lockStream = new FileStream(
-                        lockPath,
-                        forceUnlock ? FileMode.Create : FileMode.CreateNew,
-                        FileAccess.ReadWrite,
-                        FileShare.Read);
-
-                    var tw = new StreamWriter(lockStream, Encoding.UTF8);
-                    tw.Write(Utilities.GetProcessId().ToString());
-                    tw.Flush();
-
-                    return new(lockPath, lockStream);
-                }
-            }
-            catch
-            {
-            }
-
-            await Utilities.Delay(delay, ct);
-
-            if (delay < TimeSpan.FromSeconds(2))
-            {
-                delay += TimeSpan.FromMilliseconds(100);
-            }
-        }
-    }
 }

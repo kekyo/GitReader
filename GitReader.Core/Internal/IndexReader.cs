@@ -30,7 +30,7 @@ internal readonly struct ObjectEntry
 
 internal static class IndexReader
 {
-    private const int hashTableBufferCount = 8192;
+    private const int hashTableBufferCount = 65536;
 
     public static async Task<Dictionary<Hash, ObjectEntry>> ReadIndexAsync(
         string indexPath, CancellationToken ct)

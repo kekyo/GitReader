@@ -64,6 +64,10 @@ internal sealed class RangedStream : Stream
     public override int Read(byte[] buffer, int offset, int count)
     {
         var remains = (int)Math.Min(count, this.remains);
+        if (remains == 0)
+        {
+            return 0;
+        }
 
         var read = this.parent.Read(buffer, offset, remains);
 
@@ -72,15 +76,27 @@ internal sealed class RangedStream : Stream
     }
 
 #if !NET35 && !NET40
-    public override async Task<int> ReadAsync(
-        byte[] buffer, int offset, int count, CancellationToken ct)
+    private async Task<int> InternalReadAsync(
+        byte[] buffer, int offset, int remains, CancellationToken ct)
     {
-        var remains = (int)Math.Min(count, this.remains);
-
         var read = await this.parent.ReadAsync(buffer, offset, remains, ct);
 
         this.remains -= read;
         return read;
+    }
+
+    public override Task<int> ReadAsync(
+        byte[] buffer, int offset, int count, CancellationToken ct)
+    {
+        var remains = (int)Math.Min(count, this.remains);
+        if (remains >= 1)
+        {
+            return this.InternalReadAsync(buffer, offset, remains, ct);
+        }
+        else
+        {
+            return Utilities.FromResult(0);
+        }
     }
 #endif
 

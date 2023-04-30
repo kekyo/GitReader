@@ -7,9 +7,11 @@
 //
 ////////////////////////////////////////////////////////////////////////////
 
+using GitReader.Collections;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
@@ -80,6 +82,35 @@ internal readonly struct PairResult<T0, T1, T2, T3>
         item1 = this.Item1;
         item2 = this.Item2;
         item3 = this.Item3;
+    }
+}
+
+internal readonly struct PairResult<T0, T1, T2, T3, T4>
+{
+    public readonly T0 Item0;
+    public readonly T1 Item1;
+    public readonly T2 Item2;
+    public readonly T3 Item3;
+    public readonly T4 Item4;
+
+    public PairResult(
+        T0 item0, T1 item1, T2 item2, T3 item3, T4 item4)
+    {
+        this.Item0 = item0;
+        this.Item1 = item1;
+        this.Item2 = item2;
+        this.Item3 = item3;
+        this.Item4 = item4;
+    }
+
+    public void Deconstruct(
+        out T0 item0, out T1 item1, out T2 item2, out T3 item3, out T4 item4)
+    {
+        item0 = this.Item0;
+        item1 = this.Item1;
+        item2 = this.Item2;
+        item3 = this.Item3;
+        item4 = this.Item4;
     }
 }
 
@@ -208,6 +239,33 @@ internal static class Utilities
         }
     }
 
+#if !NET6_0_OR_GREATER
+    private sealed class DistinctKeyComparer<T, TKey> : IEqualityComparer<T>
+    {
+        private readonly Func<T, TKey> selector;
+
+        public DistinctKeyComparer(Func<T, TKey> selector) =>
+            this.selector = selector;
+
+        public bool Equals(T? x, T? y) =>
+            x is { } && y is { } &&
+            this.selector(x)!.Equals(this.selector(y));
+
+        public int GetHashCode(T? obj) =>
+            obj is { } ?
+                this.selector(obj)!.GetHashCode() : 0;
+    }
+
+    public static IEnumerable<T> DistinctBy<T, TKey>(
+        this IEnumerable<T> enumerable, Func<T, TKey> selector) =>
+        enumerable.Distinct(new DistinctKeyComparer<T, TKey>(selector));
+#endif
+
+    public static ReadOnlyDictionary<TKey, TValue> AsReadOnly<TKey, TValue>(
+        this Dictionary<TKey, TValue> dictionary)
+        where TKey : notnull =>
+        new(dictionary);
+
 #if NET35 || NET40
     public static Task<T[]> WhenAll<T>(IEnumerable<Task<T>> tasks) =>
         TaskEx.WhenAll(tasks);
@@ -227,6 +285,10 @@ internal static class Utilities
     public static async Task<PairResult<T0, T1, T2, T3>> WhenAll<T0, T1, T2, T3>(
         Task<T0> task0, Task<T1> task1, Task<T2> task2, Task<T3> task3) =>
         new(await task0, await task1, await task2, await task3);
+
+    public static async Task<PairResult<T0, T1, T2, T3, T4>> WhenAll<T0, T1, T2, T3, T4>(
+        Task<T0> task0, Task<T1> task1, Task<T2> task2, Task<T3> task3, Task<T4> task4) =>
+        new(await task0, await task1, await task2, await task3, await task4);
 
 #if NET35 || NET40
     public static Task<T> FromResult<T>(T result) =>
@@ -383,4 +445,27 @@ internal static class Utilities
 
         return new DeflateStream(parent, CompressionMode.Decompress, false);
     }
+
+    public static string ToGitDateString(
+        DateTimeOffset date)
+    {
+        var zone = date.Offset.TotalSeconds >= 0 ?
+                string.Format(CultureInfo.InvariantCulture, "+{0:hhmm}", date.Offset) :
+                string.Format(CultureInfo.InvariantCulture, "-{0:hhmm}", date.Offset);
+        return string.Format(CultureInfo.InvariantCulture, "{0:ddd MMM d HH:mm:ss yyyy} {1}", date, zone);
+    }
+
+    public static string ToGitIsoDateString(
+        DateTimeOffset date)
+    {
+        var zone = date.Offset.TotalSeconds >= 0 ?
+                string.Format(CultureInfo.InvariantCulture, "+{0:hhmm}", date.Offset) :
+                string.Format(CultureInfo.InvariantCulture, "-{0:hhmm}", date.Offset);
+        return string.Format(CultureInfo.InvariantCulture, "{0:yyyy-MM-dd HH:mm:ss} {1}", date, zone);
+    }
+
+    public static string ToGitAuthorString(
+        Signature signature) =>
+        signature.MailAddress is { } mailAddress ?
+            $"{signature.Name} <{mailAddress}>" : signature.Name;
 }

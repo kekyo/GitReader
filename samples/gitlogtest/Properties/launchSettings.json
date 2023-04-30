@@ -1,0 +1,9 @@
+{
+  "profiles": {
+    "gitlog": {
+        "commandName": "Project",
+        "commandLineArgs": ".",
+        "workingDirectory": "C:\\Projects\\GitReader\\samples\\IL2C"
+    }
+  }
+}

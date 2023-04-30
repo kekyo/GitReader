@@ -37,7 +37,10 @@ module public RepositoryExtension =
                    | _ -> Some c
         }
         member commit.getParentCommits(?ct: CancellationToken) =
-            RepositoryFacade.GetParentsAsync(commit, unwrapCT ct) |> Async.AwaitTask
+            RepositoryFacade.GetParentsAsync(
+                commit, unwrapCT ct) |> Async.AwaitTask
+        member commit.getMessage() =
+            commit.message
 
     let (|Repository|) (repository: StructuredRepository) =
         (repository.Path,
@@ -52,13 +55,23 @@ module public RepositoryExtension =
         (branch.Name, branch.Head)
 
     let (|Commit|) (commit: Commit) =
-        (commit.Hash, commit.Author, commit.Committer, commit.Message)
+        (commit.Hash, commit.Author, commit.Committer, commit.Subject, commit.Body)
 
     let (|Tag|) (tag: Tag) =
-        (tag.Hash, tag.Type, tag.Name,
+        (tag.Hash, tag.Name, tag.Type,
          (match tag.Tagger.HasValue with
           | false -> None
           | _ -> Some tag.Tagger.Value),
          (match tag.Message with
           | null -> None
           | _ -> Some tag.Message))
+
+    let (|CommitTag|) (tag: CommitTag) =
+        (tag.Hash, tag.Name,
+         (match tag.Tagger.HasValue with
+          | false -> None
+          | _ -> Some tag.Tagger.Value),
+         (match tag.Message with
+          | null -> None
+          | _ -> Some tag.Message),
+         tag.Commit)
