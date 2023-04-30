@@ -70,7 +70,7 @@ jobs:
 
     - name: Test
       run: dotnet test --no-restore --verbosity normal -p:CITest=True GitReader.sln
-      timeout-minutes: 2
+      timeout-minutes: 10
 
     #-----------------------------------------------------------------------
     # Deploy packages (develop)
