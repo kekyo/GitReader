@@ -99,8 +99,7 @@ internal static class RepositoryAccessor
             return new(new(new()));
         }
 
-        using var fs = new FileStream(
-            path, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, true);
+        using var fs = repository.fileAccessor.Open(path);
         var tr = new StreamReader(fs, Encoding.UTF8, true);
 
         var remotes = new Dictionary<Uri, string>();
@@ -174,8 +173,7 @@ internal static class RepositoryAccessor
             return new(new(new()), new(new()));
         }
 
-        using var fs = new FileStream(
-            path, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, true);
+        using var fs = repository.fileAccessor.Open(path);
         var tr = new StreamReader(fs, Encoding.UTF8, true);
 
         var branches = new Dictionary<string, Hash>();
@@ -268,8 +266,7 @@ internal static class RepositoryAccessor
             return new(new(new()), new(new()));
         }
 
-        using var fs = new FileStream(
-            path, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, true);
+        using var fs = repository.fileAccessor.Open(path);
         var tr = new StreamReader(fs, Encoding.UTF8, true);
 
         var branches = new Dictionary<string, Hash>();
@@ -363,8 +360,7 @@ internal static class RepositoryAccessor
                 return null;
             }
 
-            using var fs = new FileStream(
-                path, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, true);
+            using var fs = repository.fileAccessor.Open(path);
             var tr = new StreamReader(fs, Encoding.UTF8, true);
 
             var line = await tr.ReadLineAsync().WaitAsync(ct);
@@ -447,12 +443,12 @@ internal static class RepositoryAccessor
     private static ObjectAccessor GetObjectAccessor(
         Repository repository)
     {
-        if (repository.accessor == null)
+        if (repository.objectAccessor == null)
         {
             throw new InvalidOperationException(
                 "The repository already discarded.");
         }
-        return repository.accessor;
+        return repository.objectAccessor;
     }
 
     private static async Task<string?> ParseObjectBodyAsync(

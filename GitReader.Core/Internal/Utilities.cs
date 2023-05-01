@@ -373,11 +373,23 @@ internal static class Utilities
 #if NET35 || NET40
     public static Task<int> ReadAsync(
         this Stream stream,
-        byte[] buffer, int offset, int count, CancellationToken ct)
-    {
-        ct.ThrowIfCancellationRequested();
-        return Task.Factory.StartNew(() => stream.Read(buffer, offset, count));
-    }
+        byte[] buffer, int offset, int count,
+        CancellationToken ct) =>
+        Task.Factory.FromAsync(stream.BeginRead, stream.EndRead, buffer, offset, count, ct);
+#endif
+
+#if NET35 || NET40
+    public static Task WriteAsync(
+        this Stream stream,
+        byte[] buffer, int offset, int count,
+        CancellationToken ct) =>
+        Task.Factory.FromAsync(stream.BeginWrite, stream.EndWrite, buffer, offset, count, ct);
+#endif
+
+#if NET35
+    public static Task FlushAsync(
+        this Stream stream, CancellationToken ct) =>
+        Task.Factory.StartNew(stream.Flush, ct);
 #endif
 
 #if NET35 || NET40

@@ -65,20 +65,32 @@ internal sealed class AsyncLock
         }
     }
 
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
+    public ValueTask<Disposer> LockAsync(CancellationToken ct)
+#else
     public Task<Disposer> LockAsync(CancellationToken ct)
+#endif
     {
         lock (this.queue)
         {
             var running = this.running++;
             if (running <= 0)
             {
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
+                return new(this.disposer);
+#else
                 return Utilities.FromResult(this.disposer);
+#endif
             }
             else
             {
                 var queueEntry = new QueueEntry(ct);
                 this.queue.Enqueue(queueEntry);
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
+                return new(queueEntry.WaitAsync());
+#else
                 return queueEntry.WaitAsync();
+#endif
             }
         }
     }

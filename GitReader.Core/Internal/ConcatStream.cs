@@ -14,7 +14,18 @@ using System.Threading.Tasks;
 
 namespace GitReader.Internal;
 
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
+internal interface IValueTaskStream
+{
+    ValueTask<int> ReadValueTaskAsync(
+        byte[] buffer, int offset, int count, CancellationToken ct);
+}
+#endif
+
 internal sealed class ConcatStream : Stream
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
+    , IValueTaskStream
+#endif
 {
     private readonly Stream[] streams;
     private int streamIndex;
@@ -73,6 +84,40 @@ internal sealed class ConcatStream : Stream
         }
         return read;
     }
+
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
+    public async ValueTask<int> ReadValueTaskAsync(
+        byte[] buffer, int offset, int count, CancellationToken ct)
+    {
+        var read = 0;
+        while (count >= 1 && this.streamIndex < this.streams.Length)
+        {
+            var stream = this.streams[this.streamIndex];
+            int r;
+            if (stream is IValueTaskStream vts)
+            {
+                r = await vts.ReadValueTaskAsync(buffer, offset, count, ct);
+            }
+            else
+            {
+                r = await stream.ReadAsync(buffer, offset, count, ct);
+            }
+
+            if (r >= 1)
+            {
+                read += r;
+                offset += r;
+                count -= r;
+            }
+            else
+            {
+                Interlocked.Exchange(ref this.streams[this.streamIndex], null!).Dispose();
+                this.streamIndex++;
+            }
+        }
+        return read;
+    }
+#endif
 
 #if !NET35 && !NET40
     private async Task<int> InternalReadAsync(

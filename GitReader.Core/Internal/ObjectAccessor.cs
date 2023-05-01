@@ -35,13 +35,16 @@ internal sealed class ObjectAccessor : IDisposable
 {
     private const int preloadBufferSize = 65536;
 
+    private readonly FileAccessor fileAccessor;
     private readonly string objectsBasePath;
     private readonly string packedBasePath;
     private readonly AsyncLock locker = new();
     private readonly Dictionary<string, WeakReference> indexCache = new();
 
-    public ObjectAccessor(string repositoryPath)
+    public ObjectAccessor(
+        FileAccessor fileAccessor, string repositoryPath)
     {
+        this.fileAccessor = fileAccessor;
         this.objectsBasePath = Utilities.Combine(
             repositoryPath,
             "objects");
@@ -65,8 +68,7 @@ internal sealed class ObjectAccessor : IDisposable
             throw new InvalidDataException(
                 $"Could not parse the object. Hash={hash}, Step={step}");
 
-        var fs = new FileStream(
-            objectPath, FileMode.Open, FileAccess.Read, FileShare.Read, 65536, true);
+        var fs = this.fileAccessor.Open(objectPath);
 
         try
         {
@@ -123,7 +125,7 @@ internal sealed class ObjectAccessor : IDisposable
 
             var stream = new RangedStream(
                 new ConcatStream(
-                    new MemoryStream(preloadBuffer, preloadIndex, preloadBuffer.Length - preloadIndex),
+                    new PreloadedStream(preloadBuffer, preloadIndex, preloadBuffer.Length - preloadIndex),
                     zlibStream),
                 (long)length);
 
@@ -260,8 +262,7 @@ internal sealed class ObjectAccessor : IDisposable
             throw new InvalidDataException(
                 $"Could not parse the object. File={packedFilePath}, Offset={offset}, Step={step}");
 
-        var fs = new FileStream(
-            packedFilePath, FileMode.Open, FileAccess.Read, FileShare.Read, 65536, true);
+        var fs = this.fileAccessor.Open(packedFilePath);
 
         try
         {
@@ -305,7 +306,7 @@ internal sealed class ObjectAccessor : IDisposable
                         }
 
                         var stream = new ConcatStream(
-                            new MemoryStream(preloadBuffer, preloadIndex, read - preloadIndex),
+                            new PreloadedStream(preloadBuffer, preloadIndex, read - preloadIndex),
                             fs);
 
                         var (zlibStream, objectEntry) = await Utilities.WhenAll(
@@ -340,7 +341,7 @@ internal sealed class ObjectAccessor : IDisposable
                         var referenceHash = Hash.Create(hashCode);
 
                         var stream =new ConcatStream(
-                            new MemoryStream(preloadBuffer, preloadIndex, read - preloadIndex),
+                            new PreloadedStream(preloadBuffer, preloadIndex, read - preloadIndex),
                             fs);
 
                         var (zlibStream, objectEntry) = await Utilities.WhenAll(
@@ -375,7 +376,7 @@ internal sealed class ObjectAccessor : IDisposable
                     {
                         var stream = new RangedStream(
                             new ConcatStream(
-                                new MemoryStream(preloadBuffer, preloadIndex, read - preloadIndex),
+                                new PreloadedStream(preloadBuffer, preloadIndex, read - preloadIndex),
                                 fs),
                             (long)objectSize);
                         var zlibStream = await Utilities.CreateZLibStreamAsync(stream, ct);

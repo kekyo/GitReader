@@ -210,7 +210,7 @@ internal static class RepositoryFacade
         Commit commit)
     {
         if (commit.rwr.Target is not StructuredRepository repository ||
-            repository.accessor == null)
+            repository.objectAccessor == null)
         {
             throw new InvalidOperationException(
                 "The repository already discarded.");

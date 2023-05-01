@@ -1,4 +1,4 @@
-﻿////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
 //
 // GitReader - Lightweight Git local repository traversal library.
 // Copyright (c) Kouji Matsui (@kozy_kekyo, @kekyo@mastodon.cloud)
@@ -16,6 +16,9 @@ using System.Threading.Tasks;
 namespace GitReader.Internal;
 
 internal sealed class DeltaDecodedStream : Stream
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
+    , IValueTaskStream
+#endif
 {
     private abstract class State
     {
@@ -40,7 +43,6 @@ internal sealed class DeltaDecodedStream : Stream
     }
 
     private const int preloadBufferSize = 65536;
-    private const int memoizeToFileSize = 1024 * 1024;
 
     private MemoizedStream baseObjectStream;
     private Stream deltaStream;
@@ -303,6 +305,228 @@ internal sealed class DeltaDecodedStream : Stream
     }
 
 #if !NET35 && !NET40
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
+    private async ValueTask<bool> PrepareAsync(CancellationToken ct)
+    {
+        if (this.deltaStream is IValueTaskStream vts)
+        {
+            this.deltaBufferCount = await vts.ReadValueTaskAsync(
+                this.deltaBuffer, 0, this.deltaBuffer.Length, ct);
+        }
+        else
+        {
+            this.deltaBufferCount = await this.deltaStream.ReadAsync(
+                this.deltaBuffer, 0, this.deltaBuffer.Length, ct);
+        }
+
+        if (this.deltaBufferCount == 0)
+        {
+            return false;
+        }
+
+        this.deltaBufferIndex = 0;
+        return true;
+    }
+
+    public async ValueTask<int> ReadValueTaskAsync(
+        byte[] buffer, int offset, int count, CancellationToken ct)
+    {
+        var read = 0;
+
+        while (count >= 1)
+        {
+            if (this.state == null)
+            {
+                if (this.deltaBufferIndex >= this.deltaBufferCount)
+                {
+                    if (!await this.PrepareAsync(ct))
+                    {
+                        break;
+                    }
+                }
+
+                var opcode = this.deltaBuffer[this.deltaBufferIndex++];
+
+                // Copy opcode
+                if ((opcode & 0x80) != 0)
+                {
+                    var baseObjectOffset = 0U;
+                    var baseObjectSize = 0U;
+
+                    // offset1
+                    if ((opcode & 0x01) != 0)
+                    {
+                        if (this.deltaBufferIndex >= this.deltaBufferCount)
+                        {
+                            if (!await this.PrepareAsync(ct))
+                            {
+                                break;
+                            }
+                        }
+                        baseObjectOffset |= this.deltaBuffer[this.deltaBufferIndex++];
+                    }
+                    // offset2
+                    if ((opcode & 0x02) != 0)
+                    {
+                        if (this.deltaBufferIndex >= this.deltaBufferCount)
+                        {
+                            if (!await this.PrepareAsync(ct))
+                            {
+                                break;
+                            }
+                        }
+                        baseObjectOffset |= ((uint)this.deltaBuffer[this.deltaBufferIndex++] << 8);
+                    }
+                    // offset3
+                    if ((opcode & 0x04) != 0)
+                    {
+                        if (this.deltaBufferIndex >= this.deltaBufferCount)
+                        {
+                            if (!await this.PrepareAsync(ct))
+                            {
+                                break;
+                            }
+                        }
+                        baseObjectOffset |= ((uint)this.deltaBuffer[this.deltaBufferIndex++] << 16);
+                    }
+                    // offset4
+                    if ((opcode & 0x08) != 0)
+                    {
+                        if (this.deltaBufferIndex >= this.deltaBufferCount)
+                        {
+                            if (!await this.PrepareAsync(ct))
+                            {
+                                break;
+                            }
+                        }
+                        baseObjectOffset |= ((uint)this.deltaBuffer[this.deltaBufferIndex++] << 24);
+                    }
+                    // size1
+                    if ((opcode & 0x10) != 0)
+                    {
+                        if (this.deltaBufferIndex >= this.deltaBufferCount)
+                        {
+                            if (!await this.PrepareAsync(ct))
+                            {
+                                break;
+                            }
+                        }
+                        baseObjectSize |= this.deltaBuffer[this.deltaBufferIndex++];
+                    }
+                    // size2
+                    if ((opcode & 0x20) != 0)
+                    {
+                        if (this.deltaBufferIndex >= this.deltaBufferCount)
+                        {
+                            if (!await this.PrepareAsync(ct))
+                            {
+                                break;
+                            }
+                        }
+                        baseObjectSize |= ((uint)this.deltaBuffer[this.deltaBufferIndex++] << 8);
+                    }
+                    // size3
+                    if ((opcode & 0x40) != 0)
+                    {
+                        if (this.deltaBufferIndex >= this.deltaBufferCount)
+                        {
+                            if (!await this.PrepareAsync(ct))
+                            {
+                                break;
+                            }
+                        }
+                        baseObjectSize |= ((uint)this.deltaBuffer[this.deltaBufferIndex++] << 16);
+                    }
+
+                    await this.baseObjectStream.SeekValueTaskAsync(
+                        baseObjectOffset, SeekOrigin.Begin, ct);
+
+                    this.state = new CopyState(baseObjectSize);
+                }
+                // Insert opcode
+                else
+                {
+                    // Size
+                    var insertionSize = opcode & 0x7f;
+
+                    this.state = new InsertState((byte)insertionSize);
+                }
+            }
+
+            if (this.state is CopyState copyState)
+            {
+                var baseObjectRemains =
+                    copyState.Size - copyState.Position;
+                if (baseObjectRemains <= 0)
+                {
+                    this.state = null;
+                    continue;
+                }
+
+                var length = Math.Min(baseObjectRemains, count);
+
+                Debug.Assert(length <= uint.MaxValue);
+
+                var r = await this.baseObjectStream.ReadValueTaskAsync(
+                    buffer, offset, (int)length, ct);
+
+                offset += r;
+                count -= r;
+                read += r;
+
+                copyState.Position += (uint)r;
+            }
+            else
+            {
+                var insertState = (InsertState)this.state;
+
+                var insertionRemains =
+                    insertState.Size - insertState.Position;
+                if (insertionRemains <= 0)
+                {
+                    this.state = null;
+                    continue;
+                }
+
+                var length = Math.Min(insertionRemains, count);
+
+                while (length >= 1)
+                {
+                    Debug.Assert(length <= byte.MaxValue);
+
+                    if (this.deltaBufferIndex >= this.deltaBufferCount)
+                    {
+                        if (!await this.PrepareAsync(ct))
+                        {
+                            break;
+                        }
+                    }
+
+                    var l = Math.Min(
+                        length, this.deltaBufferCount - this.deltaBufferIndex);
+
+                    Array.Copy(
+                        this.deltaBuffer, this.deltaBufferIndex,
+                        buffer, offset, (int)l);
+
+                    offset += l;
+                    count -= l;
+                    read += l;
+                    this.deltaBufferIndex += l;
+
+                    insertState.Position += (byte)l;
+                    length -= l;
+                }
+            }
+        }
+
+        return read;
+    }
+
+    public override Task<int> ReadAsync(
+        byte[] buffer, int offset, int count, CancellationToken ct) =>
+        this.ReadValueTaskAsync(buffer, offset, count, ct).AsTask();
+#else
     private async Task<bool> PrepareAsync(CancellationToken ct)
     {
         this.deltaBufferCount = await this.deltaStream.ReadAsync(
@@ -511,6 +735,7 @@ internal sealed class DeltaDecodedStream : Stream
         return read;
     }
 #endif
+#endif
 
     public override long Position
     {
@@ -567,7 +792,7 @@ internal sealed class DeltaDecodedStream : Stream
         }
 
         return new(
-            new MemoizedStream(baseObjectStream, baseObjectLength >= memoizeToFileSize),
+            MemoizedStream.Create(baseObjectStream, (long)baseObjectLength),
             deltaStream,
             preloadBuffer, preloadIndex, read, (long)decodedObjectLength);
     }
