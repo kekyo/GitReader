@@ -379,7 +379,7 @@ internal static class RepositoryAccessor
         }
     }
 
-    public static async Task<Reference[]> ReadReferencesAsync(
+    public static async Task<PrimitiveReference[]> ReadReferencesAsync(
         Repository repository,
         ReferenceTypes type,
         CancellationToken ct)
@@ -395,11 +395,11 @@ internal static class RepositoryAccessor
                     path.Substring(repository.Path.Length + 1),
                     ct) is not { } results)
                 {
-                    return default(Reference?);
+                    return default(PrimitiveReference?);
                 }
                 else
                 {
-                    return Reference.Create(
+                    return new(
                         path.Substring(headsPath.Length + 1).Replace(Path.DirectorySeparatorChar, '/'),
                         results.Hash);
                 }
@@ -418,7 +418,7 @@ internal static class RepositoryAccessor
                     {
                         references.Add(
                             entry.Key,
-                            Reference.Create(entry.Key, entry.Value));
+                            new(entry.Key, entry.Value));
                     }
                 }
                 break;
@@ -429,7 +429,7 @@ internal static class RepositoryAccessor
                     {
                         references.Add(
                             entry.Key,
-                            Reference.Create(entry.Key, entry.Value));
+                            new(entry.Key, entry.Value));
                     }
                 }
                 break;
@@ -522,7 +522,7 @@ internal static class RepositoryAccessor
     }
 
 
-    public static async Task<Commit?> ReadCommitAsync(
+    public static async Task<PrimitiveCommit?> ReadCommitAsync(
         Repository repository,
         Hash hash, CancellationToken ct)
     {
@@ -565,7 +565,7 @@ internal static class RepositoryAccessor
 
         if (tree is { } t && author is { } a && committer is { } c)
         {
-            return Commit.Create(hash, t, a, c, parents.ToArray(), message);
+            return new(hash, t, a, c, parents.ToArray(), message);
         }
         else
         {
@@ -574,7 +574,7 @@ internal static class RepositoryAccessor
         }
     }
 
-    public static async Task<Tag?> ReadTagAsync(
+    public static async Task<PrimitiveTag?> ReadTagAsync(
         Repository repository,
         Hash hash,
         CancellationToken ct)
@@ -621,7 +621,7 @@ internal static class RepositoryAccessor
 
         if (obj is { } o && objectType is { } ot && tagName is { } tn)
         {
-            return Tag.Create(o, ot, tn, tagger, message);
+            return new(o, ot, tn, tagger, message);
         }
         else
         {

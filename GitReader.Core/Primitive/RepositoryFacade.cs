@@ -54,18 +54,18 @@ internal static class RepositoryFacade
 
     //////////////////////////////////////////////////////////////////////////
 
-    public static async Task<Reference?> GetCurrentHeadReferenceAsync(
+    public static async Task<PrimitiveReference?> GetCurrentHeadReferenceAsync(
         Repository repository,
         CancellationToken ct)
     {
         var results = await RepositoryAccessor.ReadHashAsync(
             repository, "HEAD", ct);
         return results is { } r ?
-            Reference.Create(r.Names.Last(), r.Hash) :
+            new PrimitiveReference(r.Names.Last(), r.Hash) :
             null;
     }
 
-    public static async Task<Reference> GetBranchHeadReferenceAsync(
+    public static async Task<PrimitiveReference> GetBranchHeadReferenceAsync(
         Repository repository,
         string branchName,
         CancellationToken ct)
@@ -73,29 +73,29 @@ internal static class RepositoryFacade
         var results = await RepositoryAccessor.ReadHashAsync(
             repository, $"refs/heads/{branchName}", ct);
         return results is { } r ?
-            Reference.Create(branchName, r.Hash) :
+            new PrimitiveReference(branchName, r.Hash) :
             throw new ArgumentException($"Could not find a branch: {branchName}");
     }
 
-    public static async Task<Reference> GetRemoteBranchHeadReferenceAsync(
+    public static async Task<PrimitiveReference> GetRemoteBranchHeadReferenceAsync(
         Repository repository,
         string branchName, CancellationToken ct)
     {
         var results = await RepositoryAccessor.ReadHashAsync(
             repository, $"refs/remotes/{branchName}", ct);
         return results is { } r ?
-            Reference.Create(branchName, r.Hash) :
+            new PrimitiveReference(branchName, r.Hash) :
             throw new ArgumentException($"Could not find a remote branch: {branchName}");
     }
 
-    public static async Task<Reference> GetTagReferenceAsync(
+    public static async Task<PrimitiveReference> GetTagReferenceAsync(
         Repository repository,
         string tagName, CancellationToken ct)
     {
         var results = await RepositoryAccessor.ReadHashAsync(
             repository, $"refs/tags/{tagName}", ct);
         return results is { } r ?
-            Reference.Create(tagName, r.Hash) :
+            new PrimitiveReference(tagName, r.Hash) :
             throw new ArgumentException($"Could not find a tag: {tagName}");
     }
 }

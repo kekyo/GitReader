@@ -11,7 +11,7 @@ using System;
 
 namespace GitReader.Primitive;
 
-public readonly struct Tag : IEquatable<Tag>
+public readonly struct PrimitiveTag : IEquatable<PrimitiveTag>
 {
     public readonly Hash Hash;
     public readonly ObjectTypes Type;
@@ -19,7 +19,7 @@ public readonly struct Tag : IEquatable<Tag>
     public readonly Signature? Tagger;
     public readonly string? Message;
 
-    private Tag(
+    public PrimitiveTag(
         Hash hash,
         ObjectTypes type,
         string name,
@@ -33,18 +33,18 @@ public readonly struct Tag : IEquatable<Tag>
         this.Message = message;
     }
 
-    public bool Equals(Tag rhs) =>
+    public bool Equals(PrimitiveTag rhs) =>
         this.Hash.Equals(rhs.Hash) &&
         this.Type.Equals(rhs.Type) &&
         this.Name.Equals(rhs.Name) &&
         this.Tagger.Equals(rhs.Tagger) &&
         this.Message == rhs.Message;
 
-    bool IEquatable<Tag>.Equals(Tag rhs) =>
+    bool IEquatable<PrimitiveTag>.Equals(PrimitiveTag rhs) =>
         this.Equals(rhs);
 
     public override bool Equals(object? obj) =>
-        obj is Tag rhs && this.Equals(rhs);
+        obj is PrimitiveTag rhs && this.Equals(rhs);
 
     public override int GetHashCode() =>
         this.Hash.GetHashCode() ^
@@ -56,14 +56,6 @@ public readonly struct Tag : IEquatable<Tag>
     public override string ToString() =>
         $"{this.Name}: {this.Type}: {this.Hash}";
 
-    public static implicit operator Hash(Tag tag) =>
+    public static implicit operator Hash(PrimitiveTag tag) =>
         tag.Hash;
-
-    public static Tag Create(
-        Hash hash,
-        ObjectTypes type,
-        string name,
-        Signature? tagger,
-        string? message) =>
-        new(hash, type, name, tagger, message);
 }

@@ -37,11 +37,11 @@ module public RepositoryExtension =
         member repository.getCommit(commit: Hash, ?ct: CancellationToken) =
             RepositoryAccessor.ReadCommitAsync(repository, commit, unwrapCT ct) |> asAsync
 
-        member repository.getTag(tag: Reference, ?ct: CancellationToken) = async {
+        member repository.getTag(tag: PrimitiveReference, ?ct: CancellationToken) = async {
             let! t = RepositoryAccessor.ReadTagAsync(repository, tag, unwrapCT ct) |> asAsync
             return match t with
                    | Some t -> t
-                   | None -> Tag.Create(tag, ObjectTypes.Commit, tag.Name, Nullable(), null)
+                   | None -> PrimitiveTag(tag, ObjectTypes.Commit, tag.Name, Nullable(), null)
         }
 
         member repository.getBranchHeadReferences(?ct: CancellationToken) =
@@ -59,11 +59,11 @@ module public RepositoryExtension =
     let (|Repository|) (repository: Repository) =
         (repository.Path)
 
-    let (|Reference|) (reference: Reference) =
+    let (|Reference|) (reference: PrimitiveReference) =
         (reference.Name, reference.Target)
 
-    let (|Commit|) (commit: Commit) =
+    let (|Commit|) (commit: PrimitiveCommit) =
         (commit.Hash, commit.TreeRoot, commit.Author, commit.Committer, commit.Parents, commit.Message)
 
-    let (|Tag|) (tag: Tag) =
+    let (|Tag|) (tag: PrimitiveTag) =
         (tag.Hash, tag.Type, tag.Name, tag.Tagger, tag.Message)
