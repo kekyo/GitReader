@@ -15,7 +15,8 @@ namespace GitReader;
 
 public class Repository : IDisposable
 {
-    internal ObjectAccessor accessor;
+    internal FileAccessor fileAccessor = new();
+    internal ObjectAccessor objectAccessor;
     internal RemoteReferenceUrlCache remoteReferenceUrlCache;
     internal ReferenceCache referenceCache;
 
@@ -23,14 +24,18 @@ public class Repository : IDisposable
         string repositoryPath)
     {
         this.Path = repositoryPath;
-        this.accessor = new(repositoryPath);
+        this.objectAccessor = new(this.fileAccessor, repositoryPath);
     }
 
     public void Dispose()
     {
-        if (Interlocked.Exchange(ref this.accessor, null!) is { } accessor)
+        if (Interlocked.Exchange(ref this.objectAccessor, null!) is { } objectAccessor)
         {
-            accessor.Dispose();
+            objectAccessor.Dispose();
+        }
+        if (Interlocked.Exchange(ref this.fileAccessor, null!) is { } fileAccessor)
+        {
+            fileAccessor.Dispose();
         }
     }
 

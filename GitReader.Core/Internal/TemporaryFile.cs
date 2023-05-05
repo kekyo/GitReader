@@ -8,12 +8,9 @@
 ////////////////////////////////////////////////////////////////////////////
 
 using System;
-using System.IO;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
-using System.Runtime.InteropServices;
 using System.Diagnostics;
+using System.IO;
+using System.Runtime.InteropServices;
 
 #if !NETSTANDARD1_6
 using System.Runtime.ConstrainedExecution;

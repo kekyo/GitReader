@@ -21,94 +21,107 @@ using Lepracaun;
 
 namespace GitReader;
 
-public static class Program
+internal sealed class CommitComparer :
+    IComparer<Commit>,
+    IEqualityComparer<Commit>
 {
-    private sealed class CommitComparer :
-        IComparer<DateTimeOffset>,
-        IEqualityComparer<Commit>
+    public int Compare(Commit? x, Commit? y) =>
+        y!.Committer.Date.CompareTo(x!.Committer.Date);    // (Descendants)
+
+
+    public bool Equals(Commit? x, Commit? y) =>
+        x!.Hash.Equals(y!.Hash);
+
+    public int GetHashCode(Commit obj) =>
+        obj.Hash.GetHashCode();
+
+    public static readonly CommitComparer Instance = new CommitComparer();
+}
+
+internal sealed class SortedCommitMap
+{
+    private readonly SortedDictionary<Commit, LinkedList<Commit>> dict =
+        new(CommitComparer.Instance);
+
+    public SortedCommitMap(IEnumerable<Commit> commits)
     {
-        public int Compare(DateTimeOffset x, DateTimeOffset y) =>
-            y.CompareTo(x);  // descendants
-
-        public bool Equals(Commit? x, Commit? y) =>
-            x!.Hash.Equals(y!.Hash);
-
-        public int GetHashCode(Commit obj) =>
-            obj.Hash.GetHashCode();
-
-        public static readonly CommitComparer Instance = new CommitComparer();
+        foreach (var commit in commits)
+        {
+            this.Add(commit);
+        }
     }
 
-    private sealed class SortedCommitMap
+    public bool Contains =>
+        this.dict.Count >= 1;
+
+    public int Count =>
+        this.dict.Values.Sum(commit => commit.Count);
+
+    public Commit? Front =>
+        this.dict.Values.FirstOrDefault()?.First!.Value;
+
+    public bool Add(Commit commit)
     {
-        private readonly SortedDictionary<DateTimeOffset, List<Commit>> dict =
-            new(CommitComparer.Instance);
-
-        public SortedCommitMap(IEnumerable<Commit> commits)
+        if (!this.dict.TryGetValue(commit, out var commits))
         {
-            foreach (var commit in commits)
-            {
-                this.Add(commit);
-            }
-        }
-
-        public bool Contains =>
-            this.dict.Count >= 1;
-
-        public int Count =>
-            this.dict.Values.Sum(commit => commit.Count);
-
-        public Commit? Front =>
-            this.dict.Values.FirstOrDefault()?[0];
-
-        public bool Add(Commit commit)
-        {
-            if (!this.dict.TryGetValue(commit.Committer.Date, out var commits))
-            {
-                commits = new();
-                this.dict.Add(commit.Committer.Date, commits);
-                commits.Add(commit);
-                return true;
-            }
-
-            foreach (var c in commits)
-            {
-                if (c.Hash.Equals(commit.Hash))
-                {
-                    return false;
-                }
-            }
-
-            commits.Add(commit);
+            commits = new();
+            this.dict.Add(commit, commits);
+            commits.AddLast(commit);
             return true;
         }
 
-        public bool Remove(Commit commit)
+        foreach (var c in commits)
         {
-            if (this.dict.TryGetValue(commit.Committer.Date, out var commits))
+            if (c.Hash.Equals(commit.Hash))
             {
-                for (var index = 0; index < commits.Count; index++)
+                return false;
+            }
+        }
+
+        commits.AddLast(commit);
+        return true;
+    }
+
+    public bool RemoveFront()
+    {
+        var commit = this.Front!;
+        if (this.dict.TryGetValue(commit, out var commits))
+        {
+            for (var index = 0; index < commits.Count; index++)
+            {
+                foreach (var c in commits)
                 {
-                    var c = commits[index];
                     if (c.Hash.Equals(commit.Hash))
                     {
-                        commits.RemoveAt(index);
+                        commits.Remove(c);
                         if (commits.Count == 0)
                         {
-                            this.dict.Remove(commit.Committer.Date);
+                            this.dict.Remove(commit);
                         }
                         return true;
                     }
                 }
             }
-            return false;
         }
+        return false;
     }
+}
 
+public static class Program
+{
     private static async Task WriteLogAsync(string repositoryPath)
     {
         using var repository = await Repository.Factory.OpenStructureAsync(repositoryPath);
 
+#if false
+        var hashedCommits = new HashSet<Commit>(CommitComparer.Instance);
+
+        var c0 = await repository.GetCommitAsync("937b71cc8b5b998963a7f9a33312ba3549d55510");
+        hashedCommits.Add(c0!);
+
+        var sortedCommits = new SortedCommitMap(
+            hashedCommits);
+#else
         var hashedCommits = new HashSet<Commit>(
             repository.RemoteBranches.Values.Select(branch => branch.Head),
             CommitComparer.Instance);
@@ -133,6 +146,7 @@ public static class Program
                 sortedCommits.Add(c);
             }
         }
+#endif
 
         while (sortedCommits.Contains)
         {
@@ -143,7 +157,7 @@ public static class Program
             Console.WriteLine(
                 $"# {commit.Hash} {string.Join(" ", parents.Select(p => p.Hash).ToArray())} [{commit.Author.Name} <{commit.Author.MailAddress}> {commit.Author.Date.ToGitIsoDateString()}] [{commit.Committer.Name} <{commit.Committer.MailAddress}> {commit.Committer.Date.ToGitIsoDateString()}] {commit.Subject} {commit.Body}");
 
-            sortedCommits.Remove(commit);
+            sortedCommits.RemoveFront();
 
             foreach (var parent in parents)
             {

@@ -7,6 +7,7 @@
 //
 ////////////////////////////////////////////////////////////////////////////
 
+using GitReader.Primitive;
 using System;
 using System.Linq;
 
@@ -29,7 +30,7 @@ public sealed class Commit : IEquatable<Commit?>
 
     internal Commit(
         WeakReference rwr,
-        Primitive.Commit commit)
+        PrimitiveCommit commit)
     {
         this.rwr = rwr;
         this.treeRoot = commit.TreeRoot;

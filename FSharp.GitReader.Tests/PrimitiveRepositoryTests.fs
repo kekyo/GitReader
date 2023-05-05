@@ -115,7 +115,7 @@ type public PrimitiveRepositoryTests() =
         let! commit = repository.getCommit(branchref) |> unwrapOptionAsy
         let mutable c = commit
         let mutable exit = false
-        let commits = new List<Commit>();
+        let commits = new List<PrimitiveCommit>();
         while not exit do
             commits.Add(c)
             // Bottom of branch.

@@ -7,7 +7,6 @@
 //
 ////////////////////////////////////////////////////////////////////////////
 
-using GitReader.Primitive;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -32,8 +31,13 @@ internal static class IndexReader
 {
     private const int hashTableBufferCount = 65536;
 
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
+    public static async ValueTask<Dictionary<Hash, ObjectEntry>> ReadIndexAsync(
+        string indexPath, CancellationToken ct)
+#else
     public static async Task<Dictionary<Hash, ObjectEntry>> ReadIndexAsync(
         string indexPath, CancellationToken ct)
+#endif
     {
         void Throw(int step) =>
             throw new InvalidDataException(

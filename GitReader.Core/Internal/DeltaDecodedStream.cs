@@ -1,4 +1,4 @@
-﻿////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
 //
 // GitReader - Lightweight Git local repository traversal library.
 // Copyright (c) Kouji Matsui (@kozy_kekyo, @kekyo@mastodon.cloud)
@@ -16,6 +16,9 @@ using System.Threading.Tasks;
 namespace GitReader.Internal;
 
 internal sealed class DeltaDecodedStream : Stream
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
+    , IValueTaskStream
+#endif
 {
     private abstract class State
     {
@@ -40,7 +43,6 @@ internal sealed class DeltaDecodedStream : Stream
     }
 
     private const int preloadBufferSize = 65536;
-    private const int memoizeToFileSize = 1024 * 1024;
 
     private MemoizedStream baseObjectStream;
     private Stream deltaStream;
@@ -122,7 +124,7 @@ internal sealed class DeltaDecodedStream : Stream
                 {
                     if (!this.Prepare())
                     {
-                        break;
+                        return read;
                     }
                 }
 
@@ -141,7 +143,7 @@ internal sealed class DeltaDecodedStream : Stream
                         {
                             if (!this.Prepare())
                             {
-                                break;
+                                return read;
                             }
                         }
                         baseObjectOffset |= this.deltaBuffer[this.deltaBufferIndex++];
@@ -153,7 +155,7 @@ internal sealed class DeltaDecodedStream : Stream
                         {
                             if (!this.Prepare())
                             {
-                                break;
+                                return read;
                             }
                         }
                         baseObjectOffset |= ((uint)this.deltaBuffer[this.deltaBufferIndex++] << 8);
@@ -165,7 +167,7 @@ internal sealed class DeltaDecodedStream : Stream
                         {
                             if (!this.Prepare())
                             {
-                                break;
+                                return read;
                             }
                         }
                         baseObjectOffset |= ((uint)this.deltaBuffer[this.deltaBufferIndex++] << 16);
@@ -177,7 +179,7 @@ internal sealed class DeltaDecodedStream : Stream
                         {
                             if (!this.Prepare())
                             {
-                                break;
+                                return read;
                             }
                         }
                         baseObjectOffset |= ((uint)this.deltaBuffer[this.deltaBufferIndex++] << 24);
@@ -189,7 +191,7 @@ internal sealed class DeltaDecodedStream : Stream
                         {
                             if (!this.Prepare())
                             {
-                                break;
+                                return read;
                             }
                         }
                         baseObjectSize |= this.deltaBuffer[this.deltaBufferIndex++];
@@ -201,7 +203,7 @@ internal sealed class DeltaDecodedStream : Stream
                         {
                             if (!this.Prepare())
                             {
-                                break;
+                                return read;
                             }
                         }
                         baseObjectSize |= ((uint)this.deltaBuffer[this.deltaBufferIndex++] << 8);
@@ -213,7 +215,7 @@ internal sealed class DeltaDecodedStream : Stream
                         {
                             if (!this.Prepare())
                             {
-                                break;
+                                return read;
                             }
                         }
                         baseObjectSize |= ((uint)this.deltaBuffer[this.deltaBufferIndex++] << 16);
@@ -249,6 +251,11 @@ internal sealed class DeltaDecodedStream : Stream
                 var r = this.baseObjectStream.Read(
                     buffer, offset, (int)length);
 
+                if (r == 0)
+                {
+                    return read;
+                }
+
                 offset += r;
                 count -= r;
                 read += r;
@@ -277,7 +284,7 @@ internal sealed class DeltaDecodedStream : Stream
                     {
                         if (!this.Prepare())
                         {
-                            break;
+                            return read;
                         }
                     }
 
@@ -302,11 +309,15 @@ internal sealed class DeltaDecodedStream : Stream
         return read;
     }
 
-#if !NET35 && !NET40
-    private async Task<bool> PrepareAsync(CancellationToken ct)
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
+    private async ValueTask<bool> PrepareAsync(CancellationToken ct)
     {
-        this.deltaBufferCount = await this.deltaStream.ReadAsync(
-            this.deltaBuffer, 0, this.deltaBuffer.Length, ct);
+        this.deltaBufferCount = this.deltaStream is IValueTaskStream vts ?
+            await vts.ReadValueTaskAsync(
+                this.deltaBuffer, 0, this.deltaBuffer.Length, ct) :
+            await this.deltaStream.ReadAsync(
+                this.deltaBuffer, 0, this.deltaBuffer.Length, ct);
+
         if (this.deltaBufferCount == 0)
         {
             return false;
@@ -316,7 +327,7 @@ internal sealed class DeltaDecodedStream : Stream
         return true;
     }
 
-    public override async Task<int> ReadAsync(
+    public async ValueTask<int> ReadValueTaskAsync(
         byte[] buffer, int offset, int count, CancellationToken ct)
     {
         var read = 0;
@@ -329,7 +340,7 @@ internal sealed class DeltaDecodedStream : Stream
                 {
                     if (!await this.PrepareAsync(ct))
                     {
-                        break;
+                        return read;
                     }
                 }
 
@@ -348,7 +359,7 @@ internal sealed class DeltaDecodedStream : Stream
                         {
                             if (!await this.PrepareAsync(ct))
                             {
-                                break;
+                                return read;
                             }
                         }
                         baseObjectOffset |= this.deltaBuffer[this.deltaBufferIndex++];
@@ -360,7 +371,7 @@ internal sealed class DeltaDecodedStream : Stream
                         {
                             if (!await this.PrepareAsync(ct))
                             {
-                                break;
+                                return read;
                             }
                         }
                         baseObjectOffset |= ((uint)this.deltaBuffer[this.deltaBufferIndex++] << 8);
@@ -372,7 +383,7 @@ internal sealed class DeltaDecodedStream : Stream
                         {
                             if (!await this.PrepareAsync(ct))
                             {
-                                break;
+                                return read;
                             }
                         }
                         baseObjectOffset |= ((uint)this.deltaBuffer[this.deltaBufferIndex++] << 16);
@@ -384,7 +395,7 @@ internal sealed class DeltaDecodedStream : Stream
                         {
                             if (!await this.PrepareAsync(ct))
                             {
-                                break;
+                                return read;
                             }
                         }
                         baseObjectOffset |= ((uint)this.deltaBuffer[this.deltaBufferIndex++] << 24);
@@ -396,7 +407,7 @@ internal sealed class DeltaDecodedStream : Stream
                         {
                             if (!await this.PrepareAsync(ct))
                             {
-                                break;
+                                return read;
                             }
                         }
                         baseObjectSize |= this.deltaBuffer[this.deltaBufferIndex++];
@@ -408,7 +419,7 @@ internal sealed class DeltaDecodedStream : Stream
                         {
                             if (!await this.PrepareAsync(ct))
                             {
-                                break;
+                                return read;
                             }
                         }
                         baseObjectSize |= ((uint)this.deltaBuffer[this.deltaBufferIndex++] << 8);
@@ -420,13 +431,13 @@ internal sealed class DeltaDecodedStream : Stream
                         {
                             if (!await this.PrepareAsync(ct))
                             {
-                                break;
+                                return read;
                             }
                         }
                         baseObjectSize |= ((uint)this.deltaBuffer[this.deltaBufferIndex++] << 16);
                     }
 
-                    await this.baseObjectStream.SeekAsync(
+                    await this.baseObjectStream.SeekValueTaskAsync(
                         baseObjectOffset, SeekOrigin.Begin, ct);
 
                     this.state = new CopyState(baseObjectSize);
@@ -455,8 +466,13 @@ internal sealed class DeltaDecodedStream : Stream
 
                 Debug.Assert(length <= uint.MaxValue);
 
-                var r = await this.baseObjectStream.ReadAsync(
+                var r = await this.baseObjectStream.ReadValueTaskAsync(
                     buffer, offset, (int)length, ct);
+
+                if (r == 0)
+                {
+                    return read;
+                }
 
                 offset += r;
                 count -= r;
@@ -486,7 +502,7 @@ internal sealed class DeltaDecodedStream : Stream
                     {
                         if (!await this.PrepareAsync(ct))
                         {
-                            break;
+                            return read;
                         }
                     }
 
@@ -510,6 +526,10 @@ internal sealed class DeltaDecodedStream : Stream
 
         return read;
     }
+
+    public override Task<int> ReadAsync(
+        byte[] buffer, int offset, int count, CancellationToken ct) =>
+        this.ReadValueTaskAsync(buffer, offset, count, ct).AsTask();
 #endif
 
     public override long Position
@@ -530,8 +550,13 @@ internal sealed class DeltaDecodedStream : Stream
     public override void Write(byte[] buffer, int offset, int count) =>
         throw new NotImplementedException();
 
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
+    public static async ValueTask<DeltaDecodedStream> CreateAsync(
+        Stream baseObjectStream, Stream deltaStream, CancellationToken ct)
+#else
     public static async Task<DeltaDecodedStream> CreateAsync(
         Stream baseObjectStream, Stream deltaStream, CancellationToken ct)
+#endif
     {
         void Throw(int step) =>
             throw new InvalidDataException(
@@ -567,7 +592,7 @@ internal sealed class DeltaDecodedStream : Stream
         }
 
         return new(
-            new MemoizedStream(baseObjectStream, baseObjectLength >= memoizeToFileSize),
+            MemoizedStream.Create(baseObjectStream, (long)baseObjectLength),
             deltaStream,
             preloadBuffer, preloadIndex, read, (long)decodedObjectLength);
     }

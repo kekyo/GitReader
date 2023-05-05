@@ -14,7 +14,18 @@ using System.Threading.Tasks;
 
 namespace GitReader.Internal;
 
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
+internal interface IValueTaskStream
+{
+    ValueTask<int> ReadValueTaskAsync(
+        byte[] buffer, int offset, int count, CancellationToken ct);
+}
+#endif
+
 internal sealed class ConcatStream : Stream
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
+    , IValueTaskStream
+#endif
 {
     private readonly Stream[] streams;
     private int streamIndex;
@@ -58,7 +69,9 @@ internal sealed class ConcatStream : Stream
         while (count >= 1 && this.streamIndex < this.streams.Length)
         {
             var stream = this.streams[this.streamIndex];
+
             var r = stream.Read(buffer, offset, count);
+
             if (r >= 1)
             {
                 read += r;
@@ -74,15 +87,19 @@ internal sealed class ConcatStream : Stream
         return read;
     }
 
-#if !NET35 && !NET40
-    private async Task<int> InternalReadAsync(
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
+    public async ValueTask<int> ReadValueTaskAsync(
         byte[] buffer, int offset, int count, CancellationToken ct)
     {
         var read = 0;
         while (count >= 1 && this.streamIndex < this.streams.Length)
         {
             var stream = this.streams[this.streamIndex];
-            var r = await stream.ReadAsync(buffer, offset, count, ct);
+
+            var r = stream is IValueTaskStream vts ?
+                await vts.ReadValueTaskAsync(buffer, offset, count, ct) :
+                await stream.ReadAsync(buffer, offset, count, ct);
+
             if (r >= 1)
             {
                 read += r;
@@ -99,17 +116,8 @@ internal sealed class ConcatStream : Stream
     }
 
     public override Task<int> ReadAsync(
-        byte[] buffer, int offset, int count, CancellationToken ct)
-    {
-        if (count >= 1 && this.streamIndex < this.streams.Length)
-        {
-            return this.InternalReadAsync(buffer, offset, count, ct);
-        }
-        else
-        {
-            return Utilities.FromResult(0);
-        }
-    }
+        byte[] buffer, int offset, int count, CancellationToken ct) =>
+        this.ReadValueTaskAsync(buffer, offset, count, ct).AsTask();
 #endif
 
     public override long Length =>

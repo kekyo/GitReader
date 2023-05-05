@@ -35,13 +35,16 @@ internal sealed class ObjectAccessor : IDisposable
 {
     private const int preloadBufferSize = 65536;
 
+    private readonly FileAccessor fileAccessor;
     private readonly string objectsBasePath;
     private readonly string packedBasePath;
     private readonly AsyncLock locker = new();
     private readonly Dictionary<string, WeakReference> indexCache = new();
 
-    public ObjectAccessor(string repositoryPath)
+    public ObjectAccessor(
+        FileAccessor fileAccessor, string repositoryPath)
     {
+        this.fileAccessor = fileAccessor;
         this.objectsBasePath = Utilities.Combine(
             repositoryPath,
             "objects");
@@ -58,15 +61,19 @@ internal sealed class ObjectAccessor : IDisposable
 
     //////////////////////////////////////////////////////////////////////////
 
-    private async Task<ObjectStreamResult> OpenFromObjectFileAsync(
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
+    private async ValueTask<ObjectStreamResult?> OpenFromObjectFileAsync(
         string objectPath, Hash hash, CancellationToken ct)
+#else
+    private async Task<ObjectStreamResult?> OpenFromObjectFileAsync(
+        string objectPath, Hash hash, CancellationToken ct)
+#endif
     {
         void Throw(int step) =>
             throw new InvalidDataException(
                 $"Could not parse the object. Hash={hash}, Step={step}");
 
-        var fs = new FileStream(
-            objectPath, FileMode.Open, FileAccess.Read, FileShare.Read, 65536, true);
+        var fs = this.fileAccessor.Open(objectPath);
 
         try
         {
@@ -123,7 +130,7 @@ internal sealed class ObjectAccessor : IDisposable
 
             var stream = new RangedStream(
                 new ConcatStream(
-                    new MemoryStream(preloadBuffer, preloadIndex, preloadBuffer.Length - preloadIndex),
+                    new PreloadedStream(preloadBuffer, preloadIndex, preloadBuffer.Length - preloadIndex),
                     zlibStream),
                 (long)length);
 
@@ -151,8 +158,13 @@ internal sealed class ObjectAccessor : IDisposable
         }
     }
 
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
+    private async ValueTask<IndexEntry> GetOrCacheIndexEntryAsync(
+        string indexFileRelativePath, CancellationToken ct)
+#else
     private async Task<IndexEntry> GetOrCacheIndexEntryAsync(
         string indexFileRelativePath, CancellationToken ct)
+#endif
     {
         using var _ = await this.locker.LockAsync(ct);
 
@@ -253,15 +265,19 @@ internal sealed class ObjectAccessor : IDisposable
         ReferenceDelta = 0x07, // OBJ_REF_DELTA
     }
 
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
+    private async ValueTask<ObjectStreamResult> OpenFromPackedFileAsync(
+        string packedFilePath, ulong offset, CancellationToken ct)
+#else
     private async Task<ObjectStreamResult> OpenFromPackedFileAsync(
         string packedFilePath, ulong offset, CancellationToken ct)
+#endif
     {
         void Throw(int step) =>
             throw new InvalidDataException(
                 $"Could not parse the object. File={packedFilePath}, Offset={offset}, Step={step}");
 
-        var fs = new FileStream(
-            packedFilePath, FileMode.Open, FileAccess.Read, FileShare.Read, 65536, true);
+        var fs = this.fileAccessor.Open(packedFilePath);
 
         try
         {
@@ -305,10 +321,10 @@ internal sealed class ObjectAccessor : IDisposable
                         }
 
                         var stream = new ConcatStream(
-                            new MemoryStream(preloadBuffer, preloadIndex, read - preloadIndex),
+                            new PreloadedStream(preloadBuffer, preloadIndex, read - preloadIndex),
                             fs);
 
-                        var (zlibStream, objectEntry) = await Utilities.WhenAll(
+                        var (zlibStream, objectEntry) = await Utilities.Join(
                             Utilities.CreateZLibStreamAsync(stream, ct),
                             this.OpenFromPackedFileAsync(packedFilePath, referenceOffset, ct));
 
@@ -340,10 +356,10 @@ internal sealed class ObjectAccessor : IDisposable
                         var referenceHash = Hash.Create(hashCode);
 
                         var stream =new ConcatStream(
-                            new MemoryStream(preloadBuffer, preloadIndex, read - preloadIndex),
+                            new PreloadedStream(preloadBuffer, preloadIndex, read - preloadIndex),
                             fs);
 
-                        var (zlibStream, objectEntry) = await Utilities.WhenAll(
+                        var (zlibStream, objectEntry) = await Utilities.Join(
                             Utilities.CreateZLibStreamAsync(stream, ct),
                             this.OpenAsync(referenceHash, ct));
 
@@ -375,7 +391,7 @@ internal sealed class ObjectAccessor : IDisposable
                     {
                         var stream = new RangedStream(
                             new ConcatStream(
-                                new MemoryStream(preloadBuffer, preloadIndex, read - preloadIndex),
+                                new PreloadedStream(preloadBuffer, preloadIndex, read - preloadIndex),
                                 fs),
                             (long)objectSize);
                         var zlibStream = await Utilities.CreateZLibStreamAsync(stream, ct);
@@ -394,8 +410,13 @@ internal sealed class ObjectAccessor : IDisposable
         }
     }
 
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
+    private async ValueTask<ObjectStreamResult?> OpenFromPackedAsync(
+        Hash hash, CancellationToken ct)
+#else
     private async Task<ObjectStreamResult?> OpenFromPackedAsync(
         Hash hash, CancellationToken ct)
+#endif
     {
         var entries = await Utilities.WhenAll(
             Utilities.EnumerateFiles(this.packedBasePath, "pack-*.idx").
@@ -434,8 +455,13 @@ internal sealed class ObjectAccessor : IDisposable
 
     //////////////////////////////////////////////////////////////////////////
 
-    public async Task<ObjectStreamResult?> OpenAsync(
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
+    public ValueTask<ObjectStreamResult?> OpenAsync(
         Hash hash, CancellationToken ct)
+#else
+    public Task<ObjectStreamResult?> OpenAsync(
+        Hash hash, CancellationToken ct)
+#endif
     {
         var objectPath = Utilities.Combine(
             this.objectsBasePath,
@@ -444,11 +470,11 @@ internal sealed class ObjectAccessor : IDisposable
 
         if (File.Exists(objectPath))
         {
-            return await this.OpenFromObjectFileAsync(objectPath, hash, ct);
+            return this.OpenFromObjectFileAsync(objectPath, hash, ct);
         }
         else
         {
-            return await this.OpenFromPackedAsync(hash, ct);
+            return this.OpenFromPackedAsync(hash, ct);
         }
     }
 }

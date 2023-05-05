@@ -16,18 +16,30 @@ namespace GitReader;
 
 public readonly struct Signature : IEquatable<Signature>
 {
+    private static readonly char[] separators = new[] { ' ' };
+
     public readonly string Name;
     public readonly string? MailAddress;
     public readonly DateTimeOffset Date;
 
-    private Signature(
-        string name, string? mailAddress,
-        DateTimeOffset date)
+    public Signature(
+        string name, string? mailAddress, DateTimeOffset date)
     {
         this.Name = name;
         this.MailAddress = mailAddress;
         this.Date = Utilities.TruncateMilliseconds(date);
     }
+
+    public Signature(
+        string name, DateTimeOffset date)
+    {
+        this.Name = name;
+        this.Date = Utilities.TruncateMilliseconds(date);
+    }
+
+    public Signature(
+        string signatureString) =>
+        this = Parse(signatureString);
 
     private string RawDate =>
         $"{this.Date.ToUnixTimeSeconds()} {this.Date.Offset:hhmm}";
@@ -54,24 +66,15 @@ public readonly struct Signature : IEquatable<Signature>
     public override string ToString() =>
         $"{Utilities.ToGitAuthorString(this)} {Utilities.ToGitDateString(this.Date)}";
 
-    public static Signature Create(
-        string name,
-        DateTimeOffset date) =>
-        new(name, null, date);
-
-    public static Signature Create(
-        string name, string mailAddress,
-        DateTimeOffset date) =>
-        new(name, mailAddress, date);
-
-    public static Signature Parse(string personString)
+    public static bool TryParse(string signatureString, out Signature sig)
     {
-        var elements = personString.Split(
-            new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+        var elements = signatureString.Split(
+            separators, StringSplitOptions.RemoveEmptyEntries);
 
         if (elements.Length < 3)
         {
-            throw new FormatException();
+            sig = default;
+            return false;
         }
 
         var dateIndex = elements.Length - 2;
@@ -80,8 +83,10 @@ public readonly struct Signature : IEquatable<Signature>
 
         if (offsetString.Length < 4)
         {
-            throw new FormatException();
+            sig = default;
+            return false;
         }
+
         var offsetHourString = offsetString.Substring(0, offsetString.Length - 2);
         var offsetMinuteString = offsetString.Substring(offsetString.Length - 2, 2);
 
@@ -91,24 +96,30 @@ public readonly struct Signature : IEquatable<Signature>
             CultureInfo.InvariantCulture,
             out var unixTime))
         {
-            throw new FormatException();
+            sig = default;
+            return false;
         }
+
         if (!sbyte.TryParse(
             offsetHourString,
             NumberStyles.Integer,
             CultureInfo.InvariantCulture,
             out var hours))
         {
-            throw new FormatException();
+            sig = default;
+            return false;
         }
+
         if (!byte.TryParse(
             offsetMinuteString,
             NumberStyles.Integer,
             CultureInfo.InvariantCulture,
             out var minutes))
         {
-            throw new FormatException();
+            sig = default;
+            return false;
         }
+
         var offset = new TimeSpan(hours, minutes, 0);
         var date = Utilities.FromUnixTimeSeconds(unixTime, offset);
 
@@ -119,6 +130,11 @@ public readonly struct Signature : IEquatable<Signature>
         var name = string.Join(" ",
             elements.Take(mailAddress != null ? dateIndex - 1 : dateIndex).ToArray());
 
-        return new(name, mailAddress, date);
+        sig = new(name, mailAddress, date);
+        return true;
     }
+
+    public static Signature Parse(string signatureString) =>
+        TryParse(signatureString, out var sig) ?
+            sig : throw new ArgumentException(nameof(signatureString));
 }

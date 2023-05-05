@@ -9,12 +9,12 @@
 
 namespace GitReader.Primitive;
 
-public readonly struct Reference
+public readonly struct PrimitiveReference
 {
     public readonly string Name;
     public readonly Hash Target;
 
-    private Reference(
+    public PrimitiveReference(
         string name,
         Hash target)
     {
@@ -25,11 +25,6 @@ public readonly struct Reference
     public override string ToString() =>
         $"{this.Name}: {this.Target}";
 
-    public static implicit operator Hash(Reference reference) =>
+    public static implicit operator Hash(PrimitiveReference reference) =>
         reference.Target;
-
-    public static Reference Create(
-        string name,
-        Hash target) =>
-        new(name, target);
 }

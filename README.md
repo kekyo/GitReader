@@ -247,9 +247,9 @@ using Repository repository =
     await Repository.Factory.OpenPrimitiveAsync(
         "/home/kekyo/Projects/YourOwnLocalGitRepo");
 
-if (await repository.GetCurrentHeadReferenceAsync() is Reference head)
+if (await repository.GetCurrentHeadReferenceAsync() is PrimitiveReference head)
 {
-    if (await repository.GetCommitAsync(head) is Commit commit)
+    if (await repository.GetCommitAsync(head) is PrimitiveCommit commit)
     {
         Console.WriteLine($"Hash: {commit.Hash}");
         Console.WriteLine($"Author: {commit.Author}");
@@ -263,7 +263,7 @@ if (await repository.GetCurrentHeadReferenceAsync() is Reference head)
 
 ```csharp
 if (await repository.GetCommitAsync(
-    "1205dc34ce48bda28fc543daaf9525a9bb6e6d10") is Commit commit)
+    "1205dc34ce48bda28fc543daaf9525a9bb6e6d10") is PrimitiveCommit commit)
 {
     Console.WriteLine($"Hash: {commit.Hash}");
     Console.WriteLine($"Author: {commit.Author}");
@@ -275,9 +275,9 @@ if (await repository.GetCommitAsync(
 ### Read a branch head commit
 
 ```csharp
-Reference head = await repository.GetBranchHeadReferenceAsync("develop");
+PrimitiveReference head = await repository.GetBranchHeadReferenceAsync("develop");
 
-if (await repository.GetCommitAsync(head) is Commit commit)
+if (await repository.GetCommitAsync(head) is PrimitiveCommit commit)
 {
     Console.WriteLine($"Hash: {commit.Hash}");
     Console.WriteLine($"Author: {commit.Author}");
@@ -289,9 +289,9 @@ if (await repository.GetCommitAsync(head) is Commit commit)
 ### Enumerate branches
 
 ```csharp
-Reference[] branches = await repository.GetBranchHeadReferencesAsync();
+PrimitiveReference[] branches = await repository.GetBranchHeadReferencesAsync();
 
-foreach (Reference branch in branches)
+foreach (PrimitiveReference branch in branches)
 {
     Console.WriteLine($"Name: {branch.Name}");
     Console.WriteLine($"Commit: {branch.Commit}");
@@ -301,11 +301,11 @@ foreach (Reference branch in branches)
 ### Enumerate tags
 
 ```csharp
-Reference[] tagReferences = await repository.GetTagReferencesAsync();
+PrimitiveReference[] tagReferences = await repository.GetTagReferencesAsync();
 
-foreach (Reference tagReference in tagReferences)
+foreach (PrimitiveReference tagReference in tagReferences)
 {
-    Tag tag = await repository.GetTagAsync(tagReference);
+    PrimitiveTag tag = await repository.GetTagAsync(tagReference);
 
     Console.WriteLine($"Hash: {tag.Hash}");
     Console.WriteLine($"Type: {tag.Type}");
@@ -319,7 +319,7 @@ foreach (Reference tagReference in tagReferences)
 
 ```csharp
 if (await repository.GetCommitAsync(
-    "1205dc34ce48bda28fc543daaf9525a9bb6e6d10") is Commit commit)
+    "1205dc34ce48bda28fc543daaf9525a9bb6e6d10") is PrimitiveCommit commit)
 {
     while (true)
     {
@@ -336,7 +336,7 @@ if (await repository.GetCommitAsync(
 
         // Get primary parent.
         Hash primary = commit.Parents[0];
-        if (await repository.GetCommitAsync(primary) is not Commit parent)
+        if (await repository.GetCommitAsync(primary) is not PrimitiveCommit parent)
         {
             throw new Exception();
         }
@@ -361,6 +361,10 @@ Apache-v2
 
 ## History
 
+* 0.7.0:
+  * Switched primitive interface types with prefix `Primitive`.
+  * Improved performance.
+  * Tested large repositories.
 * 0.6.0:
   * Improved message handling on high-level interfaces.
   * Re-implemented delta compression decoder.

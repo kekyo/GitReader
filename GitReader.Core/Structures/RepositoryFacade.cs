@@ -13,7 +13,6 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -166,14 +165,14 @@ internal static class RepositoryFacade
                 await RepositoryAccessor.ReadRemoteReferencesAsync(repository, ct);
 
             // Read FETCH_HEAD and packed-refs.
-            var (fhc1, fhc2) = await Utilities.WhenAll(
+            var (fhc1, fhc2) = await Utilities.Join(
                 RepositoryAccessor.ReadFetchHeadsAsync(repository, ct),
                 RepositoryAccessor.ReadPackedRefsAsync(repository, ct));
             repository.referenceCache = fhc1.Combine(fhc2);
 
             // Read all other requirements.
             var rwr = new WeakReference(repository);
-            var (head, branches, remoteBranches, tags) = await Utilities.WhenAll(
+            var (head, branches, remoteBranches, tags) = await Utilities.Join(
                 GetCurrentHeadAsync(repository, ct),
                 GetStructuredBranchesAsync(repository, rwr, ct),
                 GetStructuredRemoteBranchesAsync(repository, rwr, ct),
@@ -210,7 +209,7 @@ internal static class RepositoryFacade
         Commit commit)
     {
         if (commit.rwr.Target is not StructuredRepository repository ||
-            repository.accessor == null)
+            repository.objectAccessor == null)
         {
             throw new InvalidOperationException(
                 "The repository already discarded.");

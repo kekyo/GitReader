@@ -21,7 +21,7 @@ public unsafe struct Hash : IEquatable<Hash>
     private long hashCode8;
     private int hashCode16;
 
-    private Hash(byte[] hashCode)
+    public Hash(byte[] hashCode)
     {
         fixed (void* pl = &this.hashCode0)
         {
@@ -29,7 +29,7 @@ public unsafe struct Hash : IEquatable<Hash>
         }
     }
 
-    private Hash(string hashString)
+    public Hash(string hashString)
     {
         fixed (void* pl_ = &this.hashCode0)
         {
@@ -97,10 +97,6 @@ public unsafe struct Hash : IEquatable<Hash>
         return new(hashCode);
     }
 
-    public static Hash Parse(string hashString) =>
-        TryParse(hashString, out var hash) ?
-            hash : throw new ArgumentException(nameof(hashString));
-
     public static bool TryParse(string hashString, out Hash hash)
     {
         if (hashString.Length != (20 * 2))
@@ -112,4 +108,8 @@ public unsafe struct Hash : IEquatable<Hash>
         hash = new(hashString);
         return true;
     }
+
+    public static Hash Parse(string hashString) =>
+        TryParse(hashString, out var hash) ?
+            hash : throw new ArgumentException(nameof(hashString));
 }

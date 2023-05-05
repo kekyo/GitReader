@@ -14,19 +14,21 @@ using System.Threading.Tasks;
 
 namespace GitReader.Internal;
 
-internal sealed class RangedStream : Stream
+internal sealed class PreloadedStream : Stream
 #if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
     , IValueTaskStream
 #endif
 {
-    private Stream parent;
-    private long remains;
+    private readonly byte[] preloadedBuffer;
+    private readonly int preloadedLength;
+    private int preloadedIndex;
 
-    public RangedStream(Stream parent, long length)
+    public PreloadedStream(byte[] buffer, int initialIndex, int length)
     {
-        this.parent = parent;
-        this.remains = length;
-        this.Length = length;
+        this.preloadedBuffer = buffer;
+        this.preloadedLength = length;
+        this.preloadedIndex = initialIndex;
+        this.Length = length - initialIndex;
     }
 
     public override bool CanRead =>
@@ -38,22 +40,12 @@ internal sealed class RangedStream : Stream
 
     public override long Length { get; }
 
-    public override long Position
-    {
-        get => this.Length - this.remains;
-        set => throw new NotImplementedException();
-    }
-
 #if !NETSTANDARD1_6
     public override void Close()
 #else
     public void Close()
 #endif
     {
-        if (Interlocked.Exchange(ref this.parent, null!) is { } parent)
-        {
-            parent.Dispose();
-        }
     }
 
     protected override void Dispose(bool disposing)
@@ -66,40 +58,46 @@ internal sealed class RangedStream : Stream
 
     public override int Read(byte[] buffer, int offset, int count)
     {
-        var remains = (int)Math.Min(count, this.remains);
-        if (remains == 0)
+        var length = Math.Min(count, this.preloadedLength - this.preloadedIndex);
+        if (length >= 1)
+        {
+            Array.Copy(this.preloadedBuffer, this.preloadedIndex, buffer, offset, length);
+            this.preloadedIndex += length;
+            return length;
+        }
+        else
         {
             return 0;
         }
-
-        var read = this.parent.Read(buffer, offset, remains);
-
-        this.remains -= read;
-        return read;
     }
 
 #if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
-    public async ValueTask<int> ReadValueTaskAsync(
+    public ValueTask<int> ReadValueTaskAsync(
         byte[] buffer, int offset, int count, CancellationToken ct)
     {
-        var remains = (int)Math.Min(count, this.remains);
-        if (remains == 0)
+        var length = Math.Min(count, this.preloadedLength - this.preloadedIndex);
+        if (length >= 1)
         {
-            return 0;
+            Array.Copy(this.preloadedBuffer, this.preloadedIndex, buffer, offset, length);
+            this.preloadedIndex += length;
+            return new(length);
         }
-
-        var read = this.parent is IValueTaskStream vts ?
-            await vts.ReadValueTaskAsync(buffer, offset, remains, ct) :
-            await this.parent.ReadAsync(buffer, offset, remains, ct);
-
-        this.remains -= read;
-        return read;
+        else
+        {
+            return new(0);
+        }
     }
 
     public override Task<int> ReadAsync(
         byte[] buffer, int offset, int count, CancellationToken ct) =>
         this.ReadValueTaskAsync(buffer, offset, count, ct).AsTask();
 #endif
+
+    public override long Position
+    {
+        get => throw new NotImplementedException();
+        set => throw new NotImplementedException();
+    }
 
     public override void Flush() =>
         throw new NotImplementedException();
