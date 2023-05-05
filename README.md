@@ -364,7 +364,7 @@ Apache-v2
 * 0.7.0:
   * Switched primitive interface types with prefix `Primitive`.
   * Improved performance.
-  * 
+  * Tested large repositories.
 * 0.6.0:
   * Improved message handling on high-level interfaces.
   * Re-implemented delta compression decoder.
