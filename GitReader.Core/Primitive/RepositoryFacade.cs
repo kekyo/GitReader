@@ -38,7 +38,7 @@ internal static class RepositoryFacade
                 await RepositoryAccessor.ReadRemoteReferencesAsync(repository, ct);
 
             // Read FETCH_HEAD and packed-refs.
-            var (fhc1, fhc2) = await Utilities.WhenAll(
+            var (fhc1, fhc2) = await Utilities.Join(
                 RepositoryAccessor.ReadFetchHeadsAsync(repository, ct),
                 RepositoryAccessor.ReadPackedRefsAsync(repository, ct));
             repository.referenceCache = fhc1.Combine(fhc2);

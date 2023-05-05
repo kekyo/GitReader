@@ -87,24 +87,10 @@ internal sealed class PreloadedStream : Stream
             return new(0);
         }
     }
-#endif
 
-#if !NET35 && !NET40
     public override Task<int> ReadAsync(
-        byte[] buffer, int offset, int count, CancellationToken ct)
-    {
-        var length = Math.Min(count, this.preloadedLength - this.preloadedIndex);
-        if (length >= 1)
-        {
-            Array.Copy(this.preloadedBuffer, this.preloadedIndex, buffer, offset, length);
-            this.preloadedIndex += length;
-            return Utilities.FromResult(length);
-        }
-        else
-        {
-            return Utilities.FromResult(0);
-        }
-    }
+        byte[] buffer, int offset, int count, CancellationToken ct) =>
+        this.ReadValueTaskAsync(buffer, offset, count, ct).AsTask();
 #endif
 
     public override long Position

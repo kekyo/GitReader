@@ -124,7 +124,7 @@ internal sealed class DeltaDecodedStream : Stream
                 {
                     if (!this.Prepare())
                     {
-                        break;
+                        return read;
                     }
                 }
 
@@ -143,7 +143,7 @@ internal sealed class DeltaDecodedStream : Stream
                         {
                             if (!this.Prepare())
                             {
-                                break;
+                                return read;
                             }
                         }
                         baseObjectOffset |= this.deltaBuffer[this.deltaBufferIndex++];
@@ -155,7 +155,7 @@ internal sealed class DeltaDecodedStream : Stream
                         {
                             if (!this.Prepare())
                             {
-                                break;
+                                return read;
                             }
                         }
                         baseObjectOffset |= ((uint)this.deltaBuffer[this.deltaBufferIndex++] << 8);
@@ -167,7 +167,7 @@ internal sealed class DeltaDecodedStream : Stream
                         {
                             if (!this.Prepare())
                             {
-                                break;
+                                return read;
                             }
                         }
                         baseObjectOffset |= ((uint)this.deltaBuffer[this.deltaBufferIndex++] << 16);
@@ -179,7 +179,7 @@ internal sealed class DeltaDecodedStream : Stream
                         {
                             if (!this.Prepare())
                             {
-                                break;
+                                return read;
                             }
                         }
                         baseObjectOffset |= ((uint)this.deltaBuffer[this.deltaBufferIndex++] << 24);
@@ -191,7 +191,7 @@ internal sealed class DeltaDecodedStream : Stream
                         {
                             if (!this.Prepare())
                             {
-                                break;
+                                return read;
                             }
                         }
                         baseObjectSize |= this.deltaBuffer[this.deltaBufferIndex++];
@@ -203,7 +203,7 @@ internal sealed class DeltaDecodedStream : Stream
                         {
                             if (!this.Prepare())
                             {
-                                break;
+                                return read;
                             }
                         }
                         baseObjectSize |= ((uint)this.deltaBuffer[this.deltaBufferIndex++] << 8);
@@ -215,7 +215,7 @@ internal sealed class DeltaDecodedStream : Stream
                         {
                             if (!this.Prepare())
                             {
-                                break;
+                                return read;
                             }
                         }
                         baseObjectSize |= ((uint)this.deltaBuffer[this.deltaBufferIndex++] << 16);
@@ -251,6 +251,11 @@ internal sealed class DeltaDecodedStream : Stream
                 var r = this.baseObjectStream.Read(
                     buffer, offset, (int)length);
 
+                if (r == 0)
+                {
+                    return read;
+                }
+
                 offset += r;
                 count -= r;
                 read += r;
@@ -279,7 +284,7 @@ internal sealed class DeltaDecodedStream : Stream
                     {
                         if (!this.Prepare())
                         {
-                            break;
+                            return read;
                         }
                     }
 
@@ -304,20 +309,14 @@ internal sealed class DeltaDecodedStream : Stream
         return read;
     }
 
-#if !NET35 && !NET40
 #if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
     private async ValueTask<bool> PrepareAsync(CancellationToken ct)
     {
-        if (this.deltaStream is IValueTaskStream vts)
-        {
-            this.deltaBufferCount = await vts.ReadValueTaskAsync(
+        this.deltaBufferCount = this.deltaStream is IValueTaskStream vts ?
+            await vts.ReadValueTaskAsync(
+                this.deltaBuffer, 0, this.deltaBuffer.Length, ct) :
+            await this.deltaStream.ReadAsync(
                 this.deltaBuffer, 0, this.deltaBuffer.Length, ct);
-        }
-        else
-        {
-            this.deltaBufferCount = await this.deltaStream.ReadAsync(
-                this.deltaBuffer, 0, this.deltaBuffer.Length, ct);
-        }
 
         if (this.deltaBufferCount == 0)
         {
@@ -341,7 +340,7 @@ internal sealed class DeltaDecodedStream : Stream
                 {
                     if (!await this.PrepareAsync(ct))
                     {
-                        break;
+                        return read;
                     }
                 }
 
@@ -360,7 +359,7 @@ internal sealed class DeltaDecodedStream : Stream
                         {
                             if (!await this.PrepareAsync(ct))
                             {
-                                break;
+                                return read;
                             }
                         }
                         baseObjectOffset |= this.deltaBuffer[this.deltaBufferIndex++];
@@ -372,7 +371,7 @@ internal sealed class DeltaDecodedStream : Stream
                         {
                             if (!await this.PrepareAsync(ct))
                             {
-                                break;
+                                return read;
                             }
                         }
                         baseObjectOffset |= ((uint)this.deltaBuffer[this.deltaBufferIndex++] << 8);
@@ -384,7 +383,7 @@ internal sealed class DeltaDecodedStream : Stream
                         {
                             if (!await this.PrepareAsync(ct))
                             {
-                                break;
+                                return read;
                             }
                         }
                         baseObjectOffset |= ((uint)this.deltaBuffer[this.deltaBufferIndex++] << 16);
@@ -396,7 +395,7 @@ internal sealed class DeltaDecodedStream : Stream
                         {
                             if (!await this.PrepareAsync(ct))
                             {
-                                break;
+                                return read;
                             }
                         }
                         baseObjectOffset |= ((uint)this.deltaBuffer[this.deltaBufferIndex++] << 24);
@@ -408,7 +407,7 @@ internal sealed class DeltaDecodedStream : Stream
                         {
                             if (!await this.PrepareAsync(ct))
                             {
-                                break;
+                                return read;
                             }
                         }
                         baseObjectSize |= this.deltaBuffer[this.deltaBufferIndex++];
@@ -420,7 +419,7 @@ internal sealed class DeltaDecodedStream : Stream
                         {
                             if (!await this.PrepareAsync(ct))
                             {
-                                break;
+                                return read;
                             }
                         }
                         baseObjectSize |= ((uint)this.deltaBuffer[this.deltaBufferIndex++] << 8);
@@ -432,7 +431,7 @@ internal sealed class DeltaDecodedStream : Stream
                         {
                             if (!await this.PrepareAsync(ct))
                             {
-                                break;
+                                return read;
                             }
                         }
                         baseObjectSize |= ((uint)this.deltaBuffer[this.deltaBufferIndex++] << 16);
@@ -470,6 +469,11 @@ internal sealed class DeltaDecodedStream : Stream
                 var r = await this.baseObjectStream.ReadValueTaskAsync(
                     buffer, offset, (int)length, ct);
 
+                if (r == 0)
+                {
+                    return read;
+                }
+
                 offset += r;
                 count -= r;
                 read += r;
@@ -498,7 +502,7 @@ internal sealed class DeltaDecodedStream : Stream
                     {
                         if (!await this.PrepareAsync(ct))
                         {
-                            break;
+                            return read;
                         }
                     }
 
@@ -526,215 +530,6 @@ internal sealed class DeltaDecodedStream : Stream
     public override Task<int> ReadAsync(
         byte[] buffer, int offset, int count, CancellationToken ct) =>
         this.ReadValueTaskAsync(buffer, offset, count, ct).AsTask();
-#else
-    private async Task<bool> PrepareAsync(CancellationToken ct)
-    {
-        this.deltaBufferCount = await this.deltaStream.ReadAsync(
-            this.deltaBuffer, 0, this.deltaBuffer.Length, ct);
-        if (this.deltaBufferCount == 0)
-        {
-            return false;
-        }
-
-        this.deltaBufferIndex = 0;
-        return true;
-    }
-
-    public override async Task<int> ReadAsync(
-        byte[] buffer, int offset, int count, CancellationToken ct)
-    {
-        var read = 0;
-
-        while (count >= 1)
-        {
-            if (this.state == null)
-            {
-                if (this.deltaBufferIndex >= this.deltaBufferCount)
-                {
-                    if (!await this.PrepareAsync(ct))
-                    {
-                        break;
-                    }
-                }
-
-                var opcode = this.deltaBuffer[this.deltaBufferIndex++];
-
-                // Copy opcode
-                if ((opcode & 0x80) != 0)
-                {
-                    var baseObjectOffset = 0U;
-                    var baseObjectSize = 0U;
-
-                    // offset1
-                    if ((opcode & 0x01) != 0)
-                    {
-                        if (this.deltaBufferIndex >= this.deltaBufferCount)
-                        {
-                            if (!await this.PrepareAsync(ct))
-                            {
-                                break;
-                            }
-                        }
-                        baseObjectOffset |= this.deltaBuffer[this.deltaBufferIndex++];
-                    }
-                    // offset2
-                    if ((opcode & 0x02) != 0)
-                    {
-                        if (this.deltaBufferIndex >= this.deltaBufferCount)
-                        {
-                            if (!await this.PrepareAsync(ct))
-                            {
-                                break;
-                            }
-                        }
-                        baseObjectOffset |= ((uint)this.deltaBuffer[this.deltaBufferIndex++] << 8);
-                    }
-                    // offset3
-                    if ((opcode & 0x04) != 0)
-                    {
-                        if (this.deltaBufferIndex >= this.deltaBufferCount)
-                        {
-                            if (!await this.PrepareAsync(ct))
-                            {
-                                break;
-                            }
-                        }
-                        baseObjectOffset |= ((uint)this.deltaBuffer[this.deltaBufferIndex++] << 16);
-                    }
-                    // offset4
-                    if ((opcode & 0x08) != 0)
-                    {
-                        if (this.deltaBufferIndex >= this.deltaBufferCount)
-                        {
-                            if (!await this.PrepareAsync(ct))
-                            {
-                                break;
-                            }
-                        }
-                        baseObjectOffset |= ((uint)this.deltaBuffer[this.deltaBufferIndex++] << 24);
-                    }
-                    // size1
-                    if ((opcode & 0x10) != 0)
-                    {
-                        if (this.deltaBufferIndex >= this.deltaBufferCount)
-                        {
-                            if (!await this.PrepareAsync(ct))
-                            {
-                                break;
-                            }
-                        }
-                        baseObjectSize |= this.deltaBuffer[this.deltaBufferIndex++];
-                    }
-                    // size2
-                    if ((opcode & 0x20) != 0)
-                    {
-                        if (this.deltaBufferIndex >= this.deltaBufferCount)
-                        {
-                            if (!await this.PrepareAsync(ct))
-                            {
-                                break;
-                            }
-                        }
-                        baseObjectSize |= ((uint)this.deltaBuffer[this.deltaBufferIndex++] << 8);
-                    }
-                    // size3
-                    if ((opcode & 0x40) != 0)
-                    {
-                        if (this.deltaBufferIndex >= this.deltaBufferCount)
-                        {
-                            if (!await this.PrepareAsync(ct))
-                            {
-                                break;
-                            }
-                        }
-                        baseObjectSize |= ((uint)this.deltaBuffer[this.deltaBufferIndex++] << 16);
-                    }
-
-                    await this.baseObjectStream.SeekAsync(
-                        baseObjectOffset, SeekOrigin.Begin, ct);
-
-                    this.state = new CopyState(baseObjectSize);
-                }
-                // Insert opcode
-                else
-                {
-                    // Size
-                    var insertionSize = opcode & 0x7f;
-
-                    this.state = new InsertState((byte)insertionSize);
-                }
-            }
-
-            if (this.state is CopyState copyState)
-            {
-                var baseObjectRemains =
-                    copyState.Size - copyState.Position;
-                if (baseObjectRemains <= 0)
-                {
-                    this.state = null;
-                    continue;
-                }
-
-                var length = Math.Min(baseObjectRemains, count);
-
-                Debug.Assert(length <= uint.MaxValue);
-
-                var r = await this.baseObjectStream.ReadAsync(
-                    buffer, offset, (int)length, ct);
-
-                offset += r;
-                count -= r;
-                read += r;
-
-                copyState.Position += (uint)r;
-            }
-            else
-            {
-                var insertState = (InsertState)this.state;
-
-                var insertionRemains =
-                    insertState.Size - insertState.Position;
-                if (insertionRemains <= 0)
-                {
-                    this.state = null;
-                    continue;
-                }
-
-                var length = Math.Min(insertionRemains, count);
-
-                while (length >= 1)
-                {
-                    Debug.Assert(length <= byte.MaxValue);
-
-                    if (this.deltaBufferIndex >= this.deltaBufferCount)
-                    {
-                        if (!await this.PrepareAsync(ct))
-                        {
-                            break;
-                        }
-                    }
-
-                    var l = Math.Min(
-                        length, this.deltaBufferCount - this.deltaBufferIndex);
-
-                    Array.Copy(
-                        this.deltaBuffer, this.deltaBufferIndex,
-                        buffer, offset, (int)l);
-
-                    offset += l;
-                    count -= l;
-                    read += l;
-                    this.deltaBufferIndex += l;
-
-                    insertState.Position += (byte)l;
-                    length -= l;
-                }
-            }
-        }
-
-        return read;
-    }
-#endif
 #endif
 
     public override long Position
@@ -755,8 +550,13 @@ internal sealed class DeltaDecodedStream : Stream
     public override void Write(byte[] buffer, int offset, int count) =>
         throw new NotImplementedException();
 
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
+    public static async ValueTask<DeltaDecodedStream> CreateAsync(
+        Stream baseObjectStream, Stream deltaStream, CancellationToken ct)
+#else
     public static async Task<DeltaDecodedStream> CreateAsync(
         Stream baseObjectStream, Stream deltaStream, CancellationToken ct)
+#endif
     {
         void Throw(int step) =>
             throw new InvalidDataException(

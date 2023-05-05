@@ -78,7 +78,6 @@ internal sealed class RangedStream : Stream
         return read;
     }
 
-#if !NET35 && !NET40
 #if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
     public async ValueTask<int> ReadValueTaskAsync(
         byte[] buffer, int offset, int count, CancellationToken ct)
@@ -89,43 +88,17 @@ internal sealed class RangedStream : Stream
             return 0;
         }
 
-        int read;
-        if (this.parent is IValueTaskStream vts)
-        {
-            read = await vts.ReadValueTaskAsync(buffer, offset, remains, ct);
-        }
-        else
-        {
-            read = await this.parent.ReadAsync(buffer, offset, remains, ct);
-        }
-
-        this.remains -= read;
-        return read;
-    }
-#else
-    private async Task<int> InternalReadAsync(
-        byte[] buffer, int offset, int remains, CancellationToken ct)
-    {
-        var read = await this.parent.ReadAsync(buffer, offset, remains, ct);
+        var read = this.parent is IValueTaskStream vts ?
+            await vts.ReadValueTaskAsync(buffer, offset, remains, ct) :
+            await this.parent.ReadAsync(buffer, offset, remains, ct);
 
         this.remains -= read;
         return read;
     }
 
     public override Task<int> ReadAsync(
-        byte[] buffer, int offset, int count, CancellationToken ct)
-    {
-        var remains = (int)Math.Min(count, this.remains);
-        if (remains >= 1)
-        {
-            return this.InternalReadAsync(buffer, offset, remains, ct);
-        }
-        else
-        {
-            return Utilities.FromResult(0);
-        }
-    }
-#endif
+        byte[] buffer, int offset, int count, CancellationToken ct) =>
+        this.ReadValueTaskAsync(buffer, offset, count, ct).AsTask();
 #endif
 
     public override void Flush() =>

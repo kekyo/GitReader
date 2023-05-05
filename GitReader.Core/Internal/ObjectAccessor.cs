@@ -61,8 +61,13 @@ internal sealed class ObjectAccessor : IDisposable
 
     //////////////////////////////////////////////////////////////////////////
 
-    private async Task<ObjectStreamResult> OpenFromObjectFileAsync(
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
+    private async ValueTask<ObjectStreamResult?> OpenFromObjectFileAsync(
         string objectPath, Hash hash, CancellationToken ct)
+#else
+    private async Task<ObjectStreamResult?> OpenFromObjectFileAsync(
+        string objectPath, Hash hash, CancellationToken ct)
+#endif
     {
         void Throw(int step) =>
             throw new InvalidDataException(
@@ -153,8 +158,13 @@ internal sealed class ObjectAccessor : IDisposable
         }
     }
 
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
+    private async ValueTask<IndexEntry> GetOrCacheIndexEntryAsync(
+        string indexFileRelativePath, CancellationToken ct)
+#else
     private async Task<IndexEntry> GetOrCacheIndexEntryAsync(
         string indexFileRelativePath, CancellationToken ct)
+#endif
     {
         using var _ = await this.locker.LockAsync(ct);
 
@@ -255,8 +265,13 @@ internal sealed class ObjectAccessor : IDisposable
         ReferenceDelta = 0x07, // OBJ_REF_DELTA
     }
 
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
+    private async ValueTask<ObjectStreamResult> OpenFromPackedFileAsync(
+        string packedFilePath, ulong offset, CancellationToken ct)
+#else
     private async Task<ObjectStreamResult> OpenFromPackedFileAsync(
         string packedFilePath, ulong offset, CancellationToken ct)
+#endif
     {
         void Throw(int step) =>
             throw new InvalidDataException(
@@ -309,7 +324,7 @@ internal sealed class ObjectAccessor : IDisposable
                             new PreloadedStream(preloadBuffer, preloadIndex, read - preloadIndex),
                             fs);
 
-                        var (zlibStream, objectEntry) = await Utilities.WhenAll(
+                        var (zlibStream, objectEntry) = await Utilities.Join(
                             Utilities.CreateZLibStreamAsync(stream, ct),
                             this.OpenFromPackedFileAsync(packedFilePath, referenceOffset, ct));
 
@@ -344,7 +359,7 @@ internal sealed class ObjectAccessor : IDisposable
                             new PreloadedStream(preloadBuffer, preloadIndex, read - preloadIndex),
                             fs);
 
-                        var (zlibStream, objectEntry) = await Utilities.WhenAll(
+                        var (zlibStream, objectEntry) = await Utilities.Join(
                             Utilities.CreateZLibStreamAsync(stream, ct),
                             this.OpenAsync(referenceHash, ct));
 
@@ -395,8 +410,13 @@ internal sealed class ObjectAccessor : IDisposable
         }
     }
 
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
+    private async ValueTask<ObjectStreamResult?> OpenFromPackedAsync(
+        Hash hash, CancellationToken ct)
+#else
     private async Task<ObjectStreamResult?> OpenFromPackedAsync(
         Hash hash, CancellationToken ct)
+#endif
     {
         var entries = await Utilities.WhenAll(
             Utilities.EnumerateFiles(this.packedBasePath, "pack-*.idx").
@@ -435,8 +455,13 @@ internal sealed class ObjectAccessor : IDisposable
 
     //////////////////////////////////////////////////////////////////////////
 
-    public async Task<ObjectStreamResult?> OpenAsync(
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
+    public ValueTask<ObjectStreamResult?> OpenAsync(
         Hash hash, CancellationToken ct)
+#else
+    public Task<ObjectStreamResult?> OpenAsync(
+        Hash hash, CancellationToken ct)
+#endif
     {
         var objectPath = Utilities.Combine(
             this.objectsBasePath,
@@ -445,11 +470,11 @@ internal sealed class ObjectAccessor : IDisposable
 
         if (File.Exists(objectPath))
         {
-            return await this.OpenFromObjectFileAsync(objectPath, hash, ct);
+            return this.OpenFromObjectFileAsync(objectPath, hash, ct);
         }
         else
         {
-            return await this.OpenFromPackedAsync(hash, ct);
+            return this.OpenFromPackedAsync(hash, ct);
         }
     }
 }

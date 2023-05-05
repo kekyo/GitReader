@@ -8,7 +8,6 @@
 ////////////////////////////////////////////////////////////////////////////
 
 using System;
-using System.Diagnostics;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -185,53 +184,11 @@ internal sealed class MemoizedStream : Stream
 
         return current;
     }
+
+    public Task<long> SeekAsync(
+        long offset, SeekOrigin origin, CancellationToken ct) =>
+        this.SeekValueTaskAsync(offset, origin, ct).AsTask();
 #endif
-
-    public async Task<long> SeekAsync(
-        long offset, SeekOrigin origin, CancellationToken ct)
-    {
-        var position = this.PrepareSeek(offset, origin);
-
-        if (position < this.memoized.Length)
-        {
-            this.memoized.Seek(
-                position, SeekOrigin.Begin);
-            return position;
-        }
-
-        this.memoized.Seek(
-            this.memoized.Length, SeekOrigin.Begin);
-
-        var current = this.memoized.Length;
-        while (current < position)
-        {
-            var length = Math.Min(
-                position - current,
-                temporaryBuffer.Length);
-
-            var read = await this.parent.ReadAsync(
-                temporaryBuffer, 0, (int)length, ct);
-            if (read == 0)
-            {
-                break;
-            }
-
-            if (this.memoized is MemoryStream)
-            {
-                this.memoized.Write(
-                    temporaryBuffer, 0, read);
-            }
-            else
-            {
-                await this.memoized.WriteAsync(
-                    temporaryBuffer, 0, read, ct);
-            }
-
-            current += read;
-        }
-
-        return current;
-    }
 
     public override int Read(byte[] buffer, int offset, int count)
     {
@@ -279,14 +236,9 @@ internal sealed class MemoizedStream : Stream
         {
             if (this.memoized.Position < this.memoized.Length)
             {
-                if (this.memoized is MemoryStream)
-                {
-                    read = this.memoized.Read(buffer, offset, count);
-                }
-                else
-                {
-                    read = await this.memoized.ReadAsync(buffer, offset, count, ct);
-                }
+                read = this.memoized is MemoryStream ?
+                    this.memoized.Read(buffer, offset, count) :
+                    await this.memoized.ReadAsync(buffer, offset, count, ct);
 
                 offset += read;
                 count -= read;
@@ -300,15 +252,9 @@ internal sealed class MemoizedStream : Stream
                         count, this.Length - this.memoized.Position);
                     if (length >= 1)
                     {
-                        int r;
-                        if (this.parent is IValueTaskStream vts)
-                        {
-                            r = await vts.ReadValueTaskAsync(buffer, offset, (int)length, ct);
-                        }
-                        else
-                        {
-                            r = await this.parent.ReadAsync(buffer, offset, (int)length, ct);
-                        }
+                        var r = this.parent is IValueTaskStream vts ?
+                            await vts.ReadValueTaskAsync(buffer, offset, (int)length, ct) :
+                            await this.parent.ReadAsync(buffer, offset, (int)length, ct);
 
                         if (r >= 1)
                         {
@@ -329,97 +275,10 @@ internal sealed class MemoizedStream : Stream
 
         return read;
     }
-#endif
-
-#if !NET35 && !NET40
-    private async Task<int> InternalReadAsync2(
-        byte[] buffer, int offset, int count, int read, CancellationToken ct)
-    {
-        var length = Math.Min(
-            count, this.Length - this.memoized.Position);
-        if (length >= 1)
-        {
-            var r = await this.parent.ReadAsync(buffer, offset, (int)length, ct);
-            if (r >= 1)
-            {
-                if (this.memoized is MemoryStream)
-                {
-                    this.memoized.Write(buffer, offset, r);
-                }
-                else
-                {
-                    await this.memoized.WriteAsync(buffer, offset, r, ct);
-                }
-                read += r;
-            }
-        }
-
-        return read;
-    }
-
-    private async Task<int> InternalReadAsync1(
-        byte[] buffer, int offset, int count, CancellationToken ct)
-    {
-        var read = await this.memoized.ReadAsync(buffer, offset, count, ct);
-
-        offset += read;
-        count -= read;
-
-        if (count >= 1)
-        {
-            if (this.memoized.Position >= this.memoized.Length)
-            {
-                var length = Math.Min(
-                    count, this.Length - this.memoized.Position);
-                if (length >= 1)
-                {
-                    var r = await this.parent.ReadAsync(buffer, offset, (int)length, ct);
-
-                    if (r >= 1)
-                    {
-                        await this.memoized.WriteAsync(buffer, offset, r, ct);
-                        read += r;
-                    }
-                }
-            }
-        }
-
-        return read;
-    }
 
     public override Task<int> ReadAsync(
-        byte[] buffer, int offset, int count, CancellationToken ct)
-    {
-        var read = 0;
-
-        if (count >= 1)
-        {
-            if (this.memoized.Position < this.memoized.Length)
-            {
-                if (this.memoized is MemoryStream)
-                {
-                    read = this.memoized.Read(buffer, offset, count);
-                }
-                else
-                {
-                    return this.InternalReadAsync1(buffer, offset, count, ct);
-                }
-
-                offset += read;
-                count -= read;
-            }
-
-            if (count >= 1)
-            {
-                if (this.memoized.Position >= this.memoized.Length)
-                {
-                    return this.InternalReadAsync2(buffer, offset, count, read, ct);
-                }
-            }
-        }
-
-        return Utilities.FromResult(read);
-    }
+        byte[] buffer, int offset, int count, CancellationToken ct) =>
+        this.ReadValueTaskAsync(buffer, offset, count, ct).AsTask();
 #endif
 
     public override void Flush() =>

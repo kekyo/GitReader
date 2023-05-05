@@ -119,7 +119,7 @@ internal sealed class AsyncLock
 
     private void Unlock()
     {
-#if true
+#if false
         ThreadPool.QueueUserWorkItem(_ =>
         {
             lock (this.queue)
@@ -131,8 +131,8 @@ internal sealed class AsyncLock
         try
         {
             // Will cause stack overflow when a lot of continuation queued and ran it series.
-            // So it is splitted reentrancy continuation execution each 50 times.
-            if (counter.Value++ >= 50)
+            // So it is splitted reentrancy continuation execution each 10 times.
+            if (counter.Value++ >= 10)
             {
                 ThreadPool.QueueUserWorkItem(_ =>
                 {
