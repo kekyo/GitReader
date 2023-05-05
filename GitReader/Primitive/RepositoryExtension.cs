@@ -15,48 +15,48 @@ namespace GitReader.Primitive;
 
 public static class RepositoryExtension
 {
-    public static Task<Reference?> GetCurrentHeadReferenceAsync(
+    public static Task<PrimitiveReference?> GetCurrentHeadReferenceAsync(
         this Repository repository,
         CancellationToken ct = default) =>
         RepositoryFacade.GetCurrentHeadReferenceAsync(repository, ct);
 
-    public static Task<Reference> GetBranchHeadReferenceAsync(
+    public static Task<PrimitiveReference> GetBranchHeadReferenceAsync(
         this Repository repository,
         string branchName, CancellationToken ct = default) =>
         RepositoryFacade.GetBranchHeadReferenceAsync(repository, branchName, ct);
 
-    public static Task<Reference> GetRemoteBranchHeadReferenceAsync(
+    public static Task<PrimitiveReference> GetRemoteBranchHeadReferenceAsync(
         this Repository repository,
         string branchName, CancellationToken ct = default) =>
         RepositoryFacade.GetRemoteBranchHeadReferenceAsync(repository, branchName, ct);
 
-    public static Task<Reference> GetTagReferenceAsync(
+    public static Task<PrimitiveReference> GetTagReferenceAsync(
         this Repository repository,
         string tagName, CancellationToken ct = default) =>
         RepositoryFacade.GetTagReferenceAsync(repository, tagName, ct);
 
-    public static Task<Commit?> GetCommitAsync(
+    public static Task<PrimitiveCommit?> GetCommitAsync(
         this Repository repository,
         Hash commit, CancellationToken ct = default) =>
         RepositoryAccessor.ReadCommitAsync(repository, commit, ct);
 
-    public static async Task<Tag> GetTagAsync(
+    public static async Task<PrimitiveTag> GetTagAsync(
         this Repository repository,
-        Reference tag, CancellationToken ct = default) =>
+        PrimitiveReference tag, CancellationToken ct = default) =>
         await RepositoryAccessor.ReadTagAsync(repository, tag, ct) is { } t ?
-            t : Tag.Create(tag, ObjectTypes.Commit, tag.Name, null, null);
+            t : new(tag, ObjectTypes.Commit, tag.Name, null, null);
 
-    public static Task<Reference[]> GetBranchHeadReferencesAsync(
+    public static Task<PrimitiveReference[]> GetBranchHeadReferencesAsync(
         this Repository repository,
         CancellationToken ct = default) =>
         RepositoryAccessor.ReadReferencesAsync(repository, ReferenceTypes.Branches, ct);
 
-    public static Task<Reference[]> GetRemoteBranchHeadReferencesAsync(
+    public static Task<PrimitiveReference[]> GetRemoteBranchHeadReferencesAsync(
         this Repository repository,
         CancellationToken ct = default) =>
         RepositoryAccessor.ReadReferencesAsync(repository, ReferenceTypes.RemoteBranches, ct);
 
-    public static Task<Reference[]> GetTagReferencesAsync(
+    public static Task<PrimitiveReference[]> GetTagReferencesAsync(
         this Repository repository,
         CancellationToken ct = default) =>
         RepositoryAccessor.ReadReferencesAsync(repository, ReferenceTypes.Tags, ct);
@@ -69,7 +69,7 @@ public static class RepositoryExtension
     }
 
     public static void Deconstruct(
-        this Reference reference,
+        this PrimitiveReference reference,
         out string name,
         out Hash target)
     {
@@ -78,7 +78,7 @@ public static class RepositoryExtension
     }
 
     public static void Deconstruct(
-        this Commit commit,
+        this PrimitiveCommit commit,
         out Hash hash,
         out Hash treeRoot,
         out Signature author,
@@ -95,7 +95,7 @@ public static class RepositoryExtension
     }
 
     public static void Deconstruct(
-        this Tag tag,
+        this PrimitiveTag tag,
         out Hash hash,
         out ObjectTypes type,
         out string name,

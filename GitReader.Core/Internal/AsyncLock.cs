@@ -65,20 +65,32 @@ internal sealed class AsyncLock
         }
     }
 
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
+    public ValueTask<Disposer> LockAsync(CancellationToken ct)
+#else
     public Task<Disposer> LockAsync(CancellationToken ct)
+#endif
     {
         lock (this.queue)
         {
             var running = this.running++;
             if (running <= 0)
             {
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
+                return new(this.disposer);
+#else
                 return Utilities.FromResult(this.disposer);
+#endif
             }
             else
             {
                 var queueEntry = new QueueEntry(ct);
                 this.queue.Enqueue(queueEntry);
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
+                return new(queueEntry.WaitAsync());
+#else
                 return queueEntry.WaitAsync();
+#endif
             }
         }
     }
@@ -107,7 +119,7 @@ internal sealed class AsyncLock
 
     private void Unlock()
     {
-#if true
+#if false
         ThreadPool.QueueUserWorkItem(_ =>
         {
             lock (this.queue)
@@ -119,8 +131,8 @@ internal sealed class AsyncLock
         try
         {
             // Will cause stack overflow when a lot of continuation queued and ran it series.
-            // So it is splitted reentrancy continuation execution each 50 times.
-            if (counter.Value++ >= 50)
+            // So it is splitted reentrancy continuation execution each 10 times.
+            if (counter.Value++ >= 10)
             {
                 ThreadPool.QueueUserWorkItem(_ =>
                 {

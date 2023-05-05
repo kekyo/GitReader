@@ -12,7 +12,7 @@ using System.Linq;
 
 namespace GitReader.Primitive;
 
-public readonly struct Commit : IEquatable<Commit>
+public readonly struct PrimitiveCommit : IEquatable<PrimitiveCommit>
 {
     public readonly Hash Hash;
     public readonly Hash TreeRoot;
@@ -21,7 +21,7 @@ public readonly struct Commit : IEquatable<Commit>
     public readonly Hash[] Parents;
     public readonly string Message;
 
-    private Commit(
+    public PrimitiveCommit(
         Hash hash,
         Hash treeRoot,
         Signature author,
@@ -37,7 +37,7 @@ public readonly struct Commit : IEquatable<Commit>
         this.Message = message;
     }
 
-    public bool Equals(Commit rhs) =>
+    public bool Equals(PrimitiveCommit rhs) =>
         this.Hash.Equals(rhs.Hash) &&
         this.TreeRoot.Equals(rhs.TreeRoot) &&
         this.Author.Equals(rhs.Author) &&
@@ -45,11 +45,11 @@ public readonly struct Commit : IEquatable<Commit>
         this.Parents.SequenceEqual(rhs.Parents) &&
         this.Message.Equals(rhs.Message);
 
-    bool IEquatable<Commit>.Equals(Commit rhs) =>
+    bool IEquatable<PrimitiveCommit>.Equals(PrimitiveCommit rhs) =>
         this.Equals(rhs);
 
     public override bool Equals(object? obj) =>
-        obj is Commit rhs && this.Equals(rhs);
+        obj is PrimitiveCommit rhs && this.Equals(rhs);
 
     public override int GetHashCode() =>
         this.Parents.Aggregate(
@@ -63,15 +63,6 @@ public readonly struct Commit : IEquatable<Commit>
     public override string ToString() =>
         $"{this.Hash}: {this.Author}: {this.Message.Replace('\n', ' ')}";
 
-    public static implicit operator Hash(Commit commit) =>
+    public static implicit operator Hash(PrimitiveCommit commit) =>
         commit.Hash;
-
-    public static Commit Create(
-        Hash hash,
-        Hash treeRoot,
-        Signature author,
-        Signature committer,
-        Hash[] parents,
-        string message) =>
-        new(hash, treeRoot, author, committer, parents, message);
 }

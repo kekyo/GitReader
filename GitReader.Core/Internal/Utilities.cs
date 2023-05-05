@@ -269,26 +269,63 @@ internal static class Utilities
 #if NET35 || NET40
     public static Task<T[]> WhenAll<T>(IEnumerable<Task<T>> tasks) =>
         TaskEx.WhenAll(tasks);
+
+    public static Task<T[]> WhenAll<T>(params Task<T>[] tasks) =>
+        TaskEx.WhenAll(tasks);
 #else
     public static Task<T[]> WhenAll<T>(IEnumerable<Task<T>> tasks) =>
         Task.WhenAll(tasks);
+
+    public static Task<T[]> WhenAll<T>(params Task<T>[] tasks) =>
+        Task.WhenAll(tasks);
+
+    public static async ValueTask<T[]> WhenAll<T>(IEnumerable<ValueTask<T>> tasks)
+    {
+        var results = new List<T>();
+        foreach (var task in tasks)
+        {
+            results.Add(await task);
+        }
+        return results.ToArray();
+    }
+
+    public static ValueTask<T[]> WhenAll<T>(params ValueTask<T>[] tasks) =>
+        WhenAll((IEnumerable<ValueTask<T>>)tasks);
 #endif
 
-    public static async Task<PairResult<T0, T1>> WhenAll<T0, T1>(
+    public static async Task<PairResult<T0, T1>> Join<T0, T1>(
         Task<T0> task0, Task<T1> task1) =>
         new(await task0, await task1);
 
-    public static async Task<PairResult<T0, T1, T2>> WhenAll<T0, T1, T2>(
+    public static async Task<PairResult<T0, T1, T2>> Join<T0, T1, T2>(
         Task<T0> task0, Task<T1> task1, Task<T2> task2) =>
         new(await task0, await task1, await task2);
 
-    public static async Task<PairResult<T0, T1, T2, T3>> WhenAll<T0, T1, T2, T3>(
+    public static async Task<PairResult<T0, T1, T2, T3>> Join<T0, T1, T2, T3>(
         Task<T0> task0, Task<T1> task1, Task<T2> task2, Task<T3> task3) =>
         new(await task0, await task1, await task2, await task3);
 
-    public static async Task<PairResult<T0, T1, T2, T3, T4>> WhenAll<T0, T1, T2, T3, T4>(
+    public static async Task<PairResult<T0, T1, T2, T3, T4>> Join<T0, T1, T2, T3, T4>(
         Task<T0> task0, Task<T1> task1, Task<T2> task2, Task<T3> task3, Task<T4> task4) =>
         new(await task0, await task1, await task2, await task3, await task4);
+
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
+    public static async ValueTask<PairResult<T0, T1>> Join<T0, T1>(
+        ValueTask<T0> task0, ValueTask<T1> task1) =>
+        new(await task0, await task1);
+
+    public static async ValueTask<PairResult<T0, T1, T2>> Join<T0, T1, T2>(
+        ValueTask<T0> task0, ValueTask<T1> task1, ValueTask<T2> task2) =>
+        new(await task0, await task1, await task2);
+
+    public static async ValueTask<PairResult<T0, T1, T2, T3>> Join<T0, T1, T2, T3>(
+        ValueTask<T0> task0, ValueTask<T1> task1, ValueTask<T2> task2, ValueTask<T3> task3) =>
+        new(await task0, await task1, await task2, await task3);
+
+    public static async ValueTask<PairResult<T0, T1, T2, T3, T4>> Join<T0, T1, T2, T3, T4>(
+        ValueTask<T0> task0, ValueTask<T1> task1, ValueTask<T2> task2, ValueTask<T3> task3, ValueTask<T4> task4) =>
+        new(await task0, await task1, await task2, await task3, await task4);
+#endif
 
 #if NET35 || NET40
     public static Task<T> FromResult<T>(T result) =>
@@ -373,11 +410,23 @@ internal static class Utilities
 #if NET35 || NET40
     public static Task<int> ReadAsync(
         this Stream stream,
-        byte[] buffer, int offset, int count, CancellationToken ct)
-    {
-        ct.ThrowIfCancellationRequested();
-        return Task.Factory.StartNew(() => stream.Read(buffer, offset, count));
-    }
+        byte[] buffer, int offset, int count,
+        CancellationToken ct) =>
+        Task.Factory.FromAsync(stream.BeginRead, stream.EndRead, buffer, offset, count, ct);
+#endif
+
+#if NET35 || NET40
+    public static Task WriteAsync(
+        this Stream stream,
+        byte[] buffer, int offset, int count,
+        CancellationToken ct) =>
+        Task.Factory.FromAsync(stream.BeginWrite, stream.EndWrite, buffer, offset, count, ct);
+#endif
+
+#if NET35
+    public static Task FlushAsync(
+        this Stream stream, CancellationToken ct) =>
+        Task.Factory.StartNew(stream.Flush, ct);
 #endif
 
 #if NET35 || NET40
@@ -411,15 +460,27 @@ internal static class Utilities
         Process.GetCurrentProcess().Id;
 #endif
 
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
+    public static async ValueTask<Stream> CreateZLibStreamAsync(
+        Stream parent, CancellationToken ct)
+#else
     public static async Task<Stream> CreateZLibStreamAsync(
         Stream parent, CancellationToken ct)
+#endif
     {
         void Throw(int step) =>
             throw new InvalidDataException(
                 $"Could not parse zlib stream. Step={step}");
 
         var buffer = new byte[2];
+
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
+        var read = parent is IValueTaskStream vts ?
+            await vts.ReadValueTaskAsync(buffer, 0, buffer.Length, ct) :
+            await parent.ReadAsync(buffer, 0, buffer.Length, ct);
+#else
         var read = await parent.ReadAsync(buffer, 0, buffer.Length, ct);
+#endif
 
         if (read < 2)
         {

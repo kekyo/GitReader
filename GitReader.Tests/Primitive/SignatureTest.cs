@@ -19,7 +19,7 @@ public sealed class SignatureTests
     public void Create1()
     {
         var now = Utilities.TruncateMilliseconds(DateTimeOffset.Now);
-        var sig = Signature.Create("Foo Bar", now);
+        var sig = new Signature("Foo Bar", now);
 
         Assert.AreEqual("Foo Bar", sig.Name);
         Assert.AreEqual(now, sig.Date);
@@ -30,7 +30,7 @@ public sealed class SignatureTests
     public void Create2()
     {
         var now = Utilities.TruncateMilliseconds(DateTimeOffset.Now);
-        var sig = Signature.Create("Foo Bar", "foo@bar.com", now);
+        var sig = new Signature("Foo Bar", "foo@bar.com", now);
 
         Assert.AreEqual("Foo Bar", sig.Name);
         Assert.AreEqual("foo@bar.com", sig.MailAddress);

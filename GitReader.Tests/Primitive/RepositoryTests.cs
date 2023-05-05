@@ -145,7 +145,7 @@ public sealed class RepositoryTests
         var branchref = await repository.GetBranchHeadReferenceAsync("master");
         var commit = (await repository.GetCommitAsync(branchref))!.Value;
 
-        var commits = new List<Commit>();
+        var commits = new List<PrimitiveCommit>();
         while (true)
         {
             commits.Add(commit);
