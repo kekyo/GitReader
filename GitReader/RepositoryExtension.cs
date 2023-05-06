@@ -27,6 +27,14 @@ public static class RepositoryExtension
         Utilities.ToGitAuthorString(signature);
 
     public static void Deconstruct(
+        this Hash hash, out byte[] hashCode) =>
+        hashCode = hash.HashCode;
+
+    public static void Deconstruct(
+        this Hash hash, out string hashString) =>
+        hashString = hash.ToString();
+
+    public static void Deconstruct(
         this Signature signature,
         out string name, out string? mailAddress, out DateTimeOffset date)
     {

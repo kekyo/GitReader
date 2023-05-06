@@ -24,6 +24,9 @@ module public RepositoryExtension =
     type Signature with
         member signature.toGitAuthorString() =
             Utilities.ToGitAuthorString(signature)
+            
+    let (|Hash|) (hash: Hash) =
+        (hash.HashCode, hash.ToString())
 
     let (|Signature|) (signature: Signature) =
         (signature.Name, signature.MailAddress, signature.Date)

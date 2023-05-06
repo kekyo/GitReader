@@ -353,7 +353,7 @@ internal sealed class ObjectAccessor : IDisposable
                         var hashCode = new byte[20];
                         Array.Copy(preloadBuffer, preloadIndex, hashCode, 0, hashCode.Length);
                         preloadIndex += hashCode.Length;
-                        var referenceHash = Hash.Create(hashCode);
+                        Hash referenceHash = hashCode;
 
                         var stream =new ConcatStream(
                             new PreloadedStream(preloadBuffer, preloadIndex, read - preloadIndex),
