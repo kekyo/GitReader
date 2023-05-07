@@ -290,12 +290,25 @@ internal sealed class MemoizedStream : Stream
     public override void Write(byte[] buffer, int offset, int count) =>
         throw new NotImplementedException();
 
-    public static MemoizedStream Create(Stream parent, long parentLength)
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
+    public static async ValueTask<MemoizedStream> CreateAsync(
+        Stream parent, long parentLength, CancellationToken ct)
+#else
+    public static async Task<MemoizedStream> CreateAsync(
+        Stream parent, long parentLength, CancellationToken ct)
+#endif
     {
         if (parentLength >= memoizeToFileSize)
         {
             var temporaryFile = TemporaryFile.CreateFile();
             return new(parent, parentLength, temporaryFile, temporaryFile.Stream);
+        }
+        else if (parentLength < 0)
+        {
+            var ms = new MemoryStream();
+            await parent.CopyToAsync(ms, 65536, ct);
+            ms.Position = 0;
+            return new(ms, ms.Length, null, ms);
         }
         else
         {

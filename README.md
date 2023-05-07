@@ -361,6 +361,8 @@ Apache-v2
 
 ## History
 
+* 0.8.0:
+  * Improved performance.
 * 0.7.0:
   * Switched primitive interface types with prefix `Primitive`.
   * Improved performance.

@@ -167,6 +167,14 @@ public static class Program
                 }
             }
         }
+#if DEBUG
+        Console.Error.WriteLine(
+            $"HitCount={repository.HitCount}");
+        Console.Error.WriteLine(
+            $"MissCount={repository.MissCount}");
+
+        Console.ReadLine();
+#endif
     }
 
     private static Task MainAsync(string[] args)

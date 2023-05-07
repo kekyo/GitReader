@@ -99,15 +99,21 @@ internal sealed class PreloadedStream : Stream
         set => throw new NotImplementedException();
     }
 
-    public override void Flush() =>
-        throw new NotImplementedException();
-
     public override long Seek(long offset, SeekOrigin origin) =>
         throw new NotImplementedException();
+
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
+    public ValueTask<long> SeekValueTaskAsync(
+        long offset, SeekOrigin origin, CancellationToken ct) =>
+        throw new NotImplementedException();
+#endif
 
     public override void SetLength(long value) =>
         throw new NotImplementedException();
 
     public override void Write(byte[] buffer, int offset, int count) =>
+        throw new NotImplementedException();
+
+    public override void Flush() =>
         throw new NotImplementedException();
 }

@@ -453,6 +453,29 @@ internal static class Utilities
         Task.Factory.StartNew(tw.Flush);
 #endif
 
+#if NET35
+    public static Task CopyToAsync(
+        this Stream from, Stream to, int bufferSize, CancellationToken ct) =>
+        Task.Factory.StartNew(() =>
+        {
+            var buffer = new byte[bufferSize];
+            while (true)
+            {
+                ct.ThrowIfCancellationRequested();
+
+                var read = from.Read(buffer, 0, buffer.Length);
+                if (read == 0)
+                {
+                    break;
+                }
+
+                ct.ThrowIfCancellationRequested();
+
+                to.Write(buffer, 0, read);
+            }
+        }, ct);
+#endif
+
     public static int GetProcessId() =>
 #if NET5_0_OR_GREATER
         Environment.ProcessId;
@@ -504,7 +527,8 @@ internal static class Utilities
                 break;
         }
 
-        return new DeflateStream(parent, CompressionMode.Decompress, false);
+        return new DeflateStream(
+            parent, CompressionMode.Decompress, false);
     }
 
     public static string ToGitDateString(
