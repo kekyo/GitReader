@@ -14,6 +14,7 @@ open GitReader.Primitive
 open NUnit.Framework
 open System.Collections.Generic
 open System.Threading.Tasks
+open System.IO
 
 type public PrimitiveRepositoryTests() =
 
@@ -105,6 +106,29 @@ type public PrimitiveRepositoryTests() =
             tagrefs |>
             Seq.map (fun tagReference -> repository.getTag(tagReference) |> Async.StartImmediateAsTask))
         do! verify(tags |> Array.sortBy(fun t -> t.Name))
+    }
+     
+    [<Test>]
+    member _.GetTree() = task {
+        use! repository = Repository.Factory.openPrimitive(
+            RepositoryTestsSetUp.BasePath)
+        let! commit = repository.getCommit(
+            "1205dc34ce48bda28fc543daaf9525a9bb6e6d10") |> unwrapOptionAsy
+        let! tree = repository.getTree(commit.TreeRoot);
+        do! verify(tree)
+    }
+     
+    [<Test>]
+    member _.OpenBlob() = task {
+        use! repository = Repository.Factory.openPrimitive(
+            RepositoryTestsSetUp.BasePath)
+        let! commit = repository.getCommit(
+            "1205dc34ce48bda28fc543daaf9525a9bb6e6d10") |> unwrapOptionAsy
+        let! tree = repository.getTree(commit.TreeRoot);
+        let blob = tree.Children |> Seq.find (fun child -> child.Name = "build-nupkg.bat")
+        use! blobStream = repository.openBlob blob.Hash
+        let tr = new StreamReader(blobStream)
+        do! verify(tr.ReadToEnd())
     }
 
     [<Test>]

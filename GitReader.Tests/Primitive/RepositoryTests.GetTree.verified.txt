@@ -1,0 +1,63 @@
+﻿{
+  Hash: {
+    HashCode: 5462bf28fdc4681762057cac7704730b1c590b38
+  },
+  Children: [
+    {
+      Hash: {
+        HashCode: 8efbe3e1a885781cd4af635fc36c8f7c3e4a61b4
+      },
+      Name: .github,
+      Modes: Directory
+    },
+    {
+      Hash: {
+        HashCode: 7c6cf618d6b78d36a307f576ae218505d186cdcd
+      },
+      Name: .gitignore,
+      Modes: OtherRead, GroupRead, OwnerWrite, OwnerRead, File
+    },
+    {
+      Hash: {
+        HashCode: b76f410760b42d7b2822e463ec06e91946b7a56a
+      },
+      Name: CenterCLR.NamingFormatter.sln,
+      Modes: OtherRead, GroupRead, OwnerWrite, OwnerRead, File
+    },
+    {
+      Hash: {
+        HashCode: deeac68f4a9e88e0e9c01c83deee1aceb3a05cdb
+      },
+      Name: CenterCLR.NamingFormatter,
+      Modes: Directory
+    },
+    {
+      Hash: {
+        HashCode: c53d90ac78df69109f6bac85e7496ad52fcde4a7
+      },
+      Name: CenterCLR.NamingFormatterTests,
+      Modes: Directory
+    },
+    {
+      Hash: {
+        HashCode: d4cb9825ee137b53148b9776a20ba093debb8ef5
+      },
+      Name: Images,
+      Modes: Directory
+    },
+    {
+      Hash: {
+        HashCode: 6289549e5b22c0dbd64ba1d72c2fe5a6f02128b9
+      },
+      Name: README.md,
+      Modes: OtherRead, GroupRead, OwnerWrite, OwnerRead, File
+    },
+    {
+      Hash: {
+        HashCode: 0dc4f6eba2a37054088754456f63dd7b34b24753
+      },
+      Name: build-nupkg.bat,
+      Modes: OtherRead, GroupRead, OwnerWrite, OwnerRead, File
+    }
+  ]
+}

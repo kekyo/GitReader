@@ -166,6 +166,46 @@ internal static class Utilities
 #endif
 
 #if NET35
+    private static class EnumHelper<TEnum>
+        where TEnum : struct, Enum
+    {
+        private static readonly TypeCode typeCode;
+
+        static EnumHelper()
+        {
+            var type = Enum.GetUnderlyingType(typeof(TEnum));
+            if (type == typeof(int))
+            {
+                typeCode = TypeCode.Int32;
+            }
+            else if (type == typeof(ushort))
+            {
+                typeCode = TypeCode.UInt16;
+            }
+            else
+            {
+                throw new InvalidOperationException();
+            }
+        }
+
+        public static bool HasFlag(Enum enumValue, Enum flags) =>
+            typeCode switch
+            {
+                TypeCode.Int32 =>
+                    ((int)(object)(TEnum)enumValue & (int)(object)(TEnum)flags) == (int)(object)(TEnum)flags,
+                TypeCode.UInt16 =>
+                    ((ushort)(object)(TEnum)enumValue & (ushort)(object)(TEnum)flags) == (ushort)(object)(TEnum)flags,
+                _ =>
+                    throw new InvalidOperationException(),
+            };
+    }
+
+    public static unsafe bool HasFlag<TEnum>(this TEnum enumValue, TEnum flags)
+        where TEnum : struct, Enum =>
+        EnumHelper<TEnum>.HasFlag(enumValue, flags);
+#endif
+
+#if NET35
     public static IEnumerable<string> EnumerateFiles(string basePath, string match) =>
         Directory.GetFiles(basePath, match, SearchOption.AllDirectories);
 #else
@@ -265,6 +305,41 @@ internal static class Utilities
         this Dictionary<TKey, TValue> dictionary)
         where TKey : notnull =>
         new(dictionary);
+
+    public static string? Tokenize(string str, char[] separators, ref int index)
+    {
+        var start = index;
+
+        while (true)
+        {
+            if (index >= str.Length)
+            {
+                return null;
+            }
+
+            var ch = str[index];
+            if (Array.IndexOf(separators, ch) == -1)
+            {
+                break;
+            }
+
+            index++;
+        }
+
+        do
+        {
+            var ch = str[index];
+            if (Array.IndexOf(separators, ch) >= 0)
+            {
+                break;
+            }
+
+            index++;
+        }
+        while (index < str.Length);
+
+        return str.Substring(start, index - start);
+    }
 
 #if NET35 || NET40
     public static Task<T[]> WhenAll<T>(IEnumerable<Task<T>> tasks) =>
@@ -453,6 +528,29 @@ internal static class Utilities
         Task.Factory.StartNew(tw.Flush);
 #endif
 
+#if NET35
+    public static Task CopyToAsync(
+        this Stream from, Stream to, int bufferSize, CancellationToken ct) =>
+        Task.Factory.StartNew(() =>
+        {
+            var buffer = new byte[bufferSize];
+            while (true)
+            {
+                ct.ThrowIfCancellationRequested();
+
+                var read = from.Read(buffer, 0, buffer.Length);
+                if (read == 0)
+                {
+                    break;
+                }
+
+                ct.ThrowIfCancellationRequested();
+
+                to.Write(buffer, 0, read);
+            }
+        }, ct);
+#endif
+
     public static int GetProcessId() =>
 #if NET5_0_OR_GREATER
         Environment.ProcessId;
@@ -504,7 +602,8 @@ internal static class Utilities
                 break;
         }
 
-        return new DeflateStream(parent, CompressionMode.Decompress, false);
+        return new DeflateStream(
+            parent, CompressionMode.Decompress, false);
     }
 
     public static string ToGitDateString(

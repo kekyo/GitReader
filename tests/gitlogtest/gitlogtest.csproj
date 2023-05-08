@@ -1,0 +1,18 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFrameworks>net48;net6.0</TargetFrameworks>
+    <Nullable>enable</Nullable>
+    <AssemblyName>gitlogtest</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Lepracaun" Version="1.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\GitReader\GitReader.csproj" />
+  </ItemGroup>
+
+</Project>

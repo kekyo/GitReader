@@ -211,6 +211,43 @@ if (await repository.GetCommitAsync(
 }
 ```
 
+### Get commit tree information
+
+```csharp
+if (await repository.GetCommitAsync(
+    "6961a50ef3ad4e43ed9774daffd8457d32cf5e75") is Command commit)
+{
+    TreeRoot treeRoot = await commit.GetTreeRootAsync();
+
+    foreach (TreeEntry entry in treeRoot.Children)
+    {
+        Console.WriteLine($"Hash: {entry.Hash}");
+        Console.WriteLine($"Name: {entry.Name}");
+        Console.WriteLine($"Modes: {entry.Modes}");
+    }
+}
+```
+
+### Read blob
+
+```csharp
+if (await repository.GetCommitAsync(
+    "6961a50ef3ad4e43ed9774daffd8457d32cf5e75") is Command commit)
+{
+    TreeRoot treeRoot = await commit.GetTreeRootAsync();
+
+    foreach (TreeEntry entry in treeRoot.Children)
+    {
+        if (entry is TreeBlobEntry blob)
+        {
+            using var stream = await blob.OpenBlobAsync();
+
+            // (You can access the blob...)
+        }
+    }
+}
+```
+
 ### Traverse a branch through primary commits
 
 ```csharp
@@ -315,6 +352,46 @@ foreach (PrimitiveReference tagReference in tagReferences)
 }
 ```
 
+### Read commit tree information
+
+```csharp
+if (await repository.GetCommitAsync(
+    "1205dc34ce48bda28fc543daaf9525a9bb6e6d10") is PrimitiveCommit commit)
+{
+    PrimitiveTree tree = await repository.GetTreeAsync(commit.TreeRoot);
+
+    foreach (Hash childHash in tree.Children)
+    {
+        PrimitiveTreeEntry child = await repository.GetTreeAsync(childHash);
+
+        Console.WriteLine($"Hash: {child.Hash}");
+        Console.WriteLine($"Name: {child.Name}");
+        Console.WriteLine($"Modes: {child.Modes}");
+    }
+}
+```
+
+### Open blob
+
+```csharp
+if (await repository.GetCommitAsync(
+    "1205dc34ce48bda28fc543daaf9525a9bb6e6d10") is PrimitiveCommit commit)
+{
+    PrimitiveTree tree = await repository.GetTreeAsync(commit.TreeRoot);
+
+    foreach (Hash childHash in tree.Children)
+    {
+        PrimitiveTreeEntry child = await repository.GetTreeAsync(childHash);
+        if (child.Modes.HasFlag(PrimitiveModeFlags.File))
+        {
+            using var stream = await repository.OpenBlobAsync(child.Hash);
+
+            // (You can access the blob...)
+        }
+    }
+}
+```
+
 ### Traverse a commit through primary commits
 
 ```csharp
@@ -350,7 +427,6 @@ if (await repository.GetCommitAsync(
 
 ## TODO
 
-* Supported tree/file accessors.
 * Supported CRC32 verifier.
 
 ----
@@ -361,6 +437,9 @@ Apache-v2
 
 ## History
 
+* 0.8.0:
+  * Added tree/blob accessors.
+  * Improved performance.
 * 0.7.0:
   * Switched primitive interface types with prefix `Primitive`.
   * Improved performance.

@@ -12,6 +12,7 @@ using GitReader.Primitive;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -627,6 +628,136 @@ internal static class RepositoryAccessor
         {
             throw new InvalidDataException(
                 "Invalid tag object format: Step=3");
+        }
+    }
+
+    public static async Task<PrimitiveTree> ReadTreeAsync(
+        Repository repository,
+        Hash hash,
+        CancellationToken ct)
+    {
+        var accessor = GetObjectAccessor(repository);
+        if (await accessor.OpenAsync(hash, ct) is not { } streamResult)
+        {
+            throw new InvalidDataException(
+                $"Couldn't find tree object: {hash}");
+        }
+
+        try
+        {
+            if (streamResult.Type != ObjectTypes.Tree)
+            {
+                throw new InvalidDataException(
+                    $"It isn't tree object: {hash}");
+            }
+
+            var ms = new MemoryStream();
+            await streamResult.Stream.CopyToAsync(ms, 4096, ct);
+
+            var buffer = ms.ToArray();
+
+            var children = new List<PrimitiveTreeEntry>();
+            var index = 0;
+            while (index < buffer.Length)
+            {
+                var start = index;
+                while (true)
+                {
+                    if (buffer[index++] == 0x20)
+                    {
+                        break;
+                    }
+
+                    if (index >= buffer.Length)
+                    {
+                        throw new InvalidDataException(
+                            $"Invalid tree object format: Step=1");
+                    }
+                }
+
+                var modeFlagsString = Encoding.UTF8.GetString(
+                    buffer, start, index - start - 1);
+                PrimitiveModeFlags modeFlags;
+                try
+                {
+                    modeFlags = (PrimitiveModeFlags)Convert.ToUInt16(modeFlagsString, 8);
+                }
+                catch
+                {
+                    throw new InvalidDataException(
+                        $"Invalid tree object format: Step=2");
+                }
+
+                start = index;
+
+                while (true)
+                {
+                    if (buffer[index++] == 0x00)
+                    {
+                        break;
+                    }
+
+                    if (index >= buffer.Length)
+                    {
+                        throw new InvalidDataException(
+                            $"Invalid tree object format: Step=3");
+                    }
+                }
+
+                var nameString = Encoding.UTF8.GetString(
+                    buffer, start, index - start - 1);
+                if (nameString.Length == 0)
+                {
+                    throw new InvalidDataException(
+                        $"Invalid tree object format: Step=4");
+                }
+
+                if ((index + 20) > buffer.Length)
+                {
+                    throw new InvalidDataException(
+                        $"Invalid tree object format: Step=5");
+                }
+
+                var dataHash = new Hash(buffer, index);
+                index += 20;
+
+                children.Add(new(dataHash, nameString, modeFlags));
+            }
+
+            return new(hash, children.ToArray());
+        }
+        finally
+        {
+            streamResult.Stream.Dispose();
+        }
+    }
+
+    public static async Task<Stream> OpenBlobAsync(
+        Repository repository,
+        Hash hash,
+        CancellationToken ct)
+    {
+        var accessor = GetObjectAccessor(repository);
+        if (await accessor.OpenAsync(hash, ct) is not { } streamResult)
+        {
+            throw new InvalidDataException(
+                $"Couldn't find tree object: {hash}");
+        }
+
+        try
+        {
+            if (streamResult.Type != ObjectTypes.Blob)
+            {
+                throw new InvalidDataException(
+                    $"It isn't blob object: {hash}");
+            }
+
+            return streamResult.Stream;
+        }
+        catch
+        {
+            streamResult.Stream.Dispose();
+            throw;
         }
     }
 }

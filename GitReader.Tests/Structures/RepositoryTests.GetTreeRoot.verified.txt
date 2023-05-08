@@ -1,0 +1,223 @@
+﻿{
+  Children: [
+    {
+      Children: [
+        {
+          Children: [
+            {
+              Name: build.yml,
+              Modes: OtherRead, GroupRead, OwnerWrite, OwnerRead,
+              Hash: {
+                HashCode: 9e1cb4c6ea6b897bbb34488312365c8b3135b172
+              }
+            }
+          ],
+          Name: workflows,
+          Hash: {
+            HashCode: 9f13238c667645041aa83159e66e125afd0ff3ce
+          }
+        }
+      ],
+      Name: .github,
+      Hash: {
+        HashCode: 8efbe3e1a885781cd4af635fc36c8f7c3e4a61b4
+      }
+    },
+    {
+      Name: .gitignore,
+      Modes: OtherRead, GroupRead, OwnerWrite, OwnerRead,
+      Hash: {
+        HashCode: 7c6cf618d6b78d36a307f576ae218505d186cdcd
+      }
+    },
+    {
+      Name: CenterCLR.NamingFormatter.sln,
+      Modes: OtherRead, GroupRead, OwnerWrite, OwnerRead,
+      Hash: {
+        HashCode: b76f410760b42d7b2822e463ec06e91946b7a56a
+      }
+    },
+    {
+      Children: [
+        {
+          Name: CenterCLR.NamingFormatter.csproj,
+          Modes: OtherRead, GroupRead, OwnerWrite, OwnerRead,
+          Hash: {
+            HashCode: 4794a2901cb7c79b98576b71c90772dec3fcf515
+          }
+        },
+        {
+          Name: DIctionary.cs,
+          Modes: OtherRead, GroupRead, OwnerWrite, OwnerRead,
+          Hash: {
+            HashCode: 6614bc390986e43d6e70211ba2b96d1375a004b6
+          }
+        },
+        {
+          Name: Enumerable.cs,
+          Modes: OtherRead, GroupRead, OwnerWrite, OwnerRead,
+          Hash: {
+            HashCode: 613afb7ed420603ca7dbaffc3b3fc2c0e0fb1923
+          }
+        },
+        {
+          Name: EqualityComparer.cs,
+          Modes: OtherRead, GroupRead, OwnerWrite, OwnerRead,
+          Hash: {
+            HashCode: 62ee143696128a1dc6c12be424659d94d281e110
+          }
+        },
+        {
+          Name: IDictionary.cs,
+          Modes: OtherRead, GroupRead, OwnerWrite, OwnerRead,
+          Hash: {
+            HashCode: 3d43d02eeae02ad5cd2a1cc8794371f472c653b2
+          }
+        },
+        {
+          Name: IReadOnlyDictionary.cs,
+          Modes: OtherRead, GroupRead, OwnerWrite, OwnerRead,
+          Hash: {
+            HashCode: 2e548d45bf2b74717bf29ba686cbf12bb6a16a1b
+          }
+        },
+        {
+          Children: [
+            {
+              Name: ValueTuple.cs,
+              Modes: OtherRead, GroupRead, OwnerWrite, OwnerRead,
+              Hash: {
+                HashCode: 0a6b12f8df4cd69e1b12ec969c8cd7e70589f0c8
+              }
+            }
+          ],
+          Name: Internal,
+          Hash: {
+            HashCode: 01d6075020c7c7b5741b7c5f3649420d11d01e88
+          }
+        },
+        {
+          Name: Named.cs,
+          Modes: OtherRead, GroupRead, OwnerWrite, OwnerRead,
+          Hash: {
+            HashCode: e421b0285e5809988f4a9b9524e4dc533a15f0e1
+          }
+        },
+        {
+          Name: Predicate.cs,
+          Modes: OtherRead, GroupRead, OwnerWrite, OwnerRead,
+          Hash: {
+            HashCode: 183566cbbadd528055167fc4849bed48550aa30d
+          }
+        },
+        {
+          Name: Selector.cs,
+          Modes: OtherRead, GroupRead, OwnerWrite, OwnerRead,
+          Hash: {
+            HashCode: 62afd008687eca2557ba3aeb4e79c3c14c9ac2af
+          }
+        }
+      ],
+      Name: CenterCLR.NamingFormatter,
+      Hash: {
+        HashCode: deeac68f4a9e88e0e9c01c83deee1aceb3a05cdb
+      }
+    },
+    {
+      Children: [
+        {
+          Name: CenterCLR.NamingFormatterTests.csproj,
+          Modes: OtherRead, GroupRead, OwnerWrite, OwnerRead,
+          Hash: {
+            HashCode: ad4348365b861edcc18b6f208657d6c8d3fb4895
+          }
+        },
+        {
+          Name: FormatProviderOverloadTests.cs,
+          Modes: OtherRead, GroupRead, OwnerWrite, OwnerRead,
+          Hash: {
+            HashCode: 5544f759cd46b579d69f820e6ff57b1e6ebeb6c5
+          }
+        },
+        {
+          Name: KeyReplaceTests.cs,
+          Modes: OtherRead, GroupRead, OwnerWrite, OwnerRead,
+          Hash: {
+            HashCode: b1b0c75e55224f1c7158d704fca8dcfe9fefc184
+          }
+        },
+        {
+          Name: OverloadTests.cs,
+          Modes: OtherRead, GroupRead, OwnerWrite, OwnerRead,
+          Hash: {
+            HashCode: f111c8500efc382457bb55b523f0d0ba47baeea8
+          }
+        },
+        {
+          Name: WriteFormatTests.cs,
+          Modes: OtherRead, GroupRead, OwnerWrite, OwnerRead,
+          Hash: {
+            HashCode: ab60b99121ba537ebeb3327a5d9ed896696c917c
+          }
+        }
+      ],
+      Name: CenterCLR.NamingFormatterTests,
+      Hash: {
+        HashCode: c53d90ac78df69109f6bac85e7496ad52fcde4a7
+      }
+    },
+    {
+      Children: [
+        {
+          Name: CenterCLR.NamingFormatter.100.png,
+          Modes: OtherRead, GroupRead, OwnerWrite, OwnerRead,
+          Hash: {
+            HashCode: 326aa6142120f0b8dc9240853af9858384498af5
+          }
+        },
+        {
+          Name: CenterCLR.NamingFormatter.128.png,
+          Modes: OtherRead, GroupRead, OwnerWrite, OwnerRead,
+          Hash: {
+            HashCode: 3965a3ff9507bd13f0913e602447891bef9dc7d6
+          }
+        },
+        {
+          Name: CenterCLR.NamingFormatter.design,
+          Modes: OtherRead, GroupRead, OwnerWrite, OwnerRead,
+          Hash: {
+            HashCode: e5d4a3088590d9a3f94c58c3215ca71d128d9813
+          }
+        },
+        {
+          Name: Japanese.256.png,
+          Modes: OtherRead, GroupRead, OwnerWrite, OwnerRead,
+          Hash: {
+            HashCode: d9a13dc7f3de1f0a7aa8e4e2b0d3f00e77bb8e3a
+          }
+        }
+      ],
+      Name: Images,
+      Hash: {
+        HashCode: d4cb9825ee137b53148b9776a20ba093debb8ef5
+      }
+    },
+    {
+      Name: README.md,
+      Modes: OtherRead, GroupRead, OwnerWrite, OwnerRead,
+      Hash: {
+        HashCode: 6289549e5b22c0dbd64ba1d72c2fe5a6f02128b9
+      }
+    },
+    {
+      Name: build-nupkg.bat,
+      Modes: OtherRead, GroupRead, OwnerWrite, OwnerRead,
+      Hash: {
+        HashCode: 0dc4f6eba2a37054088754456f63dd7b34b24753
+      }
+    }
+  ],
+  Hash: {
+    HashCode: 1205dc34ce48bda28fc543daaf9525a9bb6e6d10
+  }
+}

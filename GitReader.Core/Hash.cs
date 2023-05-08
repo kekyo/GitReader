@@ -23,21 +23,37 @@ public unsafe struct Hash : IEquatable<Hash>
 
     public Hash(byte[] hashCode)
     {
+        if (hashCode.Length < 20)
+        {
+            throw new ArgumentException("Invalid hash size.");
+        }
+
         fixed (void* pl = &this.hashCode0)
         {
             Marshal.Copy(hashCode, 0, (nint)pl, 20);
         }
     }
 
+    public Hash(byte[] hashCode, int offset)
+    {
+        if ((hashCode.Length - offset) < 20)
+        {
+            throw new ArgumentException("Invalid hash size.");
+        }
+
+        fixed (void* pl = &this.hashCode0)
+        {
+            Marshal.Copy(hashCode, offset, (nint)pl, 20);
+        }
+    }
+
     public Hash(string hashString)
     {
-        fixed (void* pl_ = &this.hashCode0)
+        fixed (void* pl = &this.hashCode0)
         {
-            var pl = (byte*)pl_;
-            for (var index = 0; index < 20; index++)
+            if (!TryParse(hashString, (byte*)pl))
             {
-                *(pl + index) = Convert.ToByte(
-                    hashString.Substring(index * 2, 2), 16);
+                throw new ArgumentException("Invalid hash string.");
             }
         }
     }
@@ -76,40 +92,74 @@ public unsafe struct Hash : IEquatable<Hash>
         Replace("-", string.Empty).
         ToLowerInvariant();
 
-    public void Deconstruct(out byte[] hashCode) =>
-        hashCode = this.HashCode;
-
-    public void Deconstruct(out string hashString) =>
-        hashString = this.ToString();
-
     public static implicit operator Hash(byte[] hashCode) =>
-        Create(hashCode);
+        new(hashCode);
     public static implicit operator Hash(string hashString) =>
-        Parse(hashString);
+        new(hashString);
 
-    public static Hash Create(byte[] hashCode)
+    private static bool TryParse(string hashString, byte* pl)
     {
-        if (hashCode.Length != Size)
+        if (hashString.Length != (20 * 2))
         {
-            throw new ArgumentException("Invalid hash size.");
+            return false;
         }
 
-        return new(hashCode);
+        static bool TryParseHexNumber(char ch, out byte value)
+        {
+            if (ch >= '0' && ch <= '9')
+            {
+                value = (byte)(ch - '0');
+                return true;
+            }
+            else if(ch >= 'a' && ch <= 'f')
+            {
+                value = (byte)(ch - 'a' + 10);
+                return true;
+            }
+            else if(ch >= 'A' && ch <= 'F')
+            {
+                value = (byte)(ch - 'A' + 10);
+                return true;
+            }
+            else
+            {
+                value = default;
+                return false;
+            }
+        }
+
+        for (var index = 0; index < 40; index += 2)
+        {
+            var ch1 = hashString[index];
+            if (!TryParseHexNumber(ch1, out var v1))
+            {
+                return false;
+            }
+
+            var ch0 = hashString[index + 1];
+            if (!TryParseHexNumber(ch0, out var v0))
+            {
+                return false;
+            }
+
+            *pl = (byte)(v1 << 4 | v0);
+            pl++;
+        }
+
+        return true;
     }
 
     public static bool TryParse(string hashString, out Hash hash)
     {
-        if (hashString.Length != (20 * 2))
-        {
-            hash = default;
-            return false;
-        }
+        hash = default;
 
-        hash = new(hashString);
-        return true;
+        fixed (void* pl = &hash.hashCode0)
+        {
+            return TryParse(hashString, (byte*)pl);
+        }
     }
 
     public static Hash Parse(string hashString) =>
         TryParse(hashString, out var hash) ?
-            hash : throw new ArgumentException(nameof(hashString));
+            hash : throw new ArgumentException("Invalid hash string.");
 }

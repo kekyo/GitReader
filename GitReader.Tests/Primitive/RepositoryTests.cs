@@ -9,6 +9,7 @@
 
 using NUnit.Framework;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using VerifyNUnit;
@@ -134,6 +135,39 @@ public sealed class RepositoryTests
             tagrefs.Select(tagReference => repository.GetTagAsync(tagReference)));
 
         await Verifier.Verify(tags.OrderBy(tag => tag.Name).ToArray());
+    }
+
+    [Test]
+    public async Task GetTree()
+    {
+        using var repository = await Repository.Factory.OpenPrimitiveAsync(
+            RepositoryTestsSetUp.BasePath);
+
+        var commit = await repository.GetCommitAsync(
+            "1205dc34ce48bda28fc543daaf9525a9bb6e6d10");
+
+        var tree = await repository.GetTreeAsync(commit.Value.TreeRoot);
+
+        await Verifier.Verify(tree);
+    }
+
+    [Test]
+    public async Task OpenBlob()
+    {
+        using var repository = await Repository.Factory.OpenPrimitiveAsync(
+            RepositoryTestsSetUp.BasePath);
+
+        var commit = await repository.GetCommitAsync(
+            "1205dc34ce48bda28fc543daaf9525a9bb6e6d10");
+
+        var tree = await repository.GetTreeAsync(commit.Value.TreeRoot);
+
+        var blobHash = tree.Children.First(child => child.Name == "build-nupkg.bat").Hash;
+
+        using var blobStream = await repository.OpenBlobAsync(blobHash);
+        var blobText = new StreamReader(blobStream).ReadToEnd();
+
+        await Verifier.Verify(blobText);
     }
 
     [Test]

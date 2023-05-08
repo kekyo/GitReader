@@ -55,15 +55,27 @@ module public RepositoryExtension =
         member repository.getTagReferences(?ct: CancellationToken) =
             RepositoryAccessor.ReadReferencesAsync(
                 repository, ReferenceTypes.Tags, unwrapCT ct) |> Async.AwaitTask
+                
+        member repository.getTree(tree: Hash, ?ct: CancellationToken) =
+            RepositoryAccessor.ReadTreeAsync(repository, tree, unwrapCT ct) |> Async.AwaitTask
+                
+        member repository.openBlob(blob: Hash, ?ct: CancellationToken) =
+            RepositoryAccessor.OpenBlobAsync(repository, blob, unwrapCT ct) |> Async.AwaitTask
 
     let (|Repository|) (repository: Repository) =
         (repository.Path)
 
-    let (|Reference|) (reference: PrimitiveReference) =
+    let (|PrimitiveReference|) (reference: PrimitiveReference) =
         (reference.Name, reference.Target)
 
-    let (|Commit|) (commit: PrimitiveCommit) =
+    let (|PrimitiveCommit|) (commit: PrimitiveCommit) =
         (commit.Hash, commit.TreeRoot, commit.Author, commit.Committer, commit.Parents, commit.Message)
 
-    let (|Tag|) (tag: PrimitiveTag) =
+    let (|PrimitiveTag|) (tag: PrimitiveTag) =
         (tag.Hash, tag.Type, tag.Name, tag.Tagger, tag.Message)
+
+    let (|PrimitiveTree|) (tree: PrimitiveTree) =
+        (tree.Hash, tree.Children)
+
+    let (|PrimitiveTreeEntry|) (entry: PrimitiveTreeEntry) =
+        (entry.Hash, entry.Name, entry.Modes)

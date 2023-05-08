@@ -39,8 +39,16 @@ module public RepositoryExtension =
         member commit.getParentCommits(?ct: CancellationToken) =
             RepositoryFacade.GetParentsAsync(
                 commit, unwrapCT ct) |> Async.AwaitTask
+        member commit.getTreeRoot(?ct: CancellationToken) =
+            RepositoryFacade.GetTreeAsync(
+                commit, unwrapCT ct) |> Async.AwaitTask
         member commit.getMessage() =
             commit.message
+
+    type TreeBlobEntry with
+        member entry.openBlob(?ct: CancellationToken) =
+            RepositoryFacade.OpenBlobAsync(
+                entry, unwrapCT ct) |> Async.AwaitTask
 
     let (|Repository|) (repository: StructuredRepository) =
         (repository.Path,

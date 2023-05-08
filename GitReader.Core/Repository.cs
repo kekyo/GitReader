@@ -9,6 +9,7 @@
 
 using GitReader.Internal;
 using System;
+using System.ComponentModel;
 using System.Threading;
 
 namespace GitReader;
@@ -40,6 +41,13 @@ public class Repository : IDisposable
     }
 
     public string Path { get; }
+
+#if DEBUG
+    public int HitCount =>
+        this.objectAccessor.hitCount;
+    public int MissCount =>
+        this.objectAccessor.missCount;
+#endif
 
     public static readonly RepositoryFactory Factory = new();
 }
