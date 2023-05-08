@@ -17,8 +17,8 @@ public sealed class Commit : IEquatable<Commit?>
 {
     internal readonly string message;
     internal readonly WeakReference rwr;
-    internal readonly Hash treeRoot;
     internal readonly Hash[] parents;
+    internal readonly Hash treeRoot;
 
     private Branch[]? branches;
     private Branch[]? remoteBranches;
@@ -33,8 +33,8 @@ public sealed class Commit : IEquatable<Commit?>
         PrimitiveCommit commit)
     {
         this.rwr = rwr;
-        this.treeRoot = commit.TreeRoot;
         this.parents = commit.Parents;
+        this.treeRoot = commit.TreeRoot;
 
         this.Hash = commit.Hash;
         this.Author = commit.Author;

@@ -10,6 +10,8 @@
 using GitReader.Collections;
 using GitReader.Internal;
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -277,5 +279,59 @@ internal static class RepositoryFacade
                 (tag is CommitTag &&
                  tag.Hash.Equals(commit.Hash)) ? tag : null).
             ToArray();
+    }
+
+    public static async Task<TreeRoot> GetTreeAsync(
+        Commit commit,
+        CancellationToken ct)
+    {
+        var repository = GetRelatedRepository(commit);
+
+        var rootTree = await RepositoryAccessor.ReadTreeAsync(
+            repository, commit.treeRoot, ct);
+
+        Task<TreeEntry[]> GetChildrenAsync(Primitive.PrimitiveTreeEntry[] entries)
+        {
+#if DEBUG
+            static async Task<T[]> ForEach<T>(IEnumerable<Task<T>> enumerable)
+            {
+                var results = new List<T>();
+                foreach (var entry in enumerable)
+                {
+                    var result = await entry;
+                    results.Add(result);
+                }
+                return results.ToArray();
+            }
+
+            return ForEach(
+#else
+            return Utilities.WhenAll(
+#endif
+                entries.Select(async entry =>
+                {
+                    var modeFlags = (ModeFlags)((int)entry.Modes & 0x1ff);
+
+                    if (entry.Modes.HasFlag(Primitive.PrimitiveModeFlags.Directory))
+                    {
+                        var tree = await RepositoryAccessor.ReadTreeAsync(
+                            repository!, entry.Hash, ct);
+
+                        var children = await GetChildrenAsync(tree.Children);
+
+                        return (TreeEntry)new TreeDirectoryEntry(
+                            entry.Hash, entry.Name, modeFlags, children);
+                    }
+                    else
+                    {
+                        return new TreeFileEntry(
+                            entry.Hash, entry.Name, modeFlags);
+                    }
+                }));
+        }
+
+        var children = await GetChildrenAsync(rootTree.Children);
+
+        return new(commit.Hash, children);
     }
 }

@@ -149,6 +149,20 @@ public sealed class RepositoryTests
     }
 
     [Test]
+    public async Task GetTreeRoot()
+    {
+        using var repository = await Repository.Factory.OpenStructureAsync(
+            RepositoryTestsSetUp.BasePath);
+
+        var commit = await repository.GetCommitAsync(
+            "1205dc34ce48bda28fc543daaf9525a9bb6e6d10");
+
+        var treeRoot = await commit!.GetTreeRootAsync();
+
+        await Verifier.Verify(treeRoot);
+    }
+
+    [Test]
     public async Task TraverseBranchCommits()
     {
         using var repository = await Repository.Factory.OpenStructureAsync(

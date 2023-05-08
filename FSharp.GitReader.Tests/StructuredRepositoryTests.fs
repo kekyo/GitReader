@@ -113,6 +113,16 @@ type public StructuredRepositoryTests() =
         let! parents = commit.getParentCommits()
         do! verify(parents)
     }
+   
+    [<Test>]
+    member _.GetTreeRoot() = task {
+        use! repository = Repository.Factory.openStructured(
+            RepositoryTestsSetUp.BasePath)
+        let! commit = repository.getCommit(
+            "1205dc34ce48bda28fc543daaf9525a9bb6e6d10") |> unwrapOptionAsy
+        let! treeRoot = commit.getTreeRoot()
+        do! verify(treeRoot)
+    }
 
     [<Test>]
     member _.TraverseBranchCommits() = task {

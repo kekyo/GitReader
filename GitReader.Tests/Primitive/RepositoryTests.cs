@@ -137,6 +137,20 @@ public sealed class RepositoryTests
     }
 
     [Test]
+    public async Task GetTree()
+    {
+        using var repository = await Repository.Factory.OpenPrimitiveAsync(
+            RepositoryTestsSetUp.BasePath);
+
+        var commit = await repository.GetCommitAsync(
+            "1205dc34ce48bda28fc543daaf9525a9bb6e6d10");
+
+        var tree = await repository.GetTreeAsync(commit.Value.TreeRoot);
+
+        await Verifier.Verify(tree);
+    }
+
+    [Test]
     public async Task TraverseBranchCommits()
     {
         using var repository = await Repository.Factory.OpenPrimitiveAsync(

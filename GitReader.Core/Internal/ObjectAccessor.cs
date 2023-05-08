@@ -498,18 +498,16 @@ internal sealed class ObjectAccessor : IDisposable
                 case RawObjectTypes.Blob:
                 case RawObjectTypes.Tag:
                     {
-                        var stream = new RangedStream(
-                            new ConcatStream(
-                                new PreloadedStream(preloadBuffer, preloadIndex, read - preloadIndex),
-                                fs),
-                            (long)objectSize);
+                        var stream = new ConcatStream(
+                            new PreloadedStream(preloadBuffer, preloadIndex, read - preloadIndex),
+                            fs);
 
                         var zlibStream = await Utilities.CreateZLibStreamAsync(stream, ct);
                         var objectType = (ObjectTypes)(int)type;
 
                         var wrappedStream = this.AddToCache(
                             offset, objectType,
-                            await MemoizedStream.CreateAsync(zlibStream, -1, ct));
+                            await MemoizedStream.CreateAsync(zlibStream, (long)objectSize, ct));
 
                         return new(wrappedStream, objectType);
                     }

@@ -61,6 +61,12 @@ public static class RepositoryExtension
         CancellationToken ct = default) =>
         RepositoryAccessor.ReadReferencesAsync(repository, ReferenceTypes.Tags, ct);
 
+    public static Task<PrimitiveTree> GetTreeAsync(
+        this Repository repository,
+        Hash tree,
+        CancellationToken ct = default) =>
+        RepositoryAccessor.ReadTreeAsync(repository, tree, ct);
+
     public static void Deconstruct(
         this Repository repository,
         out string path)
@@ -107,5 +113,25 @@ public static class RepositoryExtension
         name = tag.Name;
         tagger = tag.Tagger;
         message = tag.Message;
+    }
+
+    public static void Deconstruct(
+        this PrimitiveTree tree,
+        out Hash hash,
+        out PrimitiveTreeEntry[] children)
+    {
+        hash = tree.Hash;
+        children = tree.Children;
+    }
+
+    public static void Deconstruct(
+        this PrimitiveTreeEntry entry,
+        out Hash hash,
+        out string name,
+        out PrimitiveModeFlags modes)
+    {
+        hash = entry.Hash;
+        name = entry.Name;
+        modes = entry.Modes;
     }
 }

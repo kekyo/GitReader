@@ -39,6 +39,9 @@ module public RepositoryExtension =
         member commit.getParentCommits(?ct: CancellationToken) =
             RepositoryFacade.GetParentsAsync(
                 commit, unwrapCT ct) |> Async.AwaitTask
+        member commit.getTreeRoot(?ct: CancellationToken) =
+            RepositoryFacade.GetTreeAsync(
+                commit, unwrapCT ct) |> Async.AwaitTask
         member commit.getMessage() =
             commit.message
 

@@ -35,6 +35,11 @@ public static class RepositoryExtension
         CancellationToken ct = default) =>
         RepositoryFacade.GetParentsAsync(commit, ct);
 
+    public static Task<TreeRoot> GetTreeRootAsync(
+        this Commit commit,
+        CancellationToken ct = default) =>
+        RepositoryFacade.GetTreeAsync(commit, ct);
+
     public static string GetMessage(
         this Commit commit) =>
         commit.message;

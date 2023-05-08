@@ -23,7 +23,7 @@ public unsafe struct Hash : IEquatable<Hash>
 
     public Hash(byte[] hashCode)
     {
-        if (hashCode.Length != 20)
+        if (hashCode.Length < 20)
         {
             throw new ArgumentException("Invalid hash size.");
         }
@@ -31,6 +31,19 @@ public unsafe struct Hash : IEquatable<Hash>
         fixed (void* pl = &this.hashCode0)
         {
             Marshal.Copy(hashCode, 0, (nint)pl, 20);
+        }
+    }
+
+    public Hash(byte[] hashCode, int offset)
+    {
+        if ((hashCode.Length - offset) < 20)
+        {
+            throw new ArgumentException("Invalid hash size.");
+        }
+
+        fixed (void* pl = &this.hashCode0)
+        {
+            Marshal.Copy(hashCode, offset, (nint)pl, 20);
         }
     }
 
