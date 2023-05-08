@@ -4,11 +4,8 @@
     <OutputType>Exe</OutputType>
     <TargetFrameworks>net48;net6.0</TargetFrameworks>
     <Nullable>enable</Nullable>
+    <AssemblyName>gitlog</AssemblyName>
   </PropertyGroup>
-
-  <ItemGroup>
-    <PackageReference Include="Lepracaun" Version="1.0.0" />
-  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\GitReader\GitReader.csproj" />
