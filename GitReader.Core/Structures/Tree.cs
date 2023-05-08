@@ -76,15 +76,17 @@ public abstract class TreeEntry : Tree
         this.Modes.GetHashCode();
 }
 
-public sealed class TreeFileEntry : TreeEntry
+public sealed class TreeBlobEntry : TreeEntry
 {
-    public TreeFileEntry(
+    internal readonly WeakReference rwr;
+
+    internal TreeBlobEntry(
         Hash hash,
         string name,
-        ModeFlags modes) :
-        base(hash, name, modes)
-    {
-    }
+        ModeFlags modes,
+        WeakReference rwr) :
+        base(hash, name, modes) =>
+        this.rwr = rwr;
 
     public override string ToString() =>
         $"File: {this.Modes}: {this.Name}: {this.Hash}";
@@ -94,7 +96,7 @@ public sealed class TreeDirectoryEntry : TreeEntry
 {
     public readonly TreeEntry[] Children;
 
-    public TreeDirectoryEntry(
+    internal TreeDirectoryEntry(
         Hash hash,
         string name,
         ModeFlags modes,

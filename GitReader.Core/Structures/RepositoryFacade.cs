@@ -219,6 +219,18 @@ internal static class RepositoryFacade
         return repository;
     }
 
+    private static StructuredRepository GetRelatedRepository(
+        TreeBlobEntry entry)
+    {
+        if (entry.rwr.Target is not StructuredRepository repository ||
+            repository.objectAccessor == null)
+        {
+            throw new InvalidOperationException(
+                "The repository already discarded.");
+        }
+        return repository;
+    }
+
     public static async Task<Commit?> GetPrimaryParentAsync(
         Commit commit,
         CancellationToken ct)
@@ -290,24 +302,8 @@ internal static class RepositoryFacade
         var rootTree = await RepositoryAccessor.ReadTreeAsync(
             repository, commit.treeRoot, ct);
 
-        Task<TreeEntry[]> GetChildrenAsync(Primitive.PrimitiveTreeEntry[] entries)
-        {
-#if DEBUG
-            static async Task<T[]> ForEach<T>(IEnumerable<Task<T>> enumerable)
-            {
-                var results = new List<T>();
-                foreach (var entry in enumerable)
-                {
-                    var result = await entry;
-                    results.Add(result);
-                }
-                return results.ToArray();
-            }
-
-            return ForEach(
-#else
-            return Utilities.WhenAll(
-#endif
+        Task<TreeEntry[]> GetChildrenAsync(Primitive.PrimitiveTreeEntry[] entries) =>
+            Utilities.WhenAll(
                 entries.Select(async entry =>
                 {
                     var modeFlags = (ModeFlags)((int)entry.Modes & 0x1ff);
@@ -324,14 +320,23 @@ internal static class RepositoryFacade
                     }
                     else
                     {
-                        return new TreeFileEntry(
-                            entry.Hash, entry.Name, modeFlags);
+                        return new TreeBlobEntry(
+                            entry.Hash, entry.Name, modeFlags, commit.rwr);
                     }
                 }));
-        }
 
         var children = await GetChildrenAsync(rootTree.Children);
 
         return new(commit.Hash, children);
+    }
+
+    public static Task<Stream> OpenBlobAsync(
+        TreeBlobEntry entry,
+        CancellationToken ct)
+    {
+        var repository = GetRelatedRepository(entry);
+
+        return RepositoryAccessor.OpenBlobAsync(
+            repository, entry.Hash, ct);
     }
 }

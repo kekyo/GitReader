@@ -8,6 +8,7 @@
 ////////////////////////////////////////////////////////////////////////////
 
 using GitReader.Internal;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -66,6 +67,12 @@ public static class RepositoryExtension
         Hash tree,
         CancellationToken ct = default) =>
         RepositoryAccessor.ReadTreeAsync(repository, tree, ct);
+
+    public static Task<Stream> OpenBlobAsync(
+        this Repository repository,
+        Hash blob,
+        CancellationToken ct = default) =>
+        RepositoryAccessor.OpenBlobAsync(repository, blob, ct);
 
     public static void Deconstruct(
         this Repository repository,

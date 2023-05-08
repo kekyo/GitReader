@@ -45,6 +45,11 @@ module public RepositoryExtension =
         member commit.getMessage() =
             commit.message
 
+    type TreeBlobEntry with
+        member entry.openBlob(?ct: CancellationToken) =
+            RepositoryFacade.OpenBlobAsync(
+                entry, unwrapCT ct) |> Async.AwaitTask
+
     let (|Repository|) (repository: StructuredRepository) =
         (repository.Path,
          (match repository.head with

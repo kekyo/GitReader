@@ -13,6 +13,7 @@ open GitReader
 open GitReader.Structures
 open NUnit.Framework
 open System.Collections.Generic
+open System.IO
 
 type public StructuredRepositoryTests() =
 
@@ -122,6 +123,19 @@ type public StructuredRepositoryTests() =
             "1205dc34ce48bda28fc543daaf9525a9bb6e6d10") |> unwrapOptionAsy
         let! treeRoot = commit.getTreeRoot()
         do! verify(treeRoot)
+    }
+         
+    [<Test>]
+    member _.OpenBlob() = task {
+        use! repository = Repository.Factory.openStructured(
+            RepositoryTestsSetUp.BasePath)
+        let! commit = repository.getCommit(
+            "1205dc34ce48bda28fc543daaf9525a9bb6e6d10") |> unwrapOptionAsy
+        let! tree = commit.getTreeRoot()
+        let blob = tree.Children |> Seq.find (fun child -> child.Name = "build-nupkg.bat") :?> TreeBlobEntry
+        use! blobStream = blob.openBlob()
+        let tr = new StreamReader(blobStream)
+        do! verify(tr.ReadToEnd())
     }
 
     [<Test>]

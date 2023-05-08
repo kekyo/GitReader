@@ -731,4 +731,33 @@ internal static class RepositoryAccessor
             streamResult.Stream.Dispose();
         }
     }
+
+    public static async Task<Stream> OpenBlobAsync(
+        Repository repository,
+        Hash hash,
+        CancellationToken ct)
+    {
+        var accessor = GetObjectAccessor(repository);
+        if (await accessor.OpenAsync(hash, ct) is not { } streamResult)
+        {
+            throw new InvalidDataException(
+                $"Couldn't find tree object: {hash}");
+        }
+
+        try
+        {
+            if (streamResult.Type != ObjectTypes.Blob)
+            {
+                throw new InvalidDataException(
+                    $"It isn't blob object: {hash}");
+            }
+
+            return streamResult.Stream;
+        }
+        catch
+        {
+            streamResult.Stream.Dispose();
+            throw;
+        }
+    }
 }

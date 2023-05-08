@@ -58,6 +58,9 @@ module public RepositoryExtension =
                 
         member repository.getTree(tree: Hash, ?ct: CancellationToken) =
             RepositoryAccessor.ReadTreeAsync(repository, tree, unwrapCT ct) |> Async.AwaitTask
+                
+        member repository.openBlob(blob: Hash, ?ct: CancellationToken) =
+            RepositoryAccessor.OpenBlobAsync(repository, blob, unwrapCT ct) |> Async.AwaitTask
 
     let (|Repository|) (repository: Repository) =
         (repository.Path)

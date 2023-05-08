@@ -9,6 +9,7 @@
 
 using NUnit.Framework;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using VerifyNUnit;
@@ -160,6 +161,26 @@ public sealed class RepositoryTests
         var treeRoot = await commit!.GetTreeRootAsync();
 
         await Verifier.Verify(treeRoot);
+    }
+
+    [Test]
+    public async Task OpenBlob()
+    {
+        using var repository = await Repository.Factory.OpenStructureAsync(
+            RepositoryTestsSetUp.BasePath);
+
+        var commit = await repository.GetCommitAsync(
+            "1205dc34ce48bda28fc543daaf9525a9bb6e6d10");
+
+        var tree = await commit!.GetTreeRootAsync();
+
+        var blob = tree.Children.OfType<TreeBlobEntry>().
+            First(child => child.Name == "build-nupkg.bat");
+
+        using var blobStream = await blob.OpenBlobAsync();
+        var blobText = new StreamReader(blobStream).ReadToEnd();
+
+        await Verifier.Verify(blobText);
     }
 
     [Test]
