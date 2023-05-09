@@ -450,7 +450,7 @@ internal static class RepositoryAccessor
         CancellationToken ct)
     {
         var accessor = GetObjectAccessor(repository);
-        if (await accessor.OpenAsync(hash, ct) is not { } streamResult)
+        if (await accessor.OpenAsync(hash, false, ct) is not { } streamResult)
         {
             return null;
         }
@@ -627,7 +627,10 @@ internal static class RepositoryAccessor
         CancellationToken ct)
     {
         var accessor = GetObjectAccessor(repository);
-        if (await accessor.OpenAsync(hash, ct) is not { } streamResult)
+
+        // Since it is unlikely that the internally used `Stream` will be
+        // reused during tree process, stream caching is disabled.
+        if (await accessor.OpenAsync(hash, true, ct) is not { } streamResult)
         {
             throw new InvalidDataException(
                 $"Couldn't find tree object: {hash}");
@@ -728,7 +731,7 @@ internal static class RepositoryAccessor
         CancellationToken ct)
     {
         var accessor = GetObjectAccessor(repository);
-        if (await accessor.OpenAsync(hash, ct) is not { } streamResult)
+        if (await accessor.OpenAsync(hash, true, ct) is not { } streamResult)
         {
             throw new InvalidDataException(
                 $"Couldn't find tree object: {hash}");

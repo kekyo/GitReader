@@ -1,4 +1,4 @@
-﻿////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
 //
 // GitReader - Lightweight Git local repository traversal library.
 // Copyright (c) Kouji Matsui (@kozy_kekyo, @kekyo@mastodon.cloud)
@@ -309,9 +309,10 @@ internal sealed class ObjectAccessor : IDisposable
     }
 
     private Stream AddToCache(
-        ulong offset, ObjectTypes type, Stream stream)
+        ulong offset, ObjectTypes type,
+        Stream stream, bool disableCaching)
     {
-        if (maxStreamCache <= 1)
+        if (disableCaching || maxStreamCache <= 1)
         {
             return stream;
         }
@@ -346,10 +347,10 @@ internal sealed class ObjectAccessor : IDisposable
 
 #if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
     private async ValueTask<ObjectStreamResult> OpenFromPackedFileAsync(
-        string packedFilePath, ulong offset, CancellationToken ct)
+        string packedFilePath, ulong offset, bool disableCaching, CancellationToken ct)
 #else
     private async Task<ObjectStreamResult> OpenFromPackedFileAsync(
-        string packedFilePath, ulong offset, CancellationToken ct)
+        string packedFilePath, ulong offset, bool disableCaching, CancellationToken ct)
 #endif
     {
         if (maxStreamCache >= 2)
@@ -426,7 +427,7 @@ internal sealed class ObjectAccessor : IDisposable
 
                         var (zlibStream, objectEntry) = await Utilities.Join(
                             Utilities.CreateZLibStreamAsync(stream, ct),
-                            this.OpenFromPackedFileAsync(packedFilePath, referenceOffset, ct));
+                            this.OpenFromPackedFileAsync(packedFilePath, referenceOffset, disableCaching, ct));
 
                         try
                         {
@@ -437,7 +438,8 @@ internal sealed class ObjectAccessor : IDisposable
 
                             var wrappedStream = this.AddToCache(
                                 offset, objectEntry.Type,
-                                await MemoizedStream.CreateAsync(deltaDecodedStream, -1, ct));
+                                await MemoizedStream.CreateAsync(deltaDecodedStream, -1, ct),
+                                disableCaching);
 
                             return new(wrappedStream, objectEntry.Type);
                         }
@@ -466,7 +468,7 @@ internal sealed class ObjectAccessor : IDisposable
 
                         var (zlibStream, objectEntry) = await Utilities.Join(
                             Utilities.CreateZLibStreamAsync(stream, ct),
-                            this.OpenAsync(referenceHash, ct));
+                            this.OpenAsync(referenceHash, disableCaching, ct));
 
                         try
                         {
@@ -482,7 +484,8 @@ internal sealed class ObjectAccessor : IDisposable
 
                             var wrappedStream = this.AddToCache(
                                 offset, oe.Type,
-                                await MemoizedStream.CreateAsync(deltaDecodedStream, -1, ct));
+                                await MemoizedStream.CreateAsync(deltaDecodedStream, -1, ct),
+                                disableCaching);
 
                             return new(wrappedStream, oe.Type);
                         }
@@ -508,7 +511,8 @@ internal sealed class ObjectAccessor : IDisposable
 
                         var wrappedStream = this.AddToCache(
                             offset, objectType,
-                            await MemoizedStream.CreateAsync(zlibStream, (long)objectSize, ct));
+                            await MemoizedStream.CreateAsync(zlibStream, (long)objectSize, ct),
+                            disableCaching);
 
                         return new(wrappedStream, objectType);
                     }
@@ -527,10 +531,10 @@ internal sealed class ObjectAccessor : IDisposable
 
 #if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
     private async ValueTask<ObjectStreamResult?> OpenFromPackedAsync(
-        Hash hash, CancellationToken ct)
+        Hash hash, bool disableCaching, CancellationToken ct)
 #else
     private async Task<ObjectStreamResult?> OpenFromPackedAsync(
-        Hash hash, CancellationToken ct)
+        Hash hash, bool disableCaching, CancellationToken ct)
 #endif
     {
         var entries = await Utilities.WhenAll(
@@ -565,17 +569,17 @@ internal sealed class ObjectAccessor : IDisposable
         }
 
         return await this.OpenFromPackedFileAsync(
-            packedFilePath, entry.ObjectEntry.Offset, ct);
+            packedFilePath, entry.ObjectEntry.Offset, disableCaching, ct);
     }
 
     //////////////////////////////////////////////////////////////////////////
 
 #if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
     public ValueTask<ObjectStreamResult?> OpenAsync(
-        Hash hash, CancellationToken ct)
+        Hash hash, bool disableCaching, CancellationToken ct)
 #else
     public Task<ObjectStreamResult?> OpenAsync(
-        Hash hash, CancellationToken ct)
+        Hash hash, bool disableCaching, CancellationToken ct)
 #endif
     {
         var objectPath = Utilities.Combine(
@@ -589,7 +593,7 @@ internal sealed class ObjectAccessor : IDisposable
         }
         else
         {
-            return this.OpenFromPackedAsync(hash, ct);
+            return this.OpenFromPackedAsync(hash, disableCaching, ct);
         }
     }
 }
