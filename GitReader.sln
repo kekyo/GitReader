@@ -28,6 +28,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "samples", "samples", "{6C0A
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{FA77DE1C-C141-4C03-AA63-DAFC2E624125}"
 	ProjectSection(SolutionItems) = preProject
+		tests\performance.sh = tests\performance.sh
 		tests\test-large-repo.sh = tests\test-large-repo.sh
 	EndProjectSection
 EndProject
