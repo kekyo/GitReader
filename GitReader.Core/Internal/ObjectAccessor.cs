@@ -62,7 +62,7 @@ internal sealed class ObjectAccessor : IDisposable
     private readonly string objectsBasePath;
     private readonly string packedBasePath;
     private readonly AsyncLock locker = new();
-    private readonly Dictionary<string, WeakReference> indexCache = new();
+    private readonly Dictionary<string, IndexEntry> indexCache = new();
     private readonly LinkedList<StreamCacheHolder> streamLRUCache = new();
     private readonly Timer streamLRUCacheExhaustTimer;
 #if DEBUG
@@ -135,7 +135,7 @@ internal sealed class ObjectAccessor : IDisposable
         {
             var zlibStream = await Utilities.CreateZLibStreamAsync(fs, ct);
 
-            var preloadBuffer = new byte[preloadBufferSize];
+            var preloadBuffer = BufferPool.Take(preloadBufferSize);
             var read = await zlibStream.ReadAsync(
                 preloadBuffer, 0, preloadBuffer.Length, ct);
 
@@ -224,23 +224,22 @@ internal sealed class ObjectAccessor : IDisposable
     {
         using var _ = await this.locker.LockAsync(ct);
 
-        if (this.indexCache.TryGetValue(indexFileRelativePath, out var wr) &&
-            wr.Target is IndexEntry cachedEntry)
+        if (this.indexCache.TryGetValue(indexFileRelativePath, out var cachedEntry))
         {
             return cachedEntry;
         }
 
         var dict = await IndexReader.ReadIndexAsync(
             Utilities.Combine(this.packedBasePath, indexFileRelativePath), ct);
-        var entry = new IndexEntry(
+        cachedEntry = new(
             Utilities.Combine(
                 Utilities.GetDirectoryPath(indexFileRelativePath),
                 Path.GetFileNameWithoutExtension(indexFileRelativePath)),
             dict);
 
-        this.indexCache[indexFileRelativePath] = new(entry);
+        this.indexCache[indexFileRelativePath] = cachedEntry;
 
-        return entry;
+        return cachedEntry;
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -342,6 +341,11 @@ internal sealed class ObjectAccessor : IDisposable
             if (this.streamLRUCache.Count >= 1)
             {
                 var dueTime = this.streamLRUCache.First!.Value.Limit - DateTime.Now;
+                if (dueTime < TimeSpan.Zero)
+                {
+                    dueTime = TimeSpan.Zero;
+                }
+
                 this.streamLRUCacheExhaustTimer.Change(
                     dueTime, Utilities.Infinite);
             }
@@ -390,6 +394,11 @@ internal sealed class ObjectAccessor : IDisposable
             if (this.streamLRUCache.Count >= 1)
             {
                 var dueTime = this.streamLRUCache.First!.Value.Limit - DateTime.Now;
+                if (dueTime < TimeSpan.Zero)
+                {
+                    dueTime = TimeSpan.Zero;
+                }
+
                 this.streamLRUCacheExhaustTimer.Change(
                     dueTime, Utilities.Infinite);
             }
@@ -410,6 +419,7 @@ internal sealed class ObjectAccessor : IDisposable
         {
             var dueTime = TimeSpan.FromSeconds(10);
             var limit = DateTime.Now.Add(dueTime);
+
             lock (this.streamLRUCache)
             {
                 var holder = this.streamLRUCache.First;
@@ -446,7 +456,7 @@ internal sealed class ObjectAccessor : IDisposable
         {
             fs.Seek((long)offset, SeekOrigin.Begin);
 
-            var preloadBuffer = new byte[preloadBufferSize];
+            var preloadBuffer = BufferPool.Take(preloadBufferSize);
             var read = await fs.ReadAsync(preloadBuffer, 0, preloadBuffer.Length, ct);
             if (read == 0)
             {
@@ -519,12 +529,13 @@ internal sealed class ObjectAccessor : IDisposable
                         {
                             Throw(6);
                         }
-                        var hashCode = new byte[20];
+
+                        var hashCode = BufferPool.Take(20);
                         Array.Copy(preloadBuffer, preloadIndex, hashCode, 0, hashCode.Length);
                         preloadIndex += hashCode.Length;
-                        Hash referenceHash = hashCode;
+                        var referenceHash = new Hash(hashCode);
 
-                        var stream =new ConcatStream(
+                        var stream = new ConcatStream(
                             new PreloadedStream(preloadBuffer, preloadIndex, read - preloadIndex),
                             fs);
 

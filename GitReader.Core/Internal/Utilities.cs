@@ -540,7 +540,8 @@ internal static class Utilities
         this Stream from, Stream to, int bufferSize, CancellationToken ct) =>
         Task.Factory.StartNew(() =>
         {
-            var buffer = new byte[bufferSize];
+            using var buffer = BufferPool.Take(bufferSize);
+
             while (true)
             {
                 ct.ThrowIfCancellationRequested();
@@ -577,7 +578,7 @@ internal static class Utilities
             throw new InvalidDataException(
                 $"Could not parse zlib stream. Step={step}");
 
-        var buffer = new byte[2];
+        using var buffer = BufferPool.Take(2);
 
 #if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
         var read = parent is IValueTaskStream vts ?

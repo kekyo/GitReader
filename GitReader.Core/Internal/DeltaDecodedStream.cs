@@ -46,7 +46,7 @@ internal sealed class DeltaDecodedStream : Stream
 
     private MemoizedStream baseObjectStream;
     private Stream deltaStream;
-    private byte[] deltaBuffer;
+    private Buffer deltaBuffer;
     private int deltaBufferIndex;
     private int deltaBufferCount;
 
@@ -54,7 +54,7 @@ internal sealed class DeltaDecodedStream : Stream
 
     private DeltaDecodedStream(
         MemoizedStream baseObjectStream, Stream deltaStream,
-        byte[] preloadBuffer, int preloadIndex, int preloadCount, long decodedObjectLength)
+        Buffer preloadBuffer, int preloadIndex, int preloadCount, long decodedObjectLength)
     {
         this.baseObjectStream = baseObjectStream;
         this.deltaStream = deltaStream;
@@ -87,7 +87,8 @@ internal sealed class DeltaDecodedStream : Stream
         {
             deltaStream.Dispose();
         }
-        this.deltaBuffer = null!;
+
+        this.deltaBuffer.Dispose();
         this.state = null;
     }
 
@@ -569,7 +570,7 @@ internal sealed class DeltaDecodedStream : Stream
                 $"Could not parse the object. Step={step}");
 
         var preloadIndex = 0;
-        var preloadBuffer = new byte[preloadBufferSize];
+        var preloadBuffer = BufferPool.Take(preloadBufferSize);
 
         var read = await deltaStream.ReadAsync(preloadBuffer, 0, preloadBuffer.Length, ct);
         if (read == 0)

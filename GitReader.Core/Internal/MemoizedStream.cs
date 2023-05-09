@@ -21,7 +21,7 @@ internal sealed class MemoizedStream : Stream
 {
     private const int memoizeToFileSize = 1024 * 1024;
 
-    private readonly byte[] temporaryBuffer = new byte[memoizeToFileSize];
+    private readonly Buffer temporaryBuffer = BufferPool.Take(memoizeToFileSize);
 
     private Stream parent;
     private Stream memoized;
@@ -69,6 +69,8 @@ internal sealed class MemoizedStream : Stream
         {
             temporaryFile.Dispose();
         }
+
+        this.temporaryBuffer.Dispose();
     }
 
     protected override void Dispose(bool disposing)
@@ -117,17 +119,17 @@ internal sealed class MemoizedStream : Stream
         {
             var length = Math.Min(
                 position - current,
-                temporaryBuffer.Length);
+                this.temporaryBuffer.Length);
 
             var read = this.parent.Read(
-                temporaryBuffer, 0, (int)length);
+                this.temporaryBuffer, 0, (int)length);
             if (read == 0)
             {
                 break;
             }
 
             this.memoized.Write(
-                temporaryBuffer, 0, read);
+                this.temporaryBuffer, 0, read);
 
             current += read;
         }
