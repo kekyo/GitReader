@@ -9,19 +9,18 @@
 
 using GitReader.Internal;
 using System;
-using System.ComponentModel;
 using System.Threading;
 
 namespace GitReader;
 
-public class Repository : IDisposable
+public abstract class Repository : IDisposable
 {
     internal FileAccessor fileAccessor = new();
     internal ObjectAccessor objectAccessor;
     internal RemoteReferenceUrlCache remoteReferenceUrlCache;
     internal ReferenceCache referenceCache;
 
-    internal Repository(
+    private protected Repository(
         string repositoryPath)
     {
         this.Path = repositoryPath;

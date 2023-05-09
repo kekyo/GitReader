@@ -32,11 +32,11 @@ Example:
 using GitReader;
 using GitReader.Structures;
 
-using Repository repository =
+using var repository =
     await Repository.Factory.OpenStructureAsync(
         "/home/kekyo/Projects/YourOwnLocalGitRepo");
 
-if (repository.GetCurrentHead() is Branch head)
+if (repository.GetCurrentHead() is { } head)
 {
     Console.WriteLine($"Name: {head.Name}");
 
@@ -116,7 +116,7 @@ The high-level interface is easily referenced by automatically reading much of t
 using GitReader;
 using GitReader.Structures;
 
-using Repository repository =
+using StructuredRepository repository =
     await Repository.Factory.OpenStructureAsync(
         "/home/kekyo/Projects/YourOwnLocalGitRepo");
 
@@ -340,7 +340,7 @@ We do not have a complete list of all examples, so we recommend referring to the
 using GitReader;
 using GitReader.Primitive;
 
-using Repository repository =
+using PrimitiveRepository repository =
     await Repository.Factory.OpenPrimitiveAsync(
         "/home/kekyo/Projects/YourOwnLocalGitRepo");
 

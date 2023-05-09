@@ -7,15 +7,13 @@
 //
 ////////////////////////////////////////////////////////////////////////////
 
-using System.Threading;
-using System.Threading.Tasks;
-
 namespace GitReader.Primitive;
 
-public static class RepositoryFactoryExtension
+public sealed class PrimitiveRepository : Repository
 {
-    public static Task<PrimitiveRepository> OpenPrimitiveAsync(
-        this RepositoryFactory _,
-        string path, CancellationToken ct = default) =>
-        RepositoryFacade.OpenPrimitiveAsync(path, ct);
+    internal PrimitiveRepository(
+        string repositoryPath) :
+        base(repositoryPath)
+    {
+    }
 }

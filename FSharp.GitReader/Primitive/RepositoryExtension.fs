@@ -17,7 +17,7 @@ open System.Threading
 [<AutoOpen>]
 module public RepositoryExtension =
 
-    type Repository with
+    type PrimitiveRepository with
         member repository.getCurrentHeadReference(?ct: CancellationToken) =
             RepositoryFacade.GetCurrentHeadReferenceAsync(
                 repository, unwrapCT ct) |> asAsync

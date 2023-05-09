@@ -32,11 +32,11 @@ GitReaderは、幅広い.NET環境に対応し、マネージドコードだけ�
 using GitReader;
 using GitReader.Structures;
 
-using Repository repository =
+using var repository =
     await Repository.Factory.OpenStructureAsync(
         "/home/kekyo/Projects/YourOwnLocalGitRepo");
 
-if (repository.GetCurrentHead() is Branch head)
+if (repository.GetCurrentHead() is { } head)
 {
     Console.WriteLine($"Name: {head.Name}");
 
@@ -114,7 +114,7 @@ GitReaderには、高レベルインターフェースとプリミティブイ�
 using GitReader;
 using GitReader.Structures;
 
-using Repository repository =
+using StructuredRepository repository =
     await Repository.Factory.OpenStructureAsync(
         "/home/kekyo/Projects/YourOwnLocalGitRepo");
 
@@ -335,7 +335,7 @@ while (current != null)
 using GitReader;
 using GitReader.Primitive;
 
-using Repository repository =
+using PrimitiveRepository repository =
     await Repository.Factory.OpenPrimitiveAsync(
         "/home/kekyo/Projects/YourOwnLocalGitRepo");
 
