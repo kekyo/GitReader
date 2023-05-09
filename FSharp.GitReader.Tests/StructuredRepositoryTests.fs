@@ -21,7 +21,7 @@ type public StructuredRepositoryTests() =
     member _.GetCurrentHead() = task {
         use! repository = Repository.Factory.openStructured(
             RepositoryTestsSetUp.BasePath)
-        let head = repository.getHead() |> unwrapOption
+        let head = repository.getCurrentHead() |> unwrapOption
         do! verify(head)
     }
 

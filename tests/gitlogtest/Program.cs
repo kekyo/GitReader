@@ -138,7 +138,7 @@ public static class Program
             }
         }
 
-        var head = repository.GetHead();
+        var head = repository.GetCurrentHead();
         if (head?.Head is { } c)
         {
             if (hashedCommits.Add(c))

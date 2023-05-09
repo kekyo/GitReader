@@ -16,7 +16,7 @@ namespace GitReader.Structures;
 
 public static class RepositoryExtension
 {
-    public static Branch? GetHead(
+    public static Branch? GetCurrentHead(
         this StructuredRepository repository) =>
         repository.head;
 
