@@ -38,6 +38,7 @@ internal sealed class ObjectAccessor : IDisposable
 
     private sealed class StreamCacheHolder
     {
+        public readonly string Path;
         public readonly ulong Offset;
         public readonly ObjectTypes Type;
         public readonly WrappedStream Stream;
@@ -45,8 +46,9 @@ internal sealed class ObjectAccessor : IDisposable
         public int HitCount;
 #endif
         public StreamCacheHolder(
-            ulong offset, ObjectTypes type, WrappedStream stream)
+            string path, ulong offset, ObjectTypes type, WrappedStream stream)
         {
+            this.Path = path;
             this.Offset = offset;
             this.Type = type;
             this.Stream = stream;
@@ -309,7 +311,7 @@ internal sealed class ObjectAccessor : IDisposable
     }
 
     private Stream AddToCache(
-        ulong offset, ObjectTypes type,
+        string packedFilePath, ulong offset, ObjectTypes type,
         Stream stream, bool disableCaching)
     {
         if (disableCaching || maxStreamCache <= 1)
@@ -322,7 +324,7 @@ internal sealed class ObjectAccessor : IDisposable
         lock (this.streamLRUCache)
         {
             this.streamLRUCache.AddFirst(
-                new StreamCacheHolder(offset, type, cachedStream));
+                new StreamCacheHolder(packedFilePath, offset, type, cachedStream));
 
             while (this.streamLRUCache.Count > maxStreamCache)
             {
@@ -355,12 +357,14 @@ internal sealed class ObjectAccessor : IDisposable
     {
         if (maxStreamCache >= 2)
         {
+            // TODO: check file path on key
             lock (this.streamLRUCache)
             {
                 var holder = this.streamLRUCache.First;
                 while (holder != null)
                 {
-                    if (holder.Value.Offset == offset)
+                    if (holder.Value.Path == packedFilePath &&
+                        holder.Value.Offset == offset)
                     {
                         this.streamLRUCache.Remove(holder);
                         this.streamLRUCache.AddFirst(holder);
@@ -437,7 +441,7 @@ internal sealed class ObjectAccessor : IDisposable
                                 ct);
 
                             var wrappedStream = this.AddToCache(
-                                offset, objectEntry.Type,
+                                packedFilePath, offset, objectEntry.Type,
                                 await MemoizedStream.CreateAsync(deltaDecodedStream, -1, ct),
                                 disableCaching);
 
@@ -483,7 +487,7 @@ internal sealed class ObjectAccessor : IDisposable
                                 ct);
 
                             var wrappedStream = this.AddToCache(
-                                offset, oe.Type,
+                                packedFilePath, offset, oe.Type,
                                 await MemoizedStream.CreateAsync(deltaDecodedStream, -1, ct),
                                 disableCaching);
 
@@ -510,7 +514,7 @@ internal sealed class ObjectAccessor : IDisposable
                         var objectType = (ObjectTypes)(int)type;
 
                         var wrappedStream = this.AddToCache(
-                            offset, objectType,
+                            packedFilePath, offset, objectType,
                             await MemoizedStream.CreateAsync(zlibStream, (long)objectSize, ct),
                             disableCaching);
 
