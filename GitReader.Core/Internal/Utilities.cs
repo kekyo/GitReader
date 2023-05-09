@@ -144,6 +144,13 @@ internal static class Utilities
     public static DateTimeOffset TruncateMilliseconds(DateTimeOffset date) =>
         new(date.Year, date.Month, date.Day, date.Hour, date.Minute, date.Second, date.Offset);
 
+    public static readonly TimeSpan Infinite =
+#if NET35 || NET40
+        new TimeSpan(0, 0, 0, 0, -1);
+#else
+        Timeout.InfiniteTimeSpan;
+#endif
+
 #if NET35
     public static bool TryParse<TEnum>(string str, bool ignoreCase, out TEnum value)
         where TEnum : struct, Enum

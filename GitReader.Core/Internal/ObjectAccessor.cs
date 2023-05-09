@@ -42,16 +42,19 @@ internal sealed class ObjectAccessor : IDisposable
         public readonly ulong Offset;
         public readonly ObjectTypes Type;
         public readonly WrappedStream Stream;
+        public DateTime Limit;
 #if DEBUG
         public int HitCount;
 #endif
         public StreamCacheHolder(
-            string path, ulong offset, ObjectTypes type, WrappedStream stream)
+            string path, ulong offset, ObjectTypes type,
+            WrappedStream stream, DateTime limit)
         {
             this.Path = path;
             this.Offset = offset;
             this.Type = type;
             this.Stream = stream;
+            this.Limit = limit;
         }
     }
 
@@ -61,6 +64,7 @@ internal sealed class ObjectAccessor : IDisposable
     private readonly AsyncLock locker = new();
     private readonly Dictionary<string, WeakReference> indexCache = new();
     private readonly LinkedList<StreamCacheHolder> streamLRUCache = new();
+    private readonly Timer streamLRUCacheExhaustTimer;
 #if DEBUG
     internal int hitCount;
     internal int missCount;
@@ -76,6 +80,9 @@ internal sealed class ObjectAccessor : IDisposable
         this.packedBasePath = Utilities.Combine(
             this.objectsBasePath,
             "pack");
+        this.streamLRUCacheExhaustTimer =
+            new(this.ExhaustStreamCache, null,
+                Utilities.Infinite, Utilities.Infinite);
     }
 
     public void Dispose()
@@ -86,6 +93,10 @@ internal sealed class ObjectAccessor : IDisposable
 
         lock (this.streamLRUCache)
         {
+            this.streamLRUCacheExhaustTimer.Change(
+                Utilities.Infinite, Utilities.Infinite);
+            this.streamLRUCacheExhaustTimer.Dispose();
+
             while (this.streamLRUCache.First is { } holder)
             {
                 holder.Value.Stream.Dispose();
@@ -310,6 +321,38 @@ internal sealed class ObjectAccessor : IDisposable
         ReferenceDelta = 0x07, // OBJ_REF_DELTA
     }
 
+    private void ExhaustStreamCache(object? _)
+    {
+        var now = DateTime.Now;
+
+        lock (this.streamLRUCache)
+        {
+            var holder = this.streamLRUCache.First;
+            while (holder != null)
+            {
+                if (holder.Value.Limit <= now)
+                {
+                    holder.Value.Stream.Dispose();
+                    this.streamLRUCache.Remove(holder);
+                }
+
+                holder = holder.Next;
+            }
+
+            if (this.streamLRUCache.Count >= 1)
+            {
+                var dueTime = this.streamLRUCache.First!.Value.Limit - DateTime.Now;
+                this.streamLRUCacheExhaustTimer.Change(
+                    dueTime, Utilities.Infinite);
+            }
+            else
+            {
+                this.streamLRUCacheExhaustTimer.Change(
+                    Utilities.Infinite, Utilities.Infinite);
+            }
+        }
+    }
+
     private Stream AddToCache(
         string packedFilePath, ulong offset, ObjectTypes type,
         Stream stream, bool disableCaching)
@@ -320,11 +363,12 @@ internal sealed class ObjectAccessor : IDisposable
         }
 
         var cachedStream = new WrappedStream(stream);
+        var limit = DateTime.Now.Add(TimeSpan.FromSeconds(10));
 
         lock (this.streamLRUCache)
         {
             this.streamLRUCache.AddFirst(
-                new StreamCacheHolder(packedFilePath, offset, type, cachedStream));
+                new StreamCacheHolder(packedFilePath, offset, type, cachedStream, limit));
 
             while (this.streamLRUCache.Count > maxStreamCache)
             {
@@ -342,6 +386,13 @@ internal sealed class ObjectAccessor : IDisposable
                 }
 #endif
             }
+
+            if (this.streamLRUCache.Count >= 1)
+            {
+                var dueTime = this.streamLRUCache.First!.Value.Limit - DateTime.Now;
+                this.streamLRUCacheExhaustTimer.Change(
+                    dueTime, Utilities.Infinite);
+            }
         }
 
         return cachedStream.Clone();
@@ -357,7 +408,8 @@ internal sealed class ObjectAccessor : IDisposable
     {
         if (maxStreamCache >= 2)
         {
-            // TODO: check file path on key
+            var dueTime = TimeSpan.FromSeconds(10);
+            var limit = DateTime.Now.Add(dueTime);
             lock (this.streamLRUCache)
             {
                 var holder = this.streamLRUCache.First;
@@ -368,11 +420,17 @@ internal sealed class ObjectAccessor : IDisposable
                     {
                         this.streamLRUCache.Remove(holder);
                         this.streamLRUCache.AddFirst(holder);
+
+                        holder.Value.Limit = limit;
 #if DEBUG
                         Interlocked.Increment(ref holder.Value.HitCount);
 #endif
+                        this.streamLRUCacheExhaustTimer.Change(
+                            dueTime, Utilities.Infinite);
+
                         return new(holder.Value.Stream.Clone(), holder.Value.Type);
                     }
+
                     holder = holder.Next;
                 }
             }
