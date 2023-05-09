@@ -82,10 +82,19 @@ public unsafe struct Hash : IEquatable<Hash>
     public override bool Equals(object? obj) =>
         obj is Hash rhs && this.Equals(rhs);
 
-    public override int GetHashCode() =>
-        this.hashCode0.GetHashCode() ^
-        this.hashCode8.GetHashCode() ^
-        this.hashCode16;
+    public override int GetHashCode()
+    {
+        fixed (void* p = &this.hashCode0)
+        {
+            int* pi = (int*)p;
+            var sum = *pi++;    // sizeof(int) * 5 = 20
+            sum ^= *pi++;
+            sum ^= *pi++;
+            sum ^= *pi++;
+            sum ^= *pi++;
+            return sum;
+        }
+    }
 
     public override string ToString() =>
         BitConverter.ToString(this.HashCode).
