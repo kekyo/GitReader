@@ -204,4 +204,13 @@ public sealed class RepositoryTests
 
         await Verifier.Verify(commits.ToArray());
     }
+
+    [Test]
+    public async Task GetRemoteUrls()
+    {
+        using var repository = await Repository.Factory.OpenStructureAsync(
+            RepositoryTestsSetUp.BasePath);
+
+        await Verifier.Verify(repository.RemoteUrls);
+    }
 }

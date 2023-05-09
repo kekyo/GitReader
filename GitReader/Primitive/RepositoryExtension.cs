@@ -8,6 +8,8 @@
 ////////////////////////////////////////////////////////////////////////////
 
 using GitReader.Internal;
+using GitReader.Collections;
+using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -76,9 +78,11 @@ public static class RepositoryExtension
 
     public static void Deconstruct(
         this PrimitiveRepository repository,
-        out string path)
+        out string gitPath,
+        out ReadOnlyDictionary<string, string> remoteUrls)
     {
-        path = repository.Path;
+        gitPath = repository.GitPath;
+        remoteUrls = repository.RemoteUrls;
     }
 
     public static void Deconstruct(

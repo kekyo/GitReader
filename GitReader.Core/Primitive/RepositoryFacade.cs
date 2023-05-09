@@ -34,7 +34,7 @@ internal static class RepositoryFacade
         try
         {
             // Read remote references from config file.
-            repository.remoteReferenceUrlCache =
+            repository.remoteUrls =
                 await RepositoryAccessor.ReadRemoteReferencesAsync(repository, ct);
 
             // Read FETCH_HEAD and packed-refs.

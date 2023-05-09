@@ -163,7 +163,7 @@ internal static class RepositoryFacade
         try
         {
             // Read remote references from config file.
-            repository.remoteReferenceUrlCache =
+            repository.remoteUrls =
                 await RepositoryAccessor.ReadRemoteReferencesAsync(repository, ct);
 
             // Read FETCH_HEAD and packed-refs.
@@ -302,6 +302,8 @@ internal static class RepositoryFacade
         var rootTree = await RepositoryAccessor.ReadTreeAsync(
             repository, commit.treeRoot, ct);
 
+        // This is a rather aggressive algorithm that recursively and in parallel searches all entries
+        // in the tree and builds all elements.
         Task<TreeEntry[]> GetChildrenAsync(Primitive.PrimitiveTreeEntry[] entries) =>
             Utilities.WhenAll(
                 entries.Select(async entry =>

@@ -197,4 +197,13 @@ public sealed class RepositoryTests
 
         await Verifier.Verify(commits.ToArray());
     }
+
+    [Test]
+    public async Task GetRemoteUrls()
+    {
+        using var repository = await Repository.Factory.OpenPrimitiveAsync(
+            RepositoryTestsSetUp.BasePath);
+
+        await Verifier.Verify(repository.RemoteUrls);
+    }
 }

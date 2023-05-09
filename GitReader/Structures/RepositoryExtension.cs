@@ -8,6 +8,7 @@
 ////////////////////////////////////////////////////////////////////////////
 
 using GitReader.Collections;
+using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -51,13 +52,15 @@ public static class RepositoryExtension
 
     public static void Deconstruct(
         this StructuredRepository repository,
-        out string path,
+        out string gitPath,
+        out ReadOnlyDictionary<string, string> remoteUrls,
         out Branch? head,
         out ReadOnlyDictionary<string, Branch> branches,
         out ReadOnlyDictionary<string, Branch> remoteBranches,
         out ReadOnlyDictionary<string, Tag> tags)
     {
-        path = repository.Path;
+        gitPath = repository.GitPath;
+        remoteUrls = repository.RemoteUrls;
         head = repository.head;
         branches = repository.branches;
         remoteBranches = repository.remoteBranches;

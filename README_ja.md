@@ -302,6 +302,8 @@ Gitのコミットは、複数の親コミットを持つ事があります。
 これは高レベルインターフェイスでも同様で、親から子を参照するためのインターフェイスはありません。
 そのため、このような探索を行いたい場合は、自力で逆方向のリンクを構築する必要があります。
 
+以下の例では、子コミットから親コミットを再帰的に探索します。
+
 ```csharp
 Branch branch = repository.Branches["develop"];
 
@@ -309,6 +311,7 @@ Console.WriteLine($"Name: {branch.Name}");
 
 Commit? current = branch.Head;
 
+// 親コミットが存在する限り続ける
 while (current != null)
 {
     Console.WriteLine($"Hash: {current.Hash}");
@@ -328,6 +331,8 @@ while (current != null)
 
 ハイレベルインターフェイスは、内部でこれらのプリミティブインターフェイスを使用して実装しています。
 全ての例を網羅していないため、情報が必要であればGitReaderのコードを参照する事をお勧めします。
+
+* [RepositoryFacadeクラス](/GitReader.Core/Structures/RepositoryFacade.cs) から始めると良いでしょう。
 
 ### 現在のHEADの情報を取得
 
@@ -475,6 +480,39 @@ if (await repository.GetCommitAsync(
 
         current = parent;
     }
+}
+```
+
+----
+
+## サンプルコード (その他)
+
+### SHA1ハッシュの操作
+
+```csharp
+Hash hashFromString = "1205dc34ce48bda28fc543daaf9525a9bb6e6d10";
+Hash hashFromArray = new byte[] { 0x12, 0x05, 0xdc, ... };
+
+var hashFromStringConstructor =
+    new Hash("1205dc34ce48bda28fc543daaf9525a9bb6e6d10");
+var hashFromArrayConstructor =
+    new Hash(new byte[] { 0x12, 0x05, 0xdc, ... });
+
+if (Hash.TryParse("1205dc34ce48bda28fc543daaf9525a9bb6e6d10", out Hash hash))
+{
+    // ...
+}
+
+Commit commit = ...;
+Hash targetHash = commit;
+```
+
+### リモートリポジトリURLの列挙
+
+```csharp
+foreach (KeyValuePair<string, string> entry in repository.RemoteUrls)
+{
+    Console.WriteLine($"Remote: Name={entry.Key}, Url={entry.Value}");
 }
 ```
 

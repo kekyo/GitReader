@@ -307,6 +307,8 @@ always expressed as one direction, from "child" to "parent".
 This is also true for the high-level interface; there is no interface for referencing a child from its parent.
 Therefore, if you wish to perform such a search, you must construct the link in the reverse direction on your own.
 
+The following example recursively searches for a parent commit from a child commit.
+
 ```csharp
 Branch branch = repository.Branches["develop"];
 
@@ -314,6 +316,7 @@ Console.WriteLine($"Name: {branch.Name}");
 
 Commit? current = branch.Head;
 
+// Continue as long as the parent commit exists.
 while (current != null)
 {
     Console.WriteLine($"Hash: {current.Hash}");
@@ -333,6 +336,8 @@ while (current != null)
 
 The high-level interface is implemented internally using these primitive interfaces.
 We do not have a complete list of all examples, so we recommend referring to the GitReader code if you need information.
+
+* You may want to start with [RepositoryFacade class](/GitReader.Core/Structures/RepositoryFacade.cs).
 
 ### Read current head commit
 
@@ -485,6 +490,39 @@ if (await repository.GetCommitAsync(
 
 ----
 
+## Samples (Others)
+
+### SHA1 hash operations
+
+```csharp
+Hash hashFromString = "1205dc34ce48bda28fc543daaf9525a9bb6e6d10";
+Hash hashFromArray = new byte[] { 0x12, 0x05, 0xdc, ... };
+
+var hashFromStringConstructor =
+    new Hash("1205dc34ce48bda28fc543daaf9525a9bb6e6d10");
+var hashFromArrayConstructor =
+    new Hash(new byte[] { 0x12, 0x05, 0xdc, ... });
+
+if (Hash.TryParse("1205dc34ce48bda28fc543daaf9525a9bb6e6d10", out Hash hash))
+{
+    // ...
+}
+
+Commit commit = ...;
+Hash targetHash = commit;
+```
+
+### Enumerate remote urls
+
+```csharp
+foreach (KeyValuePair<string, string> entry in repository.RemoteUrls)
+{
+    Console.WriteLine($"Remote: Name={entry.Key}, Url={entry.Value}");
+}
+```
+
+----
+
 ## TODO
 
 * Supported CRC32 verifier.
@@ -497,6 +535,9 @@ Apache-v2
 
 ## History
 
+* 0.9.0:
+  * Exposed remote urls.
+  * Changed some type names avoid confliction.
 * 0.8.0:
   * Added tree/blob accessors.
   * Improved performance.

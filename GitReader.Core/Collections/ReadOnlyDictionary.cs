@@ -20,13 +20,13 @@ public sealed class ReadOnlyDictionary<TKey, TValue> :
 #endif
     where TKey : notnull
 {
-    private readonly Dictionary<TKey, TValue> parent;
+    internal readonly Dictionary<TKey, TValue> parent;
 
     public ReadOnlyDictionary(Dictionary<TKey, TValue> parent) =>
         this.parent = parent;
 
     public TValue this[TKey key] =>
-    this.parent[key];
+        this.parent[key];
 
     public Dictionary<TKey, TValue>.KeyCollection Keys =>
         this.parent.Keys;
@@ -37,16 +37,16 @@ public sealed class ReadOnlyDictionary<TKey, TValue> :
     public int Count =>
         this.parent.Count;
 
-    public bool ContainsKey(TKey key) =>
+    internal bool ContainsKey(TKey key) =>
         this.parent.ContainsKey(key);
 
-    public bool ContainsValue(TValue value) =>
+    internal bool ContainsValue(TValue value) =>
         this.parent.ContainsValue(value);
 
     public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator() =>
         this.parent.GetEnumerator();
 
-    public bool TryGetValue(TKey key, out TValue value) =>
+    internal bool TryGetValue(TKey key, out TValue value) =>
         this.parent.TryGetValue(key, out value!);
 
     TValue IDictionary<TKey, TValue>.this[TKey key]
@@ -78,13 +78,24 @@ public sealed class ReadOnlyDictionary<TKey, TValue> :
     bool IDictionary<TKey, TValue>.ContainsKey(TKey key) =>
         this.parent.ContainsKey(key);
 
+    bool IDictionary<TKey, TValue>.TryGetValue(TKey key, out TValue value) =>
+        this.parent.TryGetValue(key, out value!);
+
+#if !NET35 && !NET40
+    bool IReadOnlyDictionary<TKey, TValue>.ContainsKey(TKey key) =>
+        this.parent.ContainsKey(key);
+
+    bool IReadOnlyDictionary<TKey, TValue>.TryGetValue(TKey key, out TValue value) =>
+        this.parent.TryGetValue(key, out value!);
+#endif
+
     IEnumerator IEnumerable.GetEnumerator() =>
         this.parent.GetEnumerator();
 
     void ICollection<KeyValuePair<TKey, TValue>>.CopyTo(KeyValuePair<TKey, TValue>[] array, int arrayIndex) =>
         ((ICollection<KeyValuePair<TKey, TValue>>)this.parent).CopyTo(array, arrayIndex);
 
-    public Dictionary<TKey, TValue> Clone() =>
+    internal Dictionary<TKey, TValue> Clone() =>
         new(this.parent);
 
     public static implicit operator ReadOnlyDictionary<TKey, TValue>(Dictionary<TKey, TValue> dict) =>

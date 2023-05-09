@@ -63,12 +63,13 @@ internal sealed class ObjectAccessor : IDisposable
     internal int hitCount;
     internal int missCount;
 #endif
+
     public ObjectAccessor(
-        FileAccessor fileAccessor, string repositoryPath)
+        FileAccessor fileAccessor, string gitPath)
     {
         this.fileAccessor = fileAccessor;
         this.objectsBasePath = Utilities.Combine(
-            repositoryPath,
+            gitPath,
             "objects");
         this.packedBasePath = Utilities.Combine(
             this.objectsBasePath,

@@ -12,7 +12,6 @@ using GitReader.Primitive;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -26,14 +25,6 @@ internal enum ReferenceTypes
     Branches,
     RemoteBranches,
     Tags,
-}
-
-internal readonly struct RemoteReferenceUrlCache
-{
-    public readonly ReadOnlyDictionary<Uri, string> Remotes;
-
-    public RemoteReferenceUrlCache(ReadOnlyDictionary<Uri, string> remotes) =>
-        this.Remotes = remotes;
 }
 
 internal readonly struct ReferenceCache
@@ -90,20 +81,20 @@ internal static class RepositoryAccessor
             _ => throw new ArgumentException(),
         };
 
-    public static async Task<RemoteReferenceUrlCache> ReadRemoteReferencesAsync(
+    public static async Task<ReadOnlyDictionary<string, string>> ReadRemoteReferencesAsync(
         Repository repository,
         CancellationToken ct)
     {
-        var path = Utilities.Combine(repository.Path, "config");
+        var path = Utilities.Combine(repository.GitPath, "config");
         if (!File.Exists(path))
         {
-            return new(new(new()));
+            return new(new());
         }
 
         using var fs = repository.fileAccessor.Open(path);
         var tr = new StreamReader(fs, Encoding.UTF8, true);
 
-        var remotes = new Dictionary<Uri, string>();
+        var remotes = new Dictionary<string, string>();
         var remoteName = default(string);
 
         while (true)
@@ -147,10 +138,9 @@ internal static class RepositoryAccessor
                 default:
                     if (line.StartsWith("url"))
                     {
-                        if (line.Split('=').ElementAtOrDefault(1)?.Trim() is { } urlString &&
-                            Uri.TryCreate(urlString, UriKind.Absolute, out var url))
+                        if (line.Split('=').ElementAtOrDefault(1)?.Trim() is { } urlString)
                         {
-                            remotes[url] = remoteName;
+                            remotes[remoteName] = urlString;
                         }
                     }
                     break;
@@ -164,11 +154,12 @@ internal static class RepositoryAccessor
        Repository repository,
        CancellationToken ct)
     {
-        var remoteReferenceCache = repository.remoteReferenceUrlCache;
+        Debug.Assert(repository.remoteUrls != null);
 
-        Debug.Assert(remoteReferenceCache.Remotes != null);
+        var remoteNameByUrl = repository.remoteUrls.
+            ToDictionary(entry => entry.Value, entry => entry.Key);
 
-        var path = Utilities.Combine(repository.Path, "FETCH_HEAD");
+        var path = Utilities.Combine(repository.GitPath, "FETCH_HEAD");
         if (!File.Exists(path))
         {
             return new(new(new()), new(new()));
@@ -230,8 +221,7 @@ internal static class RepositoryAccessor
                 if (typeString == "branch")
                 {
                     var urlString = descriptorString.Split(' ').Last();
-                    if (Uri.TryCreate(urlString, UriKind.Absolute, out var url) &&
-                        remoteReferenceCache.Remotes!.TryGetValue(url, out var remoteName))
+                    if (remoteNameByUrl.TryGetValue(urlString, out var remoteName))
                     {
                         branches[$"{remoteName}/{name}"] = hash;
                     }
@@ -261,7 +251,7 @@ internal static class RepositoryAccessor
         Repository repository,
         CancellationToken ct)
     {
-        var path = Utilities.Combine(repository.Path, "packed-refs");
+        var path = Utilities.Combine(repository.GitPath, "packed-refs");
         if (!File.Exists(path))
         {
             return new(new(new()), new(new()));
@@ -340,7 +330,7 @@ internal static class RepositoryAccessor
             names.Add(name);
 
             var path = Utilities.Combine(
-                repository.Path,
+                repository.GitPath,
                 currentLocation.Replace('/', Path.DirectorySeparatorChar));
             if (!File.Exists(path))
             {
@@ -386,14 +376,14 @@ internal static class RepositoryAccessor
         CancellationToken ct)
     {
         var headsPath = Utilities.Combine(
-            repository.Path, "refs", GetReferenceTypeName(type));
+            repository.GitPath, "refs", GetReferenceTypeName(type));
         var references = (await Utilities.WhenAll(
             Utilities.EnumerateFiles(headsPath, "*").
             Select(async path =>
             {
                 if (await ReadHashAsync(
                     repository,
-                    path.Substring(repository.Path.Length + 1),
+                    path.Substring(repository.GitPath.Length + 1),
                     ct) is not { } results)
                 {
                     return default(PrimitiveReference?);

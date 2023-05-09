@@ -62,8 +62,8 @@ module public RepositoryExtension =
         member repository.openBlob(blob: Hash, ?ct: CancellationToken) =
             RepositoryAccessor.OpenBlobAsync(repository, blob, unwrapCT ct) |> Async.AwaitTask
 
-    let (|Repository|) (repository: Repository) =
-        (repository.Path)
+    let (|Repository|) (repository: PrimitiveRepository) =
+        (repository.GitPath, repository.RemoteUrls)
 
     let (|PrimitiveReference|) (reference: PrimitiveReference) =
         (reference.Name, reference.Target)
