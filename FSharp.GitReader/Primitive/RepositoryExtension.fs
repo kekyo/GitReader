@@ -17,7 +17,7 @@ open System.Threading
 [<AutoOpen>]
 module public RepositoryExtension =
 
-    type Repository with
+    type PrimitiveRepository with
         member repository.getCurrentHeadReference(?ct: CancellationToken) =
             RepositoryFacade.GetCurrentHeadReferenceAsync(
                 repository, unwrapCT ct) |> asAsync
@@ -62,8 +62,8 @@ module public RepositoryExtension =
         member repository.openBlob(blob: Hash, ?ct: CancellationToken) =
             RepositoryAccessor.OpenBlobAsync(repository, blob, unwrapCT ct) |> Async.AwaitTask
 
-    let (|Repository|) (repository: Repository) =
-        (repository.Path)
+    let (|Repository|) (repository: PrimitiveRepository) =
+        (repository.GitPath, repository.RemoteUrls)
 
     let (|PrimitiveReference|) (reference: PrimitiveReference) =
         (reference.Name, reference.Target)

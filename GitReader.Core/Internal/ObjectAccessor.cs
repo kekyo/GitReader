@@ -1,4 +1,4 @@
-﻿////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
 //
 // GitReader - Lightweight Git local repository traversal library.
 // Copyright (c) Kouji Matsui (@kozy_kekyo, @kekyo@mastodon.cloud)
@@ -38,18 +38,23 @@ internal sealed class ObjectAccessor : IDisposable
 
     private sealed class StreamCacheHolder
     {
+        public readonly string Path;
         public readonly ulong Offset;
         public readonly ObjectTypes Type;
         public readonly WrappedStream Stream;
+        public DateTime Limit;
 #if DEBUG
         public int HitCount;
 #endif
         public StreamCacheHolder(
-            ulong offset, ObjectTypes type, WrappedStream stream)
+            string path, ulong offset, ObjectTypes type,
+            WrappedStream stream, DateTime limit)
         {
+            this.Path = path;
             this.Offset = offset;
             this.Type = type;
             this.Stream = stream;
+            this.Limit = limit;
         }
     }
 
@@ -57,22 +62,27 @@ internal sealed class ObjectAccessor : IDisposable
     private readonly string objectsBasePath;
     private readonly string packedBasePath;
     private readonly AsyncLock locker = new();
-    private readonly Dictionary<string, WeakReference> indexCache = new();
+    private readonly Dictionary<string, IndexEntry> indexCache = new();
     private readonly LinkedList<StreamCacheHolder> streamLRUCache = new();
+    private readonly Timer streamLRUCacheExhaustTimer;
 #if DEBUG
     internal int hitCount;
     internal int missCount;
 #endif
+
     public ObjectAccessor(
-        FileAccessor fileAccessor, string repositoryPath)
+        FileAccessor fileAccessor, string gitPath)
     {
         this.fileAccessor = fileAccessor;
         this.objectsBasePath = Utilities.Combine(
-            repositoryPath,
+            gitPath,
             "objects");
         this.packedBasePath = Utilities.Combine(
             this.objectsBasePath,
             "pack");
+        this.streamLRUCacheExhaustTimer =
+            new(this.ExhaustStreamCache, null,
+                Utilities.Infinite, Utilities.Infinite);
     }
 
     public void Dispose()
@@ -83,6 +93,10 @@ internal sealed class ObjectAccessor : IDisposable
 
         lock (this.streamLRUCache)
         {
+            this.streamLRUCacheExhaustTimer.Change(
+                Utilities.Infinite, Utilities.Infinite);
+            this.streamLRUCacheExhaustTimer.Dispose();
+
             while (this.streamLRUCache.First is { } holder)
             {
                 holder.Value.Stream.Dispose();
@@ -121,7 +135,7 @@ internal sealed class ObjectAccessor : IDisposable
         {
             var zlibStream = await Utilities.CreateZLibStreamAsync(fs, ct);
 
-            var preloadBuffer = new byte[preloadBufferSize];
+            var preloadBuffer = BufferPool.Take(preloadBufferSize);
             var read = await zlibStream.ReadAsync(
                 preloadBuffer, 0, preloadBuffer.Length, ct);
 
@@ -210,23 +224,22 @@ internal sealed class ObjectAccessor : IDisposable
     {
         using var _ = await this.locker.LockAsync(ct);
 
-        if (this.indexCache.TryGetValue(indexFileRelativePath, out var wr) &&
-            wr.Target is IndexEntry cachedEntry)
+        if (this.indexCache.TryGetValue(indexFileRelativePath, out var cachedEntry))
         {
             return cachedEntry;
         }
 
         var dict = await IndexReader.ReadIndexAsync(
             Utilities.Combine(this.packedBasePath, indexFileRelativePath), ct);
-        var entry = new IndexEntry(
+        cachedEntry = new(
             Utilities.Combine(
                 Utilities.GetDirectoryPath(indexFileRelativePath),
                 Path.GetFileNameWithoutExtension(indexFileRelativePath)),
             dict);
 
-        this.indexCache[indexFileRelativePath] = new(entry);
+        this.indexCache[indexFileRelativePath] = cachedEntry;
 
-        return entry;
+        return cachedEntry;
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -307,20 +320,59 @@ internal sealed class ObjectAccessor : IDisposable
         ReferenceDelta = 0x07, // OBJ_REF_DELTA
     }
 
-    private Stream AddToCache(
-        ulong offset, ObjectTypes type, Stream stream)
+    private void ExhaustStreamCache(object? _)
     {
-        if (maxStreamCache <= 1)
+        var now = DateTime.Now;
+
+        lock (this.streamLRUCache)
+        {
+            var holder = this.streamLRUCache.First;
+            while (holder != null)
+            {
+                if (holder.Value.Limit <= now)
+                {
+                    holder.Value.Stream.Dispose();
+                    this.streamLRUCache.Remove(holder);
+                }
+
+                holder = holder.Next;
+            }
+
+            if (this.streamLRUCache.Count >= 1)
+            {
+                var dueTime = this.streamLRUCache.First!.Value.Limit - DateTime.Now;
+                if (dueTime < TimeSpan.Zero)
+                {
+                    dueTime = TimeSpan.Zero;
+                }
+
+                this.streamLRUCacheExhaustTimer.Change(
+                    dueTime, Utilities.Infinite);
+            }
+            else
+            {
+                this.streamLRUCacheExhaustTimer.Change(
+                    Utilities.Infinite, Utilities.Infinite);
+            }
+        }
+    }
+
+    private Stream AddToCache(
+        string packedFilePath, ulong offset, ObjectTypes type,
+        Stream stream, bool disableCaching)
+    {
+        if (disableCaching || maxStreamCache <= 1)
         {
             return stream;
         }
 
         var cachedStream = new WrappedStream(stream);
+        var limit = DateTime.Now.Add(TimeSpan.FromSeconds(10));
 
         lock (this.streamLRUCache)
         {
             this.streamLRUCache.AddFirst(
-                new StreamCacheHolder(offset, type, cachedStream));
+                new StreamCacheHolder(packedFilePath, offset, type, cachedStream, limit));
 
             while (this.streamLRUCache.Count > maxStreamCache)
             {
@@ -338,6 +390,18 @@ internal sealed class ObjectAccessor : IDisposable
                 }
 #endif
             }
+
+            if (this.streamLRUCache.Count >= 1)
+            {
+                var dueTime = this.streamLRUCache.First!.Value.Limit - DateTime.Now;
+                if (dueTime < TimeSpan.Zero)
+                {
+                    dueTime = TimeSpan.Zero;
+                }
+
+                this.streamLRUCacheExhaustTimer.Change(
+                    dueTime, Utilities.Infinite);
+            }
         }
 
         return cachedStream.Clone();
@@ -345,28 +409,38 @@ internal sealed class ObjectAccessor : IDisposable
 
 #if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
     private async ValueTask<ObjectStreamResult> OpenFromPackedFileAsync(
-        string packedFilePath, ulong offset, CancellationToken ct)
+        string packedFilePath, ulong offset, bool disableCaching, CancellationToken ct)
 #else
     private async Task<ObjectStreamResult> OpenFromPackedFileAsync(
-        string packedFilePath, ulong offset, CancellationToken ct)
+        string packedFilePath, ulong offset, bool disableCaching, CancellationToken ct)
 #endif
     {
         if (maxStreamCache >= 2)
         {
+            var dueTime = TimeSpan.FromSeconds(10);
+            var limit = DateTime.Now.Add(dueTime);
+
             lock (this.streamLRUCache)
             {
                 var holder = this.streamLRUCache.First;
                 while (holder != null)
                 {
-                    if (holder.Value.Offset == offset)
+                    if (holder.Value.Path == packedFilePath &&
+                        holder.Value.Offset == offset)
                     {
                         this.streamLRUCache.Remove(holder);
                         this.streamLRUCache.AddFirst(holder);
+
+                        holder.Value.Limit = limit;
 #if DEBUG
                         Interlocked.Increment(ref holder.Value.HitCount);
 #endif
+                        this.streamLRUCacheExhaustTimer.Change(
+                            dueTime, Utilities.Infinite);
+
                         return new(holder.Value.Stream.Clone(), holder.Value.Type);
                     }
+
                     holder = holder.Next;
                 }
             }
@@ -382,7 +456,7 @@ internal sealed class ObjectAccessor : IDisposable
         {
             fs.Seek((long)offset, SeekOrigin.Begin);
 
-            var preloadBuffer = new byte[preloadBufferSize];
+            var preloadBuffer = BufferPool.Take(preloadBufferSize);
             var read = await fs.ReadAsync(preloadBuffer, 0, preloadBuffer.Length, ct);
             if (read == 0)
             {
@@ -425,7 +499,7 @@ internal sealed class ObjectAccessor : IDisposable
 
                         var (zlibStream, objectEntry) = await Utilities.Join(
                             Utilities.CreateZLibStreamAsync(stream, ct),
-                            this.OpenFromPackedFileAsync(packedFilePath, referenceOffset, ct));
+                            this.OpenFromPackedFileAsync(packedFilePath, referenceOffset, disableCaching, ct));
 
                         try
                         {
@@ -435,8 +509,9 @@ internal sealed class ObjectAccessor : IDisposable
                                 ct);
 
                             var wrappedStream = this.AddToCache(
-                                offset, objectEntry.Type,
-                                await MemoizedStream.CreateAsync(deltaDecodedStream, -1, ct));
+                                packedFilePath, offset, objectEntry.Type,
+                                await MemoizedStream.CreateAsync(deltaDecodedStream, -1, ct),
+                                disableCaching);
 
                             return new(wrappedStream, objectEntry.Type);
                         }
@@ -454,18 +529,19 @@ internal sealed class ObjectAccessor : IDisposable
                         {
                             Throw(6);
                         }
-                        var hashCode = new byte[20];
+
+                        var hashCode = BufferPool.Take(20);
                         Array.Copy(preloadBuffer, preloadIndex, hashCode, 0, hashCode.Length);
                         preloadIndex += hashCode.Length;
-                        Hash referenceHash = hashCode;
+                        var referenceHash = new Hash(hashCode);
 
-                        var stream =new ConcatStream(
+                        var stream = new ConcatStream(
                             new PreloadedStream(preloadBuffer, preloadIndex, read - preloadIndex),
                             fs);
 
                         var (zlibStream, objectEntry) = await Utilities.Join(
                             Utilities.CreateZLibStreamAsync(stream, ct),
-                            this.OpenAsync(referenceHash, ct));
+                            this.OpenAsync(referenceHash, disableCaching, ct));
 
                         try
                         {
@@ -480,8 +556,9 @@ internal sealed class ObjectAccessor : IDisposable
                                 ct);
 
                             var wrappedStream = this.AddToCache(
-                                offset, oe.Type,
-                                await MemoizedStream.CreateAsync(deltaDecodedStream, -1, ct));
+                                packedFilePath, offset, oe.Type,
+                                await MemoizedStream.CreateAsync(deltaDecodedStream, -1, ct),
+                                disableCaching);
 
                             return new(wrappedStream, oe.Type);
                         }
@@ -506,8 +583,9 @@ internal sealed class ObjectAccessor : IDisposable
                         var objectType = (ObjectTypes)(int)type;
 
                         var wrappedStream = this.AddToCache(
-                            offset, objectType,
-                            await MemoizedStream.CreateAsync(zlibStream, (long)objectSize, ct));
+                            packedFilePath, offset, objectType,
+                            await MemoizedStream.CreateAsync(zlibStream, (long)objectSize, ct),
+                            disableCaching);
 
                         return new(wrappedStream, objectType);
                     }
@@ -526,10 +604,10 @@ internal sealed class ObjectAccessor : IDisposable
 
 #if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
     private async ValueTask<ObjectStreamResult?> OpenFromPackedAsync(
-        Hash hash, CancellationToken ct)
+        Hash hash, bool disableCaching, CancellationToken ct)
 #else
     private async Task<ObjectStreamResult?> OpenFromPackedAsync(
-        Hash hash, CancellationToken ct)
+        Hash hash, bool disableCaching, CancellationToken ct)
 #endif
     {
         var entries = await Utilities.WhenAll(
@@ -564,17 +642,17 @@ internal sealed class ObjectAccessor : IDisposable
         }
 
         return await this.OpenFromPackedFileAsync(
-            packedFilePath, entry.ObjectEntry.Offset, ct);
+            packedFilePath, entry.ObjectEntry.Offset, disableCaching, ct);
     }
 
     //////////////////////////////////////////////////////////////////////////
 
 #if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
     public ValueTask<ObjectStreamResult?> OpenAsync(
-        Hash hash, CancellationToken ct)
+        Hash hash, bool disableCaching, CancellationToken ct)
 #else
     public Task<ObjectStreamResult?> OpenAsync(
-        Hash hash, CancellationToken ct)
+        Hash hash, bool disableCaching, CancellationToken ct)
 #endif
     {
         var objectPath = Utilities.Combine(
@@ -588,7 +666,7 @@ internal sealed class ObjectAccessor : IDisposable
         }
         else
         {
-            return this.OpenFromPackedAsync(hash, ct);
+            return this.OpenFromPackedAsync(hash, disableCaching, ct);
         }
     }
 }

@@ -46,7 +46,7 @@ internal static class IndexReader
         using var fs = new FileStream(
             indexPath, FileMode.Open, FileAccess.Read, FileShare.Read, 65536, true);
 
-        var header = new byte[8];
+        using var header = BufferPool.Take(8);
         var read = await fs.ReadAsync(header, 0, header.Length, ct);
         if (read != header.Length)
         {
@@ -69,7 +69,7 @@ internal static class IndexReader
         }
 
         // Skip fanout table.
-        var fanoutTableBuffer = new byte[256 * 4];
+        using var fanoutTableBuffer = BufferPool.Take(256 * 4);
         read = await fs.ReadAsync(fanoutTableBuffer, 0, fanoutTableBuffer.Length, ct);
         if (read != fanoutTableBuffer.Length)
         {
@@ -86,7 +86,7 @@ internal static class IndexReader
 
         // Read hash table.
         var sha1List = new Hash[objectCount];
-        var hashTableBuffer = new byte[hashTableBufferCount * Hash.Size];
+        using var hashTableBuffer = BufferPool.Take(hashTableBufferCount * Hash.Size);
 
         for (var index = 0; index < objectCount; )
         {
@@ -99,16 +99,17 @@ internal static class IndexReader
 
             for (var i = 0; i < read; i += Hash.Size)
             {
-                var buffer = new byte[Hash.Size];
+                using var buffer = BufferPool.Take(Hash.Size);
                 Array.Copy(hashTableBuffer, i, buffer, 0, buffer.Length);
 
-                sha1List[index] = buffer;
+                // (Copied, made safer buffer pooled array)
+                sha1List[index] = new Hash(buffer);
                 index++;
             }
         }
 
         // Read CRC32 table.
-        var crc32TableBuffer = new byte[objectCount * 4];
+        using var crc32TableBuffer = BufferPool.Take(objectCount * 4);
         read = await fs.ReadAsync(crc32TableBuffer, 0, crc32TableBuffer.Length, ct);
         if (read != crc32TableBuffer.Length)
         {
@@ -116,7 +117,7 @@ internal static class IndexReader
         }
 
         // Read offset table.
-        var offsetTableBuffer = new byte[objectCount * 4];
+        using var offsetTableBuffer = BufferPool.Take(objectCount * 4);
         read = await fs.ReadAsync(offsetTableBuffer, 0, offsetTableBuffer.Length, ct);
         if (read != offsetTableBuffer.Length)
         {
@@ -146,7 +147,7 @@ internal static class IndexReader
         // Read large offset table.
         if (largeOffsetOffset.Count >= 1)
         {
-            var largeOffsetTableBuffer = new byte[largeOffsetOffset.Count * 8];
+            using var largeOffsetTableBuffer = BufferPool.Take(largeOffsetOffset.Count * 8);
             read = await fs.ReadAsync(largeOffsetTableBuffer, 0, largeOffsetTableBuffer.Length, ct);
             if (read != largeOffsetTableBuffer.Length)
             {
@@ -165,7 +166,7 @@ internal static class IndexReader
                     Throw(10);
                 }
 
-                var offset = BitConverter.ToUInt64(offsetTableBuffer, (int)entry.Value * 8);
+                var offset = BitConverter.ToUInt64(largeOffsetTableBuffer, (int)entry.Value * 8);
 
                 Utilities.MakeBigEndian(crc32TableBuffer, entry.Key * 4, 4);
                 var crc32 = BitConverter.ToUInt32(crc32TableBuffer, entry.Key * 4);

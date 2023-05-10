@@ -1,6 +1,6 @@
 # GitReader
 
-Lightweight Git local repository traversal library.
+軽量なGitローカルリポジトリ参照ライブラリ
 
 ![GitReader](Images/GitReader.100.png)
 
@@ -15,18 +15,18 @@ Lightweight Git local repository traversal library.
 
 ----
 
-[![Japanese language](Images/Japanese.256.png)](https://github.com/kekyo/GitReader/blob/main/README_ja.md)
+[English language is here](https://github.com/kekyo/GitReader)
 
-## What is this?
+## これは何?
 
-Have you ever wanted to access information about your local Git repository in .NET?
-Explore and tag branches, get commit dates and contributor information, and read commit directory structures and files.
+.NETでGitのローカルリポジトリの情報にアクセスしたいと考えたことはありますか？
+ブランチの探索やタグ、コミットの日付や貢献者の情報の取得、そしてコミットのディレクトリ構造やファイルの読み取りなど。
 
-GitReader is written only managed code Git local repository traversal library for a wide range of .NET environments.
-It is lightweight, has a concise, easy-to-use interface, does not depend any other libraries, and does not contain native libraries,
-making it suitable for any environment.
+GitReaderは、幅広い.NET環境に対応し、マネージドコードだけで書かれた、Gitローカルリポジトリ参照ライブラリです。
+軽量で、簡潔で使いやすいインターフェイスを持ち、他のライブラリに依存せず、ネイティブのライブラリも含んでいません。
+どんな環境にも対応できるようにしました。
 
-Example:
+コードの例:
 
 ```csharp
 using GitReader;
@@ -48,69 +48,67 @@ if (repository.GetCurrentHead() is { } head)
 }
 ```
 
-It has the following features:
+以下のような特徴があります:
 
-* It provides information on Git branches, tags, and commits.
-* Branch tree traversal.
-* Read only interface makes immutability.
-* Both high-level and primitive interfaces ready.
-* Fully asynchronous operation.
-* Only contains 100% managed code. Independent of any external libraries other than the BCL and its compliant libraries.
-* Reliable zlib decompression using the .NET standard deflate implementation.
+* Gitのブランチ、タグ、コミットに関する情報を取得できます。
+* ブランチツリーの探索が可能です。
+* 読み取り専用インターフェイスで、イミュータビリティを実現。
+* 高レベルとプリミティブの、両方のインターフェイスが用意されています。
+* 完全な非同期処理と非同期インターフェイス。
+* 100%マネージドコードのみ。BCLとその準拠ライブラリ以外の外部ライブラリに依存しない。
+* .NET標準のdeflate実装を使用した、信頼性の高いzlib解凍。
 
-This library was designed from the ground up to replace `libgit2sharp`, on which [RelaxVersioner](https://github.com/kekyo/CenterCLR.RelaxVersioner) depended.
-It primarily fits the purpose of easily extracting commit information from a Git repository.
+このライブラリは、[RelaxVersioner](https://github.com/kekyo/CenterCLR.RelaxVersioner) が依存していた
+`libgit2sharp` を置き換えるために、フルスクラッチで設計されました。
+主に、Gitリポジトリからコミット情報を簡単に抽出する目的に適しています。
 
-### Target .NET platforms
+### 対応する.NETプラットフォーム
 
 * .NET 7.0 to 5.0
 * .NET Core 3.1 to 2.0
 * .NET Standard 2.1 to 1.6
 * .NET Framework 4.8.1 to 3.5
 
-### F# specialized binding
+### F#専用のバインディング
 
-F# 5.0 or upper, it contains F# friendly signature definition.
+F# 5.0以上が対象で、F#フレンドリーなシグネチャ定義が含まれています。
 
 * .NET 7.0 to 5.0
 * .NET Core 3.1 to 2.0
 * .NET Standard 2.1, 2.0
 * .NET Framework 4.8.1 to 4.6.1
 
-Note: All target framework variations are tested only newest it.
+注意: 全てのターゲットフレームワークのバリエーションは、最新のもののみテストされています。
 
 ----
 
-## How to use
+## 使い方
 
-Install [GitReader](https://www.nuget.org/packages/GitReader) from NuGet.
+NuGetの [GitReader](https://www.nuget.org/packages/GitReader) をインストールします。
 
-* Install [FSharp.GitReader](https://www.nuget.org/packages/FSharp.GitReader) when you need to use with F#.
-  It has F# friendly signature definition.
-  You can freely use the same version of a package to switch back and forth between C# and F#,
-  as long as the runtime instances are compatible.
+* F#を使っているなら、 [FSharp.GitReader](https://www.nuget.org/packages/FSharp.GitReader) を使うほうが良いでしょう。
+  このパッケージは、F#フレンドリーな定義を公開しています。
+  同じバージョンのパッケージであれば、実行時のインスタンスに互換性があるため、C#とF#を行き来する場合でも自由に使うことが出来ます。
 
-GitReader has high-level interfaces and primitive interfaces.
+GitReaderには、高レベルインターフェースとプリミティブインターフェースがあります。
 
-* The high-level interface is an interface that abstracts the Git repository.
-  Easy to handle without knowing the internal structure of Git.
-  It is possible to retrieve branch, tag, and commit information, and to read files (Blobs) at a glance.
-* The primitive interface is an interface that exposes the internal structure of the Git repository as it is,
-  It is simple to handle if you know the internal structure of Git,
-  and it offers high performance in asynchronous processing.
+* 高レベルインターフェースは、Gitリポジトリを抽象化したインターフェースです。
+  Gitの内部構造を知らなくても容易に扱えます。ブランチ、タグ、コミット情報の取得や、ファイル(Blob)の読み取りが簡単です。
+* プリミティブインターフェースは、Gitリポジトリの内部構造を、ほぼそのまま公開するインターフェースです。
+  Gitの内部構造を知っていれば扱いやすく、非同期処理で高性能を発揮します。
+  
+### サンプルコード
 
-### Sample Code
-
-Comprehensive sample code can be found in the [samples directory](/samples).
-The following things are minimal code fragments.
+総合的なサンプルコードは、 [サンプルディレクトリ](/samples) に存在します。
+以下では、最小のコード断片を示します。
 
 ----
 
-## Samples (High-level interfaces)
+## サンプルコード (高レベルインターフェイス)
 
-The high-level interface is easily referenced by automatically reading much of the information tied to a commit.
+高レベルインターフェイスは、コミットに紐づく多くの情報が自動的に読み取られることで、簡単に参照する事が出来ます。
 
-### Get current head commit
+### 現在のHEADの情報を取得
 
 ```csharp
 using GitReader;
@@ -120,7 +118,7 @@ using StructuredRepository repository =
     await Repository.Factory.OpenStructureAsync(
         "/home/kekyo/Projects/YourOwnLocalGitRepo");
 
-// Found current head
+// 現在のHEADが見つかった
 if (repository.GetCurrentHead() is Branch head)
 {
     Console.WriteLine($"Name: {head.Name}");
@@ -133,7 +131,7 @@ if (repository.GetCurrentHead() is Branch head)
 }
 ```
 
-### Get a commit directly
+### 指定されたコミットの情報を直接取得
 
 ```csharp
 if (await repository.GetCommitAsync(
@@ -147,7 +145,7 @@ if (await repository.GetCommitAsync(
 }
 ```
 
-### Get a branch head commit
+### 指定されたブランチの情報を取得
 
 ```csharp
 Branch branch = repository.Branches["develop"];
@@ -161,7 +159,7 @@ Console.WriteLine($"Subject: {branch.Head.Subject}");
 Console.WriteLine($"Body: {branch.Head.Body}");
 ```
 
-### Get a remote branch head commit
+### 指定されたリモートブランチの情報を取得
 
 ```csharp
 Branch branch = repository.RemoteBranches["origin/develop"];
@@ -175,7 +173,7 @@ Console.WriteLine($"Subject: {branch.Head.Subject}");
 Console.WriteLine($"Body: {branch.Head.Body}");
 ```
 
-### Get a tag
+### タグの情報を取得
 
 ```csharp
 Tag tag = repository.Tags["1.2.3"];
@@ -188,7 +186,7 @@ Console.WriteLine($"Committer: {tag.Committer}");
 Console.WriteLine($"Message: {tag.Message}");
 ```
 
-### Get related branches and tags from a commit
+### 指定されたコミットに紐づくブランチやタグの情報を取得
 
 ```csharp
 if (await repository.GetCommitAsync(
@@ -202,7 +200,7 @@ if (await repository.GetCommitAsync(
 }
 ```
 
-### Enumerate branches
+### このリポジトリのブランチ群の情報を取得
 
 ```csharp
 foreach (Branch branch in repository.Branches.Values)
@@ -217,7 +215,7 @@ foreach (Branch branch in repository.Branches.Values)
 }
 ```
 
-### Enumerate tags
+### このリポジトリのタグ群の情報を取得
 
 ```csharp
 foreach (Tag tag in repository.Tags.Values)
@@ -231,7 +229,7 @@ foreach (Tag tag in repository.Tags.Values)
 }
 ```
 
-### Get parent commits
+### 指定されたコミットの親コミット群を取得
 
 ```csharp
 if (await repository.GetCommitAsync(
@@ -250,10 +248,10 @@ if (await repository.GetCommitAsync(
 }
 ```
 
-### Get commit tree information
+### 指定されたコミットのツリー情報を取得
 
-Tree information is the tree structure of directories and files that are placed when a commit is checked out.
-The code shown here does not actually 'check out', but reads these structures as information.
+ツリー情報とは、コミットをチェックアウトしたときに配置される、ディレクトリ群とファイル群のツリー構造の事です。
+ここで示すコードでは、実際にチェックアウトする訳ではなく、これらの構造を情報として読み取ります。
 
 ```csharp
 if (await repository.GetCommitAsync(
@@ -270,7 +268,7 @@ if (await repository.GetCommitAsync(
 }
 ```
 
-### Read blob by stream
+### コミット内のファイル(Blob)の読み取り
 
 ```csharp
 if (await repository.GetCommitAsync(
@@ -280,34 +278,31 @@ if (await repository.GetCommitAsync(
 
     foreach (TreeEntry entry in treeRoot.Children)
     {
-        // For Blob, the instance type is `TreeBlobEntry`.
+        // Blobの場合はインスタンスの型が`TreeBlobEntry`です
         if (entry is TreeBlobEntry blob)
         {
-            using Stream stream = await blob.OpenBlobAsync();
+            using var stream = await blob.OpenBlobAsync();
 
-            // (You can access the blob...)
+            // (Blobにアクセスすることができます...)
         }
     }
 }
 ```
 
-### Traverse a branch through primary commits
+### コミットのプライマリ親コミットを再帰的に取得
 
-A commit in Git can have multiple parent commits.
-This occurs with merge commits, where there are links to all parent commits.
-The first parent commit is called the "primary commit"
-and is always present except for the first commit in the repository.
+Gitのコミットは、複数の親コミットを持つ事があります。
+これはマージコミットで発生し、全ての親コミットへのリンクが存在します。
+最初の親コミットの事を「プライマリコミット」と呼び、リポジトリの最初のコミット以外には必ず存在します。
 
-Use `GetParentCommitsAsync()` to get links to all parent commits.
+全ての親コミットへのリンクを取得するには、`GetParentCommitsAsync()` を使用します。
 
-As a general thing about Git,
-it is important to note that the parent-child relationship of commits (caused by branching and merging),
-always expressed as one direction, from "child" to "parent".
+注意する点として、コミットの親子関係（ブランチとマージによって発生する）は、
+常に「子」から「親」方向への一方向として表現されます。
+これは高レベルインターフェイスでも同様で、親から子を参照するためのインターフェイスはありません。
+そのため、このような探索を行いたい場合は、自力で逆方向のリンクを構築する必要があります。
 
-This is also true for the high-level interface; there is no interface for referencing a child from its parent.
-Therefore, if you wish to perform such a search, you must construct the link in the reverse direction on your own.
-
-The following example recursively searches for a parent commit from a child commit.
+以下の例では、子コミットから親コミットを再帰的に探索します。
 
 ```csharp
 Branch branch = repository.Branches["develop"];
@@ -316,7 +311,7 @@ Console.WriteLine($"Name: {branch.Name}");
 
 Commit? current = branch.Head;
 
-// Continue as long as the parent commit exists.
+// 親コミットが存在する限り続ける
 while (current != null)
 {
     Console.WriteLine($"Hash: {current.Hash}");
@@ -325,21 +320,21 @@ while (current != null)
     Console.WriteLine($"Subject: {current.Subject}");
     Console.WriteLine($"Body: {current.Body}");
 
-    // Get primary parent commit.
+    // プライマリ親コミットを取得
     current = await current.GetPrimaryParentCommitAsync();
 }
 ```
 
 ----
 
-## Samples (Primitive interfaces)
+## サンプルコード (プリミティブインターフェイス)
 
-The high-level interface is implemented internally using these primitive interfaces.
-We do not have a complete list of all examples, so we recommend referring to the GitReader code if you need information.
+ハイレベルインターフェイスは、内部でこれらのプリミティブインターフェイスを使用して実装しています。
+全ての例を網羅していないため、情報が必要であればGitReaderのコードを参照する事をお勧めします。
 
-* You may want to start with [RepositoryFacade class](/GitReader.Core/Structures/RepositoryFacade.cs).
+* [RepositoryFacadeクラス](/GitReader.Core/Structures/RepositoryFacade.cs) から始めると良いでしょう。
 
-### Read current head commit
+### 現在のHEADの情報を取得
 
 ```csharp
 using GitReader;
@@ -361,7 +356,7 @@ if (await repository.GetCurrentHeadReferenceAsync() is PrimitiveReference head)
 }
 ```
 
-### Read a commit directly
+### 指定されたコミットの情報を直接取得
 
 ```csharp
 if (await repository.GetCommitAsync(
@@ -374,7 +369,7 @@ if (await repository.GetCommitAsync(
 }
 ```
 
-### Read a branch head commit
+### 指定されたブランチの情報を取得
 
 ```csharp
 PrimitiveReference head = await repository.GetBranchHeadReferenceAsync("develop");
@@ -388,7 +383,7 @@ if (await repository.GetCommitAsync(head) is PrimitiveCommit commit)
 }
 ```
 
-### Enumerate branches
+### このリポジトリのブランチ群の情報を取得
 
 ```csharp
 PrimitiveReference[] branches = await repository.GetBranchHeadReferencesAsync();
@@ -400,7 +395,7 @@ foreach (PrimitiveReference branch in branches)
 }
 ```
 
-### Enumerate tags
+### このリポジトリのタグ群の情報を取得
 
 ```csharp
 PrimitiveReference[] tagReferences = await repository.GetTagReferencesAsync();
@@ -417,7 +412,7 @@ foreach (PrimitiveReference tagReference in tagReferences)
 }
 ```
 
-### Read commit tree information
+### 指定されたコミットのツリー情報を取得
 
 ```csharp
 if (await repository.GetCommitAsync(
@@ -436,7 +431,7 @@ if (await repository.GetCommitAsync(
 }
 ```
 
-### Read blob by stream
+### コミット内のファイル(Blob)の読み取り
 
 ```csharp
 if (await repository.GetCommitAsync(
@@ -449,7 +444,7 @@ if (await repository.GetCommitAsync(
         PrimitiveTreeEntry child = await repository.GetTreeAsync(childHash);
         if (child.Modes.HasFlag(PrimitiveModeFlags.File))
         {
-            using Stream stream = await repository.OpenBlobAsync(child.Hash);
+            using var stream = await repository.OpenBlobAsync(child.Hash);
 
             // (You can access the blob...)
         }
@@ -457,7 +452,7 @@ if (await repository.GetCommitAsync(
 }
 ```
 
-### Traverse a commit through primary commits
+### コミットのプライマリ親コミットを再帰的に取得
 
 ```csharp
 if (await repository.GetCommitAsync(
@@ -470,13 +465,13 @@ if (await repository.GetCommitAsync(
         Console.WriteLine($"Committer: {commit.Committer}");
         Console.WriteLine($"Message: {commit.Message}");
 
-        // Bottom of branch.
+        // 現在のブランチは最初のコミット
         if (commit.Parents.Length == 0)
         {
             break;
         }
 
-        // Get primary parent.
+        // プライマリ親コミットを取得
         Hash primary = commit.Parents[0];
         if (await repository.GetCommitAsync(primary) is not PrimitiveCommit parent)
         {
@@ -490,9 +485,9 @@ if (await repository.GetCommitAsync(
 
 ----
 
-## Samples (Others)
+## サンプルコード (その他)
 
-### SHA1 hash operations
+### SHA1ハッシュの操作
 
 ```csharp
 Hash hashFromString = "1205dc34ce48bda28fc543daaf9525a9bb6e6d10";
@@ -512,7 +507,7 @@ Commit commit = ...;
 Hash targetHash = commit;
 ```
 
-### Enumerate remote urls
+### リモートリポジトリURLの列挙
 
 ```csharp
 foreach (KeyValuePair<string, string> entry in repository.RemoteUrls)
@@ -525,9 +520,7 @@ foreach (KeyValuePair<string, string> entry in repository.RemoteUrls)
 
 ## TODO
 
-* Read stashing information.
-* Read submodule information.
-* Makes configurable minor execution parameters.
+* [英語READMEを参照してください](https://github.com/kekyo/GitReader)
 
 ----
 
@@ -537,35 +530,4 @@ Apache-v2
 
 ## History
 
-* 0.9.0:
-  * Exposed remote urls.
-  * Changed some type names avoid confliction.
-* 0.8.0:
-  * Added tree/blob accessors.
-  * Improved performance.
-* 0.7.0:
-  * Switched primitive interface types with prefix `Primitive`.
-  * Improved performance.
-  * Tested large repositories.
-* 0.6.0:
-  * Improved message handling on high-level interfaces.
-  * Re-implemented delta compression decoder.
-  * Supported both FETCH_HEAD and packed_refs parser.
-  * Improved performance.
-  * Removed index locker.
-  * Fixed contains invalid hash on annotated commit tag.
-  * Improved minor interface features.
-* 0.5.0:
-  * Supported deconstructor by F# active patterns.
-  * Downgraded at least F# version 5.
-* 0.4.0:
-  * Added F# binding.
-  * Fixed lack for head branch name.
-* 0.3.0:
-  * Supported ability for not found detection.
-* 0.2.0:
-  * The shape of the public interfaces are almost fixed.
-  * Improved high-level interfaces.
-  * Splitted core library (Preparation for F# binding)
-* 0.1.0:
-  * Initial release.
+* [英語READMEを参照してください](https://github.com/kekyo/GitReader)

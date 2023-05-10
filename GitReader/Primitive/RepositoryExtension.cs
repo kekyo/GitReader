@@ -8,6 +8,8 @@
 ////////////////////////////////////////////////////////////////////////////
 
 using GitReader.Internal;
+using GitReader.Collections;
+using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -17,68 +19,70 @@ namespace GitReader.Primitive;
 public static class RepositoryExtension
 {
     public static Task<PrimitiveReference?> GetCurrentHeadReferenceAsync(
-        this Repository repository,
+        this PrimitiveRepository repository,
         CancellationToken ct = default) =>
         RepositoryFacade.GetCurrentHeadReferenceAsync(repository, ct);
 
     public static Task<PrimitiveReference> GetBranchHeadReferenceAsync(
-        this Repository repository,
+        this PrimitiveRepository repository,
         string branchName, CancellationToken ct = default) =>
         RepositoryFacade.GetBranchHeadReferenceAsync(repository, branchName, ct);
 
     public static Task<PrimitiveReference> GetRemoteBranchHeadReferenceAsync(
-        this Repository repository,
+        this PrimitiveRepository repository,
         string branchName, CancellationToken ct = default) =>
         RepositoryFacade.GetRemoteBranchHeadReferenceAsync(repository, branchName, ct);
 
     public static Task<PrimitiveReference> GetTagReferenceAsync(
-        this Repository repository,
+        this PrimitiveRepository repository,
         string tagName, CancellationToken ct = default) =>
         RepositoryFacade.GetTagReferenceAsync(repository, tagName, ct);
 
     public static Task<PrimitiveCommit?> GetCommitAsync(
-        this Repository repository,
+        this PrimitiveRepository repository,
         Hash commit, CancellationToken ct = default) =>
         RepositoryAccessor.ReadCommitAsync(repository, commit, ct);
 
     public static async Task<PrimitiveTag> GetTagAsync(
-        this Repository repository,
+        this PrimitiveRepository repository,
         PrimitiveReference tag, CancellationToken ct = default) =>
         await RepositoryAccessor.ReadTagAsync(repository, tag, ct) is { } t ?
             t : new(tag, ObjectTypes.Commit, tag.Name, null, null);
 
     public static Task<PrimitiveReference[]> GetBranchHeadReferencesAsync(
-        this Repository repository,
+        this PrimitiveRepository repository,
         CancellationToken ct = default) =>
         RepositoryAccessor.ReadReferencesAsync(repository, ReferenceTypes.Branches, ct);
 
     public static Task<PrimitiveReference[]> GetRemoteBranchHeadReferencesAsync(
-        this Repository repository,
+        this PrimitiveRepository repository,
         CancellationToken ct = default) =>
         RepositoryAccessor.ReadReferencesAsync(repository, ReferenceTypes.RemoteBranches, ct);
 
     public static Task<PrimitiveReference[]> GetTagReferencesAsync(
-        this Repository repository,
+        this PrimitiveRepository repository,
         CancellationToken ct = default) =>
         RepositoryAccessor.ReadReferencesAsync(repository, ReferenceTypes.Tags, ct);
 
     public static Task<PrimitiveTree> GetTreeAsync(
-        this Repository repository,
+        this PrimitiveRepository repository,
         Hash tree,
         CancellationToken ct = default) =>
         RepositoryAccessor.ReadTreeAsync(repository, tree, ct);
 
     public static Task<Stream> OpenBlobAsync(
-        this Repository repository,
+        this PrimitiveRepository repository,
         Hash blob,
         CancellationToken ct = default) =>
         RepositoryAccessor.OpenBlobAsync(repository, blob, ct);
 
     public static void Deconstruct(
-        this Repository repository,
-        out string path)
+        this PrimitiveRepository repository,
+        out string gitPath,
+        out ReadOnlyDictionary<string, string> remoteUrls)
     {
-        path = repository.Path;
+        gitPath = repository.GitPath;
+        remoteUrls = repository.RemoteUrls;
     }
 
     public static void Deconstruct(

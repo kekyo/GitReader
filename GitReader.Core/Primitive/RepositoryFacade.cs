@@ -18,7 +18,7 @@ namespace GitReader.Primitive;
 
 internal static class RepositoryFacade
 {
-    public static async Task<Repository> OpenPrimitiveAsync(
+    public static async Task<PrimitiveRepository> OpenPrimitiveAsync(
         string path, CancellationToken ct)
     {
         var repositoryPath = Path.GetFileName(path) != ".git" ?
@@ -29,12 +29,12 @@ internal static class RepositoryFacade
             throw new ArgumentException("Repository does not exist.");
         }
 
-        var repository = new Repository(repositoryPath);
+        var repository = new PrimitiveRepository(repositoryPath);
 
         try
         {
             // Read remote references from config file.
-            repository.remoteReferenceUrlCache =
+            repository.remoteUrls =
                 await RepositoryAccessor.ReadRemoteReferencesAsync(repository, ct);
 
             // Read FETCH_HEAD and packed-refs.

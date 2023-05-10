@@ -268,7 +268,7 @@ public static class Program
         }
 
         // Also add a HEAD commit for the repository if exists.
-        var head = repository.GetHead();
+        var head = repository.GetCurrentHead();
         if (head?.Head is { } c)
         {
             if (hashedCommits.Add(c))

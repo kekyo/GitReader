@@ -20,6 +20,7 @@ using System.Threading.Tasks;
 
 namespace GitReader.Internal;
 
+[DebuggerStepThrough]
 internal readonly struct PairResult<T0, T1>
 {
     public readonly T0 Item0;
@@ -38,6 +39,7 @@ internal readonly struct PairResult<T0, T1>
     }
 }
 
+[DebuggerStepThrough]
 internal readonly struct PairResult<T0, T1, T2>
 {
     public readonly T0 Item0;
@@ -59,6 +61,7 @@ internal readonly struct PairResult<T0, T1, T2>
     }
 }
 
+[DebuggerStepThrough]
 internal readonly struct PairResult<T0, T1, T2, T3>
 {
     public readonly T0 Item0;
@@ -85,6 +88,7 @@ internal readonly struct PairResult<T0, T1, T2, T3>
     }
 }
 
+[DebuggerStepThrough]
 internal readonly struct PairResult<T0, T1, T2, T3, T4>
 {
     public readonly T0 Item0;
@@ -114,6 +118,9 @@ internal readonly struct PairResult<T0, T1, T2, T3, T4>
     }
 }
 
+#if !DEBUG
+[DebuggerStepThrough]
+#endif
 internal static class Utilities
 {
     // Imported from corefx.
@@ -143,6 +150,13 @@ internal static class Utilities
 
     public static DateTimeOffset TruncateMilliseconds(DateTimeOffset date) =>
         new(date.Year, date.Month, date.Day, date.Hour, date.Minute, date.Second, date.Offset);
+
+    public static readonly TimeSpan Infinite =
+#if NET35 || NET40
+        new TimeSpan(0, 0, 0, 0, -1);
+#else
+        Timeout.InfiniteTimeSpan;
+#endif
 
 #if NET35
     public static bool TryParse<TEnum>(string str, bool ignoreCase, out TEnum value)
@@ -252,6 +266,7 @@ internal static class Utilities
         Array.Empty<T>();
 #endif
 
+    [DebuggerStepThrough]
     public static IEnumerable<U> Collect<T, U>(
         this IEnumerable<T> enumerable,
         Func<T, U?> selector)
@@ -265,6 +280,7 @@ internal static class Utilities
         }
     }
 
+    [DebuggerStepThrough]
     public static IEnumerable<U> CollectValue<T, U>(
         this IEnumerable<T> enumerable,
         Func<T, U?> selector)
@@ -301,11 +317,6 @@ internal static class Utilities
         enumerable.Distinct(new DistinctKeyComparer<T, TKey>(selector));
 #endif
 
-    public static ReadOnlyDictionary<TKey, TValue> AsReadOnly<TKey, TValue>(
-        this Dictionary<TKey, TValue> dictionary)
-        where TKey : notnull =>
-        new(dictionary);
-
     public static string? Tokenize(string str, char[] separators, ref int index)
     {
         var start = index;
@@ -341,19 +352,24 @@ internal static class Utilities
         return str.Substring(start, index - start);
     }
 
-#if NET35 || NET40
-    public static Task<T[]> WhenAll<T>(IEnumerable<Task<T>> tasks) =>
-        TaskEx.WhenAll(tasks);
+#if DEBUG
+    [DebuggerStepThrough]
+    public static async Task<T[]> WhenAll<T>(IEnumerable<Task<T>> tasks)
+    {
+        var results = new List<T>();
+        foreach (var task in tasks)
+        {
+            results.Add(await task);
+        }
+        return results.ToArray();
+    }
 
+    [DebuggerStepThrough]
     public static Task<T[]> WhenAll<T>(params Task<T>[] tasks) =>
-        TaskEx.WhenAll(tasks);
-#else
-    public static Task<T[]> WhenAll<T>(IEnumerable<Task<T>> tasks) =>
-        Task.WhenAll(tasks);
+        WhenAll((IEnumerable<Task<T>>)tasks);
 
-    public static Task<T[]> WhenAll<T>(params Task<T>[] tasks) =>
-        Task.WhenAll(tasks);
-
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
+    [DebuggerStepThrough]
     public static async ValueTask<T[]> WhenAll<T>(IEnumerable<ValueTask<T>> tasks)
     {
         var results = new List<T>();
@@ -364,39 +380,82 @@ internal static class Utilities
         return results.ToArray();
     }
 
+    [DebuggerStepThrough]
     public static ValueTask<T[]> WhenAll<T>(params ValueTask<T>[] tasks) =>
         WhenAll((IEnumerable<ValueTask<T>>)tasks);
 #endif
+#else
+#if NET35 || NET40
+    [DebuggerStepThrough]
+    public static Task<T[]> WhenAll<T>(IEnumerable<Task<T>> tasks) =>
+        TaskEx.WhenAll(tasks);
 
+    [DebuggerStepThrough]
+    public static Task<T[]> WhenAll<T>(params Task<T>[] tasks) =>
+        TaskEx.WhenAll(tasks);
+#else
+    [DebuggerStepThrough]
+    public static Task<T[]> WhenAll<T>(IEnumerable<Task<T>> tasks) =>
+        Task.WhenAll(tasks);
+
+    [DebuggerStepThrough]
+    public static Task<T[]> WhenAll<T>(params Task<T>[] tasks) =>
+        Task.WhenAll(tasks);
+
+    [DebuggerStepThrough]
+    public static async ValueTask<T[]> WhenAll<T>(IEnumerable<ValueTask<T>> tasks)
+    {
+        var results = new List<T>();
+        foreach (var task in tasks)
+        {
+            results.Add(await task);
+        }
+        return results.ToArray();
+    }
+
+    [DebuggerStepThrough]
+    public static ValueTask<T[]> WhenAll<T>(params ValueTask<T>[] tasks) =>
+        WhenAll((IEnumerable<ValueTask<T>>)tasks);
+#endif
+#endif
+
+    [DebuggerStepThrough]
     public static async Task<PairResult<T0, T1>> Join<T0, T1>(
         Task<T0> task0, Task<T1> task1) =>
         new(await task0, await task1);
 
+    [DebuggerStepThrough]
     public static async Task<PairResult<T0, T1, T2>> Join<T0, T1, T2>(
         Task<T0> task0, Task<T1> task1, Task<T2> task2) =>
         new(await task0, await task1, await task2);
 
+    [DebuggerStepThrough]
     public static async Task<PairResult<T0, T1, T2, T3>> Join<T0, T1, T2, T3>(
         Task<T0> task0, Task<T1> task1, Task<T2> task2, Task<T3> task3) =>
         new(await task0, await task1, await task2, await task3);
 
+    [DebuggerStepThrough]
     public static async Task<PairResult<T0, T1, T2, T3, T4>> Join<T0, T1, T2, T3, T4>(
         Task<T0> task0, Task<T1> task1, Task<T2> task2, Task<T3> task3, Task<T4> task4) =>
         new(await task0, await task1, await task2, await task3, await task4);
 
 #if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
+    [DebuggerStepThrough]
     public static async ValueTask<PairResult<T0, T1>> Join<T0, T1>(
         ValueTask<T0> task0, ValueTask<T1> task1) =>
         new(await task0, await task1);
 
+    [DebuggerStepThrough]
     public static async ValueTask<PairResult<T0, T1, T2>> Join<T0, T1, T2>(
         ValueTask<T0> task0, ValueTask<T1> task1, ValueTask<T2> task2) =>
         new(await task0, await task1, await task2);
 
+    [DebuggerStepThrough]
     public static async ValueTask<PairResult<T0, T1, T2, T3>> Join<T0, T1, T2, T3>(
         ValueTask<T0> task0, ValueTask<T1> task1, ValueTask<T2> task2, ValueTask<T3> task3) =>
         new(await task0, await task1, await task2, await task3);
 
+    [DebuggerStepThrough]
     public static async ValueTask<PairResult<T0, T1, T2, T3, T4>> Join<T0, T1, T2, T3, T4>(
         ValueTask<T0> task0, ValueTask<T1> task1, ValueTask<T2> task2, ValueTask<T3> task3, ValueTask<T4> task4) =>
         new(await task0, await task1, await task2, await task3, await task4);
@@ -533,7 +592,8 @@ internal static class Utilities
         this Stream from, Stream to, int bufferSize, CancellationToken ct) =>
         Task.Factory.StartNew(() =>
         {
-            var buffer = new byte[bufferSize];
+            using var buffer = BufferPool.Take(bufferSize);
+
             while (true)
             {
                 ct.ThrowIfCancellationRequested();
@@ -570,7 +630,7 @@ internal static class Utilities
             throw new InvalidDataException(
                 $"Could not parse zlib stream. Step={step}");
 
-        var buffer = new byte[2];
+        using var buffer = BufferPool.Take(2);
 
 #if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
         var read = parent is IValueTaskStream vts ?

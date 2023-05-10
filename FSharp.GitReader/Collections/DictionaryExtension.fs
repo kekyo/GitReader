@@ -10,10 +10,18 @@
 namespace GitReader.Collections
 
 open System.Collections.Generic
+open System.Linq
 
 [<AutoOpen>]
 module public DictionaryExtension =
 
     type Dictionary<'TKey, 'TValue> with
         member dict.asReadOnly() =
-            new ReadOnlyDictionary<_, _>(dict)
+            ReadOnlyDictionary<_, _>(dict)
+
+    type IReadOnlyDictionary<'TKey, 'TValue> with
+        member dict.asReadOnly() =
+            ReadOnlyDictionary<_, _>(
+                dict.ToDictionary(
+                    (fun entry -> entry.Key),
+                    (fun entry -> entry.Value)))

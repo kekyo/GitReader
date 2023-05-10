@@ -7,25 +7,25 @@
 //
 ////////////////////////////////////////////////////////////////////////////
 
+using GitReader.Collections;
 using GitReader.Internal;
 using System;
-using System.ComponentModel;
 using System.Threading;
 
 namespace GitReader;
 
-public class Repository : IDisposable
+public abstract class Repository : IDisposable
 {
     internal FileAccessor fileAccessor = new();
     internal ObjectAccessor objectAccessor;
-    internal RemoteReferenceUrlCache remoteReferenceUrlCache;
+    internal ReadOnlyDictionary<string, string> remoteUrls = null!;
     internal ReferenceCache referenceCache;
 
-    internal Repository(
-        string repositoryPath)
+    private protected Repository(
+        string gitPath)
     {
-        this.Path = repositoryPath;
-        this.objectAccessor = new(this.fileAccessor, repositoryPath);
+        this.GitPath = gitPath;
+        this.objectAccessor = new(this.fileAccessor, gitPath);
     }
 
     public void Dispose()
@@ -40,7 +40,10 @@ public class Repository : IDisposable
         }
     }
 
-    public string Path { get; }
+    public string GitPath { get; }
+
+    public ReadOnlyDictionary<string, string> RemoteUrls =>
+        this.remoteUrls;
 
 #if DEBUG
     public int HitCount =>

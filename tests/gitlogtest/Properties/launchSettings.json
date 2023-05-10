@@ -1,9 +1,9 @@
 {
   "profiles": {
-    "gitlog": {
+    "gitlogtest": {
         "commandName": "Project",
         "commandLineArgs": ".",
-        "workingDirectory": "C:\\Projects\\GitReader\\samples\\IL2C"
+        "workingDirectory": "D:\\Projects\\git"
     }
   }
 }

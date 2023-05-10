@@ -16,8 +16,11 @@ namespace GitReader.Primitive;
 [Flags]
 public enum PrimitiveModeFlags
 {
-    File = 0x8000,
+    Tree = 0xa000,
+    Blob = 0x8000,
+    SubModule = 0x6000,
     Directory = 0x4000,
+    SpecialMask = 0xf000,
     OwnerRead = 0x0100,
     OwnerWrite = 0x0080,
     OwnerExecute = 0x0040,
@@ -27,6 +30,15 @@ public enum PrimitiveModeFlags
     OtherRead = 0x0004,
     OtherWrite = 0x0002,
     OtherExecute = 0x0001,
+}
+
+public enum PrimitiveSpecialModes
+{
+    Unknown,
+    Blob,
+    Directory,
+    SubModule,
+    Tree,
 }
 
 public readonly struct PrimitiveTreeEntry : IEquatable<PrimitiveTreeEntry>
@@ -44,6 +56,16 @@ public readonly struct PrimitiveTreeEntry : IEquatable<PrimitiveTreeEntry>
         this.Name = name;
         this.Modes = modes;
     }
+
+    public PrimitiveSpecialModes SpecialModes =>
+        (this.Modes & PrimitiveModeFlags.SpecialMask) switch
+        {
+            PrimitiveModeFlags.Directory => PrimitiveSpecialModes.Directory,
+            PrimitiveModeFlags.Blob => PrimitiveSpecialModes.Blob,
+            PrimitiveModeFlags.SubModule => PrimitiveSpecialModes.SubModule,
+            PrimitiveModeFlags.Tree => PrimitiveSpecialModes.Tree,
+            _ => PrimitiveSpecialModes.Unknown,
+        };
 
     public bool Equals(PrimitiveTreeEntry rhs) =>
         this.Hash.Equals(rhs.Hash) &&

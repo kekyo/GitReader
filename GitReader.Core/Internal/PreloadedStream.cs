@@ -19,11 +19,11 @@ internal sealed class PreloadedStream : Stream
     , IValueTaskStream
 #endif
 {
-    private readonly byte[] preloadedBuffer;
+    private readonly Buffer preloadedBuffer;
     private readonly int preloadedLength;
     private int preloadedIndex;
 
-    public PreloadedStream(byte[] buffer, int initialIndex, int length)
+    public PreloadedStream(Buffer buffer, int initialIndex, int length)
     {
         this.preloadedBuffer = buffer;
         this.preloadedLength = length;
@@ -46,6 +46,7 @@ internal sealed class PreloadedStream : Stream
     public void Close()
 #endif
     {
+        this.preloadedBuffer.Dispose();
     }
 
     protected override void Dispose(bool disposing)

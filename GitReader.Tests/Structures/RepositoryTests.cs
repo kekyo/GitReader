@@ -24,7 +24,7 @@ public sealed class RepositoryTests
         using var repository = await Repository.Factory.OpenStructureAsync(
             RepositoryTestsSetUp.BasePath);
 
-        var head = repository.GetHead();
+        var head = repository.GetCurrentHead();
 
         await Verifier.Verify(head);
     }
@@ -203,5 +203,14 @@ public sealed class RepositoryTests
         }
 
         await Verifier.Verify(commits.ToArray());
+    }
+
+    [Test]
+    public async Task GetRemoteUrls()
+    {
+        using var repository = await Repository.Factory.OpenStructureAsync(
+            RepositoryTestsSetUp.BasePath);
+
+        await Verifier.Verify(repository.RemoteUrls);
     }
 }

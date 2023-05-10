@@ -9,6 +9,7 @@
 
 using GitReader.Collections;
 using GitReader.Internal;
+using GitReader.Primitive;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -163,7 +164,7 @@ internal static class RepositoryFacade
         try
         {
             // Read remote references from config file.
-            repository.remoteReferenceUrlCache =
+            repository.remoteUrls =
                 await RepositoryAccessor.ReadRemoteReferencesAsync(repository, ct);
 
             // Read FETCH_HEAD and packed-refs.
@@ -302,28 +303,30 @@ internal static class RepositoryFacade
         var rootTree = await RepositoryAccessor.ReadTreeAsync(
             repository, commit.treeRoot, ct);
 
-        Task<TreeEntry[]> GetChildrenAsync(Primitive.PrimitiveTreeEntry[] entries) =>
-            Utilities.WhenAll(
-                entries.Select(async entry =>
+        // This is a rather aggressive algorithm that recursively and in parallel searches all entries
+        // in the tree and builds all elements.
+        async Task<TreeEntry[]> GetChildrenAsync(Primitive.PrimitiveTreeEntry[] entries) =>
+            (await Utilities.WhenAll(
+                entries.Collect(async entry =>
                 {
                     var modeFlags = (ModeFlags)((int)entry.Modes & 0x1ff);
-
-                    if (entry.Modes.HasFlag(Primitive.PrimitiveModeFlags.Directory))
+                    switch (entry.SpecialModes)
                     {
-                        var tree = await RepositoryAccessor.ReadTreeAsync(
-                            repository!, entry.Hash, ct);
-
-                        var children = await GetChildrenAsync(tree.Children);
-
-                        return (TreeEntry)new TreeDirectoryEntry(
-                            entry.Hash, entry.Name, modeFlags, children);
+                        case PrimitiveSpecialModes.Directory:
+                            var tree = await RepositoryAccessor.ReadTreeAsync(
+                                repository!, entry.Hash, ct);
+                            var children = await GetChildrenAsync(tree.Children);
+                            return (TreeEntry)new TreeDirectoryEntry(
+                                entry.Hash, entry.Name, modeFlags, children);
+                        case PrimitiveSpecialModes.Blob:
+                            return new TreeBlobEntry(
+                                entry.Hash, entry.Name, modeFlags, commit.rwr);
+                        default:
+                            return null!;
                     }
-                    else
-                    {
-                        return new TreeBlobEntry(
-                            entry.Hash, entry.Name, modeFlags, commit.rwr);
-                    }
-                }));
+                }))).
+            Where(entry => entry != null).
+            ToArray();
 
         var children = await GetChildrenAsync(rootTree.Children);
 

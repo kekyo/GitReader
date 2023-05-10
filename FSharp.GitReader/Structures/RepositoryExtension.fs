@@ -16,7 +16,7 @@ open System.Threading
 module public RepositoryExtension =
 
     type StructuredRepository with
-        member repository.getHead() =
+        member repository.getCurrentHead() =
             match repository.head with
             | null -> None
             | _ -> Some repository.head
@@ -51,7 +51,8 @@ module public RepositoryExtension =
                 entry, unwrapCT ct) |> Async.AwaitTask
 
     let (|Repository|) (repository: StructuredRepository) =
-        (repository.Path,
+        (repository.GitPath,
+         repository.RemoteUrls,
          (match repository.head with
           | null -> None
           | _ -> Some repository.head),
