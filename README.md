@@ -525,7 +525,9 @@ foreach (KeyValuePair<string, string> entry in repository.RemoteUrls)
 
 ## TODO
 
-* Supported CRC32 verifier.
+* Read stashing information.
+* Read submodule information.
+* Makes configurable minor execution parameters.
 
 ----
 
