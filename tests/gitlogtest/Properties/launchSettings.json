@@ -1,6 +1,6 @@
 {
   "profiles": {
-    "gitlog": {
+    "gitlogtest": {
         "commandName": "Project",
         "commandLineArgs": ".",
         "workingDirectory": "D:\\Projects\\git"

@@ -1,0 +1,9 @@
+{
+  "profiles": {
+    "gitexporttest": {
+        "commandName": "Project",
+        "commandLineArgs": "..\\git 5597cfdf47db94825213fefe78c4485e6a5702d8",
+        "workingDirectory": "D:\\Projects\\GitReader\\tests\\export"
+    }
+  }
+}
