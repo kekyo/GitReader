@@ -9,6 +9,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 	ProjectSection(SolutionItems) = preProject
 		.gitignore = .gitignore
 		build-nupkg.bat = build-nupkg.bat
+		build-nupkg.sh = build-nupkg.sh
 		.github\workflows\build.yaml = .github\workflows\build.yaml
 		Directory.Build.props = Directory.Build.props
 		LICENSE = LICENSE
@@ -29,8 +30,8 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{FA77DE1C-C141-4C03-AA63-DAFC2E624125}"
 	ProjectSection(SolutionItems) = preProject
 		tests\test-large-repo.sh = tests\test-large-repo.sh
-		tests\test-tree.sh = tests\test-tree.sh
 		tests\test-performance.sh = tests\test-performance.sh
+		tests\test-tree.sh = tests\test-tree.sh
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "gitlog", "samples\gitlog\gitlog.csproj", "{D67816F7-ADDF-4CB0-AB4D-134A288C6474}"
