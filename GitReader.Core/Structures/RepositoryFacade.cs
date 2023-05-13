@@ -145,6 +145,25 @@ internal static class RepositoryFacade
             DistinctBy(tag => tag!.Name).
             ToDictionary(tag => tag!.Name, tag => tag!);
     }
+    
+    private static async Task<Stash[]> GetStashesAsync(
+        StructuredRepository repository,
+        WeakReference rwr,
+        CancellationToken ct)
+    {
+        var primitiveStashes = await RepositoryAccessor.ReadStashesAsync(repository, ct);
+        var stashes = await Utilities.WhenAll(
+            primitiveStashes.Select(async stash =>
+            {
+                if (await RepositoryAccessor.ReadCommitAsync(repository, stash.Hash, ct) is { } commit)
+                {
+                    return new Stash(new (rwr, commit), stash.Signature, stash.Message);
+                }
+                return null;
+            }));
+
+        return stashes.Where(tag => tag != null).ToArray()!;
+    }
 
     //////////////////////////////////////////////////////////////////////////
 
@@ -175,16 +194,18 @@ internal static class RepositoryFacade
 
             // Read all other requirements.
             var rwr = new WeakReference(repository);
-            var (head, branches, remoteBranches, tags) = await Utilities.Join(
+            var (head, branches, remoteBranches, tags, stashes) = await Utilities.Join(
                 GetCurrentHeadAsync(repository, ct),
                 GetStructuredBranchesAsync(repository, rwr, ct),
                 GetStructuredRemoteBranchesAsync(repository, rwr, ct),
-                GetStructuredTagsAsync(repository, rwr, ct));
+                GetStructuredTagsAsync(repository, rwr, ct),
+                GetStashesAsync(repository, rwr, ct));
 
             repository.head = head;
             repository.branches = branches;
             repository.remoteBranches = remoteBranches;
             repository.tags = tags;
+            repository.stashes = stashes;
 
             return repository;
         }

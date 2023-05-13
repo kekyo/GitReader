@@ -1,0 +1,58 @@
+﻿[
+  {
+    Commit: {
+      Hash: {
+        HashCode: 8a770120d675b4e78872475cfd69c7aba6097eae
+      },
+      Author: {
+        Name: Julien Richard,
+        MailAddress: julien.richard@ubisoft.com,
+        Date: 2023-05-13 20:58:04 +2,
+        RawFormat: Julien Richard <julien.richard@ubisoft.com> 1684004284 0200
+      },
+      Committer: {
+        Name: Julien Richard,
+        MailAddress: julien.richard@ubisoft.com,
+        Date: 2023-05-13 20:58:04 +2,
+        RawFormat: Julien Richard <julien.richard@ubisoft.com> 1684004284 0200
+      },
+      Subject: WIP on master: 9bb78d1 Added installation .NET 6 SDK on GitHub Actions.,
+      Body: 
+    },
+    Signature: {
+      Name: Julien Richard,
+      MailAddress: julien.richard@ubisoft.com,
+      Date: 2023-05-13 20:58:04 +2,
+      RawFormat: Julien Richard <julien.richard@ubisoft.com> 1684004284 0200
+    },
+    Message: WIP on master: 9bb78d1 Added installation .NET 6 SDK on GitHub Actions.
+  },
+  {
+    Commit: {
+      Hash: {
+        HashCode: 01513a037003eae04bae543fd21f3f06cefd991b
+      },
+      Author: {
+        Name: Julien Richard,
+        MailAddress: julien.richard@ubisoft.com,
+        Date: 2023-05-13 20:59:01 +2,
+        RawFormat: Julien Richard <julien.richard@ubisoft.com> 1684004341 0200
+      },
+      Committer: {
+        Name: Julien Richard,
+        MailAddress: julien.richard@ubisoft.com,
+        Date: 2023-05-13 20:59:01 +2,
+        RawFormat: Julien Richard <julien.richard@ubisoft.com> 1684004341 0200
+      },
+      Subject: On master: Stash with custom message,
+      Body: 
+    },
+    Signature: {
+      Name: Julien Richard,
+      MailAddress: julien.richard@ubisoft.com,
+      Date: 2023-05-13 20:59:01 +2,
+      RawFormat: Julien Richard <julien.richard@ubisoft.com> 1684004341 0200
+    },
+    Message: On master: Stash with custom message
+  }
+]

@@ -370,6 +370,51 @@ internal static class RepositoryAccessor
         }
     }
 
+    public static async Task<PrimitiveStash[]> ReadStashesAsync(Repository repository, CancellationToken ct)
+    {
+        var path = Utilities.Combine(repository.GitPath, "logs", "refs", "stash");
+        if (!File.Exists(path))
+        {
+            return new PrimitiveStash[]{};
+        }
+
+        using var fs = repository.fileAccessor.Open(path);
+        var tr = new StreamReader(fs, Encoding.UTF8, true);
+
+        var stashes = new List<PrimitiveStash>();
+        while (true)
+        {
+            var line = await tr.ReadLineAsync().WaitAsync(ct);
+            if (line == null)
+            {
+                break;
+            }
+            
+            var columns = line.Split('\t');
+            if (columns.Length < 2)
+            {
+                continue;
+            }
+
+            const int hashLength = 40;
+
+            if (!Hash.TryParse(columns[0].Substring(hashLength + 1, hashLength), out var hash))
+            {
+                continue;
+            }
+            
+            if (!Signature.TryParse(columns[0].Substring((hashLength + 1) * 2), out var signature))
+            {
+                continue;
+            }
+
+            var message = columns[1].Trim();
+            stashes.Add(new PrimitiveStash(hash, signature, message));
+        }
+
+        return stashes.ToArray();
+    }
+
     public static async Task<PrimitiveReference[]> ReadReferencesAsync(
         Repository repository,
         ReferenceTypes type,
