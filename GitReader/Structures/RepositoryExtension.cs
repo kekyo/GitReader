@@ -25,7 +25,7 @@ public static class RepositoryExtension
         this StructuredRepository repository,
         Hash commit, CancellationToken ct = default) =>
         RepositoryFacade.GetCommitDirectlyAsync(repository, commit, ct);
-    
+
     public static Task<Commit?> GetPrimaryParentCommitAsync(
         this Commit commit,
         CancellationToken ct = default) =>
