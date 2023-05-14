@@ -12,8 +12,9 @@ using System.Diagnostics;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using GitReader.Internal;
 
-namespace GitReader.Internal;
+namespace GitReader.IO;
 
 internal sealed class DeltaDecodedStream : Stream
 #if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
@@ -30,7 +31,7 @@ internal sealed class DeltaDecodedStream : Stream
         public uint Position;
 
         public CopyState(uint size) =>
-            this.Size = size;
+            Size = size;
     }
 
     private sealed class InsertState : State
@@ -39,14 +40,14 @@ internal sealed class DeltaDecodedStream : Stream
         public byte Position;
 
         public InsertState(byte size) =>
-            this.Size = size;
+            Size = size;
     }
 
     private const int preloadBufferSize = 65536;
 
     private MemoizedStream baseObjectStream;
     private Stream deltaStream;
-    private Buffer deltaBuffer;
+    private BufferPoolBuffer deltaBuffer;
     private int deltaBufferIndex;
     private int deltaBufferCount;
 
@@ -54,14 +55,14 @@ internal sealed class DeltaDecodedStream : Stream
 
     private DeltaDecodedStream(
         MemoizedStream baseObjectStream, Stream deltaStream,
-        Buffer preloadBuffer, int preloadIndex, int preloadCount, long decodedObjectLength)
+        BufferPoolBuffer preloadBuffer, int preloadIndex, int preloadCount, long decodedObjectLength)
     {
         this.baseObjectStream = baseObjectStream;
         this.deltaStream = deltaStream;
-        this.deltaBuffer = preloadBuffer;
-        this.deltaBufferIndex = preloadIndex;
-        this.deltaBufferCount = preloadCount;
-        this.Length = decodedObjectLength;
+        deltaBuffer = preloadBuffer;
+        deltaBufferIndex = preloadIndex;
+        deltaBufferCount = preloadCount;
+        Length = decodedObjectLength;
     }
 
     public override long Length { get; }
@@ -88,28 +89,28 @@ internal sealed class DeltaDecodedStream : Stream
             deltaStream.Dispose();
         }
 
-        this.deltaBuffer.Dispose();
-        this.state = null;
+        deltaBuffer.Dispose();
+        state = null;
     }
 
     protected override void Dispose(bool disposing)
     {
         if (disposing)
         {
-            this.Close();
+            Close();
         }
     }
 
     private bool Prepare()
     {
-        this.deltaBufferCount = this.deltaStream.Read(
-            this.deltaBuffer, 0, this.deltaBuffer.Length);
-        if (this.deltaBufferCount == 0)
+        deltaBufferCount = deltaStream.Read(
+            deltaBuffer, 0, deltaBuffer.Length);
+        if (deltaBufferCount == 0)
         {
             return false;
         }
 
-        this.deltaBufferIndex = 0;
+        deltaBufferIndex = 0;
         return true;
     }
 
@@ -119,17 +120,17 @@ internal sealed class DeltaDecodedStream : Stream
 
         while (count >= 1)
         {
-            if (this.state == null)
+            if (state == null)
             {
-                if (this.deltaBufferIndex >= this.deltaBufferCount)
+                if (deltaBufferIndex >= deltaBufferCount)
                 {
-                    if (!this.Prepare())
+                    if (!Prepare())
                     {
                         return read;
                     }
                 }
 
-                var opcode = this.deltaBuffer[this.deltaBufferIndex++];
+                var opcode = deltaBuffer[deltaBufferIndex++];
 
                 // Copy opcode
                 if ((opcode & 0x80) != 0)
@@ -140,92 +141,92 @@ internal sealed class DeltaDecodedStream : Stream
                     // offset1
                     if ((opcode & 0x01) != 0)
                     {
-                        if (this.deltaBufferIndex >= this.deltaBufferCount)
+                        if (deltaBufferIndex >= deltaBufferCount)
                         {
-                            if (!this.Prepare())
+                            if (!Prepare())
                             {
                                 return read;
                             }
                         }
-                        baseObjectOffset |= this.deltaBuffer[this.deltaBufferIndex++];
+                        baseObjectOffset |= deltaBuffer[deltaBufferIndex++];
                     }
                     // offset2
                     if ((opcode & 0x02) != 0)
                     {
-                        if (this.deltaBufferIndex >= this.deltaBufferCount)
+                        if (deltaBufferIndex >= deltaBufferCount)
                         {
-                            if (!this.Prepare())
+                            if (!Prepare())
                             {
                                 return read;
                             }
                         }
-                        baseObjectOffset |= ((uint)this.deltaBuffer[this.deltaBufferIndex++] << 8);
+                        baseObjectOffset |= (uint)deltaBuffer[deltaBufferIndex++] << 8;
                     }
                     // offset3
                     if ((opcode & 0x04) != 0)
                     {
-                        if (this.deltaBufferIndex >= this.deltaBufferCount)
+                        if (deltaBufferIndex >= deltaBufferCount)
                         {
-                            if (!this.Prepare())
+                            if (!Prepare())
                             {
                                 return read;
                             }
                         }
-                        baseObjectOffset |= ((uint)this.deltaBuffer[this.deltaBufferIndex++] << 16);
+                        baseObjectOffset |= (uint)deltaBuffer[deltaBufferIndex++] << 16;
                     }
                     // offset4
                     if ((opcode & 0x08) != 0)
                     {
-                        if (this.deltaBufferIndex >= this.deltaBufferCount)
+                        if (deltaBufferIndex >= deltaBufferCount)
                         {
-                            if (!this.Prepare())
+                            if (!Prepare())
                             {
                                 return read;
                             }
                         }
-                        baseObjectOffset |= ((uint)this.deltaBuffer[this.deltaBufferIndex++] << 24);
+                        baseObjectOffset |= (uint)deltaBuffer[deltaBufferIndex++] << 24;
                     }
                     // size1
                     if ((opcode & 0x10) != 0)
                     {
-                        if (this.deltaBufferIndex >= this.deltaBufferCount)
+                        if (deltaBufferIndex >= deltaBufferCount)
                         {
-                            if (!this.Prepare())
+                            if (!Prepare())
                             {
                                 return read;
                             }
                         }
-                        baseObjectSize |= this.deltaBuffer[this.deltaBufferIndex++];
+                        baseObjectSize |= deltaBuffer[deltaBufferIndex++];
                     }
                     // size2
                     if ((opcode & 0x20) != 0)
                     {
-                        if (this.deltaBufferIndex >= this.deltaBufferCount)
+                        if (deltaBufferIndex >= deltaBufferCount)
                         {
-                            if (!this.Prepare())
+                            if (!Prepare())
                             {
                                 return read;
                             }
                         }
-                        baseObjectSize |= ((uint)this.deltaBuffer[this.deltaBufferIndex++] << 8);
+                        baseObjectSize |= (uint)deltaBuffer[deltaBufferIndex++] << 8;
                     }
                     // size3
                     if ((opcode & 0x40) != 0)
                     {
-                        if (this.deltaBufferIndex >= this.deltaBufferCount)
+                        if (deltaBufferIndex >= deltaBufferCount)
                         {
-                            if (!this.Prepare())
+                            if (!Prepare())
                             {
                                 return read;
                             }
                         }
-                        baseObjectSize |= ((uint)this.deltaBuffer[this.deltaBufferIndex++] << 16);
+                        baseObjectSize |= (uint)deltaBuffer[deltaBufferIndex++] << 16;
                     }
 
-                    this.baseObjectStream.Seek(
+                    baseObjectStream.Seek(
                         baseObjectOffset, SeekOrigin.Begin);
 
-                    this.state = new CopyState(baseObjectSize);
+                    state = new CopyState(baseObjectSize);
                 }
                 // Insert opcode
                 else
@@ -233,23 +234,23 @@ internal sealed class DeltaDecodedStream : Stream
                     // Size
                     var insertionSize = opcode & 0x7f;
 
-                    this.state = new InsertState((byte)insertionSize);
+                    state = new InsertState((byte)insertionSize);
                 }
             }
 
-            if (this.state is CopyState copyState)
+            if (state is CopyState copyState)
             {
                 var baseObjectRemains =
                     copyState.Size - copyState.Position;
                 if (baseObjectRemains <= 0)
                 {
-                    this.state = null;
+                    state = null;
                     continue;
                 }
 
                 var length = Math.Min(baseObjectRemains, count);
 
-                var r = this.baseObjectStream.Read(
+                var r = baseObjectStream.Read(
                     buffer, offset, (int)length);
 
                 if (r == 0)
@@ -265,13 +266,13 @@ internal sealed class DeltaDecodedStream : Stream
             }
             else
             {
-                var insertState = (InsertState)this.state;
+                var insertState = (InsertState)state;
 
                 var insertionRemains =
                     insertState.Size - insertState.Position;
                 if (insertionRemains <= 0)
                 {
-                    this.state = null;
+                    state = null;
                     continue;
                 }
 
@@ -281,25 +282,25 @@ internal sealed class DeltaDecodedStream : Stream
                 {
                     Debug.Assert(length < byte.MaxValue);
 
-                    if (this.deltaBufferIndex >= this.deltaBufferCount)
+                    if (deltaBufferIndex >= deltaBufferCount)
                     {
-                        if (!this.Prepare())
+                        if (!Prepare())
                         {
                             return read;
                         }
                     }
 
                     var l = Math.Min(
-                        length, this.deltaBufferCount - this.deltaBufferIndex);
+                        length, deltaBufferCount - deltaBufferIndex);
 
                     Array.Copy(
-                        this.deltaBuffer, this.deltaBufferIndex,
-                        buffer, offset, (int)l);
+                        deltaBuffer, deltaBufferIndex,
+                        buffer, offset, l);
 
                     offset += l;
                     count -= l;
                     read += l;
-                    this.deltaBufferIndex += l;
+                    deltaBufferIndex += l;
 
                     insertState.Position += (byte)l;
                     length -= l;
@@ -313,18 +314,18 @@ internal sealed class DeltaDecodedStream : Stream
 #if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
     private async ValueTask<bool> PrepareAsync(CancellationToken ct)
     {
-        this.deltaBufferCount = this.deltaStream is IValueTaskStream vts ?
+        deltaBufferCount = deltaStream is IValueTaskStream vts ?
             await vts.ReadValueTaskAsync(
-                this.deltaBuffer, 0, this.deltaBuffer.Length, ct) :
-            await this.deltaStream.ReadAsync(
-                this.deltaBuffer, 0, this.deltaBuffer.Length, ct);
+                deltaBuffer, 0, deltaBuffer.Length, ct) :
+            await deltaStream.ReadAsync(
+                deltaBuffer, 0, deltaBuffer.Length, ct);
 
-        if (this.deltaBufferCount == 0)
+        if (deltaBufferCount == 0)
         {
             return false;
         }
 
-        this.deltaBufferIndex = 0;
+        deltaBufferIndex = 0;
         return true;
     }
 
@@ -335,17 +336,17 @@ internal sealed class DeltaDecodedStream : Stream
 
         while (count >= 1)
         {
-            if (this.state == null)
+            if (state == null)
             {
-                if (this.deltaBufferIndex >= this.deltaBufferCount)
+                if (deltaBufferIndex >= deltaBufferCount)
                 {
-                    if (!await this.PrepareAsync(ct))
+                    if (!await PrepareAsync(ct))
                     {
                         return read;
                     }
                 }
 
-                var opcode = this.deltaBuffer[this.deltaBufferIndex++];
+                var opcode = deltaBuffer[deltaBufferIndex++];
 
                 // Copy opcode
                 if ((opcode & 0x80) != 0)
@@ -356,92 +357,92 @@ internal sealed class DeltaDecodedStream : Stream
                     // offset1
                     if ((opcode & 0x01) != 0)
                     {
-                        if (this.deltaBufferIndex >= this.deltaBufferCount)
+                        if (deltaBufferIndex >= deltaBufferCount)
                         {
-                            if (!await this.PrepareAsync(ct))
+                            if (!await PrepareAsync(ct))
                             {
                                 return read;
                             }
                         }
-                        baseObjectOffset |= this.deltaBuffer[this.deltaBufferIndex++];
+                        baseObjectOffset |= deltaBuffer[deltaBufferIndex++];
                     }
                     // offset2
                     if ((opcode & 0x02) != 0)
                     {
-                        if (this.deltaBufferIndex >= this.deltaBufferCount)
+                        if (deltaBufferIndex >= deltaBufferCount)
                         {
-                            if (!await this.PrepareAsync(ct))
+                            if (!await PrepareAsync(ct))
                             {
                                 return read;
                             }
                         }
-                        baseObjectOffset |= ((uint)this.deltaBuffer[this.deltaBufferIndex++] << 8);
+                        baseObjectOffset |= (uint)deltaBuffer[deltaBufferIndex++] << 8;
                     }
                     // offset3
                     if ((opcode & 0x04) != 0)
                     {
-                        if (this.deltaBufferIndex >= this.deltaBufferCount)
+                        if (deltaBufferIndex >= deltaBufferCount)
                         {
-                            if (!await this.PrepareAsync(ct))
+                            if (!await PrepareAsync(ct))
                             {
                                 return read;
                             }
                         }
-                        baseObjectOffset |= ((uint)this.deltaBuffer[this.deltaBufferIndex++] << 16);
+                        baseObjectOffset |= (uint)deltaBuffer[deltaBufferIndex++] << 16;
                     }
                     // offset4
                     if ((opcode & 0x08) != 0)
                     {
-                        if (this.deltaBufferIndex >= this.deltaBufferCount)
+                        if (deltaBufferIndex >= deltaBufferCount)
                         {
-                            if (!await this.PrepareAsync(ct))
+                            if (!await PrepareAsync(ct))
                             {
                                 return read;
                             }
                         }
-                        baseObjectOffset |= ((uint)this.deltaBuffer[this.deltaBufferIndex++] << 24);
+                        baseObjectOffset |= (uint)deltaBuffer[deltaBufferIndex++] << 24;
                     }
                     // size1
                     if ((opcode & 0x10) != 0)
                     {
-                        if (this.deltaBufferIndex >= this.deltaBufferCount)
+                        if (deltaBufferIndex >= deltaBufferCount)
                         {
-                            if (!await this.PrepareAsync(ct))
+                            if (!await PrepareAsync(ct))
                             {
                                 return read;
                             }
                         }
-                        baseObjectSize |= this.deltaBuffer[this.deltaBufferIndex++];
+                        baseObjectSize |= deltaBuffer[deltaBufferIndex++];
                     }
                     // size2
                     if ((opcode & 0x20) != 0)
                     {
-                        if (this.deltaBufferIndex >= this.deltaBufferCount)
+                        if (deltaBufferIndex >= deltaBufferCount)
                         {
-                            if (!await this.PrepareAsync(ct))
+                            if (!await PrepareAsync(ct))
                             {
                                 return read;
                             }
                         }
-                        baseObjectSize |= ((uint)this.deltaBuffer[this.deltaBufferIndex++] << 8);
+                        baseObjectSize |= (uint)deltaBuffer[deltaBufferIndex++] << 8;
                     }
                     // size3
                     if ((opcode & 0x40) != 0)
                     {
-                        if (this.deltaBufferIndex >= this.deltaBufferCount)
+                        if (deltaBufferIndex >= deltaBufferCount)
                         {
-                            if (!await this.PrepareAsync(ct))
+                            if (!await PrepareAsync(ct))
                             {
                                 return read;
                             }
                         }
-                        baseObjectSize |= ((uint)this.deltaBuffer[this.deltaBufferIndex++] << 16);
+                        baseObjectSize |= (uint)deltaBuffer[deltaBufferIndex++] << 16;
                     }
 
-                    await this.baseObjectStream.SeekValueTaskAsync(
+                    await baseObjectStream.SeekValueTaskAsync(
                         baseObjectOffset, SeekOrigin.Begin, ct);
 
-                    this.state = new CopyState(baseObjectSize);
+                    state = new CopyState(baseObjectSize);
                 }
                 // Insert opcode
                 else
@@ -449,17 +450,17 @@ internal sealed class DeltaDecodedStream : Stream
                     // Size
                     var insertionSize = opcode & 0x7f;
 
-                    this.state = new InsertState((byte)insertionSize);
+                    state = new InsertState((byte)insertionSize);
                 }
             }
 
-            if (this.state is CopyState copyState)
+            if (state is CopyState copyState)
             {
                 var baseObjectRemains =
                     copyState.Size - copyState.Position;
                 if (baseObjectRemains <= 0)
                 {
-                    this.state = null;
+                    state = null;
                     continue;
                 }
 
@@ -467,7 +468,7 @@ internal sealed class DeltaDecodedStream : Stream
 
                 Debug.Assert(length <= uint.MaxValue);
 
-                var r = await this.baseObjectStream.ReadValueTaskAsync(
+                var r = await baseObjectStream.ReadValueTaskAsync(
                     buffer, offset, (int)length, ct);
 
                 if (r == 0)
@@ -483,13 +484,13 @@ internal sealed class DeltaDecodedStream : Stream
             }
             else
             {
-                var insertState = (InsertState)this.state;
+                var insertState = (InsertState)state;
 
                 var insertionRemains =
                     insertState.Size - insertState.Position;
                 if (insertionRemains <= 0)
                 {
-                    this.state = null;
+                    state = null;
                     continue;
                 }
 
@@ -499,25 +500,25 @@ internal sealed class DeltaDecodedStream : Stream
                 {
                     Debug.Assert(length <= byte.MaxValue);
 
-                    if (this.deltaBufferIndex >= this.deltaBufferCount)
+                    if (deltaBufferIndex >= deltaBufferCount)
                     {
-                        if (!await this.PrepareAsync(ct))
+                        if (!await PrepareAsync(ct))
                         {
                             return read;
                         }
                     }
 
                     var l = Math.Min(
-                        length, this.deltaBufferCount - this.deltaBufferIndex);
+                        length, deltaBufferCount - deltaBufferIndex);
 
                     Array.Copy(
-                        this.deltaBuffer, this.deltaBufferIndex,
-                        buffer, offset, (int)l);
+                        deltaBuffer, deltaBufferIndex,
+                        buffer, offset, l);
 
                     offset += l;
                     count -= l;
                     read += l;
-                    this.deltaBufferIndex += l;
+                    deltaBufferIndex += l;
 
                     insertState.Position += (byte)l;
                     length -= l;
@@ -530,7 +531,7 @@ internal sealed class DeltaDecodedStream : Stream
 
     public override Task<int> ReadAsync(
         byte[] buffer, int offset, int count, CancellationToken ct) =>
-        this.ReadValueTaskAsync(buffer, offset, count, ct).AsTask();
+        ReadValueTaskAsync(buffer, offset, count, ct).AsTask();
 #endif
 
     public override long Position

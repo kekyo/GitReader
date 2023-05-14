@@ -12,11 +12,11 @@ using System.Collections.Generic;
 
 namespace GitReader.Internal;
 
-internal struct Buffer : IDisposable
+internal struct BufferPoolBuffer : IDisposable
 {
     private byte[] buffer;
 
-    internal Buffer(byte[] buffer) =>
+    internal BufferPoolBuffer(byte[] buffer) =>
         this.buffer = buffer;
 
     public void Dispose() =>
@@ -31,9 +31,9 @@ internal struct Buffer : IDisposable
         set => this.buffer[index] = value;
     }
 
-    public static implicit operator Buffer(byte[] buffer) =>
+    public static implicit operator BufferPoolBuffer(byte[] buffer) =>
         new(buffer);
-    public static implicit operator byte[](Buffer buffer) =>
+    public static implicit operator byte[](BufferPoolBuffer buffer) =>
         buffer.buffer;
 }
 
@@ -41,7 +41,7 @@ internal static class BufferPool
 {
     private static readonly Dictionary<uint, List<WeakReference>> buffers = new();
 
-    public static Buffer Take(uint size)
+    public static BufferPoolBuffer Take(uint size)
     {
         List<WeakReference> bufferStack;
 
@@ -70,7 +70,7 @@ internal static class BufferPool
         }
     }
 
-    public static Buffer Take(int size) =>
+    public static BufferPoolBuffer Take(int size) =>
         Take((uint)size);
 
     internal static void Release(ref byte[] buffer)

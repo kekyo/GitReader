@@ -462,6 +462,8 @@ internal static class RepositoryAccessor
                 return null;
             }
 
+            // TODO: The cost of asynchronous access to StreamReader is high and will eventually be replaced.
+            // It would be a good idea to have IValueTaskStream support then.
             var tr = new StreamReader(streamResult.Stream, Encoding.UTF8, true);
             var body = await tr.ReadToEndAsync().WaitAsync(ct);
 

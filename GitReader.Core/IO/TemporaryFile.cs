@@ -7,6 +7,7 @@
 //
 ////////////////////////////////////////////////////////////////////////////
 
+using GitReader.Internal;
 using System;
 using System.Diagnostics;
 using System.IO;
@@ -16,7 +17,7 @@ using System.Runtime.InteropServices;
 using System.Runtime.ConstrainedExecution;
 #endif
 
-namespace GitReader.Internal;
+namespace GitReader.IO;
 
 internal sealed class TemporaryFile :
 #if !NETSTANDARD1_6
@@ -30,28 +31,28 @@ internal sealed class TemporaryFile :
     private TemporaryFile(
         string path, Stream stream)
     {
-        this.pathHandle = GCHandle.Alloc(path, GCHandleType.Normal);
-        this.streamHandle = GCHandle.Alloc(stream, GCHandleType.Normal);
+        pathHandle = GCHandle.Alloc(path, GCHandleType.Normal);
+        streamHandle = GCHandle.Alloc(stream, GCHandleType.Normal);
 
         Debug.WriteLine($"GitReader: TemporaryFile: Created: {path}");
     }
 
     ~TemporaryFile() =>
-        this.Dispose();
+        Dispose();
 
     public void Dispose()
     {
-        if (this.streamHandle.IsAllocated &&
-            this.streamHandle.Target is Stream stream)
+        if (streamHandle.IsAllocated &&
+            streamHandle.Target is Stream stream)
         {
-            this.streamHandle.Free();
+            streamHandle.Free();
             stream.Dispose();
         }
 
-        if (this.pathHandle.IsAllocated &&
-            this.pathHandle.Target is string path)
+        if (pathHandle.IsAllocated &&
+            pathHandle.Target is string path)
         {
-            this.pathHandle.Free();
+            pathHandle.Free();
             try
             {
                 File.Delete(path);
@@ -66,10 +67,10 @@ internal sealed class TemporaryFile :
     }
 
     public Stream Stream =>
-        (Stream)this.streamHandle.Target!;
+        (Stream)streamHandle.Target!;
 
     public string Path =>
-        (string)this.pathHandle.Target!;
+        (string)pathHandle.Target!;
 
     public static TemporaryFile CreateFile()
     {

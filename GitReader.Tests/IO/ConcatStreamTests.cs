@@ -12,7 +12,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace GitReader.Internal;
+namespace GitReader.IO;
 
 public sealed class ConcatStreamTests
 {

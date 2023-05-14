@@ -11,24 +11,25 @@ using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using GitReader.Internal;
 
-namespace GitReader.Internal;
+namespace GitReader.IO;
 
 internal sealed class PreloadedStream : Stream
 #if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
     , IValueTaskStream
 #endif
 {
-    private readonly Buffer preloadedBuffer;
+    private readonly BufferPoolBuffer preloadedBuffer;
     private readonly int preloadedLength;
     private int preloadedIndex;
 
-    public PreloadedStream(Buffer buffer, int initialIndex, int length)
+    public PreloadedStream(BufferPoolBuffer buffer, int initialIndex, int length)
     {
-        this.preloadedBuffer = buffer;
-        this.preloadedLength = length;
-        this.preloadedIndex = initialIndex;
-        this.Length = length - initialIndex;
+        preloadedBuffer = buffer;
+        preloadedLength = length;
+        preloadedIndex = initialIndex;
+        Length = length - initialIndex;
     }
 
     public override bool CanRead =>
@@ -46,24 +47,24 @@ internal sealed class PreloadedStream : Stream
     public void Close()
 #endif
     {
-        this.preloadedBuffer.Dispose();
+        preloadedBuffer.Dispose();
     }
 
     protected override void Dispose(bool disposing)
     {
         if (disposing)
         {
-            this.Close();
+            Close();
         }
     }
 
     public override int Read(byte[] buffer, int offset, int count)
     {
-        var length = Math.Min(count, this.preloadedLength - this.preloadedIndex);
+        var length = Math.Min(count, preloadedLength - preloadedIndex);
         if (length >= 1)
         {
-            Array.Copy(this.preloadedBuffer, this.preloadedIndex, buffer, offset, length);
-            this.preloadedIndex += length;
+            Array.Copy(preloadedBuffer, preloadedIndex, buffer, offset, length);
+            preloadedIndex += length;
             return length;
         }
         else
@@ -76,11 +77,11 @@ internal sealed class PreloadedStream : Stream
     public ValueTask<int> ReadValueTaskAsync(
         byte[] buffer, int offset, int count, CancellationToken ct)
     {
-        var length = Math.Min(count, this.preloadedLength - this.preloadedIndex);
+        var length = Math.Min(count, preloadedLength - preloadedIndex);
         if (length >= 1)
         {
-            Array.Copy(this.preloadedBuffer, this.preloadedIndex, buffer, offset, length);
-            this.preloadedIndex += length;
+            Array.Copy(preloadedBuffer, preloadedIndex, buffer, offset, length);
+            preloadedIndex += length;
             return new(length);
         }
         else
@@ -91,7 +92,7 @@ internal sealed class PreloadedStream : Stream
 
     public override Task<int> ReadAsync(
         byte[] buffer, int offset, int count, CancellationToken ct) =>
-        this.ReadValueTaskAsync(buffer, offset, count, ct).AsTask();
+        ReadValueTaskAsync(buffer, offset, count, ct).AsTask();
 #endif
 
     public override long Position

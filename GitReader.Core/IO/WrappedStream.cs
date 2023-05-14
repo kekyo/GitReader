@@ -12,8 +12,9 @@ using System.Diagnostics;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using GitReader.Internal;
 
-namespace GitReader.Internal;
+namespace GitReader.IO;
 
 internal sealed class WrappedStream : Stream
 #if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
@@ -27,7 +28,7 @@ internal sealed class WrappedStream : Stream
         public int Count = 1;
 
         public ParentStreamContext(Stream parent) =>
-            this.Parent = parent;
+            Parent = parent;
     }
 
     private ParentStreamContext context;
@@ -36,7 +37,7 @@ internal sealed class WrappedStream : Stream
     public WrappedStream(Stream parent)
     {
         Debug.Assert(parent.CanSeek);
-        this.context = new(parent);
+        context = new(parent);
     }
 
     private WrappedStream(ParentStreamContext context)
@@ -53,12 +54,12 @@ internal sealed class WrappedStream : Stream
         false;
 
     public override long Length =>
-        this.context.Parent.Length;
+        context.Parent.Length;
 
     public override long Position
     {
-        get => this.position;
-        set => this.Seek(value, SeekOrigin.Begin);
+        get => position;
+        set => Seek(value, SeekOrigin.Begin);
     }
 
 #if !NETSTANDARD1_6
@@ -79,12 +80,12 @@ internal sealed class WrappedStream : Stream
     {
         if (disposing)
         {
-            this.Close();
+            Close();
         }
     }
 
     internal WrappedStream Clone() =>
-        new(this.context);
+        new(context);
 
     public override long Seek(
         long offset, SeekOrigin origin)
@@ -92,38 +93,38 @@ internal sealed class WrappedStream : Stream
         switch (origin)
         {
             case SeekOrigin.Begin:
-                this.position = offset;
+                position = offset;
                 break;
             case SeekOrigin.Current:
-                this.position += offset;
+                position += offset;
                 break;
             case SeekOrigin.End:
-                this.position = this.Length;
-                return this.position;
+                position = Length;
+                return position;
         }
 
-        if (this.position > this.Length)
+        if (position > Length)
         {
-            this.position = this.Length;
+            position = Length;
         }
 
-        return this.position;
+        return position;
     }
 
 #if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
     public ValueTask<long> SeekValueTaskAsync(
         long offset, SeekOrigin origin, CancellationToken ct) =>
-        new(this.Seek(offset, origin));
+        new(Seek(offset, origin));
 #endif
 
     public override int Read(
         byte[] buffer, int offset, int count)
     {
-        using var _ = this.context.Locker.Lock();
+        using var _ = context.Locker.Lock();
 
-        this.context.Parent.Seek(this.position, SeekOrigin.Begin);
-        var read = this.context.Parent.Read(buffer, offset, count);
-        this.position += read;
+        context.Parent.Seek(position, SeekOrigin.Begin);
+        var read = context.Parent.Read(buffer, offset, count);
+        position += read;
         return read;
     }
 
@@ -131,27 +132,27 @@ internal sealed class WrappedStream : Stream
     public async ValueTask<int> ReadValueTaskAsync(
         byte[] buffer, int offset, int count, CancellationToken ct)
     {
-        using var _ = await this.context.Locker.LockAsync(ct);
+        using var _ = await context.Locker.LockAsync(ct);
 
-        if (this.context.Parent is IValueTaskStream vts)
+        if (context.Parent is IValueTaskStream vts)
         {
-            await vts.SeekValueTaskAsync(this.position, SeekOrigin.Begin, ct);
+            await vts.SeekValueTaskAsync(position, SeekOrigin.Begin, ct);
             var read = await vts.ReadValueTaskAsync(buffer, offset, count, ct);
-            this.position += read;
+            position += read;
             return read;
         }
         else
         {
-            this.context.Parent.Seek(this.position, SeekOrigin.Begin);
-            var read = await this.context.Parent.ReadAsync(buffer, offset, count, ct);
-            this.position += read;
+            context.Parent.Seek(position, SeekOrigin.Begin);
+            var read = await context.Parent.ReadAsync(buffer, offset, count, ct);
+            position += read;
             return read;
         }
     }
 
     public override Task<int> ReadAsync(
         byte[] buffer, int offset, int count, CancellationToken ct) =>
-        this.ReadValueTaskAsync(buffer, offset, count, ct).AsTask();
+        ReadValueTaskAsync(buffer, offset, count, ct).AsTask();
 #endif
 
     public override void Flush() =>

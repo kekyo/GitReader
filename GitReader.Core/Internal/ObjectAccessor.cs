@@ -15,6 +15,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using GitReader.IO;
 
 namespace GitReader.Internal;
 
@@ -133,7 +134,7 @@ internal sealed class ObjectAccessor : IDisposable
 
         try
         {
-            var zlibStream = await Utilities.CreateZLibStreamAsync(fs, ct);
+            var zlibStream = await ZLibStream.CreateAsync(fs, ct);
 
             var preloadBuffer = BufferPool.Take(preloadBufferSize);
             var read = await zlibStream.ReadAsync(
@@ -498,7 +499,7 @@ internal sealed class ObjectAccessor : IDisposable
                             fs);
 
                         var (zlibStream, objectEntry) = await Utilities.Join(
-                            Utilities.CreateZLibStreamAsync(stream, ct),
+                            ZLibStream.CreateAsync(stream, ct),
                             this.OpenFromPackedFileAsync(packedFilePath, referenceOffset, disableCaching, ct));
 
                         try
@@ -540,7 +541,7 @@ internal sealed class ObjectAccessor : IDisposable
                             fs);
 
                         var (zlibStream, objectEntry) = await Utilities.Join(
-                            Utilities.CreateZLibStreamAsync(stream, ct),
+                            ZLibStream.CreateAsync(stream, ct),
                             this.OpenAsync(referenceHash, disableCaching, ct));
 
                         try
@@ -579,7 +580,7 @@ internal sealed class ObjectAccessor : IDisposable
                             new PreloadedStream(preloadBuffer, preloadIndex, read - preloadIndex),
                             fs);
 
-                        var zlibStream = await Utilities.CreateZLibStreamAsync(stream, ct);
+                        var zlibStream = await ZLibStream.CreateAsync(stream, ct);
                         var objectType = (ObjectTypes)(int)type;
 
                         var wrappedStream = this.AddToCache(

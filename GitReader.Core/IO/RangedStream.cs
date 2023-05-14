@@ -12,7 +12,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace GitReader.Internal;
+namespace GitReader.IO;
 
 internal sealed class RangedStream : Stream
 #if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
@@ -25,8 +25,8 @@ internal sealed class RangedStream : Stream
     public RangedStream(Stream parent, long length)
     {
         this.parent = parent;
-        this.remains = length;
-        this.Length = length;
+        remains = length;
+        Length = length;
     }
 
     public override bool CanRead =>
@@ -40,7 +40,7 @@ internal sealed class RangedStream : Stream
 
     public override long Position
     {
-        get => this.Length - this.remains;
+        get => Length - remains;
         set => throw new NotImplementedException();
     }
 
@@ -60,7 +60,7 @@ internal sealed class RangedStream : Stream
     {
         if (disposing)
         {
-            this.Close();
+            Close();
         }
     }
 
@@ -72,7 +72,7 @@ internal sealed class RangedStream : Stream
             return 0;
         }
 
-        var read = this.parent.Read(buffer, offset, remains);
+        var read = parent.Read(buffer, offset, remains);
 
         this.remains -= read;
         return read;
@@ -88,9 +88,9 @@ internal sealed class RangedStream : Stream
             return 0;
         }
 
-        var read = this.parent is IValueTaskStream vts ?
+        var read = parent is IValueTaskStream vts ?
             await vts.ReadValueTaskAsync(buffer, offset, remains, ct) :
-            await this.parent.ReadAsync(buffer, offset, remains, ct);
+            await parent.ReadAsync(buffer, offset, remains, ct);
 
         this.remains -= read;
         return read;
@@ -98,7 +98,7 @@ internal sealed class RangedStream : Stream
 
     public override Task<int> ReadAsync(
         byte[] buffer, int offset, int count, CancellationToken ct) =>
-        this.ReadValueTaskAsync(buffer, offset, count, ct).AsTask();
+        ReadValueTaskAsync(buffer, offset, count, ct).AsTask();
 #endif
 
     public override long Seek(long offset, SeekOrigin origin) =>
