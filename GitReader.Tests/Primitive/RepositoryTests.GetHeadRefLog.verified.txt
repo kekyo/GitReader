@@ -85,5 +85,20 @@
       RawFormat: Julien Richard <julien.richard@ubisoft.com> 1684004341 0200
     },
     Message: reset: moving to HEAD
+  },
+  {
+    Old: {
+      HashCode: 9bb78d13405cab568d3e213130f31beda1ce21d1
+    },
+    Current: {
+      HashCode: 1a85b097bde6e9800a1700f702202b3f232c8bda
+    },
+    Committer: {
+      Name: Julien Richard,
+      MailAddress: julien.richard@ubisoft.com,
+      Date: 2023-05-14 13:39:16 +2,
+      RawFormat: Julien Richard <julien.richard@ubisoft.com> 1684064356 0200
+    },
+    Message: pull: Fast-forward
   }
 ]

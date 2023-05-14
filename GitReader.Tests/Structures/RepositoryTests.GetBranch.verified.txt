@@ -2,22 +2,30 @@
   Name: master,
   Head: {
     Hash: {
-      HashCode: 9bb78d13405cab568d3e213130f31beda1ce21d1
+      HashCode: 1a85b097bde6e9800a1700f702202b3f232c8bda
     },
     Author: {
       Name: Kouji Matsui,
       MailAddress: k@kekyo.net,
-      Date: 2021-11-11 09:40:12 +9,
-      RawFormat: Kouji Matsui <k@kekyo.net> 1636591212 0900
+      Date: 2023-04-23 20:31:48 +9,
+      RawFormat: Kouji Matsui <k@kekyo.net> 1682249508 0900
     },
     Committer: {
       Name: Kouji Matsui,
       MailAddress: k@kekyo.net,
-      Date: 2021-11-11 09:40:12 +9,
-      RawFormat: Kouji Matsui <k@kekyo.net> 1636591212 0900
+      Date: 2023-04-23 20:31:48 +9,
+      RawFormat: Kouji Matsui <k@kekyo.net> 1682249508 0900
     },
-    Subject: Added installation .NET 6 SDK on GitHub Actions.,
+    Subject: Updated GA script.,
     Body: ,
-    Branches: []
+    Branches: [],
+    RemoteBranches: [
+      {
+        Name: origin/HEAD
+      },
+      {
+        Name: origin/master
+      }
+    ]
   }
 }
