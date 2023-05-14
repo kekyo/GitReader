@@ -1,67 +1,6 @@
 ﻿[
   {
     Hash: {
-      HashCode: 1a85b097bde6e9800a1700f702202b3f232c8bda
-    },
-    TreeRoot: {
-      HashCode: 01a1ea8e5ea1997c90512e6187723efd6b7aac6a
-    },
-    Author: {
-      Name: Kouji Matsui,
-      MailAddress: k@kekyo.net,
-      Date: 2023-04-23 20:31:48 +9,
-      RawFormat: Kouji Matsui <k@kekyo.net> 1682249508 0900
-    },
-    Committer: {
-      Name: Kouji Matsui,
-      MailAddress: k@kekyo.net,
-      Date: 2023-04-23 20:31:48 +9,
-      RawFormat: Kouji Matsui <k@kekyo.net> 1682249508 0900
-    },
-    Parents: [
-      {
-        HashCode: 63a8f2c84a8c1b2cf6eabd3e1bd7f1971b912a91
-      }
-    ],
-    Message:
-Updated GA script.
-
-
-  },
-  {
-    Hash: {
-      HashCode: 63a8f2c84a8c1b2cf6eabd3e1bd7f1971b912a91
-    },
-    TreeRoot: {
-      HashCode: 945e9e7e705435425f27a8c3a875aa91e10b8f5a
-    },
-    Author: {
-      Name: Kouji Matsui,
-      MailAddress: k@kekyo.net,
-      Date: 2023-04-23 20:25:33 +9,
-      RawFormat: Kouji Matsui <k@kekyo.net> 1682249133 0900
-    },
-    Committer: {
-      Name: Kouji Matsui,
-      MailAddress: k@kekyo.net,
-      Date: 2023-04-23 20:25:33 +9,
-      RawFormat: Kouji Matsui <k@kekyo.net> 1682249133 0900
-    },
-    Parents: [
-      {
-        HashCode: 9bb78d13405cab568d3e213130f31beda1ce21d1
-      },
-      {
-        HashCode: d1e1a7d34cadde9a4cd3579a7f676180549677ca
-      }
-    ],
-    Message:
-Merge branch 'develop'
-
-
-  },
-  {
-    Hash: {
       HashCode: 9bb78d13405cab568d3e213130f31beda1ce21d1
     },
     TreeRoot: {

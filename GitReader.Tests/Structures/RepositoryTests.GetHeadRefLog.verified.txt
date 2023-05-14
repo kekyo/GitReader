@@ -2,6 +2,87 @@
   {
     Commit: {
       Hash: {
+        HashCode: 9bb78d13405cab568d3e213130f31beda1ce21d1
+      },
+      Author: {
+        Name: Kouji Matsui,
+        MailAddress: k@kekyo.net,
+        Date: 2021-11-11 09:40:12 +9,
+        RawFormat: Kouji Matsui <k@kekyo.net> 1636591212 0900
+      },
+      Committer: {
+        Name: Kouji Matsui,
+        MailAddress: k@kekyo.net,
+        Date: 2021-11-11 09:40:12 +9,
+        RawFormat: Kouji Matsui <k@kekyo.net> 1636591212 0900
+      },
+      Subject: Added installation .NET 6 SDK on GitHub Actions.,
+      Body: ,
+      Branches: [
+        {
+          Name: master
+        }
+      ]
+    },
+    OldCommit: {
+      Hash: {
+        HashCode: 9bb78d13405cab568d3e213130f31beda1ce21d1
+      },
+      Author: {
+        Name: Kouji Matsui,
+        MailAddress: k@kekyo.net,
+        Date: 2021-11-11 09:40:12 +9,
+        RawFormat: Kouji Matsui <k@kekyo.net> 1636591212 0900
+      },
+      Committer: {
+        Name: Kouji Matsui,
+        MailAddress: k@kekyo.net,
+        Date: 2021-11-11 09:40:12 +9,
+        RawFormat: Kouji Matsui <k@kekyo.net> 1636591212 0900
+      },
+      Subject: Added installation .NET 6 SDK on GitHub Actions.,
+      Body: ,
+      Branches: [
+        {
+          Name: master
+        }
+      ]
+    },
+    Committer: {
+      Name: Julien Richard,
+      MailAddress: julien.richard@ubisoft.com,
+      Date: 2023-05-14 13:51:01 +2,
+      RawFormat: Julien Richard <julien.richard@ubisoft.com> 1684065061 0200
+    },
+    Message: checkout: moving from master to master
+  },
+  {
+    Commit: {
+      Hash: {
+        HashCode: 9bb78d13405cab568d3e213130f31beda1ce21d1
+      },
+      Author: {
+        Name: Kouji Matsui,
+        MailAddress: k@kekyo.net,
+        Date: 2021-11-11 09:40:12 +9,
+        RawFormat: Kouji Matsui <k@kekyo.net> 1636591212 0900
+      },
+      Committer: {
+        Name: Kouji Matsui,
+        MailAddress: k@kekyo.net,
+        Date: 2021-11-11 09:40:12 +9,
+        RawFormat: Kouji Matsui <k@kekyo.net> 1636591212 0900
+      },
+      Subject: Added installation .NET 6 SDK on GitHub Actions.,
+      Body: ,
+      Branches: [
+        {
+          Name: master
+        }
+      ]
+    },
+    OldCommit: {
+      Hash: {
         HashCode: 1a85b097bde6e9800a1700f702202b3f232c8bda
       },
       Author: {
@@ -18,11 +99,105 @@
       },
       Subject: Updated GA script.,
       Body: ,
-      Branches: [
+      RemoteBranches: [
         {
-          Name: master
+          Name: origin/HEAD
+        },
+        {
+          Name: origin/master
         }
-      ],
+      ]
+    },
+    Committer: {
+      Name: Julien Richard,
+      MailAddress: julien.richard@ubisoft.com,
+      Date: 2023-05-14 13:50:28 +2,
+      RawFormat: Julien Richard <julien.richard@ubisoft.com> 1684065028 0200
+    },
+    Message: reset: moving to 9bb78d13405cab568d3e213130f31beda1ce21d1
+  },
+  {
+    Commit: {
+      Hash: {
+        HashCode: 1a85b097bde6e9800a1700f702202b3f232c8bda
+      },
+      Author: {
+        Name: Kouji Matsui,
+        MailAddress: k@kekyo.net,
+        Date: 2023-04-23 20:31:48 +9,
+        RawFormat: Kouji Matsui <k@kekyo.net> 1682249508 0900
+      },
+      Committer: {
+        Name: Kouji Matsui,
+        MailAddress: k@kekyo.net,
+        Date: 2023-04-23 20:31:48 +9,
+        RawFormat: Kouji Matsui <k@kekyo.net> 1682249508 0900
+      },
+      Subject: Updated GA script.,
+      Body: ,
+      RemoteBranches: [
+        {
+          Name: origin/HEAD
+        },
+        {
+          Name: origin/master
+        }
+      ]
+    },
+    OldCommit: {
+      Hash: {
+        HashCode: 1a85b097bde6e9800a1700f702202b3f232c8bda
+      },
+      Author: {
+        Name: Kouji Matsui,
+        MailAddress: k@kekyo.net,
+        Date: 2023-04-23 20:31:48 +9,
+        RawFormat: Kouji Matsui <k@kekyo.net> 1682249508 0900
+      },
+      Committer: {
+        Name: Kouji Matsui,
+        MailAddress: k@kekyo.net,
+        Date: 2023-04-23 20:31:48 +9,
+        RawFormat: Kouji Matsui <k@kekyo.net> 1682249508 0900
+      },
+      Subject: Updated GA script.,
+      Body: ,
+      RemoteBranches: [
+        {
+          Name: origin/HEAD
+        },
+        {
+          Name: origin/master
+        }
+      ]
+    },
+    Committer: {
+      Name: Julien Richard,
+      MailAddress: julien.richard@ubisoft.com,
+      Date: 2023-05-14 13:50:18 +2,
+      RawFormat: Julien Richard <julien.richard@ubisoft.com> 1684065018 0200
+    },
+    Message: reset: moving to HEAD
+  },
+  {
+    Commit: {
+      Hash: {
+        HashCode: 1a85b097bde6e9800a1700f702202b3f232c8bda
+      },
+      Author: {
+        Name: Kouji Matsui,
+        MailAddress: k@kekyo.net,
+        Date: 2023-04-23 20:31:48 +9,
+        RawFormat: Kouji Matsui <k@kekyo.net> 1682249508 0900
+      },
+      Committer: {
+        Name: Kouji Matsui,
+        MailAddress: k@kekyo.net,
+        Date: 2023-04-23 20:31:48 +9,
+        RawFormat: Kouji Matsui <k@kekyo.net> 1682249508 0900
+      },
+      Subject: Updated GA script.,
+      Body: ,
       RemoteBranches: [
         {
           Name: origin/HEAD
@@ -49,7 +224,12 @@
         RawFormat: Kouji Matsui <k@kekyo.net> 1636591212 0900
       },
       Subject: Added installation .NET 6 SDK on GitHub Actions.,
-      Body: 
+      Body: ,
+      Branches: [
+        {
+          Name: master
+        }
+      ]
     },
     Committer: {
       Name: Julien Richard,
@@ -77,7 +257,12 @@
         RawFormat: Kouji Matsui <k@kekyo.net> 1636591212 0900
       },
       Subject: Added installation .NET 6 SDK on GitHub Actions.,
-      Body: 
+      Body: ,
+      Branches: [
+        {
+          Name: master
+        }
+      ]
     },
     OldCommit: {
       Hash: {
@@ -96,7 +281,12 @@
         RawFormat: Kouji Matsui <k@kekyo.net> 1636591212 0900
       },
       Subject: Added installation .NET 6 SDK on GitHub Actions.,
-      Body: 
+      Body: ,
+      Branches: [
+        {
+          Name: master
+        }
+      ]
     },
     Committer: {
       Name: Julien Richard,
@@ -124,7 +314,12 @@
         RawFormat: Kouji Matsui <k@kekyo.net> 1636591212 0900
       },
       Subject: Added installation .NET 6 SDK on GitHub Actions.,
-      Body: 
+      Body: ,
+      Branches: [
+        {
+          Name: master
+        }
+      ]
     },
     OldCommit: {
       Hash: {
@@ -143,7 +338,12 @@
         RawFormat: Kouji Matsui <k@kekyo.net> 1636591212 0900
       },
       Subject: Added installation .NET 6 SDK on GitHub Actions.,
-      Body: 
+      Body: ,
+      Branches: [
+        {
+          Name: master
+        }
+      ]
     },
     Committer: {
       Name: Julien Richard,
@@ -171,7 +371,12 @@
         RawFormat: Kouji Matsui <k@kekyo.net> 1636591212 0900
       },
       Subject: Added installation .NET 6 SDK on GitHub Actions.,
-      Body: 
+      Body: ,
+      Branches: [
+        {
+          Name: master
+        }
+      ]
     },
     OldCommit: {
       Hash: {
@@ -190,7 +395,12 @@
         RawFormat: Kouji Matsui <k@kekyo.net> 1636591212 0900
       },
       Subject: Added installation .NET 6 SDK on GitHub Actions.,
-      Body: 
+      Body: ,
+      Branches: [
+        {
+          Name: master
+        }
+      ]
     },
     Committer: {
       Name: Julien Richard,
@@ -218,7 +428,12 @@
         RawFormat: Kouji Matsui <k@kekyo.net> 1636591212 0900
       },
       Subject: Added installation .NET 6 SDK on GitHub Actions.,
-      Body: 
+      Body: ,
+      Branches: [
+        {
+          Name: master
+        }
+      ]
     },
     OldCommit: {
       Hash: {

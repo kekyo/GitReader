@@ -1,29 +1,29 @@
 ﻿{
   Hash: {
-    HashCode: 1a85b097bde6e9800a1700f702202b3f232c8bda
+    HashCode: 9bb78d13405cab568d3e213130f31beda1ce21d1
   },
   TreeRoot: {
-    HashCode: 01a1ea8e5ea1997c90512e6187723efd6b7aac6a
+    HashCode: e6d9dd7ac6252f145bc13b7b7f7512a6cf933525
   },
   Author: {
     Name: Kouji Matsui,
     MailAddress: k@kekyo.net,
-    Date: 2023-04-23 20:31:48 +9,
-    RawFormat: Kouji Matsui <k@kekyo.net> 1682249508 0900
+    Date: 2021-11-11 09:40:12 +9,
+    RawFormat: Kouji Matsui <k@kekyo.net> 1636591212 0900
   },
   Committer: {
     Name: Kouji Matsui,
     MailAddress: k@kekyo.net,
-    Date: 2023-04-23 20:31:48 +9,
-    RawFormat: Kouji Matsui <k@kekyo.net> 1682249508 0900
+    Date: 2021-11-11 09:40:12 +9,
+    RawFormat: Kouji Matsui <k@kekyo.net> 1636591212 0900
   },
   Parents: [
     {
-      HashCode: 63a8f2c84a8c1b2cf6eabd3e1bd7f1971b912a91
+      HashCode: 30aaea993cc0a3cb1dad2968d3e5f4d90a287e25
     }
   ],
   Message:
-Updated GA script.
+Added installation .NET 6 SDK on GitHub Actions.
 
 
 }
