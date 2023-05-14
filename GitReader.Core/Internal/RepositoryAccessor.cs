@@ -398,6 +398,35 @@ internal static class RepositoryAccessor
 
         return stashes.ToArray();
     }
+    
+    public static async Task<RefLogEntry[]> ReadRefLogAsync(Repository repository, PrimitiveReference reference, CancellationToken ct)
+    {
+        var path = Utilities.Combine(repository.GitPath, "logs", reference.RelativePath);
+        if (!File.Exists(path))
+        {
+            return new RefLogEntry[]{};
+        }
+
+        using var fs = repository.fileAccessor.Open(path);
+        var tr = new StreamReader(fs, Encoding.UTF8, true);
+
+        var stashes = new List<RefLogEntry>();
+        while (true)
+        {
+            var line = await tr.ReadLineAsync().WaitAsync(ct);
+            if (line == null)
+            {
+                break;
+            }
+
+            if (RefLogEntry.TryParse(line, out var refLogEntry))
+            {
+                stashes.Add(refLogEntry);
+            }
+        }
+
+        return stashes.ToArray();
+    }
 
     public static async Task<PrimitiveReference[]> ReadReferencesAsync(
         Repository repository,
@@ -421,6 +450,7 @@ internal static class RepositoryAccessor
                 {
                     return new(
                         path.Substring(headsPath.Length + 1).Replace(Path.DirectorySeparatorChar, '/'),
+                        path.Substring(repository.GitPath.Length + 1).Replace(Path.DirectorySeparatorChar, '/'),
                         results.Hash);
                 }
             }))).
@@ -438,7 +468,7 @@ internal static class RepositoryAccessor
                     {
                         references.Add(
                             entry.Key,
-                            new(entry.Key, entry.Value));
+                            new(entry.Key,$"refs/remotes/{entry.Key}", entry.Value));
                     }
                 }
                 break;
@@ -449,7 +479,7 @@ internal static class RepositoryAccessor
                     {
                         references.Add(
                             entry.Key,
-                            new(entry.Key, entry.Value));
+                            new(entry.Key, $"refs/tags/{entry.Key}", entry.Value));
                     }
                 }
                 break;

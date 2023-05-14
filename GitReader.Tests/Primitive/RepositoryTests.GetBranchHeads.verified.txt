@@ -1,6 +1,7 @@
 ﻿[
   {
     Name: master,
+    RelativePath: refs/heads/master,
     Target: {
       HashCode: 9bb78d13405cab568d3e213130f31beda1ce21d1
     }

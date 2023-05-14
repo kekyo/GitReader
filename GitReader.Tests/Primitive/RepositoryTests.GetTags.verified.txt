@@ -138,5 +138,12 @@
     },
     Type: Commit,
     Name: 2.1.0
+  },
+  {
+    Hash: {
+      HashCode: 63a8f2c84a8c1b2cf6eabd3e1bd7f1971b912a91
+    },
+    Type: Commit,
+    Name: 2.2.0
   }
 ]

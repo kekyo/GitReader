@@ -20,6 +20,12 @@ public class RefLogEntry : IEquatable<RefLogEntry>
 
     public static bool TryParse(string line, [NotNullWhen(true)]out RefLogEntry? refLogEntry)
     {
+        if (string.IsNullOrEmpty(line))
+        {
+            refLogEntry = null;
+            return false;
+        }
+        
         var columns = line.Split('\t');
         if (columns.Length < 2)
         {
