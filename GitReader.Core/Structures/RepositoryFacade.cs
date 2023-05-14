@@ -162,7 +162,27 @@ internal static class RepositoryFacade
                 return null;
             }));
 
-        return stashes.Where(tag => tag != null).ToArray()!;
+        return stashes.Where(x => x != null).Reverse().ToArray()!;
+    }
+    
+    public static async Task<RefLogEntry[]> GetHeadRefLogAsync(
+        StructuredRepository repository,
+        WeakReference rwr,
+        CancellationToken ct)
+    {
+        var primitiveRefLogEntries = await RepositoryAccessor.ReadRefLogAsync(repository, "HEAD", ct);
+        var refLogEntries = await Utilities.WhenAll(
+            primitiveRefLogEntries.Select(async stash =>
+            {
+                if (await RepositoryAccessor.ReadCommitAsync(repository, stash.Current, ct) is { } currentCommit && 
+                    await RepositoryAccessor.ReadCommitAsync(repository, stash.Old, ct) is { } oldCommit)
+                {
+                    return new RefLogEntry(new (rwr, currentCommit), new (rwr, oldCommit), stash.Committer, stash.Message);
+                }
+                return null;
+            }));
+
+        return refLogEntries.Where(x => x != null).Reverse().ToArray()!;
     }
 
     //////////////////////////////////////////////////////////////////////////

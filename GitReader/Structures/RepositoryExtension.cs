@@ -25,7 +25,7 @@ public static class RepositoryExtension
         this StructuredRepository repository,
         Hash commit, CancellationToken ct = default) =>
         RepositoryFacade.GetCommitDirectlyAsync(repository, commit, ct);
-
+    
     public static Task<Commit?> GetPrimaryParentCommitAsync(
         this Commit commit,
         CancellationToken ct = default) =>
@@ -49,6 +49,10 @@ public static class RepositoryExtension
     public static string GetMessage(
         this Commit commit) =>
         commit.message;
+    
+    public static Task<RefLogEntry[]> GetHeadReflogAsync(
+        this StructuredRepository repository, CancellationToken ct = default) =>
+        RepositoryFacade.GetHeadRefLogAsync(repository, new WeakReference(repository), ct);
 
     public static void Deconstruct(
         this StructuredRepository repository,

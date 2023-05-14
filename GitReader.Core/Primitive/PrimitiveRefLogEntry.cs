@@ -3,14 +3,14 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace GitReader.Primitive;
 
-public class RefLogEntry : IEquatable<RefLogEntry>
+public class PrimitiveRefLogEntry : IEquatable<PrimitiveRefLogEntry>
 {
     public readonly Hash Old;
     public readonly Hash Current;
     public readonly Signature Committer;
     public readonly string Message;
     
-    private RefLogEntry(Hash old, Hash current, Signature committer, string message)
+    private PrimitiveRefLogEntry(Hash old, Hash current, Signature committer, string message)
     {
         Old = old;
         Current = current;
@@ -18,7 +18,7 @@ public class RefLogEntry : IEquatable<RefLogEntry>
         Message = message;
     }
 
-    public static bool TryParse(string line, [NotNullWhen(true)]out RefLogEntry? refLogEntry)
+    public static bool TryParse(string line, [NotNullWhen(true)]out PrimitiveRefLogEntry? refLogEntry)
     {
         if (string.IsNullOrEmpty(line))
         {
@@ -55,11 +55,11 @@ public class RefLogEntry : IEquatable<RefLogEntry>
 
         var message = columns[1].Trim();
 
-        refLogEntry = new RefLogEntry(old, current, committer, message);
+        refLogEntry = new PrimitiveRefLogEntry(old, current, committer, message);
         return true;
     }
 
-    public bool Equals(RefLogEntry? other)
+    public bool Equals(PrimitiveRefLogEntry? other)
     {
         if (ReferenceEquals(null, other)) return false;
         if (ReferenceEquals(this, other)) return true;
@@ -71,7 +71,7 @@ public class RefLogEntry : IEquatable<RefLogEntry>
         if (ReferenceEquals(null, obj)) return false;
         if (ReferenceEquals(this, obj)) return true;
         if (obj.GetType() != this.GetType()) return false;
-        return Equals((RefLogEntry)obj);
+        return Equals((PrimitiveRefLogEntry)obj);
     }
 
     public override int GetHashCode()

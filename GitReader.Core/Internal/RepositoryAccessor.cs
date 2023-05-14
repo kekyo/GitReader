@@ -370,47 +370,24 @@ internal static class RepositoryAccessor
         }
     }
 
-    public static async Task<RefLogEntry[]> ReadStashesAsync(Repository repository, CancellationToken ct)
-    {
-        var path = Utilities.Combine(repository.GitPath, "logs", "refs", "stash");
-        if (!File.Exists(path))
-        {
-            return new RefLogEntry[]{};
-        }
-
-        using var fs = repository.fileAccessor.Open(path);
-        var tr = new StreamReader(fs, Encoding.UTF8, true);
-
-        var stashes = new List<RefLogEntry>();
-        while (true)
-        {
-            var line = await tr.ReadLineAsync().WaitAsync(ct);
-            if (line == null)
-            {
-                break;
-            }
-
-            if (RefLogEntry.TryParse(line, out var refLogEntry))
-            {
-                stashes.Add(refLogEntry);
-            }
-        }
-
-        return stashes.ToArray();
-    }
+    public static Task<PrimitiveRefLogEntry[]> ReadStashesAsync(Repository repository, CancellationToken ct)
+        => ReadRefLogAsync(repository, "refs/stash", ct);
     
-    public static async Task<RefLogEntry[]> ReadRefLogAsync(Repository repository, PrimitiveReference reference, CancellationToken ct)
+    public static Task<PrimitiveRefLogEntry[]> ReadRefLogAsync(Repository repository, PrimitiveReference reference, CancellationToken ct)
+        => ReadRefLogAsync(repository, reference.RelativePath, ct);
+
+    public static async Task<PrimitiveRefLogEntry[]> ReadRefLogAsync(Repository repository, string refRelativePath, CancellationToken ct)
     {
-        var path = Utilities.Combine(repository.GitPath, "logs", reference.RelativePath);
+        var path = Utilities.Combine(repository.GitPath, "logs", refRelativePath);
         if (!File.Exists(path))
         {
-            return new RefLogEntry[]{};
+            return new PrimitiveRefLogEntry[]{};
         }
 
         using var fs = repository.fileAccessor.Open(path);
         var tr = new StreamReader(fs, Encoding.UTF8, true);
 
-        var stashes = new List<RefLogEntry>();
+        var entries = new List<PrimitiveRefLogEntry>();
         while (true)
         {
             var line = await tr.ReadLineAsync().WaitAsync(ct);
@@ -419,13 +396,13 @@ internal static class RepositoryAccessor
                 break;
             }
 
-            if (RefLogEntry.TryParse(line, out var refLogEntry))
+            if (PrimitiveRefLogEntry.TryParse(line, out var refLogEntry))
             {
-                stashes.Add(refLogEntry);
+                entries.Add(refLogEntry);
             }
         }
 
-        return stashes.ToArray();
+        return entries.ToArray();
     }
 
     public static async Task<PrimitiveReference[]> ReadReferencesAsync(
