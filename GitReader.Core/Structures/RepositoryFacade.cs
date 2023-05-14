@@ -155,9 +155,9 @@ internal static class RepositoryFacade
         var stashes = await Utilities.WhenAll(
             primitiveStashes.Select(async stash =>
             {
-                if (await RepositoryAccessor.ReadCommitAsync(repository, stash.Hash, ct) is { } commit)
+                if (await RepositoryAccessor.ReadCommitAsync(repository, stash.Current, ct) is { } commit)
                 {
-                    return new Stash(new (rwr, commit), stash.Signature, stash.Message);
+                    return new Stash(new (rwr, commit), stash.Committer, stash.Message);
                 }
                 return null;
             }));

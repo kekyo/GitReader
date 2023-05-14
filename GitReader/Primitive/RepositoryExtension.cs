@@ -64,7 +64,7 @@ public static class RepositoryExtension
         CancellationToken ct = default) =>
         RepositoryAccessor.ReadReferencesAsync(repository, ReferenceTypes.Tags, ct);
     
-    public static Task<PrimitiveStash[]> GetStashesAsync(
+    public static Task<RefLogEntry[]> GetStashesAsync(
         this PrimitiveRepository repository,
         CancellationToken ct = default) =>
         RepositoryAccessor.ReadStashesAsync(repository, ct);

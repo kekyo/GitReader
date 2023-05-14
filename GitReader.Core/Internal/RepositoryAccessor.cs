@@ -370,18 +370,18 @@ internal static class RepositoryAccessor
         }
     }
 
-    public static async Task<PrimitiveStash[]> ReadStashesAsync(Repository repository, CancellationToken ct)
+    public static async Task<RefLogEntry[]> ReadStashesAsync(Repository repository, CancellationToken ct)
     {
         var path = Utilities.Combine(repository.GitPath, "logs", "refs", "stash");
         if (!File.Exists(path))
         {
-            return new PrimitiveStash[]{};
+            return new RefLogEntry[]{};
         }
 
         using var fs = repository.fileAccessor.Open(path);
         var tr = new StreamReader(fs, Encoding.UTF8, true);
 
-        var stashes = new List<PrimitiveStash>();
+        var stashes = new List<RefLogEntry>();
         while (true)
         {
             var line = await tr.ReadLineAsync().WaitAsync(ct);
@@ -389,27 +389,11 @@ internal static class RepositoryAccessor
             {
                 break;
             }
-            
-            var columns = line.Split('\t');
-            if (columns.Length < 2)
-            {
-                continue;
-            }
 
-            const int hashLength = 40;
-
-            if (!Hash.TryParse(columns[0].Substring(hashLength + 1, hashLength), out var hash))
+            if (RefLogEntry.TryParse(line, out var refLogEntry))
             {
-                continue;
+                stashes.Add(refLogEntry);
             }
-            
-            if (!Signature.TryParse(columns[0].Substring((hashLength + 1) * 2), out var signature))
-            {
-                continue;
-            }
-
-            var message = columns[1].Trim();
-            stashes.Add(new PrimitiveStash(hash, signature, message));
         }
 
         return stashes.ToArray();
