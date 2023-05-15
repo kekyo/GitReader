@@ -222,6 +222,11 @@ internal sealed class DeltaDecodedStream : Stream
                         }
                         baseObjectSize |= (uint)deltaBuffer[deltaBufferIndex++] << 16;
                     }
+                    // Adjust size when its zero
+                    if (baseObjectSize == 0)
+                    {
+                        baseObjectSize = 0x10000U;
+                    }
 
                     baseObjectStream.Seek(
                         baseObjectOffset, SeekOrigin.Begin);
@@ -437,6 +442,11 @@ internal sealed class DeltaDecodedStream : Stream
                             }
                         }
                         baseObjectSize |= (uint)deltaBuffer[deltaBufferIndex++] << 16;
+                    }
+                    // Adjust size when its zero
+                    if (baseObjectSize == 0)
+                    {
+                        baseObjectSize = 0x10000U;
                     }
 
                     await baseObjectStream.SeekValueTaskAsync(
