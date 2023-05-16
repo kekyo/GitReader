@@ -13,10 +13,7 @@ cd ..
 echo "Step 2: extract with gitexporttest."
 
 rm -rf export
-mkdir export
-cd export
-dotnet ../gitexporttest/bin/Release/net6.0/gitexporttest.dll ../git 5597cfdf47db94825213fefe78c4485e6a5702d8
-cd ..
+dotnet gitexporttest/bin/Release/net6.0/gitexporttest.dll git 5597cfdf47db94825213fefe78c4485e6a5702d8 export
 
 echo "Step 3: Makes differ."
 

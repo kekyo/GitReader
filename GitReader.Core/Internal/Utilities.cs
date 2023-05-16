@@ -421,7 +421,10 @@ internal static class Utilities
 
     [DebuggerStepThrough]
     public static ValueTask<T[]> WhenAll<T>(IEnumerable<ValueTask<T>> tasks) =>
-        WhenAll(tasks.ToArray());
+        WhenAll(
+            // Implicit starting ValueTask'ed state machines just now.
+            tasks.ToArray()
+        );
 
     [DebuggerStepThrough]
     public static async ValueTask<T[]> WhenAll<T>(params ValueTask<T>[] tasks)

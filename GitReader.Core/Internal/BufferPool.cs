@@ -9,6 +9,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Threading;
 
 namespace GitReader.Internal;
 
@@ -16,14 +17,16 @@ internal struct BufferPoolBuffer : IDisposable
 {
     private byte[] buffer;
 
-    internal BufferPoolBuffer(byte[] buffer) =>
+    internal BufferPoolBuffer(byte[] buffer)
+    {
         this.buffer = buffer;
+        this.Length = buffer.Length;
+    }
 
     public void Dispose() =>
         BufferPool.Release(ref this.buffer);
 
-    public int Length =>
-        this.buffer.Length;
+    public int Length { get; }
 
     public byte this[int index]
     {
@@ -31,10 +34,26 @@ internal struct BufferPoolBuffer : IDisposable
         set => this.buffer[index] = value;
     }
 
+    public DetachedBufferPoolBuffer Detach() =>
+        new(Interlocked.Exchange(ref this.buffer, null!));
+
     public static implicit operator BufferPoolBuffer(byte[] buffer) =>
         new(buffer);
     public static implicit operator byte[](BufferPoolBuffer buffer) =>
         buffer.buffer;
+}
+
+internal readonly struct DetachedBufferPoolBuffer
+{
+    private readonly byte[] buffer;
+
+    internal DetachedBufferPoolBuffer(byte[] buffer) =>
+        this.buffer = buffer;
+
+    public static implicit operator DetachedBufferPoolBuffer(byte[] buffer) =>
+        new(buffer);
+    public static implicit operator BufferPoolBuffer(DetachedBufferPoolBuffer buffer) =>
+        new(buffer.buffer);
 }
 
 internal static class BufferPool

@@ -24,12 +24,13 @@ internal sealed class PreloadedStream : Stream
     private readonly int preloadedLength;
     private int preloadedIndex;
 
-    public PreloadedStream(BufferPoolBuffer buffer, int initialIndex, int length)
+    public PreloadedStream(
+        DetachedBufferPoolBuffer buffer, int initialIndex, int length)
     {
-        preloadedBuffer = buffer;
-        preloadedLength = length;
-        preloadedIndex = initialIndex;
-        Length = length - initialIndex;
+        this.preloadedBuffer = buffer;
+        this.preloadedLength = length;
+        this.preloadedIndex = initialIndex;
+        this.Length = length - initialIndex;
     }
 
     public override bool CanRead =>
@@ -47,7 +48,7 @@ internal sealed class PreloadedStream : Stream
     public void Close()
 #endif
     {
-        preloadedBuffer.Dispose();
+        this.preloadedBuffer.Dispose();
     }
 
     protected override void Dispose(bool disposing)
@@ -60,11 +61,11 @@ internal sealed class PreloadedStream : Stream
 
     public override int Read(byte[] buffer, int offset, int count)
     {
-        var length = Math.Min(count, preloadedLength - preloadedIndex);
+        var length = Math.Min(count, this.preloadedLength - this.preloadedIndex);
         if (length >= 1)
         {
-            Array.Copy(preloadedBuffer, preloadedIndex, buffer, offset, length);
-            preloadedIndex += length;
+            Array.Copy(this.preloadedBuffer, this.preloadedIndex, buffer, offset, length);
+            this.preloadedIndex += length;
             return length;
         }
         else
@@ -77,11 +78,11 @@ internal sealed class PreloadedStream : Stream
     public ValueTask<int> ReadValueTaskAsync(
         byte[] buffer, int offset, int count, CancellationToken ct)
     {
-        var length = Math.Min(count, preloadedLength - preloadedIndex);
+        var length = Math.Min(count, this.preloadedLength - this.preloadedIndex);
         if (length >= 1)
         {
-            Array.Copy(preloadedBuffer, preloadedIndex, buffer, offset, length);
-            preloadedIndex += length;
+            Array.Copy(this.preloadedBuffer, this.preloadedIndex, buffer, offset, length);
+            this.preloadedIndex += length;
             return new(length);
         }
         else
@@ -92,7 +93,7 @@ internal sealed class PreloadedStream : Stream
 
     public override Task<int> ReadAsync(
         byte[] buffer, int offset, int count, CancellationToken ct) =>
-        ReadValueTaskAsync(buffer, offset, count, ct).AsTask();
+        this.ReadValueTaskAsync(buffer, offset, count, ct).AsTask();
 #endif
 
     public override long Position

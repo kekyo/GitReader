@@ -303,11 +303,38 @@ internal static class RepositoryFacade
         var rootTree = await RepositoryAccessor.ReadTreeAsync(
             repository, commit.treeRoot, ct);
 
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
         // This is a rather aggressive algorithm that recursively and in parallel searches all entries
         // in the tree and builds all elements.
-        async Task<TreeEntry[]> GetChildrenAsync(Primitive.PrimitiveTreeEntry[] entries) =>
+        async ValueTask<TreeEntry[]> GetChildrenAsync(PrimitiveTreeEntry[] entries) =>
             (await Utilities.WhenAll(
-                entries.Collect(async entry =>
+                entries.Select((Func<PrimitiveTreeEntry, ValueTask<TreeEntry>>)(async entry =>
+                {
+                    var modeFlags = (ModeFlags)((int)entry.Modes & 0x1ff);
+                    switch (entry.SpecialModes)
+                    {
+                        case PrimitiveSpecialModes.Directory:
+                            var tree = await RepositoryAccessor.ReadTreeAsync(
+                                repository!, entry.Hash, ct);
+                            var children = await GetChildrenAsync(tree.Children);
+                            return new TreeDirectoryEntry(
+                                entry.Hash, entry.Name, modeFlags, children);
+                        case PrimitiveSpecialModes.Blob:
+                            return new TreeBlobEntry(
+                                entry.Hash, entry.Name, modeFlags, commit.rwr);
+                        default:
+                            // TODO:
+                            return null!;
+                    }
+                })))).
+            Where(entry => entry != null).
+            ToArray();
+#else
+        // This is a rather aggressive algorithm that recursively and in parallel searches all entries
+        // in the tree and builds all elements.
+        async Task<TreeEntry[]> GetChildrenAsync(PrimitiveTreeEntry[] entries) =>
+            (await Utilities.WhenAll(
+                entries.Select(async entry =>
                 {
                     var modeFlags = (ModeFlags)((int)entry.Modes & 0x1ff);
                     switch (entry.SpecialModes)
@@ -322,11 +349,13 @@ internal static class RepositoryFacade
                             return new TreeBlobEntry(
                                 entry.Hash, entry.Name, modeFlags, commit.rwr);
                         default:
+                            // TODO:
                             return null!;
                     }
                 }))).
             Where(entry => entry != null).
             ToArray();
+#endif
 
         var children = await GetChildrenAsync(rootTree.Children);
 

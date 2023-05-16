@@ -379,7 +379,11 @@ internal static class RepositoryAccessor
             repository.GitPath, "refs", GetReferenceTypeName(type));
         var references = (await Utilities.WhenAll(
             Utilities.EnumerateFiles(headsPath, "*").
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
+            Select((Func<string, ValueTask<PrimitiveReference?>>)(async path =>
+#else
             Select(async path =>
+#endif
             {
                 if (await ReadHashAsync(
                     repository,
@@ -394,7 +398,11 @@ internal static class RepositoryAccessor
                         path.Substring(headsPath.Length + 1).Replace(Path.DirectorySeparatorChar, '/'),
                         results.Hash);
                 }
-            }))).
+            }
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
+            )
+#endif
+            ))).
             CollectValue(reference => reference).
             ToDictionary(reference => reference.Name);
 

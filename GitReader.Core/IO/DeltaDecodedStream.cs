@@ -31,7 +31,7 @@ internal sealed class DeltaDecodedStream : Stream
         public uint Position;
 
         public CopyState(uint size) =>
-            Size = size;
+            this.Size = size;
     }
 
     private sealed class InsertState : State
@@ -40,7 +40,7 @@ internal sealed class DeltaDecodedStream : Stream
         public byte Position;
 
         public InsertState(byte size) =>
-            Size = size;
+            this.Size = size;
     }
 
     private const int preloadBufferSize = 65536;
@@ -55,14 +55,14 @@ internal sealed class DeltaDecodedStream : Stream
 
     private DeltaDecodedStream(
         MemoizedStream baseObjectStream, Stream deltaStream,
-        BufferPoolBuffer preloadBuffer, int preloadIndex, int preloadCount, long decodedObjectLength)
+        DetachedBufferPoolBuffer preloadBuffer, int preloadIndex, int preloadCount, long decodedObjectLength)
     {
         this.baseObjectStream = baseObjectStream;
         this.deltaStream = deltaStream;
-        deltaBuffer = preloadBuffer;
-        deltaBufferIndex = preloadIndex;
-        deltaBufferCount = preloadCount;
-        Length = decodedObjectLength;
+        this.deltaBuffer = preloadBuffer;
+        this.deltaBufferIndex = preloadIndex;
+        this.deltaBufferCount = preloadCount;
+        this.Length = decodedObjectLength;
     }
 
     public override long Length { get; }
@@ -89,8 +89,8 @@ internal sealed class DeltaDecodedStream : Stream
             deltaStream.Dispose();
         }
 
-        deltaBuffer.Dispose();
-        state = null;
+        this.deltaBuffer.Dispose();
+        this.state = null;
     }
 
     protected override void Dispose(bool disposing)
@@ -103,14 +103,14 @@ internal sealed class DeltaDecodedStream : Stream
 
     private bool Prepare()
     {
-        deltaBufferCount = deltaStream.Read(
-            deltaBuffer, 0, deltaBuffer.Length);
-        if (deltaBufferCount == 0)
+        this.deltaBufferCount = this.deltaStream.Read(
+            this.deltaBuffer, 0, this.deltaBuffer.Length);
+        if (this.deltaBufferCount == 0)
         {
             return false;
         }
 
-        deltaBufferIndex = 0;
+        this.deltaBufferIndex = 0;
         return true;
     }
 
@@ -120,17 +120,17 @@ internal sealed class DeltaDecodedStream : Stream
 
         while (count >= 1)
         {
-            if (state == null)
+            if (this.state == null)
             {
-                if (deltaBufferIndex >= deltaBufferCount)
+                if (this.deltaBufferIndex >= this.deltaBufferCount)
                 {
-                    if (!Prepare())
+                    if (!this.Prepare())
                     {
                         return read;
                     }
                 }
 
-                var opcode = deltaBuffer[deltaBufferIndex++];
+                var opcode = this.deltaBuffer[this.deltaBufferIndex++];
 
                 // Copy opcode
                 if ((opcode & 0x80) != 0)
@@ -141,86 +141,93 @@ internal sealed class DeltaDecodedStream : Stream
                     // offset1
                     if ((opcode & 0x01) != 0)
                     {
-                        if (deltaBufferIndex >= deltaBufferCount)
+                        if (this.deltaBufferIndex >= this.deltaBufferCount)
                         {
-                            if (!Prepare())
+                            if (!this.Prepare())
                             {
-                                return read;
+                                throw new InvalidDataException(
+                                    "Broken deltified stream: Step=1");
                             }
                         }
-                        baseObjectOffset |= deltaBuffer[deltaBufferIndex++];
+                        baseObjectOffset |= this.deltaBuffer[this.deltaBufferIndex++];
                     }
                     // offset2
                     if ((opcode & 0x02) != 0)
                     {
-                        if (deltaBufferIndex >= deltaBufferCount)
+                        if (this.deltaBufferIndex >= this.deltaBufferCount)
                         {
-                            if (!Prepare())
+                            if (!this.Prepare())
                             {
-                                return read;
+                                throw new InvalidDataException(
+                                    "Broken deltified stream: Step=2");
                             }
                         }
-                        baseObjectOffset |= (uint)deltaBuffer[deltaBufferIndex++] << 8;
+                        baseObjectOffset |= (uint)this.deltaBuffer[this.deltaBufferIndex++] << 8;
                     }
                     // offset3
                     if ((opcode & 0x04) != 0)
                     {
-                        if (deltaBufferIndex >= deltaBufferCount)
+                        if (this.deltaBufferIndex >= this.deltaBufferCount)
                         {
-                            if (!Prepare())
+                            if (!this.Prepare())
                             {
-                                return read;
+                                throw new InvalidDataException(
+                                    "Broken deltified stream: Step=3");
                             }
                         }
-                        baseObjectOffset |= (uint)deltaBuffer[deltaBufferIndex++] << 16;
+                        baseObjectOffset |= (uint)this.deltaBuffer[this.deltaBufferIndex++] << 16;
                     }
                     // offset4
                     if ((opcode & 0x08) != 0)
                     {
-                        if (deltaBufferIndex >= deltaBufferCount)
+                        if (this.deltaBufferIndex >= this.deltaBufferCount)
                         {
-                            if (!Prepare())
+                            if (!this.Prepare())
                             {
-                                return read;
+                                throw new InvalidDataException(
+                                    "Broken deltified stream: Step=4");
                             }
                         }
-                        baseObjectOffset |= (uint)deltaBuffer[deltaBufferIndex++] << 24;
+                        baseObjectOffset |= (uint)this.deltaBuffer[this.deltaBufferIndex++] << 24;
                     }
                     // size1
                     if ((opcode & 0x10) != 0)
                     {
-                        if (deltaBufferIndex >= deltaBufferCount)
+                        if (this.deltaBufferIndex >= this.deltaBufferCount)
                         {
-                            if (!Prepare())
+                            if (!this.Prepare())
                             {
-                                return read;
+                                throw new InvalidDataException(
+                                    "Broken deltified stream: Step=5");
                             }
                         }
-                        baseObjectSize |= deltaBuffer[deltaBufferIndex++];
+                        baseObjectSize |= this.deltaBuffer[this.deltaBufferIndex++];
                     }
                     // size2
                     if ((opcode & 0x20) != 0)
                     {
-                        if (deltaBufferIndex >= deltaBufferCount)
+                        if (this.deltaBufferIndex >= this.deltaBufferCount)
                         {
-                            if (!Prepare())
+                            if (!this.Prepare())
                             {
-                                return read;
+                                throw new InvalidDataException(
+                                    "Broken deltified stream: Step=6");
                             }
                         }
-                        baseObjectSize |= (uint)deltaBuffer[deltaBufferIndex++] << 8;
+                        baseObjectSize |= (uint)this.deltaBuffer[this.deltaBufferIndex++] << 8;
                     }
                     // size3
                     if ((opcode & 0x40) != 0)
                     {
-                        if (deltaBufferIndex >= deltaBufferCount)
+                        if (this.deltaBufferIndex >= this.deltaBufferCount)
                         {
-                            if (!Prepare())
+                            if (!this.Prepare())
                             {
-                                return read;
+                                throw new InvalidDataException(
+                                    "Broken deltified stream: Step=7");
                             }
                         }
-                        baseObjectSize |= (uint)deltaBuffer[deltaBufferIndex++] << 16;
+                        baseObjectSize |= (uint)this.deltaBuffer[this.deltaBufferIndex++] << 16;
                     }
                     // Adjust size when its zero
                     if (baseObjectSize == 0)
@@ -228,10 +235,10 @@ internal sealed class DeltaDecodedStream : Stream
                         baseObjectSize = 0x10000U;
                     }
 
-                    baseObjectStream.Seek(
+                    this.baseObjectStream.Seek(
                         baseObjectOffset, SeekOrigin.Begin);
 
-                    state = new CopyState(baseObjectSize);
+                    this.state = new CopyState(baseObjectSize);
                 }
                 // Insert opcode
                 else
@@ -239,23 +246,19 @@ internal sealed class DeltaDecodedStream : Stream
                     // Size
                     var insertionSize = opcode & 0x7f;
 
-                    state = new InsertState((byte)insertionSize);
+                    this.state = new InsertState((byte)insertionSize);
                 }
             }
 
-            if (state is CopyState copyState)
+            if (this.state is CopyState copyState)
             {
                 var baseObjectRemains =
                     copyState.Size - copyState.Position;
-                if (baseObjectRemains <= 0)
-                {
-                    state = null;
-                    continue;
-                }
+                Debug.Assert(baseObjectRemains >= 1);
 
                 var length = Math.Min(baseObjectRemains, count);
 
-                var r = baseObjectStream.Read(
+                var r = this.baseObjectStream.Read(
                     buffer, offset, (int)length);
 
                 if (r == 0)
@@ -268,18 +271,20 @@ internal sealed class DeltaDecodedStream : Stream
                 read += r;
 
                 copyState.Position += (uint)r;
+                baseObjectRemains -= (uint)r;
+
+                if (baseObjectRemains <= 0)
+                {
+                    this.state = null;
+                }
             }
             else
             {
-                var insertState = (InsertState)state;
+                var insertState = (InsertState)this.state;
 
                 var insertionRemains =
                     insertState.Size - insertState.Position;
-                if (insertionRemains <= 0)
-                {
-                    state = null;
-                    continue;
-                }
+                Debug.Assert(insertionRemains >= 1);
 
                 var length = Math.Min(insertionRemains, count);
 
@@ -287,28 +292,35 @@ internal sealed class DeltaDecodedStream : Stream
                 {
                     Debug.Assert(length < byte.MaxValue);
 
-                    if (deltaBufferIndex >= deltaBufferCount)
+                    if (this.deltaBufferIndex >= this.deltaBufferCount)
                     {
-                        if (!Prepare())
+                        if (!this.Prepare())
                         {
-                            return read;
+                            throw new InvalidDataException(
+                                "Broken deltified stream: Step=8");
                         }
                     }
 
                     var l = Math.Min(
-                        length, deltaBufferCount - deltaBufferIndex);
+                        length, this.deltaBufferCount - this.deltaBufferIndex);
 
                     Array.Copy(
-                        deltaBuffer, deltaBufferIndex,
+                        this.deltaBuffer, this.deltaBufferIndex,
                         buffer, offset, l);
 
                     offset += l;
                     count -= l;
                     read += l;
-                    deltaBufferIndex += l;
+                    this.deltaBufferIndex += l;
 
                     insertState.Position += (byte)l;
                     length -= l;
+                    insertionRemains -= l;
+                }
+
+                if (insertionRemains <= 0)
+                {
+                    this.state = null;
                 }
             }
         }
@@ -319,18 +331,18 @@ internal sealed class DeltaDecodedStream : Stream
 #if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
     private async ValueTask<bool> PrepareAsync(CancellationToken ct)
     {
-        deltaBufferCount = deltaStream is IValueTaskStream vts ?
+        this.deltaBufferCount = this.deltaStream is IValueTaskStream vts ?
             await vts.ReadValueTaskAsync(
-                deltaBuffer, 0, deltaBuffer.Length, ct) :
-            await deltaStream.ReadAsync(
-                deltaBuffer, 0, deltaBuffer.Length, ct);
+                this.deltaBuffer, 0, this.deltaBuffer.Length, ct) :
+            await this.deltaStream.ReadAsync(
+                this.deltaBuffer, 0, this.deltaBuffer.Length, ct);
 
-        if (deltaBufferCount == 0)
+        if (this.deltaBufferCount == 0)
         {
             return false;
         }
 
-        deltaBufferIndex = 0;
+        this.deltaBufferIndex = 0;
         return true;
     }
 
@@ -341,9 +353,9 @@ internal sealed class DeltaDecodedStream : Stream
 
         while (count >= 1)
         {
-            if (state == null)
+            if (this.state == null)
             {
-                if (deltaBufferIndex >= deltaBufferCount)
+                if (this.deltaBufferIndex >= this.deltaBufferCount)
                 {
                     if (!await PrepareAsync(ct))
                     {
@@ -351,7 +363,7 @@ internal sealed class DeltaDecodedStream : Stream
                     }
                 }
 
-                var opcode = deltaBuffer[deltaBufferIndex++];
+                var opcode = this.deltaBuffer[this.deltaBufferIndex++];
 
                 // Copy opcode
                 if ((opcode & 0x80) != 0)
@@ -362,47 +374,51 @@ internal sealed class DeltaDecodedStream : Stream
                     // offset1
                     if ((opcode & 0x01) != 0)
                     {
-                        if (deltaBufferIndex >= deltaBufferCount)
+                        if (this.deltaBufferIndex >= this.deltaBufferCount)
                         {
-                            if (!await PrepareAsync(ct))
+                            if (!await this.PrepareAsync(ct))
                             {
-                                return read;
+                                throw new InvalidDataException(
+                                    "Broken deltified stream: Step=1");
                             }
                         }
-                        baseObjectOffset |= deltaBuffer[deltaBufferIndex++];
+                        baseObjectOffset |= this.deltaBuffer[this.deltaBufferIndex++];
                     }
                     // offset2
                     if ((opcode & 0x02) != 0)
                     {
-                        if (deltaBufferIndex >= deltaBufferCount)
+                        if (this.deltaBufferIndex >= this.deltaBufferCount)
                         {
-                            if (!await PrepareAsync(ct))
+                            if (!await this.PrepareAsync(ct))
                             {
-                                return read;
+                                throw new InvalidDataException(
+                                    "Broken deltified stream: Step=2");
                             }
                         }
-                        baseObjectOffset |= (uint)deltaBuffer[deltaBufferIndex++] << 8;
+                        baseObjectOffset |= (uint)this.deltaBuffer[this.deltaBufferIndex++] << 8;
                     }
                     // offset3
                     if ((opcode & 0x04) != 0)
                     {
-                        if (deltaBufferIndex >= deltaBufferCount)
+                        if (this.deltaBufferIndex >= this.deltaBufferCount)
                         {
-                            if (!await PrepareAsync(ct))
+                            if (!await this.PrepareAsync(ct))
                             {
-                                return read;
+                                throw new InvalidDataException(
+                                    "Broken deltified stream: Step=3");
                             }
                         }
-                        baseObjectOffset |= (uint)deltaBuffer[deltaBufferIndex++] << 16;
+                        baseObjectOffset |= (uint)this.deltaBuffer[this.deltaBufferIndex++] << 16;
                     }
                     // offset4
                     if ((opcode & 0x08) != 0)
                     {
-                        if (deltaBufferIndex >= deltaBufferCount)
+                        if (this.deltaBufferIndex >= this.deltaBufferCount)
                         {
-                            if (!await PrepareAsync(ct))
+                            if (!await this.PrepareAsync(ct))
                             {
-                                return read;
+                                throw new InvalidDataException(
+                                    "Broken deltified stream: Step=4");
                             }
                         }
                         baseObjectOffset |= (uint)deltaBuffer[deltaBufferIndex++] << 24;
@@ -410,38 +426,41 @@ internal sealed class DeltaDecodedStream : Stream
                     // size1
                     if ((opcode & 0x10) != 0)
                     {
-                        if (deltaBufferIndex >= deltaBufferCount)
+                        if (this.deltaBufferIndex >= this.deltaBufferCount)
                         {
-                            if (!await PrepareAsync(ct))
+                            if (!await this.PrepareAsync(ct))
                             {
-                                return read;
+                                throw new InvalidDataException(
+                                    "Broken deltified stream: Step=5");
                             }
                         }
-                        baseObjectSize |= deltaBuffer[deltaBufferIndex++];
+                        baseObjectSize |= this.deltaBuffer[this.deltaBufferIndex++];
                     }
                     // size2
                     if ((opcode & 0x20) != 0)
                     {
-                        if (deltaBufferIndex >= deltaBufferCount)
+                        if (this.deltaBufferIndex >= this.deltaBufferCount)
                         {
-                            if (!await PrepareAsync(ct))
+                            if (!await this.PrepareAsync(ct))
                             {
-                                return read;
+                                throw new InvalidDataException(
+                                    "Broken deltified stream: Step=6");
                             }
                         }
-                        baseObjectSize |= (uint)deltaBuffer[deltaBufferIndex++] << 8;
+                        baseObjectSize |= (uint)deltaBuffer[this.deltaBufferIndex++] << 8;
                     }
                     // size3
                     if ((opcode & 0x40) != 0)
                     {
-                        if (deltaBufferIndex >= deltaBufferCount)
+                        if (this.deltaBufferIndex >= this.deltaBufferCount)
                         {
-                            if (!await PrepareAsync(ct))
+                            if (!await this.PrepareAsync(ct))
                             {
-                                return read;
+                                throw new InvalidDataException(
+                                    "Broken deltified stream: Step=7");
                             }
                         }
-                        baseObjectSize |= (uint)deltaBuffer[deltaBufferIndex++] << 16;
+                        baseObjectSize |= (uint)this.deltaBuffer[this.deltaBufferIndex++] << 16;
                     }
                     // Adjust size when its zero
                     if (baseObjectSize == 0)
@@ -449,10 +468,10 @@ internal sealed class DeltaDecodedStream : Stream
                         baseObjectSize = 0x10000U;
                     }
 
-                    await baseObjectStream.SeekValueTaskAsync(
+                    await this.baseObjectStream.SeekValueTaskAsync(
                         baseObjectOffset, SeekOrigin.Begin, ct);
 
-                    state = new CopyState(baseObjectSize);
+                    this.state = new CopyState(baseObjectSize);
                 }
                 // Insert opcode
                 else
@@ -460,25 +479,21 @@ internal sealed class DeltaDecodedStream : Stream
                     // Size
                     var insertionSize = opcode & 0x7f;
 
-                    state = new InsertState((byte)insertionSize);
+                    this.state = new InsertState((byte)insertionSize);
                 }
             }
 
-            if (state is CopyState copyState)
+            if (this.state is CopyState copyState)
             {
                 var baseObjectRemains =
                     copyState.Size - copyState.Position;
-                if (baseObjectRemains <= 0)
-                {
-                    state = null;
-                    continue;
-                }
+                Debug.Assert(baseObjectRemains >= 1);
 
                 var length = Math.Min(baseObjectRemains, count);
 
                 Debug.Assert(length <= uint.MaxValue);
 
-                var r = await baseObjectStream.ReadValueTaskAsync(
+                var r = await this.baseObjectStream.ReadValueTaskAsync(
                     buffer, offset, (int)length, ct);
 
                 if (r == 0)
@@ -491,18 +506,20 @@ internal sealed class DeltaDecodedStream : Stream
                 read += r;
 
                 copyState.Position += (uint)r;
+                baseObjectRemains -= (uint)r;
+
+                if (baseObjectRemains <= 0)
+                {
+                    this.state = null;
+                }
             }
             else
             {
-                var insertState = (InsertState)state;
+                var insertState = (InsertState)this.state;
 
                 var insertionRemains =
                     insertState.Size - insertState.Position;
-                if (insertionRemains <= 0)
-                {
-                    state = null;
-                    continue;
-                }
+                Debug.Assert(insertionRemains >= 1);
 
                 var length = Math.Min(insertionRemains, count);
 
@@ -510,28 +527,35 @@ internal sealed class DeltaDecodedStream : Stream
                 {
                     Debug.Assert(length <= byte.MaxValue);
 
-                    if (deltaBufferIndex >= deltaBufferCount)
+                    if (this.deltaBufferIndex >= this.deltaBufferCount)
                     {
-                        if (!await PrepareAsync(ct))
+                        if (!await this.PrepareAsync(ct))
                         {
-                            return read;
+                            throw new InvalidDataException(
+                                "Broken deltified stream: Step=8");
                         }
                     }
 
                     var l = Math.Min(
-                        length, deltaBufferCount - deltaBufferIndex);
+                        length, this.deltaBufferCount - this.deltaBufferIndex);
 
                     Array.Copy(
-                        deltaBuffer, deltaBufferIndex,
+                        this.deltaBuffer, this.deltaBufferIndex,
                         buffer, offset, l);
 
                     offset += l;
                     count -= l;
                     read += l;
-                    deltaBufferIndex += l;
+                    this.deltaBufferIndex += l;
 
                     insertState.Position += (byte)l;
                     length -= l;
+                    insertionRemains -= l;
+                }
+
+                if (insertionRemains <= 0)
+                {
+                    this.state = null;
                 }
             }
         }
@@ -541,7 +565,7 @@ internal sealed class DeltaDecodedStream : Stream
 
     public override Task<int> ReadAsync(
         byte[] buffer, int offset, int count, CancellationToken ct) =>
-        ReadValueTaskAsync(buffer, offset, count, ct).AsTask();
+        this.ReadValueTaskAsync(buffer, offset, count, ct).AsTask();
 #endif
 
     public override long Position
@@ -581,7 +605,7 @@ internal sealed class DeltaDecodedStream : Stream
                 $"Could not parse the object. Step={step}");
 
         var preloadIndex = 0;
-        var preloadBuffer = BufferPool.Take(preloadBufferSize);
+        using var preloadBuffer = BufferPool.Take(preloadBufferSize);
 
         var read = await deltaStream.ReadAsync(preloadBuffer, 0, preloadBuffer.Length, ct);
         if (read == 0)
@@ -612,6 +636,6 @@ internal sealed class DeltaDecodedStream : Stream
         return new(
             await MemoizedStream.CreateAsync(baseObjectStream, (long)baseObjectLength, ct),
             deltaStream,
-            preloadBuffer, preloadIndex, read, (long)decodedObjectLength);
+            preloadBuffer.Detach(), preloadIndex, read, (long)decodedObjectLength);
     }
 }

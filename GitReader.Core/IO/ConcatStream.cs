@@ -38,9 +38,9 @@ internal sealed class ConcatStream : Stream
     public void Close()
 #endif
     {
-        for (var index = 0; index < streams.Length; index++)
+        for (var index = 0; index < this.streams.Length; index++)
         {
-            if (Interlocked.Exchange(ref streams[index], null!) is { } stream)
+            if (Interlocked.Exchange(ref this.streams[index], null!) is { } stream)
             {
                 stream.Dispose();
             }
@@ -58,9 +58,9 @@ internal sealed class ConcatStream : Stream
     public override int Read(byte[] buffer, int offset, int count)
     {
         var read = 0;
-        while (count >= 1 && streamIndex < streams.Length)
+        while (count >= 1 && this.streamIndex < this.streams.Length)
         {
-            var stream = streams[streamIndex];
+            var stream = this.streams[this.streamIndex];
 
             var r = stream.Read(buffer, offset, count);
 
@@ -72,8 +72,8 @@ internal sealed class ConcatStream : Stream
             }
             else
             {
-                Interlocked.Exchange(ref streams[streamIndex], null!).Dispose();
-                streamIndex++;
+                Interlocked.Exchange(ref this.streams[this.streamIndex], null!).Dispose();
+                this.streamIndex++;
             }
         }
         return read;
@@ -84,9 +84,9 @@ internal sealed class ConcatStream : Stream
         byte[] buffer, int offset, int count, CancellationToken ct)
     {
         var read = 0;
-        while (count >= 1 && streamIndex < streams.Length)
+        while (count >= 1 && this.streamIndex < this.streams.Length)
         {
-            var stream = streams[streamIndex];
+            var stream = this.streams[this.streamIndex];
 
             var r = stream is IValueTaskStream vts ?
                 await vts.ReadValueTaskAsync(buffer, offset, count, ct) :
@@ -100,8 +100,8 @@ internal sealed class ConcatStream : Stream
             }
             else
             {
-                Interlocked.Exchange(ref streams[streamIndex], null!).Dispose();
-                streamIndex++;
+                Interlocked.Exchange(ref this.streams[this.streamIndex], null!).Dispose();
+                this.streamIndex++;
             }
         }
         return read;
@@ -109,7 +109,7 @@ internal sealed class ConcatStream : Stream
 
     public override Task<int> ReadAsync(
         byte[] buffer, int offset, int count, CancellationToken ct) =>
-        ReadValueTaskAsync(buffer, offset, count, ct).AsTask();
+        this.ReadValueTaskAsync(buffer, offset, count, ct).AsTask();
 #endif
 
     public override long Length =>

@@ -25,8 +25,8 @@ internal sealed class RangedStream : Stream
     public RangedStream(Stream parent, long length)
     {
         this.parent = parent;
-        remains = length;
-        Length = length;
+        this.remains = length;
+        this.Length = length;
     }
 
     public override bool CanRead =>
@@ -40,7 +40,7 @@ internal sealed class RangedStream : Stream
 
     public override long Position
     {
-        get => Length - remains;
+        get => this.Length - remains;
         set => throw new NotImplementedException();
     }
 
@@ -72,7 +72,7 @@ internal sealed class RangedStream : Stream
             return 0;
         }
 
-        var read = parent.Read(buffer, offset, remains);
+        var read = this.parent.Read(buffer, offset, remains);
 
         this.remains -= read;
         return read;
@@ -88,9 +88,9 @@ internal sealed class RangedStream : Stream
             return 0;
         }
 
-        var read = parent is IValueTaskStream vts ?
+        var read = this.parent is IValueTaskStream vts ?
             await vts.ReadValueTaskAsync(buffer, offset, remains, ct) :
-            await parent.ReadAsync(buffer, offset, remains, ct);
+            await this.parent.ReadAsync(buffer, offset, remains, ct);
 
         this.remains -= read;
         return read;
