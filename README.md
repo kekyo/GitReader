@@ -231,6 +231,17 @@ foreach (Tag tag in repository.Tags.Values)
 }
 ```
 
+### Enumerate stashes
+
+```csharp
+foreach (Stash stash in repository.Stashes)
+{
+    Console.WriteLine($"Commit: {stash.Commit.Hash}");
+    Console.WriteLine($"Committer: {stash.Committer}");
+    Console.WriteLine($"Message: {stash.Message}");
+}
+```
+
 ### Get parent commits
 
 ```csharp
@@ -525,11 +536,14 @@ foreach (KeyValuePair<string, string> entry in repository.RemoteUrls)
 
 ## TODO
 
-* Read stashing information.
 * Read submodule information.
 * Makes configurable minor execution parameters.
 
 ----
+
+## Contributed (Thanks!)
+
+* Stash implementation: [Julien Richard](https://github.com/jairbubbles)
 
 ## License
 
@@ -537,6 +551,10 @@ Apache-v2
 
 ## History
 
+* 0.10.0:
+  * Implemented stash interface.
+  * Improved performance.
+  * Fixed minor corruption on blob data when it arrives zero-sized deltified data.
 * 0.9.0:
   * Exposed remote urls.
   * Changed some type names avoid confliction.

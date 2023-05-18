@@ -229,6 +229,17 @@ foreach (Tag tag in repository.Tags.Values)
 }
 ```
 
+### このリポジトリのスタッシュ群の情報を取得
+
+```csharp
+foreach (Stash stash in repository.Stashes)
+{
+    Console.WriteLine($"Commit: {stash.Commit.Hash}");
+    Console.WriteLine($"Committer: {stash.Committer}");
+    Console.WriteLine($"Message: {stash.Message}");
+}
+```
+
 ### 指定されたコミットの親コミット群を取得
 
 ```csharp
