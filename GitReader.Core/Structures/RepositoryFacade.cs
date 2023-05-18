@@ -170,7 +170,7 @@ internal static class RepositoryFacade
         WeakReference rwr,
         CancellationToken ct)
     {
-        var primitiveReflogEntries = await RepositoryAccessor.ReadReflogAsync(repository, "HEAD", ct);
+        var primitiveReflogEntries = await RepositoryAccessor.ReadReflogEntriesAsync(repository, "HEAD", ct);
         var reflogEntries = await Utilities.WhenAll(
             primitiveReflogEntries.Select(async stash =>
             {

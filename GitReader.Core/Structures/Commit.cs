@@ -13,7 +13,7 @@ using System.Linq;
 
 namespace GitReader.Structures;
 
-public sealed class Commit : IEquatable<Commit?>
+public sealed class Commit : IEquatable<Commit>
 {
     internal readonly string message;
     internal readonly WeakReference rwr;
@@ -111,7 +111,7 @@ public sealed class Commit : IEquatable<Commit?>
         this.parents.SequenceEqual(rhs.parents) &&
         this.message.Equals(rhs.message);
 
-    bool IEquatable<Commit?>.Equals(Commit? rhs) =>
+    bool IEquatable<Commit>.Equals(Commit? rhs) =>
         this.Equals(rhs!);
 
     public override bool Equals(object? obj) =>

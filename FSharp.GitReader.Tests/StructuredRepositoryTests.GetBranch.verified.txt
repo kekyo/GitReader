@@ -18,6 +18,10 @@
     },
     Subject: Added installation .NET 6 SDK on GitHub Actions.,
     Body: ,
-    Branches: []
+    Branches: [
+      {
+        Name: master
+      }
+    ]
   }
 }

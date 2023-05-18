@@ -393,13 +393,13 @@ internal static class RepositoryAccessor
 
     public static Task<PrimitiveReflogEntry[]> ReadStashesAsync(
         Repository repository, CancellationToken ct) =>
-        ReadReflogAsync(repository, "refs/stash", ct);
+        ReadReflogEntriesAsync(repository, "refs/stash", ct);
     
-    public static Task<PrimitiveReflogEntry[]> ReadReflogAsync(
+    public static Task<PrimitiveReflogEntry[]> ReadReflogEntriesAsync(
         Repository repository, PrimitiveReference reference, CancellationToken ct) =>
-        ReadReflogAsync(repository, reference.RelativePath, ct);
+        ReadReflogEntriesAsync(repository, reference.RelativePath, ct);
 
-    public static async Task<PrimitiveReflogEntry[]> ReadReflogAsync(
+    public static async Task<PrimitiveReflogEntry[]> ReadReflogEntriesAsync(
         Repository repository, string refRelativePath, CancellationToken ct)
     {
         var path = Utilities.Combine(

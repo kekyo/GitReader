@@ -82,7 +82,9 @@ type public StructuredRepositoryTests() =
         let! commit = repository.getCommit(
             "9bb78d13405cab568d3e213130f31beda1ce21d1") |> unwrapOptionAsy
         let branches = commit.Branches
-        do! verify(branches |> Array.sortBy(fun br -> br.Name))
+        do! verify(branches |> Array.sortBy(fun br -> br.Name)
+            // HACK: Fixed by Array.toList, because avoid serialization in BranchArrayConverter.
+            |> Array.toList)
     }
 
     [<Test>]
@@ -102,7 +104,9 @@ type public StructuredRepositoryTests() =
         let! commit = repository.getCommit(
             "f690f0e7bf703582a1fad7e6f1c2d1586390f43d") |> unwrapOptionAsy
         let branches = commit.RemoteBranches
-        do! verify(branches |> Array.sortBy(fun br -> br.Name))
+        do! verify(branches |> Array.sortBy(fun br -> br.Name)
+            // HACK: Fixed by Array.toList, because avoid serialization in BranchArrayConverter.
+            |> Array.toList)
     }
 
     [<Test>]

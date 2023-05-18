@@ -69,11 +69,11 @@ public static class RepositoryExtension
         CancellationToken ct = default) =>
         RepositoryAccessor.ReadStashesAsync(repository, ct);
     
-    public static Task<PrimitiveReflogEntry[]> GetReflogAsync(
+    public static Task<PrimitiveReflogEntry[]> GetRelatedReflogsAsync(
         this PrimitiveRepository repository,
         PrimitiveReference reference,
         CancellationToken ct = default) =>
-        RepositoryAccessor.ReadReflogAsync(repository, reference, ct);
+        RepositoryAccessor.ReadReflogEntriesAsync(repository, reference, ct);
 
     public static Task<PrimitiveTree> GetTreeAsync(
         this PrimitiveRepository repository,

@@ -158,14 +158,14 @@ type public PrimitiveRepositoryTests() =
         use! repository = Repository.Factory.openPrimitive(
             RepositoryTestsSetUp.BasePath)
         let! stashes = repository.getStashes()
-        return! verify(stashes)
+        return! verify(stashes |> Array.sortByDescending(fun stash -> stash.Committer.Date))
     }
     
     [<Test>]
-    member _.GetHeadReflog() = task {
+    member _.GetHeadReflogs() = task {
         use! repository = Repository.Factory.openPrimitive(
             RepositoryTestsSetUp.BasePath)
         let! headRef = repository.getCurrentHeadReference()
-        let! reflog = repository.getReflog(headRef.Value)
-        return! verify(reflog)
+        let! reflogs = repository.getRelatedReflogs(headRef.Value)
+        return! verify(reflogs |> Array.sortByDescending(fun reflog -> reflog.Committer.Date))
     }

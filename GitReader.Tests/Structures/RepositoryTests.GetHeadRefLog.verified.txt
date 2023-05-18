@@ -49,6 +49,63 @@
       ]
     },
     Committer: {
+      Name: Kouji Matsui,
+      MailAddress: k@kekyo.net,
+      Date: 2023-05-18 09:45:43 +9,
+      RawFormat: Kouji Matsui <k@kekyo.net> 1684370743 0900
+    },
+    Message: discard: [43960e1cc08acd5e665417e8e548c12dbc626e0d]
+  },
+  {
+    Commit: {
+      Hash: {
+        HashCode: 9bb78d13405cab568d3e213130f31beda1ce21d1
+      },
+      Author: {
+        Name: Kouji Matsui,
+        MailAddress: k@kekyo.net,
+        Date: 2021-11-11 09:40:12 +9,
+        RawFormat: Kouji Matsui <k@kekyo.net> 1636591212 0900
+      },
+      Committer: {
+        Name: Kouji Matsui,
+        MailAddress: k@kekyo.net,
+        Date: 2021-11-11 09:40:12 +9,
+        RawFormat: Kouji Matsui <k@kekyo.net> 1636591212 0900
+      },
+      Subject: Added installation .NET 6 SDK on GitHub Actions.,
+      Body: ,
+      Branches: [
+        {
+          Name: master
+        }
+      ]
+    },
+    OldCommit: {
+      Hash: {
+        HashCode: 9bb78d13405cab568d3e213130f31beda1ce21d1
+      },
+      Author: {
+        Name: Kouji Matsui,
+        MailAddress: k@kekyo.net,
+        Date: 2021-11-11 09:40:12 +9,
+        RawFormat: Kouji Matsui <k@kekyo.net> 1636591212 0900
+      },
+      Committer: {
+        Name: Kouji Matsui,
+        MailAddress: k@kekyo.net,
+        Date: 2021-11-11 09:40:12 +9,
+        RawFormat: Kouji Matsui <k@kekyo.net> 1636591212 0900
+      },
+      Subject: Added installation .NET 6 SDK on GitHub Actions.,
+      Body: ,
+      Branches: [
+        {
+          Name: master
+        }
+      ]
+    },
+    Committer: {
       Name: Julien Richard,
       MailAddress: julien.richard@ubisoft.com,
       Date: 2023-05-14 13:51:01 +2,
@@ -409,122 +466,5 @@
       RawFormat: Julien Richard <julien.richard@ubisoft.com> 1684004254 0200
     },
     Message: reset: moving to HEAD
-  },
-  {
-    Commit: {
-      Hash: {
-        HashCode: 9bb78d13405cab568d3e213130f31beda1ce21d1
-      },
-      Author: {
-        Name: Kouji Matsui,
-        MailAddress: k@kekyo.net,
-        Date: 2021-11-11 09:40:12 +9,
-        RawFormat: Kouji Matsui <k@kekyo.net> 1636591212 0900
-      },
-      Committer: {
-        Name: Kouji Matsui,
-        MailAddress: k@kekyo.net,
-        Date: 2021-11-11 09:40:12 +9,
-        RawFormat: Kouji Matsui <k@kekyo.net> 1636591212 0900
-      },
-      Subject: Added installation .NET 6 SDK on GitHub Actions.,
-      Body: ,
-      Branches: [
-        {
-          Name: master
-        }
-      ]
-    },
-    OldCommit: {
-      Hash: {
-        HashCode: 30aaea993cc0a3cb1dad2968d3e5f4d90a287e25
-      },
-      Author: {
-        Name: Kouji Matsui,
-        MailAddress: k@kekyo.net,
-        Date: 2021-11-10 22:50:12 +9,
-        RawFormat: Kouji Matsui <k@kekyo.net> 1636552212 0900
-      },
-      Committer: {
-        Name: Kouji Matsui,
-        MailAddress: k@kekyo.net,
-        Date: 2021-11-10 22:50:12 +9,
-        RawFormat: Kouji Matsui <k@kekyo.net> 1636552212 0900
-      },
-      Subject: Upgraded .NET 6.0.,
-      Body: ,
-      Tags: [
-        {
-          Hash: {
-            HashCode: 30aaea993cc0a3cb1dad2968d3e5f4d90a287e25
-          },
-          Name: 2.1.0,
-          Type: Commit
-        }
-      ]
-    },
-    Committer: {
-      Name: Kouji Matsui,
-      MailAddress: k@kekyo.net,
-      Date: 2021-11-11 09:40:12 +9,
-      RawFormat: Kouji Matsui <k@kekyo.net> 1636591212 0900
-    },
-    Message: commit: Added installation .NET 6 SDK on GitHub Actions.
-  },
-  {
-    Commit: {
-      Hash: {
-        HashCode: 30aaea993cc0a3cb1dad2968d3e5f4d90a287e25
-      },
-      Author: {
-        Name: Kouji Matsui,
-        MailAddress: k@kekyo.net,
-        Date: 2021-11-10 22:50:12 +9,
-        RawFormat: Kouji Matsui <k@kekyo.net> 1636552212 0900
-      },
-      Committer: {
-        Name: Kouji Matsui,
-        MailAddress: k@kekyo.net,
-        Date: 2021-11-10 22:50:12 +9,
-        RawFormat: Kouji Matsui <k@kekyo.net> 1636552212 0900
-      },
-      Subject: Upgraded .NET 6.0.,
-      Body: ,
-      Tags: [
-        {
-          Hash: {
-            HashCode: 30aaea993cc0a3cb1dad2968d3e5f4d90a287e25
-          },
-          Name: 2.1.0,
-          Type: Commit
-        }
-      ]
-    },
-    OldCommit: {
-      Hash: {
-        HashCode: cb9b168ff973ce766d55e8697b3aea2c93ad3986
-      },
-      Author: {
-        Name: Kouji Matsui,
-        MailAddress: k@kekyo.net,
-        Date: 2021-01-21 00:21:32 +9,
-        RawFormat: Kouji Matsui <k@kekyo.net> 1611156092 0900
-      },
-      Committer: {
-        Name: Kouji Matsui,
-        MailAddress: k@kekyo.net,
-        Date: 2021-01-21 00:21:32 +9,
-        RawFormat: Kouji Matsui <k@kekyo.net> 1611156092 0900
-      },
-      Subject: Update badge.,
-      Body: 
-    },
-    Committer: {
-      Name: Kouji Matsui,
-      MailAddress: k@kekyo.net,
-      Date: 2021-11-10 22:50:12 +9,
-      RawFormat: Kouji Matsui <k@kekyo.net> 1636552212 0900
-    },
-    Message: commit: Upgraded .NET 6.0.
   }
 ]

@@ -225,7 +225,7 @@ public sealed class RepositoryTests
             RepositoryTestsSetUp.BasePath);
         
         var headRef = await repository.GetCurrentHeadReferenceAsync();
-        var reflogs = await repository.GetReflogAsync(headRef!.Value);
+        var reflogs = await repository.GetRelatedReflogsAsync(headRef!.Value);
 
         await Verifier.Verify(reflogs.OrderByDescending(reflog => reflog.Committer.Date).ToArray());
     }

@@ -38,8 +38,8 @@ module public RepositoryExtension =
             RepositoryAccessor.ReadStashesAsync(
                 repository, unwrapCT ct) |> Async.AwaitTask
 
-        member repository.getReflog(reference: PrimitiveReference, ?ct: CancellationToken) =
-            RepositoryAccessor.ReadReflogAsync(
+        member repository.getRelatedReflogs(reference: PrimitiveReference, ?ct: CancellationToken) =
+            RepositoryAccessor.ReadReflogEntriesAsync(
                 repository, reference, unwrapCT ct) |> Async.AwaitTask
 
         member repository.getCommit(commit: Hash, ?ct: CancellationToken) =

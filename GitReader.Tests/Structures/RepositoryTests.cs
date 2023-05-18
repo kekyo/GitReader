@@ -107,7 +107,8 @@ public sealed class RepositoryTests
             "9bb78d13405cab568d3e213130f31beda1ce21d1");
         var branches = commit!.Branches;
 
-        await Verifier.Verify(branches.OrderBy(b => b.Name).ToArray());
+        // HACK: Fixed by ToList(), because avoid serialization in BranchArrayConverter.
+        await Verifier.Verify(branches.OrderBy(b => b.Name).ToList());
     }
 
     [Test]
@@ -133,7 +134,8 @@ public sealed class RepositoryTests
             "f690f0e7bf703582a1fad7e6f1c2d1586390f43d");
         var branches = commit!.RemoteBranches;
 
-        await Verifier.Verify(branches.OrderBy(br => br.Name).ToArray());
+        // HACK: Fixed by ToList(), because avoid serialization in BranchArrayConverter.
+        await Verifier.Verify(branches.OrderBy(br => br.Name).ToList());
     }
 
     [Test]
@@ -219,7 +221,7 @@ public sealed class RepositoryTests
     {
         using var repository = await Repository.Factory.OpenStructureAsync(RepositoryTestsSetUp.BasePath);
 
-        await Verifier.Verify(repository.Stashes);
+        await Verifier.Verify(repository.Stashes.OrderByDescending(reflog => reflog.Committer.Date).ToArray());
     }
     
     [Test]
@@ -227,7 +229,8 @@ public sealed class RepositoryTests
     {
         using var repository = await Repository.Factory.OpenStructureAsync(RepositoryTestsSetUp.BasePath);
 
-        var reflog = repository.GetHeadReflogAsync();
-        await Verifier.Verify(reflog);
+        var reflogs = await repository.GetHeadReflogAsync();
+
+        await Verifier.Verify(reflogs.OrderByDescending(reflog => reflog.Committer.Date).ToArray());
     }
 }

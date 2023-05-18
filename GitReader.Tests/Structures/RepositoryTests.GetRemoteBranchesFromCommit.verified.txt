@@ -19,12 +19,11 @@
       },
       Subject: Add UWP and .NETCore test projects.,
       Body: ,
-      Branches: [
+      RemoteBranches: [
         {
           Name: origin/netcore
         }
-      ],
-      RemoteBranches: []
+      ]
     }
   }
 ]
