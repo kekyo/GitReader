@@ -143,7 +143,7 @@ type public PrimitiveRepositoryTests() =
         while not exit do
             commits.Add(c)
             // Bottom of branch.
-            if c.Parents.Length = 0 then
+            if c.Parents.Count = 0 then
                 exit <- true
             else
                 // Get primary parent.

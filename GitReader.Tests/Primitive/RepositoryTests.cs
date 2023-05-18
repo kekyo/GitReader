@@ -185,7 +185,7 @@ public sealed class RepositoryTests
             commits.Add(commit);
 
             // Bottom of branch.
-            if (commit.Parents.Length == 0)
+            if (commit.Parents.Count == 0)
             {
                 break;
             }

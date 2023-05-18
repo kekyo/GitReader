@@ -277,7 +277,7 @@ internal static class RepositoryFacade
         Commit commit,
         CancellationToken ct)
     {
-        if (commit.parents.Length == 0)
+        if (commit.parents.Count == 0)
         {
             return null;
         }
@@ -347,7 +347,7 @@ internal static class RepositoryFacade
 #if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
         // This is a rather aggressive algorithm that recursively and in parallel searches all entries
         // in the tree and builds all elements.
-        async ValueTask<TreeEntry[]> GetChildrenAsync(PrimitiveTreeEntry[] entries) =>
+        async ValueTask<TreeEntry[]> GetChildrenAsync(ReadOnlyArray<PrimitiveTreeEntry> entries) =>
             (await Utilities.WhenAll(
                 entries.Select((Func<PrimitiveTreeEntry, ValueTask<TreeEntry>>)(async entry =>
                 {
@@ -373,7 +373,7 @@ internal static class RepositoryFacade
 #else
         // This is a rather aggressive algorithm that recursively and in parallel searches all entries
         // in the tree and builds all elements.
-        async Task<TreeEntry[]> GetChildrenAsync(PrimitiveTreeEntry[] entries) =>
+        async Task<TreeEntry[]> GetChildrenAsync(ReadOnlyArray<PrimitiveTreeEntry> entries) =>
             (await Utilities.WhenAll(
                 entries.Select(async entry =>
                 {

@@ -58,6 +58,8 @@ internal readonly struct DetachedBufferPoolBuffer
 
 internal static class BufferPool
 {
+    // TODO: Makes lock-free.
+
     private static readonly Dictionary<uint, List<WeakReference>> buffers = new();
 
     public static BufferPoolBuffer Take(uint size)

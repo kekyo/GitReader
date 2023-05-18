@@ -111,7 +111,7 @@ public static class RepositoryExtension
         out Hash treeRoot,
         out Signature author,
         out Signature committer,
-        out Hash[] parents,
+        out ReadOnlyArray<Hash> parents,
         out string message)
     {
         hash = commit.Hash;
@@ -153,7 +153,7 @@ public static class RepositoryExtension
     public static void Deconstruct(
         this PrimitiveTree tree,
         out Hash hash,
-        out PrimitiveTreeEntry[] children)
+        out ReadOnlyArray<PrimitiveTreeEntry> children)
     {
         hash = tree.Hash;
         children = tree.Children;

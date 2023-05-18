@@ -7,6 +7,7 @@
 //
 ////////////////////////////////////////////////////////////////////////////
 
+using GitReader.Collections;
 using GitReader.Primitive;
 using System;
 using System.Linq;
@@ -17,12 +18,12 @@ public sealed class Commit : IEquatable<Commit>
 {
     internal readonly string message;
     internal readonly WeakReference rwr;
-    internal readonly Hash[] parents;
+    internal readonly ReadOnlyArray<Hash> parents;
     internal readonly Hash treeRoot;
 
-    private Branch[]? branches;
-    private Branch[]? remoteBranches;
-    private Tag[]? tags;
+    private ReadOnlyArray<Branch>? branches;
+    private ReadOnlyArray<Branch>? remoteBranches;
+    private ReadOnlyArray<Tag>? tags;
 
     public readonly Hash Hash;
     public readonly Signature Author;
@@ -60,7 +61,7 @@ public sealed class Commit : IEquatable<Commit>
         }
     }
 
-    public Branch[] Branches
+    public ReadOnlyArray<Branch> Branches
     {
         get
         {
@@ -74,7 +75,7 @@ public sealed class Commit : IEquatable<Commit>
         }
     }
 
-    public Branch[] RemoteBranches
+    public ReadOnlyArray<Branch> RemoteBranches
     {
         get
         {
@@ -88,7 +89,7 @@ public sealed class Commit : IEquatable<Commit>
         }
     }
 
-    public Tag[] Tags
+    public ReadOnlyArray<Tag> Tags
     {
         get
         {

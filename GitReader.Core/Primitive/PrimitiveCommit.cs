@@ -7,6 +7,7 @@
 //
 ////////////////////////////////////////////////////////////////////////////
 
+using GitReader.Collections;
 using System;
 using System.Linq;
 
@@ -18,7 +19,7 @@ public readonly struct PrimitiveCommit : IEquatable<PrimitiveCommit>
     public readonly Hash TreeRoot;
     public readonly Signature Author;
     public readonly Signature Committer;
-    public readonly Hash[] Parents;
+    public readonly ReadOnlyArray<Hash> Parents;
     public readonly string Message;
 
     public PrimitiveCommit(
@@ -26,7 +27,7 @@ public readonly struct PrimitiveCommit : IEquatable<PrimitiveCommit>
         Hash treeRoot,
         Signature author,
         Signature committer,
-        Hash[] parents,
+        ReadOnlyArray<Hash> parents,
         string message)
     {
         this.Hash = hash;

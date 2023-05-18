@@ -8,6 +8,7 @@
 ////////////////////////////////////////////////////////////////////////////
 
 using Argon;
+using GitReader.Collections;
 using System;
 using System.IO;
 using System.IO.Compression;
@@ -27,9 +28,10 @@ public sealed class RepositoryTestsSetUp
     }
 
     private sealed class BranchArrayConverter :
-        WriteOnlyJsonConverter<Structures.Branch[]>
+        WriteOnlyJsonConverter<ReadOnlyArray<Structures.Branch>>
     {
-        public override void Write(VerifyJsonWriter writer, Structures.Branch[] branches)
+        public override void Write(
+            VerifyJsonWriter writer, ReadOnlyArray<Structures.Branch> branches)
         {
             // Avoid infinite reference by Branch.Head.
             writer.WriteStartArray();

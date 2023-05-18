@@ -15,6 +15,7 @@ open System.IO.Compression
 open System.Threading.Tasks
 open VerifyNUnit
 open VerifyTests
+open GitReader.Collections
 
 [<Sealed>]
 type private ByteDataConverter() =
@@ -25,8 +26,8 @@ type private ByteDataConverter() =
 
 [<Sealed>]
 type private BranchArrayConverter() =
-    inherit WriteOnlyJsonConverter<Structures.Branch[]>()
-    override _.Write(writer: VerifyJsonWriter, branches: Structures.Branch[]) =
+    inherit WriteOnlyJsonConverter<ReadOnlyArray<Structures.Branch>>()
+    override _.Write(writer: VerifyJsonWriter, branches: ReadOnlyArray<Structures.Branch>) =
         // Avoid infinite reference by Branch.Head.
         writer.WriteStartArray()
         for branch in branches do

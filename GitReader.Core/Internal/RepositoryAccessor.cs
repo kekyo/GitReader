@@ -638,7 +638,7 @@ internal static class RepositoryAccessor
 
         if (tree is { } t && author is { } a && committer is { } c)
         {
-            return new(hash, t, a, c, parents.ToArray(), message);
+            return new(hash, t, a, c, parents, message);
         }
         else
         {
@@ -799,7 +799,7 @@ internal static class RepositoryAccessor
                 children.Add(new(dataHash, nameString, modeFlags));
             }
 
-            return new(hash, children.ToArray());
+            return new(hash, children);
         }
         finally
         {
