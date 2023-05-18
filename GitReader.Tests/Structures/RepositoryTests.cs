@@ -213,4 +213,21 @@ public sealed class RepositoryTests
 
         await Verifier.Verify(repository.RemoteUrls);
     }
+    
+    [Test]
+    public async Task GetStashes()  
+    {
+        using var repository = await Repository.Factory.OpenStructureAsync(RepositoryTestsSetUp.BasePath);
+
+        await Verifier.Verify(repository.Stashes);
+    }
+    
+    [Test]
+    public async Task GetHeadRefLog()  
+    {
+        using var repository = await Repository.Factory.OpenStructureAsync(RepositoryTestsSetUp.BasePath);
+
+        var refLog = repository.GetHeadReflogAsync();
+        await Verifier.Verify(refLog);
+    }
 }

@@ -29,22 +29,30 @@ internal enum ReferenceTypes
 
 internal readonly struct ReferenceCache
 {
+    public readonly ReadOnlyDictionary<string, Hash> Branches;
     public readonly ReadOnlyDictionary<string, Hash> RemoteBranches;
     public readonly ReadOnlyDictionary<string, Hash> Tags;
 
     public ReferenceCache(
+        ReadOnlyDictionary<string, Hash> branches,
         ReadOnlyDictionary<string, Hash> remoteBranches,
         ReadOnlyDictionary<string, Hash> tags)
     {
+        this.Branches = branches;
         this.RemoteBranches = remoteBranches;
         this.Tags = tags;
     }
 
     public ReferenceCache Combine(ReferenceCache rhs)
     {
+        var branches = this.RemoteBranches.Clone();
         var remoteBranches = this.RemoteBranches.Clone();
         var tags = this.Tags.Clone();
-
+        
+        foreach (var entry in rhs.Branches)
+        {
+            branches[entry.Key] = entry.Value;
+        }
         foreach (var entry in rhs.RemoteBranches)
         {
             remoteBranches[entry.Key] = entry.Value;
@@ -54,7 +62,7 @@ internal readonly struct ReferenceCache
             tags[entry.Key] = entry.Value;
         }
 
-        return new(remoteBranches, tags);
+        return new(branches, remoteBranches, tags);
     }
 }
 
@@ -162,13 +170,13 @@ internal static class RepositoryAccessor
         var path = Utilities.Combine(repository.GitPath, "FETCH_HEAD");
         if (!File.Exists(path))
         {
-            return new(new(new()), new(new()));
+            return new(new(new()), new(new()), new(new()));
         }
 
         using var fs = repository.fileAccessor.Open(path);
         var tr = new StreamReader(fs, Encoding.UTF8, true);
 
-        var branches = new Dictionary<string, Hash>();
+        var remoteBranches = new Dictionary<string, Hash>();
         var tags = new Dictionary<string, Hash>();
 
         while (true)
@@ -223,7 +231,7 @@ internal static class RepositoryAccessor
                     var urlString = descriptorString.Split(' ').Last();
                     if (remoteNameByUrl.TryGetValue(urlString, out var remoteName))
                     {
-                        branches[$"{remoteName}/{name}"] = hash;
+                        remoteBranches[$"{remoteName}/{name}"] = hash;
                     }
                 }
                 else
@@ -235,7 +243,7 @@ internal static class RepositoryAccessor
             {
                 if (typeString == "branch")
                 {
-                    branches[descriptorString] = hash;
+                    remoteBranches[descriptorString] = hash;
                 }
                 else
                 {
@@ -244,7 +252,7 @@ internal static class RepositoryAccessor
             }
         }
 
-        return new(branches, tags);
+        return new(new(new()), remoteBranches, tags);
     }
 
     public static async Task<ReferenceCache> ReadPackedRefsAsync(
@@ -254,13 +262,14 @@ internal static class RepositoryAccessor
         var path = Utilities.Combine(repository.GitPath, "packed-refs");
         if (!File.Exists(path))
         {
-            return new(new(new()), new(new()));
+            return new(new(new()), new(new()), new(new()));
         }
 
         using var fs = repository.fileAccessor.Open(path);
         var tr = new StreamReader(fs, Encoding.UTF8, true);
 
         var branches = new Dictionary<string, Hash>();
+        var remoteBranches = new Dictionary<string, Hash>();
         var tags = new Dictionary<string, Hash>();
 
         var separators = new[] { ' ' };
@@ -297,17 +306,22 @@ internal static class RepositoryAccessor
             var referenceString = columns[1];
             if (referenceString.StartsWith("refs/remotes/"))
             {
-                var name = referenceString.Substring(13);
+                var name = referenceString.Substring("refs/remotes/".Length);
+                remoteBranches[name] = hash;
+            }
+            else if (referenceString.StartsWith("refs/heads/"))
+            {
+                var name = referenceString.Substring("refs/heads/".Length);
                 branches[name] = hash;
             }
             else if (referenceString.StartsWith("refs/tags/"))
             {
-                var name = referenceString.Substring(10);
+                var name = referenceString.Substring("refs/tags/".Length);
                 tags[name] = hash;
             }
         }
 
-        return new(branches, tags);
+        return new(branches, remoteBranches, tags);
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -370,6 +384,41 @@ internal static class RepositoryAccessor
         }
     }
 
+    public static Task<PrimitiveRefLogEntry[]> ReadStashesAsync(Repository repository, CancellationToken ct)
+        => ReadRefLogAsync(repository, "refs/stash", ct);
+    
+    public static Task<PrimitiveRefLogEntry[]> ReadRefLogAsync(Repository repository, PrimitiveReference reference, CancellationToken ct)
+        => ReadRefLogAsync(repository, reference.RelativePath, ct);
+
+    public static async Task<PrimitiveRefLogEntry[]> ReadRefLogAsync(Repository repository, string refRelativePath, CancellationToken ct)
+    {
+        var path = Utilities.Combine(repository.GitPath, "logs", refRelativePath);
+        if (!File.Exists(path))
+        {
+            return new PrimitiveRefLogEntry[]{};
+        }
+
+        using var fs = repository.fileAccessor.Open(path);
+        var tr = new StreamReader(fs, Encoding.UTF8, true);
+
+        var entries = new List<PrimitiveRefLogEntry>();
+        while (true)
+        {
+            var line = await tr.ReadLineAsync().WaitAsync(ct);
+            if (line == null)
+            {
+                break;
+            }
+
+            if (PrimitiveRefLogEntry.TryParse(line, out var refLogEntry))
+            {
+                entries.Add(refLogEntry);
+            }
+        }
+
+        return entries.ToArray();
+    }
+
     public static async Task<PrimitiveReference[]> ReadReferencesAsync(
         Repository repository,
         ReferenceTypes type,
@@ -396,6 +445,7 @@ internal static class RepositoryAccessor
                 {
                     return new(
                         path.Substring(headsPath.Length + 1).Replace(Path.DirectorySeparatorChar, '/'),
+                        path.Substring(repository.GitPath.Length + 1).Replace(Path.DirectorySeparatorChar, '/'),
                         results.Hash);
                 }
             }
@@ -407,9 +457,20 @@ internal static class RepositoryAccessor
             ToDictionary(reference => reference.Name);
 
         // Remote branches and tags may not all be placed in `refs/*/`.
-        // Therefore, information obtained from FETCH_HEAD is also covered.
+        // Therefore, information obtained from FETCH_HEAD and packed-refs is also covered.
         switch (type)
         {
+            case ReferenceTypes.Branches:
+                foreach (var entry in repository.referenceCache.Branches)
+                {
+                    if (!references.ContainsKey(entry.Key))
+                    {
+                        references.Add(
+                            entry.Key,
+                            new(entry.Key,$"refs/heads/{entry.Key}", entry.Value));
+                    }
+                }
+                break;
             case ReferenceTypes.RemoteBranches:
                 foreach (var entry in repository.referenceCache.RemoteBranches)
                 {
@@ -417,7 +478,7 @@ internal static class RepositoryAccessor
                     {
                         references.Add(
                             entry.Key,
-                            new(entry.Key, entry.Value));
+                            new(entry.Key,$"refs/remotes/{entry.Key}", entry.Value));
                     }
                 }
                 break;
@@ -428,7 +489,7 @@ internal static class RepositoryAccessor
                     {
                         references.Add(
                             entry.Key,
-                            new(entry.Key, entry.Value));
+                            new(entry.Key, $"refs/tags/{entry.Key}", entry.Value));
                     }
                 }
                 break;

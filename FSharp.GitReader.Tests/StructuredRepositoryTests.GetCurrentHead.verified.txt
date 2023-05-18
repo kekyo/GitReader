@@ -22,14 +22,6 @@
       {
         Name: master
       }
-    ],
-    RemoteBranches: [
-      {
-        Name: origin/HEAD
-      },
-      {
-        Name: origin/master
-      }
     ]
   }
 }

@@ -12,13 +12,16 @@ namespace GitReader.Primitive;
 public readonly struct PrimitiveReference
 {
     public readonly string Name;
+    public readonly string RelativePath;
     public readonly Hash Target;
 
     public PrimitiveReference(
         string name,
+        string relativePath,
         Hash target)
     {
         this.Name = name;
+        this.RelativePath = relativePath;
         this.Target = target;
     }
 
