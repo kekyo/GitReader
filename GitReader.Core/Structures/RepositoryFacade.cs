@@ -146,7 +146,7 @@ internal static class RepositoryFacade
             ToDictionary(tag => tag!.Name, tag => tag!);
     }
     
-    private static async Task<Stash[]> GetStashesAsync(
+    private static async Task<Stash[]> GetStructuredStashesAsync(
         StructuredRepository repository,
         WeakReference rwr,
         CancellationToken ct)
@@ -219,7 +219,7 @@ internal static class RepositoryFacade
                 GetStructuredBranchesAsync(repository, rwr, ct),
                 GetStructuredRemoteBranchesAsync(repository, rwr, ct),
                 GetStructuredTagsAsync(repository, rwr, ct),
-                GetStashesAsync(repository, rwr, ct));
+                GetStructuredStashesAsync(repository, rwr, ct));
 
             repository.head = head;
             repository.branches = branches;

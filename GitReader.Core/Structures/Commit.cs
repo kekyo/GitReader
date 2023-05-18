@@ -103,6 +103,7 @@ public sealed class Commit : IEquatable<Commit?>
     }
 
     public bool Equals(Commit rhs) =>
+        rhs is { } &&
         this.Hash.Equals(rhs.Hash) &&
         this.treeRoot.Equals(rhs.treeRoot) &&
         this.Author.Equals(rhs.Author) &&
@@ -111,19 +112,31 @@ public sealed class Commit : IEquatable<Commit?>
         this.message.Equals(rhs.message);
 
     bool IEquatable<Commit?>.Equals(Commit? rhs) =>
-        rhs is { } && this.Equals(rhs);
+        this.Equals(rhs!);
 
     public override bool Equals(object? obj) =>
         obj is Commit rhs && this.Equals(rhs);
 
-    public override int GetHashCode() =>
-        this.parents.Aggregate(
-            this.Hash.GetHashCode() ^
-            this.treeRoot.GetHashCode() ^
-            this.Author.GetHashCode() ^
-            this.Committer.GetHashCode() ^
-            this.message.GetHashCode(),
-            (agg, v) => agg ^ v.GetHashCode());
+    public override int GetHashCode()
+    {
+        unchecked
+        {
+            var hashCode = this.Hash.GetHashCode();
+            hashCode = (hashCode * 397) ^ this.treeRoot.GetHashCode();
+            hashCode = (hashCode * 397) ^ this.Author.GetHashCode();
+            hashCode = (hashCode * 397) ^ this.Committer.GetHashCode();
+            hashCode = (hashCode * 397) ^ this.message.GetHashCode();
+            return this.parents.Aggregate(
+                hashCode,
+                (agg, v) =>
+                {
+                    unchecked
+                    {
+                        return (agg * 397) ^ v.GetHashCode();
+                    }
+                });
+        }
+    }
 
     public override string ToString() =>
         $"{this.Hash}: {this.Author}: {this.Subject.Replace('\n', ' ')}";

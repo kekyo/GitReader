@@ -51,14 +51,26 @@ public readonly struct PrimitiveCommit : IEquatable<PrimitiveCommit>
     public override bool Equals(object? obj) =>
         obj is PrimitiveCommit rhs && this.Equals(rhs);
 
-    public override int GetHashCode() =>
-        this.Parents.Aggregate(
-            this.Hash.GetHashCode() ^
-            this.TreeRoot.GetHashCode() ^
-            this.Author.GetHashCode() ^
-            this.Committer.GetHashCode() ^
-            this.Message.GetHashCode(),
-            (agg, v) => agg ^ v.GetHashCode());
+    public override int GetHashCode()
+    {
+        unchecked
+        {
+            var hashCode = this.Hash.GetHashCode();
+            hashCode = (hashCode * 397) ^ this.TreeRoot.GetHashCode();
+            hashCode = (hashCode * 397) ^ this.Author.GetHashCode();
+            hashCode = (hashCode * 397) ^ this.Committer.GetHashCode();
+            hashCode = (hashCode * 397) ^ this.Message.GetHashCode();
+            return this.Parents.Aggregate(
+                hashCode,
+                (agg, v) =>
+                {
+                    unchecked
+                    {
+                        return (agg * 397) ^ v.GetHashCode();
+                    }
+                });
+        }
+    }
 
     public override string ToString() =>
         $"{this.Hash}: {this.Author}: {this.Message.Replace('\n', ' ')}";

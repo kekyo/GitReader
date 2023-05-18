@@ -1,42 +1,50 @@
-﻿using System;
+﻿////////////////////////////////////////////////////////////////////////////
+//
+// GitReader - Lightweight Git local repository traversal library.
+// Copyright (c) Kouji Matsui (@kozy_kekyo, @kekyo@mastodon.cloud)
+//
+// Licensed under Apache-v2: https://opensource.org/licenses/Apache-2.0
+//
+////////////////////////////////////////////////////////////////////////////
+
+using System;
 
 namespace GitReader.Structures;
 
-public class Stash : IEquatable<Stash>
+public sealed class Stash : IEquatable<Stash>
 {
     public readonly Commit Commit;
     public readonly Signature Committer;
     public readonly string Message;
 
-    public Stash(Commit commit, Signature committer, string message)
+    internal Stash(
+        Commit commit, Signature committer, string message)
     {
-        Commit = commit;
-        Committer = committer;
-        Message = message;
+        this.Commit = commit;
+        this.Committer = committer;
+        this.Message = message;
     }
 
-    public bool Equals(Stash? other)
-    {
-        if (ReferenceEquals(null, other)) return false;
-        if (ReferenceEquals(this, other)) return true;
-        return Commit.Equals(other.Commit) && Committer.Equals(other.Committer) && Message == other.Message;
-    }
+    public bool Equals(Stash rhs) =>
+        rhs is { } &&
+        (object.ReferenceEquals(this, rhs) ||
+            (this.Commit.Equals(rhs.Commit) &&
+             this.Committer.Equals(rhs.Committer) &&
+             this.Message.Equals(rhs.Message)));
 
-    public override bool Equals(object? obj)
-    {
-        if (ReferenceEquals(null, obj)) return false;
-        if (ReferenceEquals(this, obj)) return true;
-        if (obj.GetType() != this.GetType()) return false;
-        return Equals((Stash)obj);
-    }
+    bool IEquatable<Stash>.Equals(Stash? rhs) =>
+        this.Equals(rhs!);
+
+    public override bool Equals(object? obj) =>
+        obj is Stash rhs && this.Equals(rhs);
 
     public override int GetHashCode()
     {
         unchecked
         {
-            var hashCode = Commit.GetHashCode();
-            hashCode = (hashCode * 397) ^ Committer.GetHashCode();
-            hashCode = (hashCode * 397) ^ Message.GetHashCode();
+            var hashCode = this.Commit.GetHashCode();
+            hashCode = (hashCode * 397) ^ this.Committer.GetHashCode();
+            hashCode = (hashCode * 397) ^ this.Message.GetHashCode();
             return hashCode;
         }
     }

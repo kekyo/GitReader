@@ -384,15 +384,19 @@ internal static class RepositoryAccessor
         }
     }
 
-    public static Task<PrimitiveRefLogEntry[]> ReadStashesAsync(Repository repository, CancellationToken ct)
-        => ReadRefLogAsync(repository, "refs/stash", ct);
+    public static Task<PrimitiveRefLogEntry[]> ReadStashesAsync(
+        Repository repository, CancellationToken ct) =>
+        ReadRefLogAsync(repository, "refs/stash", ct);
     
-    public static Task<PrimitiveRefLogEntry[]> ReadRefLogAsync(Repository repository, PrimitiveReference reference, CancellationToken ct)
-        => ReadRefLogAsync(repository, reference.RelativePath, ct);
+    public static Task<PrimitiveRefLogEntry[]> ReadRefLogAsync(
+        Repository repository, PrimitiveReference reference, CancellationToken ct) =>
+        ReadRefLogAsync(repository, reference.RelativePath, ct);
 
-    public static async Task<PrimitiveRefLogEntry[]> ReadRefLogAsync(Repository repository, string refRelativePath, CancellationToken ct)
+    public static async Task<PrimitiveRefLogEntry[]> ReadRefLogAsync(
+        Repository repository, string refRelativePath, CancellationToken ct)
     {
-        var path = Utilities.Combine(repository.GitPath, "logs", refRelativePath);
+        var path = Utilities.Combine(
+            repository.GitPath, "logs", refRelativePath);
         if (!File.Exists(path))
         {
             return new PrimitiveRefLogEntry[]{};

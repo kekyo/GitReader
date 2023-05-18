@@ -46,12 +46,18 @@ public readonly struct PrimitiveTag : IEquatable<PrimitiveTag>
     public override bool Equals(object? obj) =>
         obj is PrimitiveTag rhs && this.Equals(rhs);
 
-    public override int GetHashCode() =>
-        this.Hash.GetHashCode() ^
-        this.Type.GetHashCode() ^
-        this.Name.GetHashCode() ^
-        this.Tagger.GetHashCode() ^
-        (this.Message?.GetHashCode() ?? 0);
+    public override int GetHashCode()
+    {
+        unchecked
+        {
+            var hashCode = this.Hash.GetHashCode();
+            hashCode = (hashCode * 397) ^ this.Type.GetHashCode();
+            hashCode = (hashCode * 397) ^ this.Name.GetHashCode();
+            hashCode = (hashCode * 397) ^ this.Tagger.GetHashCode();
+            hashCode = (hashCode * 397) ^ (this.Message?.GetHashCode() ?? 0);
+            return hashCode;
+        }
+    }
 
     public override string ToString() =>
         $"{this.Name}: {this.Type}: {this.Hash}";
