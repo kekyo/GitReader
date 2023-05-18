@@ -229,7 +229,7 @@ public sealed class RepositoryTests
     {
         using var repository = await Repository.Factory.OpenStructureAsync(RepositoryTestsSetUp.BasePath);
 
-        var reflogs = await repository.GetHeadReflogAsync();
+        var reflogs = await repository.GetHeadReflogsAsync();
 
         await Verifier.Verify(reflogs.OrderByDescending(reflog => reflog.Committer.Date).ToArray());
     }

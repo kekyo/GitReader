@@ -159,13 +159,14 @@ internal static class RepositoryFacade
                 {
                     return new Stash(new (rwr, commit), stash.Committer, stash.Message);
                 }
-                return null;
-            }));
+                return null!;
+            }).
+            Reverse());
 
-        return stashes.Where(x => x != null).Reverse().ToArray()!;
+        return stashes.Where(x => x != null).ToArray()!;
     }
     
-    public static async Task<ReflogEntry[]> GetHeadReflogAsync(
+    public static async Task<ReflogEntry[]> GetHeadReflogsAsync(
         StructuredRepository repository,
         WeakReference rwr,
         CancellationToken ct)
@@ -174,15 +175,18 @@ internal static class RepositoryFacade
         var reflogEntries = await Utilities.WhenAll(
             primitiveReflogEntries.Select(async stash =>
             {
-                if (await RepositoryAccessor.ReadCommitAsync(repository, stash.Current, ct) is { } currentCommit && 
-                    await RepositoryAccessor.ReadCommitAsync(repository, stash.Old, ct) is { } oldCommit)
+                var (currentCommit, oldCommit) = await Utilities.Join(
+                    RepositoryAccessor.ReadCommitAsync(repository, stash.Current, ct),
+                    RepositoryAccessor.ReadCommitAsync(repository, stash.Old, ct));
+                if (currentCommit is { } cc && oldCommit is { } oc)
                 {
-                    return new ReflogEntry(new (rwr, currentCommit), new (rwr, oldCommit), stash.Committer, stash.Message);
+                    return new ReflogEntry(new(rwr, cc), new(rwr, oc), stash.Committer, stash.Message);
                 }
-                return null;
-            }));
+                return null!;
+            }).
+            Reverse());
 
-        return reflogEntries.Where(x => x != null).Reverse().ToArray()!;
+        return reflogEntries.Where(x => x != null).ToArray();
     }
 
     //////////////////////////////////////////////////////////////////////////

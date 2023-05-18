@@ -50,9 +50,9 @@ public static class RepositoryExtension
         this Commit commit) =>
         commit.message;
     
-    public static Task<ReflogEntry[]> GetHeadReflogAsync(
+    public static Task<ReflogEntry[]> GetHeadReflogsAsync(
         this StructuredRepository repository, CancellationToken ct = default) =>
-        RepositoryFacade.GetHeadReflogAsync(repository, new WeakReference(repository), ct);
+        RepositoryFacade.GetHeadReflogsAsync(repository, new WeakReference(repository), ct);
 
     public static void Deconstruct(
         this StructuredRepository repository,
