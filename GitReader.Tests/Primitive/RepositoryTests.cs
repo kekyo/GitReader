@@ -215,7 +215,7 @@ public sealed class RepositoryTests
 
         var stashes = await repository.GetStashesAsync();
 
-        await Verifier.Verify(stashes);
+        await Verifier.Verify(stashes.OrderByDescending(stash => stash.Committer.Date).ToArray());
     }
     
     [Test]
@@ -225,8 +225,8 @@ public sealed class RepositoryTests
             RepositoryTestsSetUp.BasePath);
         
         var headRef = await repository.GetCurrentHeadReferenceAsync();
-        var reflog = await repository.GetReflogAsync(headRef!.Value);
+        var reflogs = await repository.GetReflogAsync(headRef!.Value);
 
-        await Verifier.Verify(reflog);
+        await Verifier.Verify(reflogs.OrderByDescending(reflog => reflog.Committer.Date).ToArray());
     }
 }
