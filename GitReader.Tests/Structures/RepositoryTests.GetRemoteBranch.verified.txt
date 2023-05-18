@@ -18,6 +18,11 @@
     },
     Subject: Updates test nuget refs.,
     Body: ,
+    Branches: [
+      {
+        Name: origin/devel
+      }
+    ],
     RemoteBranches: []
   }
 }
