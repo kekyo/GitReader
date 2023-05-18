@@ -192,9 +192,11 @@ Console.WriteLine($"Message: {tag.Message}");
 if (await repository.GetCommitAsync(
     "1205dc34ce48bda28fc543daaf9525a9bb6e6d10") is Commit commit)
 {
-    Branch[] branches = commit.Branches;
-    Branch[] remoteBranches = commit.RemoteBranches;
-    Tags[] tags = commit.Tags;
+    // ReadOnlyArray<T>クラスは、内部の配列を保護するために使用されます。
+    // 使用方法はList<T>のような一般的なコレクションと同じです。
+    ReadOnlyArray<Branch> branches = commit.Branches;
+    ReadOnlyArray<Branch> remoteBranches = commit.RemoteBranches;
+    ReadOnlyArray<Tag> tags = commit.Tags;
 
     // ...
 }

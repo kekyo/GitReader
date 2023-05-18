@@ -194,9 +194,11 @@ Console.WriteLine($"Message: {tag.Message}");
 if (await repository.GetCommitAsync(
     "1205dc34ce48bda28fc543daaf9525a9bb6e6d10") is Commit commit)
 {
-    Branch[] branches = commit.Branches;
-    Branch[] remoteBranches = commit.RemoteBranches;
-    Tags[] tags = commit.Tags;
+    // The ReadOnlyArray<T> class is used to protect the inner array.
+    // Usage is the same as for general collections such as List<T>.
+    ReadOnlyArray<Branch> branches = commit.Branches;
+    ReadOnlyArray<Branch> remoteBranches = commit.RemoteBranches;
+    ReadOnlyArray<Tag> tags = commit.Tags;
 
     // ...
 }
