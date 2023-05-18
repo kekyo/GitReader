@@ -42,6 +42,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "gitexporttest", "tests\gite
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "gitexport", "samples\gitexport\gitexport.csproj", "{04192260-BFB9-490D-B835-E0E4311FEE93}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Benchmark", "samples\Benchmark\Benchmark.csproj", "{AAE6C35C-2281-4E7E-B720-E29DF4CC6CD4}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -84,6 +86,10 @@ Global
 		{04192260-BFB9-490D-B835-E0E4311FEE93}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{04192260-BFB9-490D-B835-E0E4311FEE93}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{04192260-BFB9-490D-B835-E0E4311FEE93}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AAE6C35C-2281-4E7E-B720-E29DF4CC6CD4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AAE6C35C-2281-4E7E-B720-E29DF4CC6CD4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AAE6C35C-2281-4E7E-B720-E29DF4CC6CD4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AAE6C35C-2281-4E7E-B720-E29DF4CC6CD4}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -93,6 +99,7 @@ Global
 		{ED0ACA0C-1639-404B-825B-8FC79A384243} = {FA77DE1C-C141-4C03-AA63-DAFC2E624125}
 		{48C10B93-4D7A-4D44-974B-55677CB08B2D} = {FA77DE1C-C141-4C03-AA63-DAFC2E624125}
 		{04192260-BFB9-490D-B835-E0E4311FEE93} = {6C0A2BF1-2E5A-4040-9617-9438F1A8BBDD}
+		{AAE6C35C-2281-4E7E-B720-E29DF4CC6CD4} = {6C0A2BF1-2E5A-4040-9617-9438F1A8BBDD}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {AD39B2E0-9F24-4605-A51C-FF43CCA98564}
