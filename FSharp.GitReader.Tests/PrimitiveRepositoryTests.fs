@@ -152,3 +152,20 @@ type public PrimitiveRepositoryTests() =
                 c <- commit
         return! verify(commits.ToArray())
     }
+        
+    [<Test>]
+    member _.GetStashes() = task {
+        use! repository = Repository.Factory.openPrimitive(
+            RepositoryTestsSetUp.BasePath)
+        let! stashes = repository.getStashes()
+        return! verify(stashes)
+    }
+    
+    [<Test>]
+    member _.GetHeadRefLog() = task {
+        use! repository = Repository.Factory.openPrimitive(
+            RepositoryTestsSetUp.BasePath)
+        let! headRef = repository.getCurrentHeadReference()
+        let! reflog = repository.getRefLog(headRef.Value)
+        return! verify(reflog)
+    }

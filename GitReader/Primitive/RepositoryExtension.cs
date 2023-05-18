@@ -138,6 +138,19 @@ public static class RepositoryExtension
     }
 
     public static void Deconstruct(
+        this PrimitiveRefLogEntry reflog,
+        out Hash old,
+        out Hash current,
+        out Signature committer,
+        out string message)
+    {
+        old = reflog.Old;
+        current = reflog.Current;
+        committer = reflog.Committer;
+        message = reflog.Message;
+    }
+
+    public static void Deconstruct(
         this PrimitiveTree tree,
         out Hash hash,
         out PrimitiveTreeEntry[] children)
