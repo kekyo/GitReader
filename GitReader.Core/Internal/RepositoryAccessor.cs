@@ -45,7 +45,7 @@ internal readonly struct ReferenceCache
 
     public ReferenceCache Combine(ReferenceCache rhs)
     {
-        var branches = this.RemoteBranches.Clone();
+        var branches = this.Branches.Clone();
         var remoteBranches = this.RemoteBranches.Clone();
         var tags = this.Tags.Clone();
         

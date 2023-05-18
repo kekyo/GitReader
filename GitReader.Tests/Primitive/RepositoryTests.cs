@@ -213,7 +213,9 @@ public sealed class RepositoryTests
         using var repository = await Repository.Factory.OpenPrimitiveAsync(
             RepositoryTestsSetUp.BasePath);
 
-        await Verifier.Verify(repository.GetStashesAsync());
+        var stashes = await repository.GetStashesAsync();
+
+        await Verifier.Verify(stashes);
     }
     
     [Test]
@@ -223,7 +225,8 @@ public sealed class RepositoryTests
             RepositoryTestsSetUp.BasePath);
         
         var headRef = await repository.GetCurrentHeadReferenceAsync();
+        var reflog = await repository.GetReflogAsync(headRef!.Value);
 
-        await Verifier.Verify(repository.GetReflogAsync(headRef!.Value));
+        await Verifier.Verify(reflog);
     }
 }
