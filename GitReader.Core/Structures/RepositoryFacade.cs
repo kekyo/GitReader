@@ -145,6 +145,49 @@ internal static class RepositoryFacade
             DistinctBy(tag => tag!.Name).
             ToDictionary(tag => tag!.Name, tag => tag!);
     }
+    
+    private static async Task<Stash[]> GetStructuredStashesAsync(
+        StructuredRepository repository,
+        WeakReference rwr,
+        CancellationToken ct)
+    {
+        var primitiveStashes = await RepositoryAccessor.ReadStashesAsync(repository, ct);
+        var stashes = await Utilities.WhenAll(
+            primitiveStashes.Select(async stash =>
+            {
+                if (await RepositoryAccessor.ReadCommitAsync(repository, stash.Current, ct) is { } commit)
+                {
+                    return new Stash(new (rwr, commit), stash.Committer, stash.Message);
+                }
+                return null!;
+            }).
+            Reverse());
+
+        return stashes.Where(x => x != null).ToArray()!;
+    }
+    
+    public static async Task<ReflogEntry[]> GetHeadReflogsAsync(
+        StructuredRepository repository,
+        WeakReference rwr,
+        CancellationToken ct)
+    {
+        var primitiveReflogEntries = await RepositoryAccessor.ReadReflogEntriesAsync(repository, "HEAD", ct);
+        var reflogEntries = await Utilities.WhenAll(
+            primitiveReflogEntries.Select(async stash =>
+            {
+                var (currentCommit, oldCommit) = await Utilities.Join(
+                    RepositoryAccessor.ReadCommitAsync(repository, stash.Current, ct),
+                    RepositoryAccessor.ReadCommitAsync(repository, stash.Old, ct));
+                if (currentCommit is { } cc && oldCommit is { } oc)
+                {
+                    return new ReflogEntry(new(rwr, cc), new(rwr, oc), stash.Committer, stash.Message);
+                }
+                return null!;
+            }).
+            Reverse());
+
+        return reflogEntries.Where(x => x != null).ToArray();
+    }
 
     //////////////////////////////////////////////////////////////////////////
 
@@ -175,16 +218,18 @@ internal static class RepositoryFacade
 
             // Read all other requirements.
             var rwr = new WeakReference(repository);
-            var (head, branches, remoteBranches, tags) = await Utilities.Join(
+            var (head, branches, remoteBranches, tags, stashes) = await Utilities.Join(
                 GetCurrentHeadAsync(repository, ct),
                 GetStructuredBranchesAsync(repository, rwr, ct),
                 GetStructuredRemoteBranchesAsync(repository, rwr, ct),
-                GetStructuredTagsAsync(repository, rwr, ct));
+                GetStructuredTagsAsync(repository, rwr, ct),
+                GetStructuredStashesAsync(repository, rwr, ct));
 
             repository.head = head;
             repository.branches = branches;
             repository.remoteBranches = remoteBranches;
             repository.tags = tags;
+            repository.stashes = stashes;
 
             return repository;
         }
@@ -236,7 +281,7 @@ internal static class RepositoryFacade
         Commit commit,
         CancellationToken ct)
     {
-        if (commit.parents.Length == 0)
+        if (commit.parents.Count == 0)
         {
             return null;
         }
@@ -303,11 +348,38 @@ internal static class RepositoryFacade
         var rootTree = await RepositoryAccessor.ReadTreeAsync(
             repository, commit.treeRoot, ct);
 
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
         // This is a rather aggressive algorithm that recursively and in parallel searches all entries
         // in the tree and builds all elements.
-        async Task<TreeEntry[]> GetChildrenAsync(Primitive.PrimitiveTreeEntry[] entries) =>
+        async ValueTask<TreeEntry[]> GetChildrenAsync(ReadOnlyArray<PrimitiveTreeEntry> entries) =>
             (await Utilities.WhenAll(
-                entries.Collect(async entry =>
+                entries.Select((Func<PrimitiveTreeEntry, ValueTask<TreeEntry>>)(async entry =>
+                {
+                    var modeFlags = (ModeFlags)((int)entry.Modes & 0x1ff);
+                    switch (entry.SpecialModes)
+                    {
+                        case PrimitiveSpecialModes.Directory:
+                            var tree = await RepositoryAccessor.ReadTreeAsync(
+                                repository!, entry.Hash, ct);
+                            var children = await GetChildrenAsync(tree.Children);
+                            return new TreeDirectoryEntry(
+                                entry.Hash, entry.Name, modeFlags, children);
+                        case PrimitiveSpecialModes.Blob:
+                            return new TreeBlobEntry(
+                                entry.Hash, entry.Name, modeFlags, commit.rwr);
+                        default:
+                            // TODO:
+                            return null!;
+                    }
+                })))).
+            Where(entry => entry != null).
+            ToArray();
+#else
+        // This is a rather aggressive algorithm that recursively and in parallel searches all entries
+        // in the tree and builds all elements.
+        async Task<TreeEntry[]> GetChildrenAsync(ReadOnlyArray<PrimitiveTreeEntry> entries) =>
+            (await Utilities.WhenAll(
+                entries.Select(async entry =>
                 {
                     var modeFlags = (ModeFlags)((int)entry.Modes & 0x1ff);
                     switch (entry.SpecialModes)
@@ -322,11 +394,13 @@ internal static class RepositoryFacade
                             return new TreeBlobEntry(
                                 entry.Hash, entry.Name, modeFlags, commit.rwr);
                         default:
+                            // TODO:
                             return null!;
                     }
                 }))).
             Where(entry => entry != null).
             ToArray();
+#endif
 
         var children = await GetChildrenAsync(rootTree.Children);
 

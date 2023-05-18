@@ -7,9 +7,12 @@
 //
 ////////////////////////////////////////////////////////////////////////////
 
+using Argon;
+using GitReader.Collections;
 using System;
 using System.IO;
 using System.IO.Compression;
+using System.Linq;
 using VerifyTests;
 
 namespace GitReader;
@@ -24,6 +27,25 @@ public sealed class RepositoryTestsSetUp
                 BitConverter.ToString(data).Replace("-", string.Empty).ToLowerInvariant());
     }
 
+    private sealed class BranchArrayConverter :
+        WriteOnlyJsonConverter<ReadOnlyArray<Structures.Branch>>
+    {
+        public override void Write(
+            VerifyJsonWriter writer, ReadOnlyArray<Structures.Branch> branches)
+        {
+            // Avoid infinite reference by Branch.Head.
+            writer.WriteStartArray();
+            foreach (var branch in branches)
+            {
+                writer.WriteStartObject();
+                writer.WritePropertyName("Name");
+                writer.WriteValue(branch.Name);
+                writer.WriteEndObject();
+            }
+            writer.WriteEndArray();
+        }
+    }
+
     public static readonly string BasePath =
         Path.Combine("tests", $"{DateTime.Now:yyyyMMdd_HHmmss}");
 
@@ -31,7 +53,10 @@ public sealed class RepositoryTestsSetUp
     {
         VerifierSettings.DontScrubDateTimes();
         VerifierSettings.AddExtraSettings(setting =>
-            setting.Converters.Add(new ByteDataConverter()));
+        {
+            setting.Converters.Add(new ByteDataConverter());
+            setting.Converters.Add(new BranchArrayConverter());
+        });
 
         if (!Directory.Exists(BasePath))
         {

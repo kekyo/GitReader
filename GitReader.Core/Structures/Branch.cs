@@ -7,9 +7,11 @@
 //
 ////////////////////////////////////////////////////////////////////////////
 
+using System;
+
 namespace GitReader.Structures;
 
-public sealed class Branch
+public sealed class Branch : IEquatable<Branch>
 {
     public readonly string Name;
     public readonly Commit Head;
@@ -20,6 +22,27 @@ public sealed class Branch
     {
         this.Name = name;
         this.Head = head;
+    }
+
+    public bool Equals(Branch rhs) =>
+        rhs is { } &&
+        this.Name.Equals(rhs.Name) &&
+        this.Head.Equals(rhs.Head);
+
+    bool IEquatable<Branch>.Equals(Branch? rhs) =>
+        this.Equals(rhs!);
+
+    public override bool Equals(object? obj) =>
+        obj is Branch rhs && this.Equals(rhs);
+
+    public override int GetHashCode()
+    {
+        unchecked
+        {
+            var hashCode = this.Name.GetHashCode();
+            hashCode = (hashCode * 397) ^ this.Head.GetHashCode();
+            return hashCode;
+        }
     }
 
     public override string ToString() =>

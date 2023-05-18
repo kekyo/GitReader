@@ -15,6 +15,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using GitReader.IO;
 
 namespace GitReader.Internal;
 
@@ -133,9 +134,9 @@ internal sealed class ObjectAccessor : IDisposable
 
         try
         {
-            var zlibStream = await Utilities.CreateZLibStreamAsync(fs, ct);
+            var zlibStream = await ZLibStream.CreateAsync(fs, ct);
 
-            var preloadBuffer = BufferPool.Take(preloadBufferSize);
+            using var preloadBuffer = BufferPool.Take(preloadBufferSize);
             var read = await zlibStream.ReadAsync(
                 preloadBuffer, 0, preloadBuffer.Length, ct);
 
@@ -186,7 +187,7 @@ internal sealed class ObjectAccessor : IDisposable
 
             var stream = new RangedStream(
                 new ConcatStream(
-                    new PreloadedStream(preloadBuffer, preloadIndex, preloadBuffer.Length - preloadIndex),
+                    new PreloadedStream(preloadBuffer.Detach(), preloadIndex, preloadBuffer.Length - preloadIndex),
                     zlibStream),
                 (long)length);
 
@@ -456,7 +457,7 @@ internal sealed class ObjectAccessor : IDisposable
         {
             fs.Seek((long)offset, SeekOrigin.Begin);
 
-            var preloadBuffer = BufferPool.Take(preloadBufferSize);
+            using var preloadBuffer = BufferPool.Take(preloadBufferSize);
             var read = await fs.ReadAsync(preloadBuffer, 0, preloadBuffer.Length, ct);
             if (read == 0)
             {
@@ -494,11 +495,11 @@ internal sealed class ObjectAccessor : IDisposable
                         }
 
                         var stream = new ConcatStream(
-                            new PreloadedStream(preloadBuffer, preloadIndex, read - preloadIndex),
+                            new PreloadedStream(preloadBuffer.Detach(), preloadIndex, read - preloadIndex),
                             fs);
 
                         var (zlibStream, objectEntry) = await Utilities.Join(
-                            Utilities.CreateZLibStreamAsync(stream, ct),
+                            ZLibStream.CreateAsync(stream, ct),
                             this.OpenFromPackedFileAsync(packedFilePath, referenceOffset, disableCaching, ct));
 
                         try
@@ -530,17 +531,17 @@ internal sealed class ObjectAccessor : IDisposable
                             Throw(6);
                         }
 
-                        var hashCode = BufferPool.Take(20);
+                        using var hashCode = BufferPool.Take(20);
                         Array.Copy(preloadBuffer, preloadIndex, hashCode, 0, hashCode.Length);
                         preloadIndex += hashCode.Length;
                         var referenceHash = new Hash(hashCode);
 
                         var stream = new ConcatStream(
-                            new PreloadedStream(preloadBuffer, preloadIndex, read - preloadIndex),
+                            new PreloadedStream(preloadBuffer.Detach(), preloadIndex, read - preloadIndex),
                             fs);
 
                         var (zlibStream, objectEntry) = await Utilities.Join(
-                            Utilities.CreateZLibStreamAsync(stream, ct),
+                            ZLibStream.CreateAsync(stream, ct),
                             this.OpenAsync(referenceHash, disableCaching, ct));
 
                         try
@@ -576,10 +577,10 @@ internal sealed class ObjectAccessor : IDisposable
                 case RawObjectTypes.Tag:
                     {
                         var stream = new ConcatStream(
-                            new PreloadedStream(preloadBuffer, preloadIndex, read - preloadIndex),
+                            new PreloadedStream(preloadBuffer.Detach(), preloadIndex, read - preloadIndex),
                             fs);
 
-                        var zlibStream = await Utilities.CreateZLibStreamAsync(stream, ct);
+                        var zlibStream = await ZLibStream.CreateAsync(stream, ct);
                         var objectType = (ObjectTypes)(int)type;
 
                         var wrappedStream = this.AddToCache(

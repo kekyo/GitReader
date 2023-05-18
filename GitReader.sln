@@ -40,6 +40,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "gitlogtest", "tests\gitlogt
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "gitexporttest", "tests\gitexporttest\gitexporttest.csproj", "{48C10B93-4D7A-4D44-974B-55677CB08B2D}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "gitexport", "samples\gitexport\gitexport.csproj", "{04192260-BFB9-490D-B835-E0E4311FEE93}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -78,6 +80,10 @@ Global
 		{48C10B93-4D7A-4D44-974B-55677CB08B2D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{48C10B93-4D7A-4D44-974B-55677CB08B2D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{48C10B93-4D7A-4D44-974B-55677CB08B2D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{04192260-BFB9-490D-B835-E0E4311FEE93}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{04192260-BFB9-490D-B835-E0E4311FEE93}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{04192260-BFB9-490D-B835-E0E4311FEE93}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{04192260-BFB9-490D-B835-E0E4311FEE93}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -86,6 +92,7 @@ Global
 		{D67816F7-ADDF-4CB0-AB4D-134A288C6474} = {6C0A2BF1-2E5A-4040-9617-9438F1A8BBDD}
 		{ED0ACA0C-1639-404B-825B-8FC79A384243} = {FA77DE1C-C141-4C03-AA63-DAFC2E624125}
 		{48C10B93-4D7A-4D44-974B-55677CB08B2D} = {FA77DE1C-C141-4C03-AA63-DAFC2E624125}
+		{04192260-BFB9-490D-B835-E0E4311FEE93} = {6C0A2BF1-2E5A-4040-9617-9438F1A8BBDD}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {AD39B2E0-9F24-4605-A51C-FF43CCA98564}

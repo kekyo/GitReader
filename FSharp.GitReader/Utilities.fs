@@ -16,7 +16,7 @@ open System.Threading.Tasks
 [<AutoOpen>]
 module internal Utilities =
 
-    let unwrapOption(v: 'T option) =
+    let inline unwrapOption(v: 'T option) =
         match v with
         | None -> Unchecked.defaultof<'T>
         | Some v -> v
@@ -24,6 +24,14 @@ module internal Utilities =
         match ct with
         | Some ct -> ct
         | None -> CancellationToken()
+    let inline wrapOption(v: 'T) =
+        match v with
+        | null -> None
+        | _ -> Some v
+    let inline wrapOptionV(v: Nullable<'T>) =
+        match v.HasValue with
+        | true -> Some v.Value
+        | _ -> None
 
     let inline asAsync(task: Task<Nullable<'T>>) = async {
         let! result = task |> Async.AwaitTask

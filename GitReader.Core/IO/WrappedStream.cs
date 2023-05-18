@@ -12,8 +12,9 @@ using System.Diagnostics;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using GitReader.Internal;
 
-namespace GitReader.Internal;
+namespace GitReader.IO;
 
 internal sealed class WrappedStream : Stream
 #if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
@@ -58,7 +59,7 @@ internal sealed class WrappedStream : Stream
     public override long Position
     {
         get => this.position;
-        set => this.Seek(value, SeekOrigin.Begin);
+        set => Seek(value, SeekOrigin.Begin);
     }
 
 #if !NETSTANDARD1_6
@@ -79,7 +80,7 @@ internal sealed class WrappedStream : Stream
     {
         if (disposing)
         {
-            this.Close();
+            Close();
         }
     }
 
@@ -98,7 +99,7 @@ internal sealed class WrappedStream : Stream
                 this.position += offset;
                 break;
             case SeekOrigin.End:
-                this.position = this.Length;
+                this.position = Length;
                 return this.position;
         }
 
@@ -113,7 +114,7 @@ internal sealed class WrappedStream : Stream
 #if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
     public ValueTask<long> SeekValueTaskAsync(
         long offset, SeekOrigin origin, CancellationToken ct) =>
-        new(this.Seek(offset, origin));
+        new(Seek(offset, origin));
 #endif
 
     public override int Read(

@@ -29,7 +29,7 @@ public enum ModeFlags
     OtherExecute = 0x0001,
 }
 
-public abstract class Tree : IEquatable<Tree?>
+public abstract class Tree : IEquatable<Tree>
 {
     public readonly Hash Hash;
 
@@ -39,8 +39,8 @@ public abstract class Tree : IEquatable<Tree?>
 
     public abstract bool Equals(Tree rhs);
 
-    bool IEquatable<Tree?>.Equals(Tree? rhs) =>
-        rhs is { } && this.Equals(rhs);
+    bool IEquatable<Tree>.Equals(Tree? rhs) =>
+        this.Equals(rhs!);
 
     public override bool Equals(object? obj) =>
         obj is Tree rhs && this.Equals(rhs);
@@ -63,17 +63,6 @@ public abstract class TreeEntry : Tree
         this.Name = name;
         this.Modes = modes;
     }
-
-    public override bool Equals(Tree rhs) =>
-        rhs is TreeEntry r &&
-        this.Hash.Equals(r.Hash) &&
-        this.Name.Equals(r.Name) &&
-        this.Modes == r.Modes;
-
-    public override int GetHashCode() =>
-        this.Hash.GetHashCode() ^
-        this.Name.GetHashCode() ^
-        this.Modes.GetHashCode();
 }
 
 public sealed class TreeBlobEntry : TreeEntry
@@ -87,6 +76,23 @@ public sealed class TreeBlobEntry : TreeEntry
         WeakReference rwr) :
         base(hash, name, modes) =>
         this.rwr = rwr;
+
+    public override bool Equals(Tree rhs) =>
+        rhs is TreeBlobEntry r &&
+        this.Hash.Equals(r.Hash) &&
+        this.Name.Equals(r.Name) &&
+        this.Modes == r.Modes;
+
+    public override int GetHashCode()
+    {
+        unchecked
+        {
+            var hashCode = this.Hash.GetHashCode();
+            hashCode = (hashCode * 397) ^ this.Name.GetHashCode();
+            hashCode = (hashCode * 397) ^ this.Modes.GetHashCode();
+            return hashCode;
+        }
+    }
 
     public override string ToString() =>
         $"File: {this.Modes}: {this.Name}: {this.Hash}";
@@ -103,6 +109,32 @@ public sealed class TreeDirectoryEntry : TreeEntry
         TreeEntry[] children) :
         base(hash, name, modes) =>
         this.Children = children;
+
+    public override bool Equals(Tree rhs) =>
+        rhs is TreeDirectoryEntry r &&
+        this.Hash.Equals(r.Hash) &&
+        this.Name.Equals(r.Name) &&
+        this.Modes == r.Modes &&
+        this.Children.SequenceEqual(r.Children);
+
+    public override int GetHashCode()
+    {
+        unchecked
+        {
+            var hashCode = this.Hash.GetHashCode();
+            hashCode = (hashCode * 397) ^ this.Name.GetHashCode();
+            hashCode = (hashCode * 397) ^ this.Modes.GetHashCode();
+            return this.Children.Aggregate(
+                hashCode,
+                (agg, v) =>
+                {
+                    unchecked
+                    {
+                        return (agg * 397) ^ v.GetHashCode();
+                    }
+                });
+        }
+    }
 
     public override string ToString() =>
         $"Directory: {this.Modes}: {this.Name}: {this.Hash}";
@@ -122,10 +154,22 @@ public sealed class TreeRoot : Tree
         this.Hash.Equals(r.Hash) &&
         this.Children.SequenceEqual(r.Children);
 
-    public override int GetHashCode() =>
-        this.Children.Aggregate(
-            this.Hash.GetHashCode(),
-            (agg, v) => agg ^ v.GetHashCode());
+    public override int GetHashCode()
+    {
+        unchecked
+        {
+            var hashCode = this.Hash.GetHashCode();
+            return this.Children.Aggregate(
+                hashCode,
+                (agg, v) =>
+                {
+                    unchecked
+                    {
+                        return (agg * 397) ^ v.GetHashCode();
+                    }
+                });
+        }
+    }
 
     public override string ToString() =>
         $"{this.Hash}: Children={this.Children.Length}";

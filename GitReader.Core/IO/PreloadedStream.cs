@@ -11,19 +11,21 @@ using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using GitReader.Internal;
 
-namespace GitReader.Internal;
+namespace GitReader.IO;
 
 internal sealed class PreloadedStream : Stream
 #if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
     , IValueTaskStream
 #endif
 {
-    private readonly Buffer preloadedBuffer;
+    private readonly BufferPoolBuffer preloadedBuffer;
     private readonly int preloadedLength;
     private int preloadedIndex;
 
-    public PreloadedStream(Buffer buffer, int initialIndex, int length)
+    public PreloadedStream(
+        DetachedBufferPoolBuffer buffer, int initialIndex, int length)
     {
         this.preloadedBuffer = buffer;
         this.preloadedLength = length;
@@ -53,7 +55,7 @@ internal sealed class PreloadedStream : Stream
     {
         if (disposing)
         {
-            this.Close();
+            Close();
         }
     }
 

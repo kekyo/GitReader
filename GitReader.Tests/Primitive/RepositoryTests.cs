@@ -185,7 +185,7 @@ public sealed class RepositoryTests
             commits.Add(commit);
 
             // Bottom of branch.
-            if (commit.Parents.Length == 0)
+            if (commit.Parents.Count == 0)
             {
                 break;
             }
@@ -205,5 +205,28 @@ public sealed class RepositoryTests
             RepositoryTestsSetUp.BasePath);
 
         await Verifier.Verify(repository.RemoteUrls);
+    }
+    
+    [Test]
+    public async Task GetStashes()  
+    {
+        using var repository = await Repository.Factory.OpenPrimitiveAsync(
+            RepositoryTestsSetUp.BasePath);
+
+        var stashes = await repository.GetStashesAsync();
+
+        await Verifier.Verify(stashes.OrderByDescending(stash => stash.Committer.Date).ToArray());
+    }
+    
+    [Test]
+    public async Task GetHeadReflog()  
+    {
+        using var repository = await Repository.Factory.OpenPrimitiveAsync(
+            RepositoryTestsSetUp.BasePath);
+        
+        var headRef = await repository.GetCurrentHeadReferenceAsync();
+        var reflogs = await repository.GetRelatedReflogsAsync(headRef!.Value);
+
+        await Verifier.Verify(reflogs.OrderByDescending(reflog => reflog.Committer.Date).ToArray());
     }
 }

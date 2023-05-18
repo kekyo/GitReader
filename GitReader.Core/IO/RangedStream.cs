@@ -12,7 +12,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace GitReader.Internal;
+namespace GitReader.IO;
 
 internal sealed class RangedStream : Stream
 #if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
@@ -40,7 +40,7 @@ internal sealed class RangedStream : Stream
 
     public override long Position
     {
-        get => this.Length - this.remains;
+        get => this.Length - remains;
         set => throw new NotImplementedException();
     }
 
@@ -60,7 +60,7 @@ internal sealed class RangedStream : Stream
     {
         if (disposing)
         {
-            this.Close();
+            Close();
         }
     }
 
@@ -98,7 +98,7 @@ internal sealed class RangedStream : Stream
 
     public override Task<int> ReadAsync(
         byte[] buffer, int offset, int count, CancellationToken ct) =>
-        this.ReadValueTaskAsync(buffer, offset, count, ct).AsTask();
+        ReadValueTaskAsync(buffer, offset, count, ct).AsTask();
 #endif
 
     public override long Seek(long offset, SeekOrigin origin) =>

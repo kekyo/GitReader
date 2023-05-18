@@ -15,6 +15,7 @@ open System.IO.Compression
 open System.Threading.Tasks
 open VerifyNUnit
 open VerifyTests
+open GitReader.Collections
 
 [<Sealed>]
 type private ByteDataConverter() =
@@ -23,6 +24,19 @@ type private ByteDataConverter() =
         writer.WriteValue(
             BitConverter.ToString(data).Replace("-", "").ToLowerInvariant())
 
+[<Sealed>]
+type private BranchArrayConverter() =
+    inherit WriteOnlyJsonConverter<ReadOnlyArray<Structures.Branch>>()
+    override _.Write(writer: VerifyJsonWriter, branches: ReadOnlyArray<Structures.Branch>) =
+        // Avoid infinite reference by Branch.Head.
+        writer.WriteStartArray()
+        for branch in branches do
+          writer.WriteStartObject()
+          writer.WritePropertyName("Name")
+          writer.WriteValue(branch.Name)
+          writer.WriteEndObject()
+        writer.WriteEndArray()
+
 [<Sealed; AbstractClass>]
 type public RepositoryTestsSetUp() =
     static let mutable basePath = ""
@@ -30,7 +44,8 @@ type public RepositoryTestsSetUp() =
         basePath <- Path.Combine("tests", $"{DateTime.Now:yyyyMMdd_HHmmss}")
         VerifierSettings.DontScrubDateTimes()
         VerifierSettings.AddExtraSettings(fun setting ->
-            setting.Converters.Add(ByteDataConverter()))
+            setting.Converters.Add(ByteDataConverter())
+            setting.Converters.Add(BranchArrayConverter()))
         if not (Directory.Exists basePath) then
             try
                 Directory.CreateDirectory(basePath) |> ignore

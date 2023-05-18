@@ -143,7 +143,7 @@ type public PrimitiveRepositoryTests() =
         while not exit do
             commits.Add(c)
             // Bottom of branch.
-            if c.Parents.Length = 0 then
+            if c.Parents.Count = 0 then
                 exit <- true
             else
                 // Get primary parent.
@@ -151,4 +151,21 @@ type public PrimitiveRepositoryTests() =
                 let! commit = repository.getCommit(primary) |> unwrapOptionAsy
                 c <- commit
         return! verify(commits.ToArray())
+    }
+        
+    [<Test>]
+    member _.GetStashes() = task {
+        use! repository = Repository.Factory.openPrimitive(
+            RepositoryTestsSetUp.BasePath)
+        let! stashes = repository.getStashes()
+        return! verify(stashes |> Array.sortByDescending(fun stash -> stash.Committer.Date))
+    }
+    
+    [<Test>]
+    member _.GetHeadReflogs() = task {
+        use! repository = Repository.Factory.openPrimitive(
+            RepositoryTestsSetUp.BasePath)
+        let! headRef = repository.getCurrentHeadReference()
+        let! reflogs = repository.getRelatedReflogs(headRef.Value)
+        return! verify(reflogs |> Array.sortByDescending(fun reflog -> reflog.Committer.Date))
     }

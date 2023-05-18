@@ -15,7 +15,9 @@
 
   <ItemGroup>
     <Compile Include="Utilities.fs" />
-    <Compile Include="Collections/*.fs" />
+    <Compile Include="Collections\DictionaryExtension.fs" />
+    <Compile Include="Collections\ReadOnlyArrayExtension.fs" />
+    <Compile Include="Collections\ReadOnlyDictionaryExtension.fs" />
     <Compile Include="Primitive/*.fs" />
     <Compile Include="Structures/*.fs" />
     <Compile Include="RepositoryExtension.fs" />

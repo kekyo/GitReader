@@ -12,17 +12,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace GitReader.Internal;
-
-#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
-internal interface IValueTaskStream
-{
-    ValueTask<long> SeekValueTaskAsync(
-        long offset, SeekOrigin origin, CancellationToken ct);
-    ValueTask<int> ReadValueTaskAsync(
-        byte[] buffer, int offset, int count, CancellationToken ct);
-}
-#endif
+namespace GitReader.IO;
 
 internal sealed class ConcatStream : Stream
 #if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
@@ -61,7 +51,7 @@ internal sealed class ConcatStream : Stream
     {
         if (disposing)
         {
-            this.Close();
+            Close();
         }
     }
 

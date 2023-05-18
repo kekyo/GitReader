@@ -7,22 +7,23 @@
 //
 ////////////////////////////////////////////////////////////////////////////
 
+using GitReader.Collections;
 using GitReader.Primitive;
 using System;
 using System.Linq;
 
 namespace GitReader.Structures;
 
-public sealed class Commit : IEquatable<Commit?>
+public sealed class Commit : IEquatable<Commit>
 {
     internal readonly string message;
     internal readonly WeakReference rwr;
-    internal readonly Hash[] parents;
+    internal readonly ReadOnlyArray<Hash> parents;
     internal readonly Hash treeRoot;
 
-    private Branch[]? branches;
-    private Branch[]? remoteBranches;
-    private Tag[]? tags;
+    private ReadOnlyArray<Branch>? branches;
+    private ReadOnlyArray<Branch>? remoteBranches;
+    private ReadOnlyArray<Tag>? tags;
 
     public readonly Hash Hash;
     public readonly Signature Author;
@@ -60,7 +61,7 @@ public sealed class Commit : IEquatable<Commit?>
         }
     }
 
-    public Branch[] Branches
+    public ReadOnlyArray<Branch> Branches
     {
         get
         {
@@ -74,7 +75,7 @@ public sealed class Commit : IEquatable<Commit?>
         }
     }
 
-    public Branch[] RemoteBranches
+    public ReadOnlyArray<Branch> RemoteBranches
     {
         get
         {
@@ -88,7 +89,7 @@ public sealed class Commit : IEquatable<Commit?>
         }
     }
 
-    public Tag[] Tags
+    public ReadOnlyArray<Tag> Tags
     {
         get
         {
@@ -103,6 +104,7 @@ public sealed class Commit : IEquatable<Commit?>
     }
 
     public bool Equals(Commit rhs) =>
+        rhs is { } &&
         this.Hash.Equals(rhs.Hash) &&
         this.treeRoot.Equals(rhs.treeRoot) &&
         this.Author.Equals(rhs.Author) &&
@@ -110,20 +112,32 @@ public sealed class Commit : IEquatable<Commit?>
         this.parents.SequenceEqual(rhs.parents) &&
         this.message.Equals(rhs.message);
 
-    bool IEquatable<Commit?>.Equals(Commit? rhs) =>
-        rhs is { } && this.Equals(rhs);
+    bool IEquatable<Commit>.Equals(Commit? rhs) =>
+        this.Equals(rhs!);
 
     public override bool Equals(object? obj) =>
         obj is Commit rhs && this.Equals(rhs);
 
-    public override int GetHashCode() =>
-        this.parents.Aggregate(
-            this.Hash.GetHashCode() ^
-            this.treeRoot.GetHashCode() ^
-            this.Author.GetHashCode() ^
-            this.Committer.GetHashCode() ^
-            this.message.GetHashCode(),
-            (agg, v) => agg ^ v.GetHashCode());
+    public override int GetHashCode()
+    {
+        unchecked
+        {
+            var hashCode = this.Hash.GetHashCode();
+            hashCode = (hashCode * 397) ^ this.treeRoot.GetHashCode();
+            hashCode = (hashCode * 397) ^ this.Author.GetHashCode();
+            hashCode = (hashCode * 397) ^ this.Committer.GetHashCode();
+            hashCode = (hashCode * 397) ^ this.message.GetHashCode();
+            return this.parents.Aggregate(
+                hashCode,
+                (agg, v) =>
+                {
+                    unchecked
+                    {
+                        return (agg * 397) ^ v.GetHashCode();
+                    }
+                });
+        }
+    }
 
     public override string ToString() =>
         $"{this.Hash}: {this.Author}: {this.Subject.Replace('\n', ' ')}";

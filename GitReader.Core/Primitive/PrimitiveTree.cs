@@ -7,6 +7,7 @@
 //
 ////////////////////////////////////////////////////////////////////////////
 
+using GitReader.Collections;
 using GitReader.Internal;
 using System;
 using System.Linq;
@@ -78,10 +79,16 @@ public readonly struct PrimitiveTreeEntry : IEquatable<PrimitiveTreeEntry>
     public override bool Equals(object? obj) =>
         obj is PrimitiveTreeEntry rhs && this.Equals(rhs);
 
-    public override int GetHashCode() =>
-        this.Hash.GetHashCode() ^
-        this.Name.GetHashCode() ^
-        this.Modes.GetHashCode();
+    public override int GetHashCode()
+    {
+        unchecked
+        {
+            var hashCode = this.Hash.GetHashCode();
+            hashCode = (hashCode * 397) ^ this.Name.GetHashCode();
+            hashCode = (hashCode * 397) ^ this.Modes.GetHashCode();
+            return hashCode;
+        }
+    }
 
     public override string ToString() =>
         $"{this.Modes}: {this.Name}: {this.Hash}";
@@ -93,11 +100,11 @@ public readonly struct PrimitiveTreeEntry : IEquatable<PrimitiveTreeEntry>
 public readonly struct PrimitiveTree : IEquatable<PrimitiveTree>
 {
     public readonly Hash Hash;
-    public readonly PrimitiveTreeEntry[] Children;
+    public readonly ReadOnlyArray<PrimitiveTreeEntry> Children;
 
     public PrimitiveTree(
         Hash hash,
-        PrimitiveTreeEntry[] children)
+        ReadOnlyArray<PrimitiveTreeEntry> children)
     {
         this.Hash = hash;
         this.Children = children;
@@ -116,10 +123,16 @@ public readonly struct PrimitiveTree : IEquatable<PrimitiveTree>
     public override int GetHashCode() =>
         this.Children.Aggregate(
             this.Hash.GetHashCode(),
-            (agg, v) => agg ^ v.GetHashCode());
+            (agg, v) =>
+            {
+                unchecked
+                {
+                    return (agg * 397) ^ v.GetHashCode();
+                }
+            });
 
     public override string ToString() =>
-        $"{this.Hash}: Children={this.Children.Length}";
+        $"{this.Hash}: Children={this.Children.Count}";
 
     public static implicit operator Hash(PrimitiveTree tree) =>
         tree.Hash;

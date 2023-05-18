@@ -8,6 +8,7 @@
 ////////////////////////////////////////////////////////////////////////////
 
 using GitReader.Collections;
+using GitReader.IO;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -356,6 +357,7 @@ internal static class Utilities
     [DebuggerStepThrough]
     public static async Task<T[]> WhenAll<T>(IEnumerable<Task<T>> tasks)
     {
+        // Sequential execution on `Debug` conditional.
         var results = new List<T>();
         foreach (var task in tasks)
         {
@@ -365,12 +367,31 @@ internal static class Utilities
     }
 
     [DebuggerStepThrough]
-    public static Task<T[]> WhenAll<T>(params Task<T>[] tasks) =>
-        WhenAll((IEnumerable<Task<T>>)tasks);
+    public static async Task<T[]> WhenAll<T>(params Task<T>[] tasks)
+    {
+        var results = new T[tasks.Length];
+        for (var index = 0; index < tasks.Length; index++)
+        {
+            results[index] = await tasks[index];
+        }
+        return results;
+    }
 
 #if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
     [DebuggerStepThrough]
     public static async ValueTask<T[]> WhenAll<T>(IEnumerable<ValueTask<T>> tasks)
+    {
+        // Sequential execution on `Debug` conditional.
+        var results = new List<T>();
+        foreach (var task in tasks)
+        {
+            results.Add(await task);
+        }
+        return results.ToArray();
+    }
+
+    [DebuggerStepThrough]
+    public static async ValueTask<T[]> WhenAll<T>(params ValueTask<T>[] tasks)
     {
         var results = new List<T>();
         foreach (var task in tasks)
@@ -379,10 +400,6 @@ internal static class Utilities
         }
         return results.ToArray();
     }
-
-    [DebuggerStepThrough]
-    public static ValueTask<T[]> WhenAll<T>(params ValueTask<T>[] tasks) =>
-        WhenAll((IEnumerable<ValueTask<T>>)tasks);
 #endif
 #else
 #if NET35 || NET40
@@ -403,7 +420,14 @@ internal static class Utilities
         Task.WhenAll(tasks);
 
     [DebuggerStepThrough]
-    public static async ValueTask<T[]> WhenAll<T>(IEnumerable<ValueTask<T>> tasks)
+    public static ValueTask<T[]> WhenAll<T>(IEnumerable<ValueTask<T>> tasks) =>
+        WhenAll(
+            // Implicit starting ValueTask'ed state machines just now.
+            tasks.ToArray()
+        );
+
+    [DebuggerStepThrough]
+    public static async ValueTask<T[]> WhenAll<T>(params ValueTask<T>[] tasks)
     {
         var results = new List<T>();
         foreach (var task in tasks)
@@ -412,10 +436,6 @@ internal static class Utilities
         }
         return results.ToArray();
     }
-
-    [DebuggerStepThrough]
-    public static ValueTask<T[]> WhenAll<T>(params ValueTask<T>[] tasks) =>
-        WhenAll((IEnumerable<ValueTask<T>>)tasks);
 #endif
 #endif
 
@@ -478,8 +498,13 @@ internal static class Utilities
 #endif
 
 #if !NET6_0_OR_GREATER
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
+    public static async ValueTask<T> WaitAsync<T>(
+        this Task<T> task, CancellationToken ct)
+#else
     public static async Task<T> WaitAsync<T>(
         this Task<T> task, CancellationToken ct)
+#endif
     {
         if (task.IsCompleted && !task.IsFaulted && !task.IsCanceled)
         {
@@ -508,8 +533,13 @@ internal static class Utilities
         return await tcs.Task;
     }
 
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP2_1_OR_GREATER
+    public static async ValueTask WaitAsync(
+        this Task task, CancellationToken ct)
+#else
     public static async Task WaitAsync(
         this Task task, CancellationToken ct)
+#endif
     {
         if (task.IsCompleted && !task.IsFaulted && !task.IsCanceled)
         {
@@ -617,54 +647,6 @@ internal static class Utilities
 #else
         Process.GetCurrentProcess().Id;
 #endif
-
-#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
-    public static async ValueTask<Stream> CreateZLibStreamAsync(
-        Stream parent, CancellationToken ct)
-#else
-    public static async Task<Stream> CreateZLibStreamAsync(
-        Stream parent, CancellationToken ct)
-#endif
-    {
-        void Throw(int step) =>
-            throw new InvalidDataException(
-                $"Could not parse zlib stream. Step={step}");
-
-        using var buffer = BufferPool.Take(2);
-
-#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
-        var read = parent is IValueTaskStream vts ?
-            await vts.ReadValueTaskAsync(buffer, 0, buffer.Length, ct) :
-            await parent.ReadAsync(buffer, 0, buffer.Length, ct);
-#else
-        var read = await parent.ReadAsync(buffer, 0, buffer.Length, ct);
-#endif
-
-        if (read < 2)
-        {
-            Throw(1);
-        }
-
-        if (buffer[0] != 0x78)
-        {
-            Throw(2);
-        }
-
-        switch (buffer[1])
-        {
-            case 0x01:
-            case 0x5e:
-            case 0x9c:
-            case 0xda:
-                break;
-            default:
-                Throw(3);
-                break;
-        }
-
-        return new DeflateStream(
-            parent, CompressionMode.Decompress, false);
-    }
 
     public static string ToGitDateString(
         DateTimeOffset date)

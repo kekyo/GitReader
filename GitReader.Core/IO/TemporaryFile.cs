@@ -7,6 +7,7 @@
 //
 ////////////////////////////////////////////////////////////////////////////
 
+using GitReader.Internal;
 using System;
 using System.Diagnostics;
 using System.IO;
@@ -16,7 +17,7 @@ using System.Runtime.InteropServices;
 using System.Runtime.ConstrainedExecution;
 #endif
 
-namespace GitReader.Internal;
+namespace GitReader.IO;
 
 internal sealed class TemporaryFile :
 #if !NETSTANDARD1_6
@@ -37,7 +38,7 @@ internal sealed class TemporaryFile :
     }
 
     ~TemporaryFile() =>
-        this.Dispose();
+        Dispose();
 
     public void Dispose()
     {

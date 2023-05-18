@@ -29,22 +29,30 @@ internal enum ReferenceTypes
 
 internal readonly struct ReferenceCache
 {
+    public readonly ReadOnlyDictionary<string, Hash> Branches;
     public readonly ReadOnlyDictionary<string, Hash> RemoteBranches;
     public readonly ReadOnlyDictionary<string, Hash> Tags;
 
     public ReferenceCache(
+        ReadOnlyDictionary<string, Hash> branches,
         ReadOnlyDictionary<string, Hash> remoteBranches,
         ReadOnlyDictionary<string, Hash> tags)
     {
+        this.Branches = branches;
         this.RemoteBranches = remoteBranches;
         this.Tags = tags;
     }
 
     public ReferenceCache Combine(ReferenceCache rhs)
     {
+        var branches = this.Branches.Clone();
         var remoteBranches = this.RemoteBranches.Clone();
         var tags = this.Tags.Clone();
-
+        
+        foreach (var entry in rhs.Branches)
+        {
+            branches[entry.Key] = entry.Value;
+        }
         foreach (var entry in rhs.RemoteBranches)
         {
             remoteBranches[entry.Key] = entry.Value;
@@ -54,7 +62,7 @@ internal readonly struct ReferenceCache
             tags[entry.Key] = entry.Value;
         }
 
-        return new(remoteBranches, tags);
+        return new(branches, remoteBranches, tags);
     }
 }
 
@@ -162,13 +170,13 @@ internal static class RepositoryAccessor
         var path = Utilities.Combine(repository.GitPath, "FETCH_HEAD");
         if (!File.Exists(path))
         {
-            return new(new(new()), new(new()));
+            return new(new(new()), new(new()), new(new()));
         }
 
         using var fs = repository.fileAccessor.Open(path);
         var tr = new StreamReader(fs, Encoding.UTF8, true);
 
-        var branches = new Dictionary<string, Hash>();
+        var remoteBranches = new Dictionary<string, Hash>();
         var tags = new Dictionary<string, Hash>();
 
         while (true)
@@ -223,7 +231,7 @@ internal static class RepositoryAccessor
                     var urlString = descriptorString.Split(' ').Last();
                     if (remoteNameByUrl.TryGetValue(urlString, out var remoteName))
                     {
-                        branches[$"{remoteName}/{name}"] = hash;
+                        remoteBranches[$"{remoteName}/{name}"] = hash;
                     }
                 }
                 else
@@ -235,7 +243,7 @@ internal static class RepositoryAccessor
             {
                 if (typeString == "branch")
                 {
-                    branches[descriptorString] = hash;
+                    remoteBranches[descriptorString] = hash;
                 }
                 else
                 {
@@ -244,7 +252,7 @@ internal static class RepositoryAccessor
             }
         }
 
-        return new(branches, tags);
+        return new(new(new()), remoteBranches, tags);
     }
 
     public static async Task<ReferenceCache> ReadPackedRefsAsync(
@@ -254,13 +262,14 @@ internal static class RepositoryAccessor
         var path = Utilities.Combine(repository.GitPath, "packed-refs");
         if (!File.Exists(path))
         {
-            return new(new(new()), new(new()));
+            return new(new(new()), new(new()), new(new()));
         }
 
         using var fs = repository.fileAccessor.Open(path);
         var tr = new StreamReader(fs, Encoding.UTF8, true);
 
         var branches = new Dictionary<string, Hash>();
+        var remoteBranches = new Dictionary<string, Hash>();
         var tags = new Dictionary<string, Hash>();
 
         var separators = new[] { ' ' };
@@ -297,17 +306,22 @@ internal static class RepositoryAccessor
             var referenceString = columns[1];
             if (referenceString.StartsWith("refs/remotes/"))
             {
-                var name = referenceString.Substring(13);
+                var name = referenceString.Substring("refs/remotes/".Length);
+                remoteBranches[name] = hash;
+            }
+            else if (referenceString.StartsWith("refs/heads/"))
+            {
+                var name = referenceString.Substring("refs/heads/".Length);
                 branches[name] = hash;
             }
             else if (referenceString.StartsWith("refs/tags/"))
             {
-                var name = referenceString.Substring(10);
+                var name = referenceString.Substring("refs/tags/".Length);
                 tags[name] = hash;
             }
         }
 
-        return new(branches, tags);
+        return new(branches, remoteBranches, tags);
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -334,7 +348,14 @@ internal static class RepositoryAccessor
                 currentLocation.Replace('/', Path.DirectorySeparatorChar));
             if (!File.Exists(path))
             {
-                if (currentLocation.StartsWith("refs/remotes/"))
+                if (currentLocation.StartsWith("refs/heads/"))
+                {
+                    if (repository.referenceCache.Branches.TryGetValue(name, out var branchHash))
+                    {
+                        return new(branchHash, names.ToArray());
+                    }
+                }
+                else if (currentLocation.StartsWith("refs/remotes/"))
                 {
                     if (repository.referenceCache.RemoteBranches.TryGetValue(name, out var branchHash))
                     {
@@ -370,6 +391,45 @@ internal static class RepositoryAccessor
         }
     }
 
+    public static Task<PrimitiveReflogEntry[]> ReadStashesAsync(
+        Repository repository, CancellationToken ct) =>
+        ReadReflogEntriesAsync(repository, "refs/stash", ct);
+    
+    public static Task<PrimitiveReflogEntry[]> ReadReflogEntriesAsync(
+        Repository repository, PrimitiveReference reference, CancellationToken ct) =>
+        ReadReflogEntriesAsync(repository, reference.RelativePath, ct);
+
+    public static async Task<PrimitiveReflogEntry[]> ReadReflogEntriesAsync(
+        Repository repository, string refRelativePath, CancellationToken ct)
+    {
+        var path = Utilities.Combine(
+            repository.GitPath, "logs", refRelativePath);
+        if (!File.Exists(path))
+        {
+            return new PrimitiveReflogEntry[]{};
+        }
+
+        using var fs = repository.fileAccessor.Open(path);
+        var tr = new StreamReader(fs, Encoding.UTF8, true);
+
+        var entries = new List<PrimitiveReflogEntry>();
+        while (true)
+        {
+            var line = await tr.ReadLineAsync().WaitAsync(ct);
+            if (line == null)
+            {
+                break;
+            }
+
+            if (PrimitiveReflogEntry.TryParse(line, out var reflogEntry))
+            {
+                entries.Add(reflogEntry);
+            }
+        }
+
+        return entries.ToArray();
+    }
+
     public static async Task<PrimitiveReference[]> ReadReferencesAsync(
         Repository repository,
         ReferenceTypes type,
@@ -379,7 +439,11 @@ internal static class RepositoryAccessor
             repository.GitPath, "refs", GetReferenceTypeName(type));
         var references = (await Utilities.WhenAll(
             Utilities.EnumerateFiles(headsPath, "*").
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
+            Select((Func<string, ValueTask<PrimitiveReference?>>)(async path =>
+#else
             Select(async path =>
+#endif
             {
                 if (await ReadHashAsync(
                     repository,
@@ -392,16 +456,32 @@ internal static class RepositoryAccessor
                 {
                     return new(
                         path.Substring(headsPath.Length + 1).Replace(Path.DirectorySeparatorChar, '/'),
+                        path.Substring(repository.GitPath.Length + 1).Replace(Path.DirectorySeparatorChar, '/'),
                         results.Hash);
                 }
-            }))).
+            }
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
+            )
+#endif
+            ))).
             CollectValue(reference => reference).
             ToDictionary(reference => reference.Name);
 
         // Remote branches and tags may not all be placed in `refs/*/`.
-        // Therefore, information obtained from FETCH_HEAD is also covered.
+        // Therefore, information obtained from FETCH_HEAD and packed-refs is also covered.
         switch (type)
         {
+            case ReferenceTypes.Branches:
+                foreach (var entry in repository.referenceCache.Branches)
+                {
+                    if (!references.ContainsKey(entry.Key))
+                    {
+                        references.Add(
+                            entry.Key,
+                            new(entry.Key,$"refs/heads/{entry.Key}", entry.Value));
+                    }
+                }
+                break;
             case ReferenceTypes.RemoteBranches:
                 foreach (var entry in repository.referenceCache.RemoteBranches)
                 {
@@ -409,7 +489,7 @@ internal static class RepositoryAccessor
                     {
                         references.Add(
                             entry.Key,
-                            new(entry.Key, entry.Value));
+                            new(entry.Key,$"refs/remotes/{entry.Key}", entry.Value));
                     }
                 }
                 break;
@@ -420,7 +500,7 @@ internal static class RepositoryAccessor
                     {
                         references.Add(
                             entry.Key,
-                            new(entry.Key, entry.Value));
+                            new(entry.Key, $"refs/tags/{entry.Key}", entry.Value));
                     }
                 }
                 break;
@@ -462,6 +542,8 @@ internal static class RepositoryAccessor
                 return null;
             }
 
+            // TODO: The cost of asynchronous access to StreamReader is high and will eventually be replaced.
+            // It would be a good idea to have IValueTaskStream support then.
             var tr = new StreamReader(streamResult.Stream, Encoding.UTF8, true);
             var body = await tr.ReadToEndAsync().WaitAsync(ct);
 
@@ -556,7 +638,7 @@ internal static class RepositoryAccessor
 
         if (tree is { } t && author is { } a && committer is { } c)
         {
-            return new(hash, t, a, c, parents.ToArray(), message);
+            return new(hash, t, a, c, parents, message);
         }
         else
         {
@@ -717,7 +799,7 @@ internal static class RepositoryAccessor
                 children.Add(new(dataHash, nameString, modeFlags));
             }
 
-            return new(hash, children.ToArray());
+            return new(hash, children);
         }
         finally
         {
