@@ -156,11 +156,6 @@
       },
       Subject: Updated GA script.,
       Body: ,
-      Branches: [
-        {
-          Name: origin/master
-        }
-      ],
       RemoteBranches: [
         {
           Name: origin/HEAD
@@ -197,11 +192,6 @@
       },
       Subject: Updated GA script.,
       Body: ,
-      Branches: [
-        {
-          Name: origin/master
-        }
-      ],
       RemoteBranches: [
         {
           Name: origin/HEAD
@@ -229,11 +219,6 @@
       },
       Subject: Updated GA script.,
       Body: ,
-      Branches: [
-        {
-          Name: origin/master
-        }
-      ],
       RemoteBranches: [
         {
           Name: origin/HEAD
@@ -270,11 +255,6 @@
       },
       Subject: Updated GA script.,
       Body: ,
-      Branches: [
-        {
-          Name: origin/master
-        }
-      ],
       RemoteBranches: [
         {
           Name: origin/HEAD

@@ -18,7 +18,6 @@
     },
     Subject: Updates test nuget refs.,
     Body: ,
-    Branches: [],
     RemoteBranches: []
   }
 }

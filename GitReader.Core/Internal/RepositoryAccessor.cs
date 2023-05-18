@@ -348,7 +348,14 @@ internal static class RepositoryAccessor
                 currentLocation.Replace('/', Path.DirectorySeparatorChar));
             if (!File.Exists(path))
             {
-                if (currentLocation.StartsWith("refs/remotes/"))
+                if (currentLocation.StartsWith("refs/heads/"))
+                {
+                    if (repository.referenceCache.Branches.TryGetValue(name, out var branchHash))
+                    {
+                        return new(branchHash, names.ToArray());
+                    }
+                }
+                else if (currentLocation.StartsWith("refs/remotes/"))
                 {
                     if (repository.referenceCache.RemoteBranches.TryGetValue(name, out var branchHash))
                     {
