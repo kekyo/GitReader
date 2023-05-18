@@ -223,11 +223,11 @@ public sealed class RepositoryTests
     }
     
     [Test]
-    public async Task GetHeadRefLog()  
+    public async Task GetHeadReflog()  
     {
         using var repository = await Repository.Factory.OpenStructureAsync(RepositoryTestsSetUp.BasePath);
 
-        var refLog = repository.GetHeadReflogAsync();
-        await Verifier.Verify(refLog);
+        var reflog = repository.GetHeadReflogAsync();
+        await Verifier.Verify(reflog);
     }
 }

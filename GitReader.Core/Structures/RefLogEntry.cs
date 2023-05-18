@@ -11,14 +11,14 @@ using System;
 
 namespace GitReader.Structures;
 
-public sealed class RefLogEntry : IEquatable<RefLogEntry>
+public sealed class ReflogEntry : IEquatable<ReflogEntry>
 {
     public readonly Commit Commit;
     public readonly Commit OldCommit;
     public readonly Signature Committer;
     public readonly string Message;
 
-    internal RefLogEntry(
+    internal ReflogEntry(
         Commit commit, Commit oldCommit, Signature committer, string message)
     {
         this.Commit = commit;
@@ -27,7 +27,7 @@ public sealed class RefLogEntry : IEquatable<RefLogEntry>
         this.Message = message;
     }
 
-    public bool Equals(RefLogEntry rhs) =>
+    public bool Equals(ReflogEntry rhs) =>
         rhs is { } &&
         (object.ReferenceEquals(this, rhs) ||
             (this.Commit.Equals(rhs.Commit) &&
@@ -35,11 +35,11 @@ public sealed class RefLogEntry : IEquatable<RefLogEntry>
              this.Committer.Equals(rhs.Committer) &&
              this.Message.Equals(rhs.Message)));
 
-    bool IEquatable<RefLogEntry>.Equals(RefLogEntry? rhs) =>
+    bool IEquatable<ReflogEntry>.Equals(ReflogEntry? rhs) =>
         this.Equals(rhs!);
 
     public override bool Equals(object? obj) =>
-        obj is RefLogEntry rhs && this.Equals(rhs);
+        obj is ReflogEntry rhs && this.Equals(rhs);
 
     public override int GetHashCode()
     {

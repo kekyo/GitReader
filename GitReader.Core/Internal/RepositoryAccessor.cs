@@ -384,28 +384,28 @@ internal static class RepositoryAccessor
         }
     }
 
-    public static Task<PrimitiveRefLogEntry[]> ReadStashesAsync(
+    public static Task<PrimitiveReflogEntry[]> ReadStashesAsync(
         Repository repository, CancellationToken ct) =>
-        ReadRefLogAsync(repository, "refs/stash", ct);
+        ReadReflogAsync(repository, "refs/stash", ct);
     
-    public static Task<PrimitiveRefLogEntry[]> ReadRefLogAsync(
+    public static Task<PrimitiveReflogEntry[]> ReadReflogAsync(
         Repository repository, PrimitiveReference reference, CancellationToken ct) =>
-        ReadRefLogAsync(repository, reference.RelativePath, ct);
+        ReadReflogAsync(repository, reference.RelativePath, ct);
 
-    public static async Task<PrimitiveRefLogEntry[]> ReadRefLogAsync(
+    public static async Task<PrimitiveReflogEntry[]> ReadReflogAsync(
         Repository repository, string refRelativePath, CancellationToken ct)
     {
         var path = Utilities.Combine(
             repository.GitPath, "logs", refRelativePath);
         if (!File.Exists(path))
         {
-            return new PrimitiveRefLogEntry[]{};
+            return new PrimitiveReflogEntry[]{};
         }
 
         using var fs = repository.fileAccessor.Open(path);
         var tr = new StreamReader(fs, Encoding.UTF8, true);
 
-        var entries = new List<PrimitiveRefLogEntry>();
+        var entries = new List<PrimitiveReflogEntry>();
         while (true)
         {
             var line = await tr.ReadLineAsync().WaitAsync(ct);
@@ -414,9 +414,9 @@ internal static class RepositoryAccessor
                 break;
             }
 
-            if (PrimitiveRefLogEntry.TryParse(line, out var refLogEntry))
+            if (PrimitiveReflogEntry.TryParse(line, out var reflogEntry))
             {
-                entries.Add(refLogEntry);
+                entries.Add(reflogEntry);
             }
         }
 

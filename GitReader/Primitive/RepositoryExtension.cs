@@ -64,16 +64,16 @@ public static class RepositoryExtension
         CancellationToken ct = default) =>
         RepositoryAccessor.ReadReferencesAsync(repository, ReferenceTypes.Tags, ct);
     
-    public static Task<PrimitiveRefLogEntry[]> GetStashesAsync(
+    public static Task<PrimitiveReflogEntry[]> GetStashesAsync(
         this PrimitiveRepository repository,
         CancellationToken ct = default) =>
         RepositoryAccessor.ReadStashesAsync(repository, ct);
     
-    public static Task<PrimitiveRefLogEntry[]> GetRefLogAsync(
+    public static Task<PrimitiveReflogEntry[]> GetReflogAsync(
         this PrimitiveRepository repository,
         PrimitiveReference reference,
         CancellationToken ct = default) =>
-        RepositoryAccessor.ReadRefLogAsync(repository, reference, ct);
+        RepositoryAccessor.ReadReflogAsync(repository, reference, ct);
 
     public static Task<PrimitiveTree> GetTreeAsync(
         this PrimitiveRepository repository,
@@ -138,7 +138,7 @@ public static class RepositoryExtension
     }
 
     public static void Deconstruct(
-        this PrimitiveRefLogEntry reflog,
+        this PrimitiveReflogEntry reflog,
         out Hash old,
         out Hash current,
         out Signature committer,

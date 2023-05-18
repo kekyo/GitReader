@@ -217,13 +217,13 @@ public sealed class RepositoryTests
     }
     
     [Test]
-    public async Task GetHeadRefLog()  
+    public async Task GetHeadReflog()  
     {
         using var repository = await Repository.Factory.OpenPrimitiveAsync(
             RepositoryTestsSetUp.BasePath);
         
         var headRef = await repository.GetCurrentHeadReferenceAsync();
 
-        await Verifier.Verify(repository.GetRefLogAsync(headRef!.Value));
+        await Verifier.Verify(repository.GetReflogAsync(headRef!.Value));
     }
 }

@@ -162,10 +162,10 @@ type public PrimitiveRepositoryTests() =
     }
     
     [<Test>]
-    member _.GetHeadRefLog() = task {
+    member _.GetHeadReflog() = task {
         use! repository = Repository.Factory.openPrimitive(
             RepositoryTestsSetUp.BasePath)
         let! headRef = repository.getCurrentHeadReference()
-        let! reflog = repository.getRefLog(headRef.Value)
+        let! reflog = repository.getReflog(headRef.Value)
         return! verify(reflog)
     }

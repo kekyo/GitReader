@@ -11,15 +11,15 @@ using System;
 
 namespace GitReader.Primitive;
 
-public readonly struct PrimitiveRefLogEntry :
-    IEquatable<PrimitiveRefLogEntry>
+public readonly struct PrimitiveReflogEntry :
+    IEquatable<PrimitiveReflogEntry>
 {
     public readonly Hash Old;
     public readonly Hash Current;
     public readonly Signature Committer;
     public readonly string Message;
     
-    private PrimitiveRefLogEntry(
+    private PrimitiveReflogEntry(
         Hash old, Hash current, Signature committer, string message)
     {
         this.Old = old;
@@ -28,17 +28,17 @@ public readonly struct PrimitiveRefLogEntry :
         this.Message = message;
     }
 
-    public bool Equals(PrimitiveRefLogEntry other) =>
+    public bool Equals(PrimitiveReflogEntry other) =>
         this.Old.Equals(other.Old) &&
         this.Current.Equals(other.Current) &&
         this.Committer.Equals(other.Committer) &&
         this.Message == other.Message;
 
-    bool IEquatable<PrimitiveRefLogEntry>.Equals(PrimitiveRefLogEntry rhs) =>
+    bool IEquatable<PrimitiveReflogEntry>.Equals(PrimitiveReflogEntry rhs) =>
         this.Equals(rhs);
 
     public override bool Equals(object? obj) =>
-        obj is PrimitiveRefLogEntry rhs && this.Equals(rhs);
+        obj is PrimitiveReflogEntry rhs && this.Equals(rhs);
 
     public override int GetHashCode()
     {
@@ -53,18 +53,18 @@ public readonly struct PrimitiveRefLogEntry :
     }
 
     public static bool TryParse(
-        string line, out PrimitiveRefLogEntry refLogEntry)
+        string line, out PrimitiveReflogEntry reflogEntry)
     {
         if (string.IsNullOrEmpty(line))
         {
-            refLogEntry = default;
+            reflogEntry = default;
             return false;
         }
 
         var columns = line.Split('\t');
         if (columns.Length < 2)
         {
-            refLogEntry = default;
+            reflogEntry = default;
             return false;
         }
 
@@ -72,25 +72,25 @@ public readonly struct PrimitiveRefLogEntry :
 
         if (!Hash.TryParse(columns[0].Substring(0, hashLength), out var old))
         {
-            refLogEntry = default;
+            reflogEntry = default;
             return false;
         }
 
         if (!Hash.TryParse(columns[0].Substring(hashLength + 1, hashLength), out var current))
         {
-            refLogEntry = default;
+            reflogEntry = default;
             return false;
         }
 
         if (!Signature.TryParse(columns[0].Substring((hashLength + 1) * 2), out var committer))
         {
-            refLogEntry = default;
+            reflogEntry = default;
             return false;
         }
 
         var message = columns[1].Trim();
 
-        refLogEntry = new(old, current, committer, message);
+        reflogEntry = new(old, current, committer, message);
         return true;
     }
 }

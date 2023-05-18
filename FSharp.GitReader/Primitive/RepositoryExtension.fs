@@ -38,8 +38,8 @@ module public RepositoryExtension =
             RepositoryAccessor.ReadStashesAsync(
                 repository, unwrapCT ct) |> Async.AwaitTask
 
-        member repository.getRefLog(reference: PrimitiveReference, ?ct: CancellationToken) =
-            RepositoryAccessor.ReadRefLogAsync(
+        member repository.getReflog(reference: PrimitiveReference, ?ct: CancellationToken) =
+            RepositoryAccessor.ReadReflogAsync(
                 repository, reference, unwrapCT ct) |> Async.AwaitTask
 
         member repository.getCommit(commit: Hash, ?ct: CancellationToken) =
@@ -82,7 +82,7 @@ module public RepositoryExtension =
     let (|PrimitiveTag|) (tag: PrimitiveTag) =
         (tag.Hash, tag.Type, tag.Name, tag.Tagger |> wrapOptionV, tag.Message |> wrapOption)
 
-    let (|PrimitiveRefLog|) (reflog: PrimitiveRefLogEntry) =
+    let (|PrimitiveReflogEntry|) (reflog: PrimitiveReflogEntry) =
         (reflog.Old, reflog.Current, reflog.Committer, reflog.Message)
 
     let (|PrimitiveTree|) (tree: PrimitiveTree) =
