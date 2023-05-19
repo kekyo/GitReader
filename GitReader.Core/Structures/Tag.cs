@@ -11,17 +11,15 @@ using System;
 
 namespace GitReader.Structures;
 
-public abstract class Tag : IEquatable<Tag>
+public abstract class Tag : CommitRef, IEquatable<Tag>
 {
-    public readonly Hash Hash;
     public readonly string Name;
     public readonly Signature? Tagger;
     public readonly string? Message;
 
-    private protected Tag(
-        Hash hash, string name, Signature? tagger, string? message)
+    private protected Tag(WeakReference rwr, Hash commit, string name, Signature? tagger, string? message)
+     : base(rwr, commit)
     {
-        this.Hash = hash;
         this.Name = name;
         this.Tagger = tagger;
         this.Message = message;
@@ -31,7 +29,7 @@ public abstract class Tag : IEquatable<Tag>
 
     public bool Equals(Tag rhs) =>
         rhs is { } &&
-        this.Hash.Equals(rhs.Hash) &&
+        this.CommitHash.Equals(rhs.CommitHash) &&
         this.Name.Equals(rhs.Name) &&
         this.Type == rhs.Type &&
         this.Tagger.Equals(rhs.Tagger) &&
@@ -47,7 +45,7 @@ public abstract class Tag : IEquatable<Tag>
     {
         unchecked
         {
-            var hashCode = this.Hash.GetHashCode();
+            var hashCode = this.CommitHash.GetHashCode();
             hashCode = (hashCode * 397) ^ this.Name.GetHashCode();
             hashCode = (hashCode * 397) ^ this.Type.GetHashCode();
             hashCode = (hashCode * 397) ^ this.Tagger.GetHashCode();
@@ -57,18 +55,16 @@ public abstract class Tag : IEquatable<Tag>
     }
 
     public override string ToString() =>
-        $"{this.Name}: {this.Type}: {this.Hash}";
+        $"{this.Name}: {this.Type}: {this.CommitHash}";
 }
 
 public sealed class CommitTag : Tag
 {
-    public readonly Commit Commit;
 
-    internal CommitTag(
-        Hash hash, string name, Signature? tagger, string? message,
-        Commit commit) :
-        base(hash, name, tagger, message) =>
-        this.Commit = commit;
+    internal CommitTag(WeakReference rwr, Hash hash, string name, Signature? tagger, string? message) :
+        base(rwr, hash, name, tagger, message)
+    {
+    }
 
     public override ObjectTypes Type =>
         ObjectTypes.Commit;

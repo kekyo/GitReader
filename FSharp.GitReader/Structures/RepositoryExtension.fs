@@ -67,7 +67,7 @@ module public RepositoryExtension =
         (commit.Hash, commit.Author, commit.Committer, commit.Subject, commit.Body)
 
     let (|Tag|) (tag: Tag) =
-        (tag.Hash, tag.Name, tag.Type,
+        (tag.CommitHash, tag.Name, tag.Type,
          (match tag.Tagger.HasValue with
           | false -> None
           | _ -> Some tag.Tagger.Value),
@@ -76,11 +76,11 @@ module public RepositoryExtension =
           | _ -> Some tag.Message))
 
     let (|CommitTag|) (tag: CommitTag) =
-        (tag.Hash, tag.Name,
+        (tag.CommitHash, tag.Name,
          (match tag.Tagger.HasValue with
           | false -> None
           | _ -> Some tag.Tagger.Value),
          (match tag.Message with
           | null -> None
           | _ -> Some tag.Message),
-         tag.Commit)
+         tag.CommitHash)

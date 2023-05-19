@@ -148,7 +148,8 @@ type public StructuredRepositoryTests() =
             RepositoryTestsSetUp.BasePath)
         let branch = repository.Branches["master"]
         let commits = new List<Commit>()
-        let mutable current = branch.Head
+        let! c = branch.GetCommitAsync() |> Async.AwaitTask
+        let mutable current = c
         while not (isNull current) do
             commits.Add(current)
             // Get primary parent commit.

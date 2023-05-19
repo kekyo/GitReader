@@ -194,8 +194,8 @@ public sealed class RepositoryTests
         var branch = repository.Branches["master"];
 
         var commits = new List<Commit>();
-        var current = branch.Head;
-
+        
+        var current = await branch.GetCommitAsync();
         while (current != null)
         {
             commits.Add(current);
@@ -232,5 +232,16 @@ public sealed class RepositoryTests
         var reflogs = await repository.GetHeadReflogsAsync();
 
         await Verifier.Verify(reflogs.OrderByDescending(reflog => reflog.Committer.Date).ToArray());
+    }
+
+    [Test]
+    public async Task Test()
+    {
+        using var repository = await Repository.Factory.OpenStructureAsync(@"D:\Git\TeaBox\Teabox");
+        var stashes = repository.Stashes.ToArray();
+        var branches = repository.Branches.Values.ToArray();
+        var remoteBranches = repository.RemoteBranches.Values.ToArray();
+        var tags = repository.Tags.Values.ToArray();
+        var currentBranch = repository.GetCurrentHead();
     }
 }
