@@ -11,16 +11,14 @@ using System;
 
 namespace GitReader.Structures;
 
-public sealed class Stash : IEquatable<Stash>
+public sealed class Stash : CommitRef, IEquatable<Stash>
 {
-    public readonly Commit Commit;
     public readonly Signature Committer;
     public readonly string Message;
 
-    internal Stash(
-        Commit commit, Signature committer, string message)
+    internal Stash(WeakReference rwr, Hash commitHash, Signature committer, string message) : 
+        base(rwr, commitHash)
     {
-        this.Commit = commit;
         this.Committer = committer;
         this.Message = message;
     }
@@ -28,7 +26,7 @@ public sealed class Stash : IEquatable<Stash>
     public bool Equals(Stash rhs) =>
         rhs is { } &&
         (object.ReferenceEquals(this, rhs) ||
-            (this.Commit.Equals(rhs.Commit) &&
+            (this.CommitHash.Equals(rhs.CommitHash) &&
              this.Committer.Equals(rhs.Committer) &&
              this.Message.Equals(rhs.Message)));
 
@@ -42,7 +40,7 @@ public sealed class Stash : IEquatable<Stash>
     {
         unchecked
         {
-            var hashCode = this.Commit.GetHashCode();
+            var hashCode = this.CommitHash.GetHashCode();
             hashCode = (hashCode * 397) ^ this.Committer.GetHashCode();
             hashCode = (hashCode * 397) ^ this.Message.GetHashCode();
             return hashCode;

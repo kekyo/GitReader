@@ -74,7 +74,7 @@ public static class RepositoryExtension
     public static void Deconstruct(
         this Branch branch,
         out string name,
-        out Commit head)
+        out Hash head)
     {
         name = branch.Name;
         head = branch.Head;
@@ -115,7 +115,7 @@ public static class RepositoryExtension
         out Signature? tagger,
         out string? message)
     {
-        hash = tag.Hash;
+        hash = tag.CommitHash;
         name = tag.Name;
         tagger = tag.Tagger;
         message = tag.Message;
@@ -129,7 +129,7 @@ public static class RepositoryExtension
         out Signature? tagger,
         out string? message)
     {
-        hash = tag.Hash;
+        hash = tag.CommitHash;
         name = tag.Name;
         type = tag.Type;
         tagger = tag.Tagger;
@@ -141,13 +141,11 @@ public static class RepositoryExtension
         out Hash hash,
         out string name,
         out Signature? tagger,
-        out string? message,
-        out Commit commit)
+        out string? message)
     {
-        hash = tag.Hash;
+        hash = tag.CommitHash;
         name = tag.Name;
         tagger = tag.Tagger;
         message = tag.Message;
-        commit = tag.Commit;
     }
 }

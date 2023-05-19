@@ -11,15 +11,15 @@ using System;
 
 namespace GitReader.Structures;
 
-public sealed class ReflogEntry : IEquatable<ReflogEntry>
+public sealed class ReflogEntry : CommitRef, IEquatable<ReflogEntry>
 {
-    public readonly Commit Commit;
-    public readonly Commit OldCommit;
+    public readonly Hash Commit;
+    public readonly Hash OldCommit;
     public readonly Signature Committer;
     public readonly string Message;
 
-    internal ReflogEntry(
-        Commit commit, Commit oldCommit, Signature committer, string message)
+    internal ReflogEntry(WeakReference rwr, Hash commit, Hash oldCommit, Signature committer, string message) :
+        base(rwr, commit)
     {
         this.Commit = commit;
         this.OldCommit = oldCommit;

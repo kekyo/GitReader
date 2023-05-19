@@ -8,20 +8,22 @@
 ////////////////////////////////////////////////////////////////////////////
 
 using System;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace GitReader.Structures;
 
-public sealed class Branch : IEquatable<Branch>
+public sealed class Branch : CommitRef, IEquatable<Branch>
 {
     public readonly string Name;
-    public readonly Commit Head;
 
-    internal Branch(
+    public Hash Head => CommitHash;
+
+    internal Branch(WeakReference rwr,
         string name,
-        Commit head)
+        Hash head) : base(rwr, head)
     {
         this.Name = name;
-        this.Head = head;
     }
 
     public bool Equals(Branch rhs) =>
@@ -46,5 +48,5 @@ public sealed class Branch : IEquatable<Branch>
     }
 
     public override string ToString() =>
-        $"{this.Head.Hash}: {this.Name}";
+        $"{this.Head}: {this.Name}";
 }
