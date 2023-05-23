@@ -83,6 +83,10 @@ internal static class IndexReader
         {
             return new();
         }
+        if (objectCount >= int.MaxValue)
+        {
+            Throw(5);
+        }
 
         // Read hash table.
         var sha1List = new Hash[objectCount];
@@ -94,7 +98,7 @@ internal static class IndexReader
             read = await fs.ReadAsync(hashTableBuffer, 0, request, ct);
             if (read != request)
             {
-                Throw(5);
+                Throw(6);
             }
 
             for (var i = 0; i < read; i += Hash.Size)
@@ -109,7 +113,7 @@ internal static class IndexReader
         }
 
         // Read CRC32 table.
-        using var crc32TableBuffer = BufferPool.Take(objectCount * 4);
+        using var crc32TableBuffer = BufferPool.Take((int)objectCount * 4);
         read = await fs.ReadAsync(crc32TableBuffer, 0, crc32TableBuffer.Length, ct);
         if (read != crc32TableBuffer.Length)
         {
@@ -117,7 +121,7 @@ internal static class IndexReader
         }
 
         // Read offset table.
-        using var offsetTableBuffer = BufferPool.Take(objectCount * 4);
+        using var offsetTableBuffer = BufferPool.Take((int)objectCount * 4);
         read = await fs.ReadAsync(offsetTableBuffer, 0, offsetTableBuffer.Length, ct);
         if (read != offsetTableBuffer.Length)
         {
