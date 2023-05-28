@@ -1,6 +1,6 @@
 ﻿[
   {
-    Commit: {
+    Item1: {
       Hash: {
         HashCode: 9bb78d13405cab568d3e213130f31beda1ce21d1
       },
@@ -24,7 +24,7 @@
         }
       ]
     },
-    OldCommit: {
+    Item2: {
       Hash: {
         HashCode: 9bb78d13405cab568d3e213130f31beda1ce21d1
       },
@@ -48,7 +48,7 @@
         }
       ]
     },
-    Reflog: {
+    Item3: {
       Commit: {
         HashCode: 9bb78d13405cab568d3e213130f31beda1ce21d1
       },
@@ -65,7 +65,7 @@
     }
   },
   {
-    Commit: {
+    Item1: {
       Hash: {
         HashCode: 9bb78d13405cab568d3e213130f31beda1ce21d1
       },
@@ -89,7 +89,7 @@
         }
       ]
     },
-    OldCommit: {
+    Item2: {
       Hash: {
         HashCode: 9bb78d13405cab568d3e213130f31beda1ce21d1
       },
@@ -113,7 +113,7 @@
         }
       ]
     },
-    Reflog: {
+    Item3: {
       Commit: {
         HashCode: 9bb78d13405cab568d3e213130f31beda1ce21d1
       },
@@ -130,7 +130,7 @@
     }
   },
   {
-    Commit: {
+    Item1: {
       Hash: {
         HashCode: 9bb78d13405cab568d3e213130f31beda1ce21d1
       },
@@ -154,7 +154,7 @@
         }
       ]
     },
-    OldCommit: {
+    Item2: {
       Hash: {
         HashCode: 1a85b097bde6e9800a1700f702202b3f232c8bda
       },
@@ -181,7 +181,7 @@
         }
       ]
     },
-    Reflog: {
+    Item3: {
       Commit: {
         HashCode: 9bb78d13405cab568d3e213130f31beda1ce21d1
       },
@@ -198,7 +198,7 @@
     }
   },
   {
-    Commit: {
+    Item1: {
       Hash: {
         HashCode: 1a85b097bde6e9800a1700f702202b3f232c8bda
       },
@@ -225,7 +225,7 @@
         }
       ]
     },
-    OldCommit: {
+    Item2: {
       Hash: {
         HashCode: 1a85b097bde6e9800a1700f702202b3f232c8bda
       },
@@ -252,7 +252,7 @@
         }
       ]
     },
-    Reflog: {
+    Item3: {
       Commit: {
         HashCode: 1a85b097bde6e9800a1700f702202b3f232c8bda
       },
@@ -269,7 +269,7 @@
     }
   },
   {
-    Commit: {
+    Item1: {
       Hash: {
         HashCode: 1a85b097bde6e9800a1700f702202b3f232c8bda
       },
@@ -296,7 +296,7 @@
         }
       ]
     },
-    OldCommit: {
+    Item2: {
       Hash: {
         HashCode: 9bb78d13405cab568d3e213130f31beda1ce21d1
       },
@@ -320,7 +320,7 @@
         }
       ]
     },
-    Reflog: {
+    Item3: {
       Commit: {
         HashCode: 1a85b097bde6e9800a1700f702202b3f232c8bda
       },
@@ -337,7 +337,7 @@
     }
   },
   {
-    Commit: {
+    Item1: {
       Hash: {
         HashCode: 9bb78d13405cab568d3e213130f31beda1ce21d1
       },
@@ -361,7 +361,7 @@
         }
       ]
     },
-    OldCommit: {
+    Item2: {
       Hash: {
         HashCode: 9bb78d13405cab568d3e213130f31beda1ce21d1
       },
@@ -385,7 +385,7 @@
         }
       ]
     },
-    Reflog: {
+    Item3: {
       Commit: {
         HashCode: 9bb78d13405cab568d3e213130f31beda1ce21d1
       },
@@ -402,7 +402,7 @@
     }
   },
   {
-    Commit: {
+    Item1: {
       Hash: {
         HashCode: 9bb78d13405cab568d3e213130f31beda1ce21d1
       },
@@ -426,7 +426,7 @@
         }
       ]
     },
-    OldCommit: {
+    Item2: {
       Hash: {
         HashCode: 9bb78d13405cab568d3e213130f31beda1ce21d1
       },
@@ -450,7 +450,7 @@
         }
       ]
     },
-    Reflog: {
+    Item3: {
       Commit: {
         HashCode: 9bb78d13405cab568d3e213130f31beda1ce21d1
       },
@@ -467,7 +467,7 @@
     }
   },
   {
-    Commit: {
+    Item1: {
       Hash: {
         HashCode: 9bb78d13405cab568d3e213130f31beda1ce21d1
       },
@@ -491,7 +491,7 @@
         }
       ]
     },
-    OldCommit: {
+    Item2: {
       Hash: {
         HashCode: 9bb78d13405cab568d3e213130f31beda1ce21d1
       },
@@ -515,7 +515,7 @@
         }
       ]
     },
-    Reflog: {
+    Item3: {
       Commit: {
         HashCode: 9bb78d13405cab568d3e213130f31beda1ce21d1
       },

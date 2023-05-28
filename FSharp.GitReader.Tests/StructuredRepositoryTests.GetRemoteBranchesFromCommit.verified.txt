@@ -1,7 +1,7 @@
 ﻿[
   {
-    Name: origin/netcore,
-    Head: {
+    Item1: origin/netcore,
+    Item2: {
       Hash: {
         HashCode: f690f0e7bf703582a1fad7e6f1c2d1586390f43d
       },

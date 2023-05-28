@@ -242,11 +242,12 @@ public static class Program
 
         // HashSet to check if the commit has already been output.
         // Initially, insert HEAD commit for all local branches and remote branches.
+        var headCommits = await Task.WhenAll(repository.Branches.Values.
+            Concat(repository.RemoteBranches.Values).
+            Select(branch => branch.GetHeadCommitAsync()));
+
         var hashedCommits = new HashSet<Commit>(
-            repository.Branches.Values.
-                Concat(repository.RemoteBranches.Values).
-                Select(branch => branch.Head),
-            CommitComparer.Instance);
+            headCommits, CommitComparer.Instance);
 
         // SortedCommitMap to extract the next commit to be output.
         // Insert all of the above commit groups as the initial state.
@@ -256,24 +257,28 @@ public static class Program
         // Insert all tag commits in hashedCommits and sortedCommits.
         // Although not common, Git tags can also be applied to trees and file objects.
         // Therefore, here we only extract tags applied to commits.
-        foreach (var commit in repository.Tags.Values.
-            Select(tag => tag is CommitTag ct ? ct.Commit : null).
-            Where(commit => commit != null))
+        foreach (var tag in repository.Tags.Values.
+            Select(tag => tag is CommitTag ct ? ct : null!).
+            Where(tag => tag != null))
         {
+            var commit = await tag.GetCommitAsync();
+
             // Ignore commits that already exist.
-            if (hashedCommits.Add(commit!))
+            if (hashedCommits.Add(commit))
             {
-                sortedCommits.Add(commit!);
+                sortedCommits.Add(commit);
             }
         }
 
         // Also add a HEAD commit for the repository if exists.
         var head = repository.GetCurrentHead();
-        if (head?.Head is { } c)
+        if (head is { })
         {
-            if (hashedCommits.Add(c))
+            var headCommit = await head.GetHeadCommitAsync();
+
+            if (hashedCommits.Add(headCommit))
             {
-                sortedCommits.Add(c);
+                sortedCommits.Add(headCommit);
             }
         }
 

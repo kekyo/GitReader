@@ -1,6 +1,6 @@
 ﻿[
   {
-    Stash: {
+    Item1: {
       Hash: {
         HashCode: 01513a037003eae04bae543fd21f3f06cefd991b
       },
@@ -12,7 +12,7 @@
       },
       Message: On master: Stash with custom message
     },
-    Commit: {
+    Item2: {
       Hash: {
         HashCode: 01513a037003eae04bae543fd21f3f06cefd991b
       },
@@ -33,7 +33,7 @@
     }
   },
   {
-    Stash: {
+    Item1: {
       Hash: {
         HashCode: 8a770120d675b4e78872475cfd69c7aba6097eae
       },
@@ -45,7 +45,7 @@
       },
       Message: WIP on master: 9bb78d1 Added installation .NET 6 SDK on GitHub Actions.
     },
-    Commit: {
+    Item2: {
       Hash: {
         HashCode: 8a770120d675b4e78872475cfd69c7aba6097eae
       },

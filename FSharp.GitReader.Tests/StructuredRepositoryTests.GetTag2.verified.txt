@@ -1,5 +1,5 @@
 ﻿{
-  Commit: {
+  Item1: {
     Hash: {
       HashCode: a7187601f4b4b9dacc3c78895397bb2911d190d6
     },
@@ -17,18 +17,35 @@
     },
     Subject: Use RelaxVersioner on .NET2/35,
     Body: ,
-    Tags: []
+    Tags: [
+      {
+        Hash: {
+          HashCode: a7187601f4b4b9dacc3c78895397bb2911d190d6
+        },
+        Name: 0.9.6,
+        Tagger: {
+          Name: Kouji Matsui,
+          MailAddress: k@kekyo.net,
+          Date: 2016-01-29 23:44:10 +9,
+          RawFormat: Kouji Matsui <k@kekyo.net> 1454078650 0900
+        },
+        Message: ,
+        Type: Commit
+      }
+    ]
   },
-  Hash: {
-    HashCode: a7187601f4b4b9dacc3c78895397bb2911d190d6
-  },
-  Name: 0.9.6,
-  Tagger: {
-    Name: Kouji Matsui,
-    MailAddress: k@kekyo.net,
-    Date: 2016-01-29 23:44:10 +9,
-    RawFormat: Kouji Matsui <k@kekyo.net> 1454078650 0900
-  },
-  Message: ,
-  Type: Commit
+  Item2: {
+    Hash: {
+      HashCode: a7187601f4b4b9dacc3c78895397bb2911d190d6
+    },
+    Name: 0.9.6,
+    Tagger: {
+      Name: Kouji Matsui,
+      MailAddress: k@kekyo.net,
+      Date: 2016-01-29 23:44:10 +9,
+      RawFormat: Kouji Matsui <k@kekyo.net> 1454078650 0900
+    },
+    Message: ,
+    Type: Commit
+  }
 }

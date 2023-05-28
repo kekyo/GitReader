@@ -11,6 +11,7 @@ namespace GitReader.Structures
 
 open GitReader
 open System.Threading
+open System
 
 [<AutoOpen>]
 module public RepositoryExtension =
@@ -27,6 +28,14 @@ module public RepositoryExtension =
                    | null -> None
                    | _ -> Some c
         }
+        member repository.getHeadReflogs(?ct: CancellationToken) =
+            RepositoryFacade.GetHeadReflogsAsync(
+                repository, new WeakReference(repository), unwrapCT ct) |> Async.AwaitTask
+
+    type Branch with
+        member branch.getHeadCommit(?ct: CancellationToken) =
+            RepositoryFacade.GetCommitAsync(
+                branch, unwrapCT ct) |> Async.AwaitTask
 
     type Commit with
         member commit.getPrimaryParentCommit(?ct: CancellationToken) = async {
@@ -44,6 +53,24 @@ module public RepositoryExtension =
                 commit, unwrapCT ct) |> Async.AwaitTask
         member commit.getMessage() =
             commit.message
+            
+    type CommitTag with
+        member tag.getCommit(?ct: CancellationToken) =
+            RepositoryFacade.GetCommitAsync(
+                tag, unwrapCT ct) |> Async.AwaitTask
+            
+    type Stash with
+        member stash.getCommit(?ct: CancellationToken) =
+            RepositoryFacade.GetCommitAsync(
+                stash, unwrapCT ct) |> Async.AwaitTask
+            
+    type ReflogEntry with
+        member reflog.getCurrentCommit(?ct: CancellationToken) =
+            RepositoryFacade.GetCommitAsync(
+                reflog, reflog.Commit, unwrapCT ct) |> Async.AwaitTask
+        member reflog.getOldCommit(?ct: CancellationToken) =
+            RepositoryFacade.GetCommitAsync(
+                reflog, reflog.OldCommit, unwrapCT ct) |> Async.AwaitTask
 
     type TreeBlobEntry with
         member entry.openBlob(?ct: CancellationToken) =
@@ -82,5 +109,4 @@ module public RepositoryExtension =
           | _ -> Some tag.Tagger.Value),
          (match tag.Message with
           | null -> None
-          | _ -> Some tag.Message),
-         tag.Commit)
+          | _ -> Some tag.Message))
