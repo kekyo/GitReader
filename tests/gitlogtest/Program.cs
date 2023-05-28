@@ -123,24 +123,29 @@ public static class Program
             hashedCommits);
 #else
         var hashedCommits = new HashSet<Commit>(
-            repository.RemoteBranches.Values.Select(branch => branch.Head),
+            await Task.WhenAll(
+                repository.RemoteBranches.Values.
+                Select(branch => branch.GetHeadCommitAsync())),
             CommitComparer.Instance);
         var sortedCommits = new SortedCommitMap(
             hashedCommits);
 
-        foreach (var commit in repository.Tags.Values.
-            Select(tag => tag is CommitTag ct ? ct.Commit : null).
-            Where(commit => commit != null))
+        foreach (var tag in repository.Tags.Values.
+            Select(tag => tag is CommitTag ct ? ct : null!).
+            Where(tag => tag != null))
         {
-            if (hashedCommits.Add(commit!))
+            var c = await tag.GetCommitAsync();
+
+            if (hashedCommits.Add(c))
             {
-                sortedCommits.Add(commit!);
+                sortedCommits.Add(c);
             }
         }
 
-        var head = repository.GetCurrentHead();
-        if (head?.Head is { } c)
+        if (repository.GetCurrentHead() is { } head)
         {
+            var c = await head.GetHeadCommitAsync();
+
             if (hashedCommits.Add(c))
             {
                 sortedCommits.Add(c);

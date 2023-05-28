@@ -60,8 +60,9 @@ public sealed class RepositoryTests
             RepositoryTestsSetUp.BasePath);
 
         var branch = repository.Branches["master"];
+        var headCommit = await branch.GetHeadCommitAsync();
 
-        await Verifier.Verify(branch);
+        await Verifier.Verify(new { Name = branch.Name, Head = headCommit, });
     }
 
     [Test]
@@ -81,9 +82,10 @@ public sealed class RepositoryTests
         using var repository = await Repository.Factory.OpenStructureAsync(
             RepositoryTestsSetUp.BasePath);
 
-        var tag = repository.Tags["2.0.0"];
+        var tag = (CommitTag)repository.Tags["2.0.0"];
+        var commit = await tag.GetCommitAsync();
 
-        await Verifier.Verify(tag);
+        await Verifier.Verify(new { Commit = commit, Tag = tag, });
     }
 
     [Test]
@@ -92,9 +94,10 @@ public sealed class RepositoryTests
         using var repository = await Repository.Factory.OpenStructureAsync(
             RepositoryTestsSetUp.BasePath);
 
-        var tag = repository.Tags["0.9.6"];
+        var tag = (CommitTag)repository.Tags["0.9.6"];
+        var commit = await tag.GetCommitAsync();
 
-        await Verifier.Verify(tag);
+        await Verifier.Verify(new { Commit = commit, Tag = tag, });
     }
 
     [Test]
@@ -107,8 +110,10 @@ public sealed class RepositoryTests
             "9bb78d13405cab568d3e213130f31beda1ce21d1");
         var branches = commit!.Branches;
 
-        // HACK: Fixed by ToList(), because avoid serialization in BranchArrayConverter.
-        await Verifier.Verify(branches.OrderBy(b => b.Name).ToList());
+        await Verifier.Verify(
+            await Task.WhenAll(
+                branches.OrderBy(b => b.Name).
+                Select(async b => new { Name = b.Name, Head = await b.GetHeadCommitAsync(), })));
     }
 
     [Test]
@@ -134,8 +139,10 @@ public sealed class RepositoryTests
             "f690f0e7bf703582a1fad7e6f1c2d1586390f43d");
         var branches = commit!.RemoteBranches;
 
-        // HACK: Fixed by ToList(), because avoid serialization in BranchArrayConverter.
-        await Verifier.Verify(branches.OrderBy(br => br.Name).ToList());
+        await Verifier.Verify(
+            await Task.WhenAll(
+                branches.OrderBy(br => br.Name).
+                Select(async br => new { Name = br.Name, Head = await br.GetHeadCommitAsync(), })));
     }
 
     [Test]
@@ -194,8 +201,8 @@ public sealed class RepositoryTests
         var branch = repository.Branches["master"];
 
         var commits = new List<Commit>();
-        var current = branch.Head;
 
+        Commit? current = await branch.GetHeadCommitAsync();
         while (current != null)
         {
             commits.Add(current);
@@ -221,7 +228,12 @@ public sealed class RepositoryTests
     {
         using var repository = await Repository.Factory.OpenStructureAsync(RepositoryTestsSetUp.BasePath);
 
-        await Verifier.Verify(repository.Stashes.OrderByDescending(reflog => reflog.Committer.Date).ToArray());
+        var stashes = await Task.WhenAll(
+            repository.Stashes.
+            OrderByDescending(stash => stash.Committer.Date).
+            Select(async stash => new { Stash = stash, Commit = await stash.GetCommitAsync(), }));
+
+        await Verifier.Verify(stashes);
     }
     
     [Test]
@@ -231,6 +243,15 @@ public sealed class RepositoryTests
 
         var reflogs = await repository.GetHeadReflogsAsync();
 
-        await Verifier.Verify(reflogs.OrderByDescending(reflog => reflog.Committer.Date).ToArray());
+        var results = await Task.WhenAll(reflogs.
+            OrderByDescending(reflog => reflog.Committer.Date).
+            Select(async reflog =>
+            {
+                var current = await reflog.GetCurrentCommitAsync();
+                var old = await reflog.GetOldCommitAsync();
+                return new { Commit = current, OldCommit = old, Reflog = reflog, };
+            }));
+
+        await Verifier.Verify(results);
     }
 }

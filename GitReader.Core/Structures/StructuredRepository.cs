@@ -8,8 +8,16 @@
 ////////////////////////////////////////////////////////////////////////////
 
 using GitReader.Collections;
+using System;
+using System.ComponentModel;
 
 namespace GitReader.Structures;
+
+internal interface IRepositoryReference
+{
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    WeakReference Repository { get; }
+}
 
 public sealed class StructuredRepository : Repository
 {

@@ -40,11 +40,13 @@ if (repository.GetCurrentHead() is { } head)
 {
     Console.WriteLine($"Name: {head.Name}");
 
-    Console.WriteLine($"Hash: {head.Head.Hash}");
-    Console.WriteLine($"Author: {head.Head.Author}");
-    Console.WriteLine($"Committer: {head.Head.Committer}");
-    Console.WriteLine($"Subject: {head.Head.Subject}");
-    Console.WriteLine($"Body: {head.Head.Body}");
+    var commit = await head.GetHeadCommitAsync();
+
+    Console.WriteLine($"Hash: {commit.Hash}");
+    Console.WriteLine($"Author: {commit.Author}");
+    Console.WriteLine($"Committer: {commit.Committer}");
+    Console.WriteLine($"Subject: {commit.Subject}");
+    Console.WriteLine($"Body: {commit.Body}");
 }
 ```
 
@@ -125,11 +127,14 @@ if (repository.GetCurrentHead() is Branch head)
 {
     Console.WriteLine($"Name: {head.Name}");
 
-    Console.WriteLine($"Hash: {head.Head.Hash}");
-    Console.WriteLine($"Author: {head.Head.Author}");
-    Console.WriteLine($"Committer: {head.Head.Committer}");
-    Console.WriteLine($"Subject: {head.Head.Subject}");
-    Console.WriteLine($"Body: {head.Head.Body}");
+    // Get the commit that this HEAD points to:
+    Commit commit = await head.GetHeadCommitAsync();
+
+    Console.WriteLine($"Hash: {commit.Hash}");
+    Console.WriteLine($"Author: {commit.Author}");
+    Console.WriteLine($"Committer: {commit.Committer}");
+    Console.WriteLine($"Subject: {commit.Subject}");
+    Console.WriteLine($"Body: {commit.Body}");
 }
 ```
 
@@ -154,11 +159,13 @@ Branch branch = repository.Branches["develop"];
 
 Console.WriteLine($"Name: {branch.Name}");
 
-Console.WriteLine($"Hash: {branch.Head.Hash}");
-Console.WriteLine($"Author: {branch.Head.Author}");
-Console.WriteLine($"Committer: {branch.Head.Committer}");
-Console.WriteLine($"Subject: {branch.Head.Subject}");
-Console.WriteLine($"Body: {branch.Head.Body}");
+Commit commit = await branch.GetHeadCommitAsync();
+
+Console.WriteLine($"Hash: {commit.Hash}");
+Console.WriteLine($"Author: {commit.Author}");
+Console.WriteLine($"Committer: {commit.Committer}");
+Console.WriteLine($"Subject: {commit.Subject}");
+Console.WriteLine($"Body: {commit.Body}");
 ```
 
 ### Get a remote branch head commit
@@ -168,11 +175,13 @@ Branch branch = repository.RemoteBranches["origin/develop"];
 
 Console.WriteLine($"Name: {branch.Name}");
 
-Console.WriteLine($"Hash: {branch.Head.Hash}");
-Console.WriteLine($"Author: {branch.Head.Author}");
-Console.WriteLine($"Committer: {branch.Head.Committer}");
-Console.WriteLine($"Subject: {branch.Head.Subject}");
-Console.WriteLine($"Body: {branch.Head.Body}");
+Commit commit = await branch.GetHeadCommitAsync();
+
+Console.WriteLine($"Hash: {commit.Hash}");
+Console.WriteLine($"Author: {commit.Author}");
+Console.WriteLine($"Committer: {commit.Committer}");
+Console.WriteLine($"Subject: {commit.Subject}");
+Console.WriteLine($"Body: {commit.Body}");
 ```
 
 ### Get a tag
@@ -186,6 +195,15 @@ Console.WriteLine($"Hash: {tag.Hash}");
 Console.WriteLine($"Author: {tag.Author}");
 Console.WriteLine($"Committer: {tag.Committer}");
 Console.WriteLine($"Message: {tag.Message}");
+
+// If tag is a commit tag?
+if (tag is CommitTag ct)
+{
+    // Get the commit indicated by the tag.
+    Commit commit = await ct.GetCommitAsync();
+
+    // ...
+}
 ```
 
 ### Get related branches and tags from a commit
@@ -211,11 +229,13 @@ foreach (Branch branch in repository.Branches.Values)
 {
     Console.WriteLine($"Name: {branch.Name}");
 
-    Console.WriteLine($"Hash: {branch.Head.Hash}");
-    Console.WriteLine($"Author: {branch.Head.Author}");
-    Console.WriteLine($"Committer: {branch.Head.Committer}");
-    Console.WriteLine($"Subject: {branch.Head.Subject}");
-    Console.WriteLine($"Body: {branch.Head.Body}");
+    Commit commit = await branch.GetHeadCommitAsync();
+
+    Console.WriteLine($"Hash: {commit.Hash}");
+    Console.WriteLine($"Author: {commit.Author}");
+    Console.WriteLine($"Committer: {commit.Committer}");
+    Console.WriteLine($"Subject: {commit.Subject}");
+    Console.WriteLine($"Body: {commit.Body}");
 }
 ```
 
@@ -311,7 +331,8 @@ This occurs with merge commits, where there are links to all parent commits.
 The first parent commit is called the "primary commit"
 and is always present except for the first commit in the repository.
 
-Use `GetParentCommitsAsync()` to get links to all parent commits.
+Use `GetPrimaryParentCommitAsync()` to retrieve the primary commit,
+and use `GetParentCommitsAsync()` to get links to all parent commits.
 
 As a general thing about Git,
 it is important to note that the parent-child relationship of commits (caused by branching and merging),
@@ -327,7 +348,7 @@ Branch branch = repository.Branches["develop"];
 
 Console.WriteLine($"Name: {branch.Name}");
 
-Commit? current = branch.Head;
+Commit? current = await branch.GetHeadCommitAsync();
 
 // Continue as long as the parent commit exists.
 while (current != null)
@@ -553,6 +574,11 @@ Apache-v2
 
 ## History
 
+* 0.11.0:
+  * The structured interface no longer reads commit information when it opens.
+    Instead, you must explicitly call `Branch.GetHeadCommitAsync()`,
+    but the open will be processed much faster.  
+  * Improved performance.
 * 0.10.0:
   * Implemented stash interface.
   * Improved performance.

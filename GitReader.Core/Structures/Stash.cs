@@ -8,27 +8,40 @@
 ////////////////////////////////////////////////////////////////////////////
 
 using System;
+using System.ComponentModel;
 
 namespace GitReader.Structures;
 
-public sealed class Stash : IEquatable<Stash>
+public sealed class Stash :
+    IEquatable<Stash>, IInternalCommitReference
 {
-    public readonly Commit Commit;
+    private readonly WeakReference rwr;
+
+    [EditorBrowsable(EditorBrowsableState.Advanced)]
+    public readonly Hash Hash;
+
     public readonly Signature Committer;
     public readonly string Message;
 
     internal Stash(
-        Commit commit, Signature committer, string message)
+        WeakReference rwr, Hash hash, Signature committer, string message)
     {
-        this.Commit = commit;
+        this.rwr = rwr;
+        this.Hash = hash;
         this.Committer = committer;
         this.Message = message;
     }
 
+    Hash ICommitReference.Hash =>
+        this.Hash;
+
+    WeakReference IRepositoryReference.Repository =>
+        this.rwr;
+
     public bool Equals(Stash rhs) =>
         rhs is { } &&
         (object.ReferenceEquals(this, rhs) ||
-            (this.Commit.Equals(rhs.Commit) &&
+            (this.Hash.Equals(rhs.Hash) &&
              this.Committer.Equals(rhs.Committer) &&
              this.Message.Equals(rhs.Message)));
 
@@ -42,7 +55,7 @@ public sealed class Stash : IEquatable<Stash>
     {
         unchecked
         {
-            var hashCode = this.Commit.GetHashCode();
+            var hashCode = this.Hash.GetHashCode();
             hashCode = (hashCode * 397) ^ this.Committer.GetHashCode();
             hashCode = (hashCode * 397) ^ this.Message.GetHashCode();
             return hashCode;

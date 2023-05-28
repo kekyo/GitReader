@@ -14,10 +14,11 @@ using System.Linq;
 
 namespace GitReader.Structures;
 
-public sealed class Commit : IEquatable<Commit>
+public sealed class Commit :
+    IEquatable<Commit>, IRepositoryReference
 {
+    private readonly WeakReference rwr;
     internal readonly string message;
-    internal readonly WeakReference rwr;
     internal readonly ReadOnlyArray<Hash> parents;
     internal readonly Hash treeRoot;
 
@@ -102,6 +103,9 @@ public sealed class Commit : IEquatable<Commit>
             return this.tags;
         }
     }
+
+    WeakReference IRepositoryReference.Repository =>
+        this.rwr;
 
     public bool Equals(Commit rhs) =>
         rhs is { } &&

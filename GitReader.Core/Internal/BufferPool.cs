@@ -8,7 +8,7 @@
 ////////////////////////////////////////////////////////////////////////////
 
 using System;
-using System.Collections.Generic;
+using System.Diagnostics;
 using System.Threading;
 
 namespace GitReader.Internal;
@@ -58,81 +58,111 @@ internal readonly struct DetachedBufferPoolBuffer
 
 internal static class BufferPool
 {
-    // TODO: Makes lock-free.
-
-    private static readonly Dictionary<uint, List<WeakReference>> buffers = new();
-
-    public static BufferPoolBuffer Take(uint size)
+    private sealed class BufferHolder
     {
-        List<WeakReference> bufferStack;
+        private volatile BufferHolder? next;
+        private readonly WeakReference bwr;
 
-        lock (buffers)
+        public BufferHolder() =>
+            this.bwr = new(null);
+
+        private BufferHolder(byte[] buffer) =>
+            this.bwr = new(buffer);
+
+        public byte[] Take(int size)
         {
-            if (!buffers.TryGetValue(size, out bufferStack!))
+            var current = this;
+            do
             {
-                bufferStack = new();
-                buffers.Add(size, bufferStack);
+                if (current.bwr.Target is byte[] buffer &&
+                    buffer.Length == size)
+                {
+                    lock (current.bwr)
+                    {
+                        if (current.bwr.Target is byte[] b &&
+                            b.Length == size)
+                        {
+                            current.bwr.Target = null;
+                            return b;
+                        }
+                    }
+                }
+                current = current.next;
             }
+            while (current != null);
+
+            return new byte[size];
         }
 
-        lock (bufferStack)
+        public void Release(byte[] buffer)
         {
-            for (var index = 0; index < bufferStack.Count; index++)
+            var current = this;
+            BufferHolder last;
+            do
             {
-                var wr = bufferStack[index];
-                if (wr.Target is byte[] buffer)
+                if (current.bwr.Target == null)
                 {
-                    wr.Target = null;
-                    return new(buffer);
+                    lock (current.bwr)
+                    {
+                        if (current.bwr.Target == null)
+                        {
+                            current.bwr.Target = buffer;
+                            return;
+                        }
+                    }
                 }
+                last = current;
+                current = current.next;
             }
+            while (current != null);
 
-            return new(new byte[size]);
+            var next = new BufferHolder(buffer);
+
+            while (true)
+            {
+                if (Interlocked.CompareExchange(ref last.next, next, null) is not { } cnext)
+                {
+                    return;
+                }
+                last = cnext;
+            }
         }
     }
 
-    public static BufferPoolBuffer Take(int size) =>
-        Take((uint)size);
+    private static readonly BufferHolder[] bufferHolders = new[]
+    {
+        new BufferHolder(),  // 0 - 12
+        new BufferHolder(),
+        new BufferHolder(),
+        new BufferHolder(),
+        new BufferHolder(),
+        new BufferHolder(),
+        new BufferHolder(),
+        new BufferHolder(),
+        new BufferHolder(),
+        new BufferHolder(),
+        new BufferHolder(),
+        new BufferHolder(),
+        new BufferHolder(),
+    };
+
+    static BufferPool()
+    {
+        Debug.Assert(bufferHolders.Length == 13);
+    }
+
+    public static BufferPoolBuffer Take(int size)
+    {
+        var bufferHolder = bufferHolders[size % 13];
+        return bufferHolder.Take(size);
+    }
 
     internal static void Release(ref byte[] buffer)
     {
-        if (buffer == null)
+        if (Interlocked.Exchange(ref buffer, null!) is { } b)
         {
-            return;
+            var bufferHolder = bufferHolders[b.Length % 13];
+            bufferHolder.Release(b);
         }
-
-        var size = buffer.Length;
-
-        List<WeakReference> bufferStack;
-
-        lock (buffers)
-        {
-            if (!buffers.TryGetValue((uint)size, out bufferStack!))
-            {
-                bufferStack = new();
-                buffers.Add((uint)size, bufferStack);
-            }
-        }
-
-        lock (bufferStack)
-        {
-            WeakReference wr;
-
-            for (var index = 0; index < bufferStack.Count; index++)
-            {
-                wr = bufferStack[index];
-                if (wr.Target == null)
-                {
-                    wr.Target = buffer;
-                    buffer = null!;
-                    return;
-                }
-            }
-
-            wr = new WeakReference(buffer);
-            bufferStack.Add(wr);
-        }
-
-        buffer = null!;
     }
 }

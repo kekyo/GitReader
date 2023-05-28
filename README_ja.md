@@ -40,11 +40,13 @@ if (repository.GetCurrentHead() is { } head)
 {
     Console.WriteLine($"Name: {head.Name}");
 
-    Console.WriteLine($"Hash: {head.Head.Hash}");
-    Console.WriteLine($"Author: {head.Head.Author}");
-    Console.WriteLine($"Committer: {head.Head.Committer}");
-    Console.WriteLine($"Subject: {head.Head.Subject}");
-    Console.WriteLine($"Body: {head.Head.Body}");
+    var commit = await head.GetHeadCommitAsync();
+
+    Console.WriteLine($"Hash: {commit.Hash}");
+    Console.WriteLine($"Author: {commit.Author}");
+    Console.WriteLine($"Committer: {commit.Committer}");
+    Console.WriteLine($"Subject: {commit.Subject}");
+    Console.WriteLine($"Body: {commit.Body}");
 }
 ```
 
@@ -123,11 +125,14 @@ if (repository.GetCurrentHead() is Branch head)
 {
     Console.WriteLine($"Name: {head.Name}");
 
-    Console.WriteLine($"Hash: {head.Head.Hash}");
-    Console.WriteLine($"Author: {head.Head.Author}");
-    Console.WriteLine($"Committer: {head.Head.Committer}");
-    Console.WriteLine($"Subject: {head.Head.Subject}");
-    Console.WriteLine($"Body: {head.Head.Body}");
+    // このHEADが指すコミットを得る
+    Commit commit = await head.GetHeadCommitAsync();
+
+    Console.WriteLine($"Hash: {commit.Hash}");
+    Console.WriteLine($"Author: {commit.Author}");
+    Console.WriteLine($"Committer: {commit.Committer}");
+    Console.WriteLine($"Subject: {commit.Subject}");
+    Console.WriteLine($"Body: {commit.Body}");
 }
 ```
 
@@ -152,11 +157,13 @@ Branch branch = repository.Branches["develop"];
 
 Console.WriteLine($"Name: {branch.Name}");
 
-Console.WriteLine($"Hash: {branch.Head.Hash}");
-Console.WriteLine($"Author: {branch.Head.Author}");
-Console.WriteLine($"Committer: {branch.Head.Committer}");
-Console.WriteLine($"Subject: {branch.Head.Subject}");
-Console.WriteLine($"Body: {branch.Head.Body}");
+Commit commit = await branch.GetHeadCommitAsync();
+
+Console.WriteLine($"Hash: {commit.Hash}");
+Console.WriteLine($"Author: {commit.Author}");
+Console.WriteLine($"Committer: {commit.Committer}");
+Console.WriteLine($"Subject: {commit.Subject}");
+Console.WriteLine($"Body: {commit.Body}");
 ```
 
 ### 指定されたリモートブランチの情報を取得
@@ -166,11 +173,13 @@ Branch branch = repository.RemoteBranches["origin/develop"];
 
 Console.WriteLine($"Name: {branch.Name}");
 
-Console.WriteLine($"Hash: {branch.Head.Hash}");
-Console.WriteLine($"Author: {branch.Head.Author}");
-Console.WriteLine($"Committer: {branch.Head.Committer}");
-Console.WriteLine($"Subject: {branch.Head.Subject}");
-Console.WriteLine($"Body: {branch.Head.Body}");
+Commit commit = await branch.GetHeadCommitAsync();
+
+Console.WriteLine($"Hash: {commit.Hash}");
+Console.WriteLine($"Author: {commit.Author}");
+Console.WriteLine($"Committer: {commit.Committer}");
+Console.WriteLine($"Subject: {commit.Subject}");
+Console.WriteLine($"Body: {commit.Body}");
 ```
 
 ### タグの情報を取得
@@ -184,6 +193,15 @@ Console.WriteLine($"Hash: {tag.Hash}");
 Console.WriteLine($"Author: {tag.Author}");
 Console.WriteLine($"Committer: {tag.Committer}");
 Console.WriteLine($"Message: {tag.Message}");
+
+// タグがコミットタグなら
+if (tag is CommitTag ct)
+{
+    // タグが示すコミットを取得
+    Commit commit = await ct.GetCommitAsync();
+
+    // ...
+}
 ```
 
 ### 指定されたコミットに紐づくブランチやタグの情報を取得
@@ -209,11 +227,13 @@ foreach (Branch branch in repository.Branches.Values)
 {
     Console.WriteLine($"Name: {branch.Name}");
 
-    Console.WriteLine($"Hash: {branch.Head.Hash}");
-    Console.WriteLine($"Author: {branch.Head.Author}");
-    Console.WriteLine($"Committer: {branch.Head.Committer}");
-    Console.WriteLine($"Subject: {branch.Head.Subject}");
-    Console.WriteLine($"Body: {branch.Head.Body}");
+    Commit commit = await branch.GetHeadCommitAsync();
+
+    Console.WriteLine($"Hash: {commit.Hash}");
+    Console.WriteLine($"Author: {commit.Author}");
+    Console.WriteLine($"Committer: {commit.Committer}");
+    Console.WriteLine($"Subject: {commit.Subject}");
+    Console.WriteLine($"Body: {commit.Body}");
 }
 ```
 
@@ -308,7 +328,8 @@ Gitのコミットは、複数の親コミットを持つ事があります。
 これはマージコミットで発生し、全ての親コミットへのリンクが存在します。
 最初の親コミットの事を「プライマリコミット」と呼び、リポジトリの最初のコミット以外には必ず存在します。
 
-全ての親コミットへのリンクを取得するには、`GetParentCommitsAsync()` を使用します。
+プライマリコミットを取得する場合は、 `GetPrimaryParentCommitAsync()` を、
+全ての親コミットへのリンクを取得する場合は、`GetParentCommitsAsync()` を使用します。
 
 注意する点として、コミットの親子関係（ブランチとマージによって発生する）は、
 常に「子」から「親」方向への一方向として表現されます。
@@ -322,7 +343,7 @@ Branch branch = repository.Branches["develop"];
 
 Console.WriteLine($"Name: {branch.Name}");
 
-Commit? current = branch.Head;
+Commit? current = await branch.GetHeadCommitAsync();
 
 // 親コミットが存在する限り続ける
 while (current != null)

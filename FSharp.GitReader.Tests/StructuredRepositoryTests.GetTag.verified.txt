@@ -1,5 +1,5 @@
 ﻿{
-  Commit: {
+  Item1: {
     Hash: {
       HashCode: f64de5e3ad34528757207109e68f626bf8cc1a31
     },
@@ -17,11 +17,21 @@
     },
     Subject: Upgraded new MSBuild format and omit PCL versions.,
     Body: ,
-    Tags: []
+    Tags: [
+      {
+        Hash: {
+          HashCode: f64de5e3ad34528757207109e68f626bf8cc1a31
+        },
+        Name: 2.0.0,
+        Type: Commit
+      }
+    ]
   },
-  Hash: {
-    HashCode: f64de5e3ad34528757207109e68f626bf8cc1a31
-  },
-  Name: 2.0.0,
-  Type: Commit
+  Item2: {
+    Hash: {
+      HashCode: f64de5e3ad34528757207109e68f626bf8cc1a31
+    },
+    Name: 2.0.0,
+    Type: Commit
+  }
 }

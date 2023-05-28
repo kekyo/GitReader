@@ -65,17 +65,21 @@ public abstract class TreeEntry : Tree
     }
 }
 
-public sealed class TreeBlobEntry : TreeEntry
+public sealed class TreeBlobEntry :
+    TreeEntry, IRepositoryReference
 {
-    internal readonly WeakReference rwr;
+    private readonly WeakReference rwr;
 
     internal TreeBlobEntry(
+        WeakReference rwr,
         Hash hash,
         string name,
-        ModeFlags modes,
-        WeakReference rwr) :
+        ModeFlags modes) :
         base(hash, name, modes) =>
         this.rwr = rwr;
+
+    WeakReference IRepositoryReference.Repository =>
+        this.rwr;
 
     public override bool Equals(Tree rhs) =>
         rhs is TreeBlobEntry r &&

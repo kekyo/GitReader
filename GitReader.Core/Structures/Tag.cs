@@ -8,12 +8,15 @@
 ////////////////////////////////////////////////////////////////////////////
 
 using System;
+using System.ComponentModel;
 
 namespace GitReader.Structures;
 
 public abstract class Tag : IEquatable<Tag>
 {
+    [EditorBrowsable(EditorBrowsableState.Advanced)]
     public readonly Hash Hash;
+
     public readonly string Name;
     public readonly Signature? Tagger;
     public readonly string? Message;
@@ -60,16 +63,22 @@ public abstract class Tag : IEquatable<Tag>
         $"{this.Name}: {this.Type}: {this.Hash}";
 }
 
-public sealed class CommitTag : Tag
+public sealed class CommitTag :
+    Tag, IInternalCommitReference
 {
-    public readonly Commit Commit;
+    internal readonly WeakReference rwr;
 
     internal CommitTag(
-        Hash hash, string name, Signature? tagger, string? message,
-        Commit commit) :
+        WeakReference rwr, Hash hash, string name, Signature? tagger, string? message) :
         base(hash, name, tagger, message) =>
-        this.Commit = commit;
+        this.rwr = rwr;
 
     public override ObjectTypes Type =>
         ObjectTypes.Commit;
+
+    Hash ICommitReference.Hash =>
+        this.Hash;
+
+    WeakReference IRepositoryReference.Repository =>
+        this.rwr;
 }
