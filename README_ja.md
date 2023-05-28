@@ -193,6 +193,15 @@ Console.WriteLine($"Hash: {tag.Hash}");
 Console.WriteLine($"Author: {tag.Author}");
 Console.WriteLine($"Committer: {tag.Committer}");
 Console.WriteLine($"Message: {tag.Message}");
+
+// タグがコミットタグなら
+if (tag is CommitTag ct)
+{
+    // タグが示すコミットを取得
+    Commit commit = await ct.GetCommitAsync();
+
+    // ...
+}
 ```
 
 ### 指定されたコミットに紐づくブランチやタグの情報を取得

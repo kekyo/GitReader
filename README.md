@@ -195,6 +195,15 @@ Console.WriteLine($"Hash: {tag.Hash}");
 Console.WriteLine($"Author: {tag.Author}");
 Console.WriteLine($"Committer: {tag.Committer}");
 Console.WriteLine($"Message: {tag.Message}");
+
+// If tag is a commit tag?
+if (tag is CommitTag ct)
+{
+    // Get the commit indicated by the tag.
+    Commit commit = await ct.GetCommitAsync();
+
+    // ...
+}
 ```
 
 ### Get related branches and tags from a commit
