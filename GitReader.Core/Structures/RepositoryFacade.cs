@@ -11,8 +11,6 @@ using GitReader.Collections;
 using GitReader.Internal;
 using GitReader.Primitive;
 using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -23,13 +21,48 @@ namespace GitReader.Structures;
 
 internal static class RepositoryFacade
 {
+    public readonly struct RepositoryReferenceExtracted
+    {
+        public readonly StructuredRepository Repository;
+        public readonly WeakReference WeakReference;
+
+        public RepositoryReferenceExtracted(
+            StructuredRepository repository, WeakReference weakReference)
+        {
+            this.Repository = repository;
+            this.WeakReference = weakReference;
+        }
+
+        public void Deconstruct(out StructuredRepository repository, out WeakReference weakReference)
+        {
+            repository = this.Repository;
+            weakReference = this.WeakReference;
+        }
+    }
+
+    public static RepositoryReferenceExtracted GetRelatedRepository(
+        this IRepositoryReference repositoryReference)
+    {
+        if (repositoryReference.Repository.Target is not StructuredRepository repository ||
+            repository.objectAccessor == null)
+        {
+            throw new InvalidOperationException(
+                "The repository already discarded.");
+        }
+        return new(repository, repositoryReference.Repository);
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+
     private static async Task<Branch?> GetCurrentHeadAsync(
         StructuredRepository repository,
+        WeakReference rwr,
         CancellationToken ct)
     {
-        if (await RepositoryAccessor.ReadHashAsync(repository, "HEAD", ct) is { } results)
+        if (await RepositoryAccessor.ReadHashAsync(
+            repository, "HEAD", ct) is { } results)
         {
-            return new(new WeakReference(repository), results.Names.Last(), results.Hash);
+            return new(rwr, results.Names.Last(), results.Hash);
         }
         else
         {
@@ -49,12 +82,13 @@ internal static class RepositoryFacade
         var references = await RepositoryAccessor.ReadReferencesAsync(
             repository, ReferenceTypes.Branches, ct);
 
-        return references.ToDictionary(
-            entry => entry.Name,
-            entry => new Branch(
-                new WeakReference(repository),
-                entry.Name,
-                entry.Target));
+        return references.
+            ToDictionary(
+                reference => reference.Name,
+                reference => new Branch(
+                    rwr,
+                    reference.Name,
+                    reference.Target));
     }
 
     private static async Task<ReadOnlyDictionary<string, Branch>> GetStructuredRemoteBranchesAsync(
@@ -69,11 +103,11 @@ internal static class RepositoryFacade
 
         return references.
             ToDictionary(
-                entry => entry.Name,
-                entry => new Branch(
-                    new WeakReference(repository),
-                    entry.Name,
-                    entry.Target));
+                reference => reference.Name,
+                reference => new Branch(
+                    rwr,
+                    reference.Name,
+                    reference.Target));
     }
 
     private static async Task<ReadOnlyDictionary<string, Tag>> GetStructuredTagsAsync(
@@ -83,6 +117,7 @@ internal static class RepositoryFacade
     {
         var references = await RepositoryAccessor.ReadReferencesAsync(
             repository, ReferenceTypes.Tags, ct);
+
         var tags = await Utilities.WhenAll(
             references.Select(async reference =>
             {
@@ -93,14 +128,16 @@ internal static class RepositoryFacade
                     // TODO: Currently does not support any other tag types.
                     if (tag.Type == ObjectTypes.Commit)
                     {
-                        return (Tag)new CommitTag(new (repository), tag.Hash, tag.Name, tag.Tagger, tag.Message);
+                        return (Tag)new CommitTag(
+                            rwr, tag.Hash, tag.Name, tag.Tagger, tag.Message);
                     }
                 }
                 else
                 {
-                    return (Tag)new CommitTag(new (repository), reference.Target, reference.Name, null, null);
+                    return (Tag)new CommitTag(
+                        rwr, reference.Target, reference.Name, null, null);
                 }
-                return null;
+                return null!;
             }));
 
         return tags.
@@ -115,8 +152,11 @@ internal static class RepositoryFacade
         CancellationToken ct)
     {
         var primitiveStashes = await RepositoryAccessor.ReadStashesAsync(repository, ct);
-        var stashes = primitiveStashes.Select(stash => new Stash(new (repository), stash.Current, stash.Committer, stash.Message)).Reverse();
-        return stashes.Where(x => x != null).ToArray()!;
+        
+        return primitiveStashes.Select(stash =>
+            new Stash(rwr, stash.Current, stash.Committer, stash.Message)).
+            Reverse().
+            ToArray();
     }
     
     public static async Task<ReflogEntry[]> GetHeadReflogsAsync(
@@ -125,11 +165,11 @@ internal static class RepositoryFacade
         CancellationToken ct)
     {
         var primitiveReflogEntries = await RepositoryAccessor.ReadReflogEntriesAsync(repository, "HEAD", ct);
-        var reflogEntries = primitiveReflogEntries
-            .Select(stash => new ReflogEntry(new(repository), stash.Current, stash.Old, stash.Committer, stash.Message))
-            .Reverse();
 
-        return reflogEntries.Where(x => x != null).ToArray();
+        return primitiveReflogEntries.Select(stash =>
+            new ReflogEntry(rwr, stash.Current, stash.Old, stash.Committer, stash.Message)).
+            Reverse().
+            ToArray();
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -162,7 +202,7 @@ internal static class RepositoryFacade
             // Read all other requirements.
             var rwr = new WeakReference(repository);
             var (head, branches, remoteBranches, tags, stashes) = await Utilities.Join(
-                GetCurrentHeadAsync(repository, ct),
+                GetCurrentHeadAsync(repository, rwr, ct),
                 GetStructuredBranchesAsync(repository, rwr, ct),
                 GetStructuredRemoteBranchesAsync(repository, rwr, ct),
                 GetStructuredTagsAsync(repository, rwr, ct),
@@ -196,28 +236,27 @@ internal static class RepositoryFacade
             new(new(repository), c) : null;
     }
 
-    private static StructuredRepository GetRelatedRepository(
-        Commit commit)
+    public static async Task<Commit> GetCommitAsync(
+        IInternalCommitReference commitReference,
+        CancellationToken ct)
     {
-        if (commit.rwr.Target is not StructuredRepository repository ||
-            repository.objectAccessor == null)
-        {
-            throw new InvalidOperationException(
-                "The repository already discarded.");
-        }
-        return repository;
+        var (repository, rwr) = GetRelatedRepository(commitReference);
+
+        var commit = await RepositoryAccessor.ReadCommitAsync(
+            repository, commitReference.Hash, ct);
+        return new(rwr, commit.Value);
     }
-    
-    private static StructuredRepository GetRelatedRepository(
-        TreeBlobEntry entry)
+
+    public static async Task<Commit> GetCommitAsync(
+        IRepositoryReference repositoryReference,
+        Hash hash,
+        CancellationToken ct)
     {
-        if (entry.rwr.Target is not StructuredRepository repository ||
-            repository.objectAccessor == null)
-        {
-            throw new InvalidOperationException(
-                "The repository already discarded.");
-        }
-        return repository;
+        var (repository, rwr) = GetRelatedRepository(repositoryReference);
+
+        var commit = await RepositoryAccessor.ReadCommitAsync(
+            repository, hash, ct);
+        return new(rwr, commit.Value);
     }
 
     public static async Task<Commit?> GetPrimaryParentAsync(
@@ -229,20 +268,21 @@ internal static class RepositoryFacade
             return null;
         }
 
-        var repository = GetRelatedRepository(commit);
+        var (repository, rwr) = GetRelatedRepository(commit);
+
         var pc = await RepositoryAccessor.ReadCommitAsync(
             repository, commit.parents[0], ct);
         return pc is { } ?
-            new(commit.rwr, pc!.Value) :
+            new(rwr, pc!.Value) :
             throw new InvalidDataException(
                 $"Could not find a commit: {commit.parents[0]}");
     }
-    
+
     public static Task<Commit[]> GetParentsAsync(
         Commit commit,
         CancellationToken ct)
     {
-        var repository = GetRelatedRepository(commit);
+        var (repository, rwr) = GetRelatedRepository(commit);
 
         return Utilities.WhenAll(
             commit.parents.Select(async parent =>
@@ -250,7 +290,7 @@ internal static class RepositoryFacade
                 var pc = await RepositoryAccessor.ReadCommitAsync(
                     repository, parent, ct);
                 return pc is { } ?
-                    new Commit(commit.rwr, pc!.Value) :
+                    new Commit(rwr, pc!.Value) :
                     throw new InvalidDataException(
                         $"Could not find a commit: {parent}");
             }));
@@ -258,27 +298,30 @@ internal static class RepositoryFacade
 
     public static Branch[] GetRelatedBranches(Commit commit)
     {
-        var repository = GetRelatedRepository(commit);
+        var (repository, _) = GetRelatedRepository(commit);
+
         return repository.Branches.Values.
-            Collect(branch => branch.Head.Equals(commit) ? branch : null).
+            Collect(branch => branch.Head.Equals(commit.Hash) ? branch : null).
             ToArray();
     }
 
     public static Branch[] GetRelatedRemoteBranches(Commit commit)
     {
-        var repository = GetRelatedRepository(commit);
+        var (repository, _) = GetRelatedRepository(commit);
+
         return repository.RemoteBranches.Values.
-            Collect(branch => branch.Head.Equals(commit) ? branch : null).
+            Collect(branch => branch.Head.Equals(commit.Hash) ? branch : null).
             ToArray();
     }
 
     public static Tag[] GetRelatedTags(Commit commit)
     {
-        var repository = GetRelatedRepository(commit);
+        var (repository, _) = GetRelatedRepository(commit);
+
         return repository.Tags.Values.
             Collect(tag =>
                 (tag is CommitTag &&
-                 tag.CommitHash.Equals(commit.Hash)) ? tag : null).
+                 tag.Hash.Equals(commit.Hash)) ? tag : null).
             ToArray();
     }
 
@@ -286,7 +329,7 @@ internal static class RepositoryFacade
         Commit commit,
         CancellationToken ct)
     {
-        var repository = GetRelatedRepository(commit);
+        var (repository, rwr) = GetRelatedRepository(commit);
 
         var rootTree = await RepositoryAccessor.ReadTreeAsync(
             repository, commit.treeRoot, ct);
@@ -309,7 +352,7 @@ internal static class RepositoryFacade
                                 entry.Hash, entry.Name, modeFlags, children);
                         case PrimitiveSpecialModes.Blob:
                             return new TreeBlobEntry(
-                                entry.Hash, entry.Name, modeFlags, commit.rwr);
+                                rwr, entry.Hash, entry.Name, modeFlags);
                         default:
                             // TODO:
                             return null!;
@@ -335,7 +378,7 @@ internal static class RepositoryFacade
                                 entry.Hash, entry.Name, modeFlags, children);
                         case PrimitiveSpecialModes.Blob:
                             return new TreeBlobEntry(
-                                entry.Hash, entry.Name, modeFlags, commit.rwr);
+                                rwr, entry.Hash, entry.Name, modeFlags);
                         default:
                             // TODO:
                             return null!;
@@ -354,7 +397,7 @@ internal static class RepositoryFacade
         TreeBlobEntry entry,
         CancellationToken ct)
     {
-        var repository = GetRelatedRepository(entry);
+        var (repository, rwr) = GetRelatedRepository(entry);
 
         return RepositoryAccessor.OpenBlobAsync(
             repository, entry.Hash, ct);

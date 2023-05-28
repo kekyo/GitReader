@@ -8,18 +8,23 @@
 ////////////////////////////////////////////////////////////////////////////
 
 using System;
+using System.ComponentModel;
 
 namespace GitReader.Structures;
 
-public abstract class Tag : CommitRef, IEquatable<Tag>
+public abstract class Tag : IEquatable<Tag>
 {
+    [EditorBrowsable(EditorBrowsableState.Advanced)]
+    public readonly Hash Hash;
+
     public readonly string Name;
     public readonly Signature? Tagger;
     public readonly string? Message;
 
-    private protected Tag(WeakReference rwr, Hash commit, string name, Signature? tagger, string? message)
-     : base(rwr, commit)
+    private protected Tag(
+        Hash hash, string name, Signature? tagger, string? message)
     {
+        this.Hash = hash;
         this.Name = name;
         this.Tagger = tagger;
         this.Message = message;
@@ -29,7 +34,7 @@ public abstract class Tag : CommitRef, IEquatable<Tag>
 
     public bool Equals(Tag rhs) =>
         rhs is { } &&
-        this.CommitHash.Equals(rhs.CommitHash) &&
+        this.Hash.Equals(rhs.Hash) &&
         this.Name.Equals(rhs.Name) &&
         this.Type == rhs.Type &&
         this.Tagger.Equals(rhs.Tagger) &&
@@ -45,7 +50,7 @@ public abstract class Tag : CommitRef, IEquatable<Tag>
     {
         unchecked
         {
-            var hashCode = this.CommitHash.GetHashCode();
+            var hashCode = this.Hash.GetHashCode();
             hashCode = (hashCode * 397) ^ this.Name.GetHashCode();
             hashCode = (hashCode * 397) ^ this.Type.GetHashCode();
             hashCode = (hashCode * 397) ^ this.Tagger.GetHashCode();
@@ -55,17 +60,25 @@ public abstract class Tag : CommitRef, IEquatable<Tag>
     }
 
     public override string ToString() =>
-        $"{this.Name}: {this.Type}: {this.CommitHash}";
+        $"{this.Name}: {this.Type}: {this.Hash}";
 }
 
-public sealed class CommitTag : Tag
+public sealed class CommitTag :
+    Tag, IInternalCommitReference
 {
+    internal readonly WeakReference rwr;
 
-    internal CommitTag(WeakReference rwr, Hash hash, string name, Signature? tagger, string? message) :
-        base(rwr, hash, name, tagger, message)
-    {
-    }
+    internal CommitTag(
+        WeakReference rwr, Hash hash, string name, Signature? tagger, string? message) :
+        base(hash, name, tagger, message) =>
+        this.rwr = rwr;
 
     public override ObjectTypes Type =>
         ObjectTypes.Commit;
+
+    Hash ICommitReference.Hash =>
+        this.Hash;
+
+    WeakReference IRepositoryReference.Repository =>
+        this.rwr;
 }

@@ -8,24 +8,36 @@
 ////////////////////////////////////////////////////////////////////////////
 
 using System;
+using System.ComponentModel;
 
 namespace GitReader.Structures;
 
-public sealed class ReflogEntry : CommitRef, IEquatable<ReflogEntry>
+public sealed class ReflogEntry :
+    IEquatable<ReflogEntry>, IRepositoryReference
 {
+    private readonly WeakReference rwr;
+
+    [EditorBrowsable(EditorBrowsableState.Advanced)]
     public readonly Hash Commit;
     public readonly Hash OldCommit;
+
     public readonly Signature Committer;
     public readonly string Message;
 
-    internal ReflogEntry(WeakReference rwr, Hash commit, Hash oldCommit, Signature committer, string message) :
-        base(rwr, commit)
+    internal ReflogEntry(
+        WeakReference rwr,
+        Hash commit, Hash oldCommit, Signature committer,
+        string message)
     {
+        this.rwr = rwr;
         this.Commit = commit;
         this.OldCommit = oldCommit;
         this.Committer = committer;
         this.Message = message;
     }
+
+    WeakReference IRepositoryReference.Repository =>
+        this.rwr;
 
     public bool Equals(ReflogEntry rhs) =>
         rhs is { } &&

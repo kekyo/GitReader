@@ -122,25 +122,30 @@ public static class Program
         var sortedCommits = new SortedCommitMap(
             hashedCommits);
 #else
-        var remoteBranchCommits = await Task.WhenAll(repository.RemoteBranches.Values.Select(b => b.GetCommitAsync()));
         var hashedCommits = new HashSet<Commit>(
-            remoteBranchCommits,
+            await Task.WhenAll(
+                repository.RemoteBranches.Values.
+                Select(branch => branch.GetHeadCommitAsync())),
             CommitComparer.Instance);
         var sortedCommits = new SortedCommitMap(
             hashedCommits);
 
-        var tagCommits = await Task.WhenAll(repository.Tags.Values.Select(b => b.GetCommitAsync()));
-        foreach (var commit in tagCommits)
+        foreach (var tag in repository.Tags.Values.
+            Select(tag => tag is CommitTag ct ? ct : null!).
+            Where(tag => tag != null))
         {
-            if (hashedCommits.Add(commit!))
+            var c = await tag.GetCommitAsync();
+
+            if (hashedCommits.Add(c))
             {
-                sortedCommits.Add(commit!);
+                sortedCommits.Add(c);
             }
         }
 
-        var head = repository.GetCurrentHead();
-        if (head is not null && await head.GetCommitAsync() is { } c)
+        if (repository.GetCurrentHead() is { } head)
         {
+            var c = await head.GetHeadCommitAsync();
+
             if (hashedCommits.Add(c))
             {
                 sortedCommits.Add(c);

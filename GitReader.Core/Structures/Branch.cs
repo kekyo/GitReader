@@ -8,23 +8,35 @@
 ////////////////////////////////////////////////////////////////////////////
 
 using System;
-using System.Threading;
-using System.Threading.Tasks;
+using System.ComponentModel;
 
 namespace GitReader.Structures;
 
-public sealed class Branch : CommitRef, IEquatable<Branch>
+public sealed class Branch :
+    IEquatable<Branch>, IInternalCommitReference
 {
+    private readonly WeakReference rwr;
+
+    [EditorBrowsable(EditorBrowsableState.Advanced)]
+    public readonly Hash Head;
+
     public readonly string Name;
 
-    public Hash Head => CommitHash;
-
-    internal Branch(WeakReference rwr,
+    internal Branch(
+        WeakReference rwr,
         string name,
-        Hash head) : base(rwr, head)
+        Hash head)
     {
+        this.rwr = rwr;
+        this.Head = head;
         this.Name = name;
     }
+
+    Hash ICommitReference.Hash =>
+        this.Head;
+
+    WeakReference IRepositoryReference.Repository =>
+        this.rwr;
 
     public bool Equals(Branch rhs) =>
         rhs is { } &&

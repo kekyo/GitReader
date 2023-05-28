@@ -14,6 +14,7 @@ open GitReader.Structures
 open NUnit.Framework
 open System.Collections.Generic
 open System.IO
+open System.Threading.Tasks
 
 type public StructuredRepositoryTests() =
 
@@ -63,16 +64,18 @@ type public StructuredRepositoryTests() =
     member _.GetTag() = task {
         use! repository = Repository.Factory.openStructured(
             RepositoryTestsSetUp.BasePath)
-        let tag = repository.Tags["2.0.0"]
-        do! verify(tag)
+        let tag = repository.Tags["2.0.0"] :?> CommitTag
+        let! commit = tag.getCommit()
+        do! verify((commit, tag))
     }
 
     [<Test>]
     member _.GetTag2() = task {
         use! repository = Repository.Factory.openStructured(
             RepositoryTestsSetUp.BasePath)
-        let tag = repository.Tags["0.9.6"]
-        do! verify(tag)
+        let tag = repository.Tags["0.9.6"] :?> CommitTag
+        let! commit = tag.getCommit()
+        do! verify((commit, tag))
     }
 
     [<Test>]
@@ -81,10 +84,13 @@ type public StructuredRepositoryTests() =
             RepositoryTestsSetUp.BasePath)
         let! commit = repository.getCommit(
             "9bb78d13405cab568d3e213130f31beda1ce21d1") |> unwrapOptionAsy
-        let branches = commit.Branches
-        do! verify(branches |> Seq.sortBy(fun br -> br.Name)
-            // HACK: Fixed by Array.toList, because avoid serialization in BranchArrayConverter.
-            |> Seq.toList)
+        let! results = Task.WhenAll(
+            commit.Branches
+            |> Seq.sortBy(fun br -> br.Name)
+            |> Seq.map(fun br -> task {
+                let! head = br.getHeadCommit()
+                return (br.Name, head) }))
+        do! verify(results)
     }
 
     [<Test>]
@@ -103,10 +109,13 @@ type public StructuredRepositoryTests() =
             RepositoryTestsSetUp.BasePath)
         let! commit = repository.getCommit(
             "f690f0e7bf703582a1fad7e6f1c2d1586390f43d") |> unwrapOptionAsy
-        let branches = commit.RemoteBranches
-        do! verify(branches |> Seq.sortBy(fun br -> br.Name)
-            // HACK: Fixed by Array.toList, because avoid serialization in BranchArrayConverter.
-            |> Seq.toList)
+        let! results = Task.WhenAll(
+            commit.RemoteBranches
+            |> Seq.sortBy(fun br -> br.Name)
+            |> Seq.map(fun br -> task {
+                let! head = br.getHeadCommit()
+                return (br.Name, head) }))
+        do! verify(results)
     }
 
     [<Test>]
@@ -148,12 +157,45 @@ type public StructuredRepositoryTests() =
             RepositoryTestsSetUp.BasePath)
         let branch = repository.Branches["master"]
         let commits = new List<Commit>()
-        let! c = branch.GetCommitAsync() |> Async.AwaitTask
-        let mutable current = c
+        let! head = branch.getHeadCommit();
+        let mutable current = head
         while not (isNull current) do
             commits.Add(current)
             // Get primary parent commit.
             let! c = current.getPrimaryParentCommit() |> unwrapOptionAsy
             current <- c
         do! verify(commits.ToArray())
+    }
+   
+    [<Test>]
+    member _.GetRemoteUrls() = task {
+        use! repository = Repository.Factory.openStructured(
+            RepositoryTestsSetUp.BasePath)
+        do! verify(repository.RemoteUrls)
+    }
+
+    [<Test>]
+    member _.GetStashes() = task {
+        use! repository = Repository.Factory.openStructured(
+            RepositoryTestsSetUp.BasePath)
+        let! results = Task.WhenAll(repository.Stashes
+            |> Seq.sortByDescending(fun stash -> stash.Committer.Date)
+            |> Seq.map(fun stash -> task {
+                let! commit = stash.getCommit()
+                return (stash, commit) }))
+        do! verify(results)
+    }
+
+    [<Test>]
+    member _.GetHeadReflog() = task {
+        use! repository = Repository.Factory.openStructured(
+            RepositoryTestsSetUp.BasePath)
+        let! reflogs = repository.getHeadReflogs()
+        let! results = Task.WhenAll(reflogs
+            |> Seq.sortByDescending(fun reflog -> reflog.Committer.Date)
+            |> Seq.map(fun reflog -> task {
+                let! current = reflog.getCurrentCommit()
+                let! old = reflog.getOldCommit()
+                return (current, old, reflog) }))
+        do! verify(results)
     }

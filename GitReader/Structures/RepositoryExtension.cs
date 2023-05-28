@@ -26,6 +26,31 @@ public static class RepositoryExtension
         Hash commit, CancellationToken ct = default) =>
         RepositoryFacade.GetCommitDirectlyAsync(repository, commit, ct);
 
+    public static Task<Commit> GetHeadCommitAsync(
+        this Branch branch,
+        CancellationToken ct = default) =>
+        RepositoryFacade.GetCommitAsync(branch, ct);
+
+    public static Task<Commit> GetCommitAsync(
+        this CommitTag tag,
+        CancellationToken ct = default) =>
+        RepositoryFacade.GetCommitAsync(tag, ct);
+
+    public static Task<Commit> GetCommitAsync(
+        this Stash stash,
+        CancellationToken ct = default) =>
+        RepositoryFacade.GetCommitAsync(stash, ct);
+
+    public static Task<Commit> GetCurrentCommitAsync(
+        this ReflogEntry reflog,
+        CancellationToken ct = default) =>
+        RepositoryFacade.GetCommitAsync(reflog, reflog.Commit, ct);
+
+    public static Task<Commit> GetOldCommitAsync(
+        this ReflogEntry reflog,
+        CancellationToken ct = default) =>
+        RepositoryFacade.GetCommitAsync(reflog, reflog.OldCommit, ct);
+
     public static Task<Commit?> GetPrimaryParentCommitAsync(
         this Commit commit,
         CancellationToken ct = default) =>
@@ -52,7 +77,8 @@ public static class RepositoryExtension
     
     public static Task<ReflogEntry[]> GetHeadReflogsAsync(
         this StructuredRepository repository, CancellationToken ct = default) =>
-        RepositoryFacade.GetHeadReflogsAsync(repository, new WeakReference(repository), ct);
+        RepositoryFacade.GetHeadReflogsAsync(
+            repository, new WeakReference(repository), ct);
 
     public static void Deconstruct(
         this StructuredRepository repository,
@@ -115,7 +141,7 @@ public static class RepositoryExtension
         out Signature? tagger,
         out string? message)
     {
-        hash = tag.CommitHash;
+        hash = tag.Hash;
         name = tag.Name;
         tagger = tag.Tagger;
         message = tag.Message;
@@ -129,7 +155,7 @@ public static class RepositoryExtension
         out Signature? tagger,
         out string? message)
     {
-        hash = tag.CommitHash;
+        hash = tag.Hash;
         name = tag.Name;
         type = tag.Type;
         tagger = tag.Tagger;
@@ -143,7 +169,7 @@ public static class RepositoryExtension
         out Signature? tagger,
         out string? message)
     {
-        hash = tag.CommitHash;
+        hash = tag.Hash;
         name = tag.Name;
         tagger = tag.Tagger;
         message = tag.Message;
