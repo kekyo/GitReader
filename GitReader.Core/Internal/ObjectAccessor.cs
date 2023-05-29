@@ -332,7 +332,7 @@ internal sealed class ObjectAccessor : IDisposable
             {
                 if (holder.Value.Limit <= now)
                 {
-                    holder.Value.Stream.Dispose();
+                    holder.Value.Stream.Dispose();  // [1]
                     this.streamLRUCache.Remove(holder);
                 }
 
@@ -341,7 +341,7 @@ internal sealed class ObjectAccessor : IDisposable
 
             if (this.streamLRUCache.Count >= 1)
             {
-                var dueTime = this.streamLRUCache.First!.Value.Limit - DateTime.Now;
+                var dueTime = this.streamLRUCache.First!.Value.Limit - now;
                 if (dueTime < TimeSpan.Zero)
                 {
                     dueTime = TimeSpan.Zero;
@@ -367,13 +367,16 @@ internal sealed class ObjectAccessor : IDisposable
             return stream;
         }
 
-        var cachedStream = new WrappedStream(stream);
-        var limit = DateTime.Now.Add(TimeSpan.FromSeconds(10));
+        var heldStream = new WrappedStream(stream);
+        var cachedStream = heldStream.Clone();   // [1]
+
+        var now = DateTime.Now;
+        var limit = now.Add(TimeSpan.FromSeconds(10));
 
         lock (this.streamLRUCache)
         {
             this.streamLRUCache.AddFirst(
-                new StreamCacheHolder(packedFilePath, offset, type, cachedStream, limit));
+                new StreamCacheHolder(packedFilePath, offset, type, heldStream, limit));
 
             while (this.streamLRUCache.Count > maxStreamCache)
             {
@@ -394,18 +397,23 @@ internal sealed class ObjectAccessor : IDisposable
 
             if (this.streamLRUCache.Count >= 1)
             {
-                var dueTime = this.streamLRUCache.First!.Value.Limit - DateTime.Now;
+                var dueTime = this.streamLRUCache.First!.Value.Limit - now;
                 if (dueTime < TimeSpan.Zero)
                 {
                     dueTime = TimeSpan.Zero;
                 }
 
+                // Race condition [1]:
+                // If dueTime is zero here, ExhaustStreamCache is called directly in same thread context.
+                // Within ExhaustStreamCache, the heldStream will be released,
+                // when it returns here, the counter of the stream may be 0.
+                // Therefore, cachedStreams for return are cloned in advance so that the counter does not become 0.
                 this.streamLRUCacheExhaustTimer.Change(
                     dueTime, Utilities.Infinite);
             }
         }
 
-        return cachedStream.Clone();
+        return cachedStream;
     }
 
 #if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
