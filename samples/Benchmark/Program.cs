@@ -1,4 +1,13 @@
-﻿// See https://aka.ms/new-console-template for more information
+﻿////////////////////////////////////////////////////////////////////////////
+//
+// GitReader - Lightweight Git local repository traversal library.
+// Copyright (c) Kouji Matsui (@kozy_kekyo, @kekyo@mastodon.cloud)
+//
+// Licensed under Apache-v2: https://opensource.org/licenses/Apache-2.0
+//
+////////////////////////////////////////////////////////////////////////////
+
+// See https://aka.ms/new-console-template for more information
 
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Engines;
@@ -51,8 +60,8 @@ public class GitRepo
         var remoteBranches = repository.Branches.Where(x => x.IsRemote).ToArray();
         var tags = repository.Tags.ToArray();
         var currentBranch = repository.Head;
-        var currentTrackedBranch = repository.Head.TrackedBranch;
-        var currentTrackingDetails = repository.Head.TrackedBranch.TrackingDetails;
+        var currentTrackedBranch = repository.Head?.TrackedBranch;
+        var currentTrackingDetails = repository.Head?.TrackedBranch?.TrackingDetails;
     }
 }
 
