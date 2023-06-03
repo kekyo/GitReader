@@ -1,7 +1,8 @@
 #!/bin/bash
 
-rm -rf git
-git clone https://github.com/git/git.git
+if [ ! -f git ]; then
+    git clone https://github.com/git/git.git
+fi
 
 echo "Step 1: checkout with git command."
 
