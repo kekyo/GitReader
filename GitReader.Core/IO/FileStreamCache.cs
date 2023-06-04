@@ -13,16 +13,16 @@ using System.Diagnostics;
 using System.IO;
 using System.Threading;
 
-namespace GitReader.Internal;
+namespace GitReader.IO;
 
-internal sealed class FileAccessor : IDisposable
+internal sealed class FileStreamCache : IDisposable
 {
-    private sealed class InternalStream : FileStream
+    private sealed class CachedStream : FileStream
     {
-        private FileAccessor parent;
+        private FileStreamCache parent;
         internal readonly string path;
 
-        public InternalStream(FileAccessor parent, string path) :
+        public CachedStream(FileStreamCache parent, string path) :
             base(path, FileMode.Open, FileAccess.Read, FileShare.Read, 65536, true)
         {
             this.parent = parent;
@@ -57,10 +57,10 @@ internal sealed class FileAccessor : IDisposable
         }
     }
 
-    private static readonly int MaxReservedStreams = Environment.ProcessorCount;
+    private static readonly int MaxReservedStreams = Environment.ProcessorCount * 2;
 
-    private readonly Dictionary<string, LinkedList<InternalStream>> reserved = new();
-    private readonly LinkedList<InternalStream> streamsLRU = new();
+    private readonly Dictionary<string, LinkedList<CachedStream>> reserved = new();
+    private readonly LinkedList<CachedStream> streamsLRU = new();
 
     public void Dispose()
     {
@@ -96,8 +96,10 @@ internal sealed class FileAccessor : IDisposable
         }
     }
 
-    private void Release(InternalStream stream)
+    private void Release(CachedStream stream)
     {
+        stream.Seek(0, SeekOrigin.Begin);
+
         lock (this.reserved)
         {
             if (!this.reserved.TryGetValue(stream.path, out var streams))
@@ -105,8 +107,6 @@ internal sealed class FileAccessor : IDisposable
                 streams = new();
                 this.reserved.Add(stream.path, streams);
             }
-
-            stream.Seek(0, SeekOrigin.Begin);
 
             streams.AddFirst(stream);
             this.streamsLRU.AddFirst(stream);
@@ -141,7 +141,7 @@ internal sealed class FileAccessor : IDisposable
                 {
                     this.RemoveLastReserved();
                 }
-                return new InternalStream(this, fullPath);
+                return new CachedStream(this, fullPath);
             }
         }
     }

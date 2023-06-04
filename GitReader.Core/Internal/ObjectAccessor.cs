@@ -7,6 +7,7 @@
 //
 ////////////////////////////////////////////////////////////////////////////
 
+using GitReader.IO;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -15,8 +16,6 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using GitReader.IO;
-using GitReader.Primitive;
 
 namespace GitReader.Internal;
 
@@ -25,7 +24,7 @@ internal sealed class ObjectAccessor : IDisposable
     private const int preloadBufferSize = 65536;
     private static readonly int maxStreamCache = 16;
 
-    private sealed class StreamCacheHolder
+    private sealed class ObjectStreamCacheHolder
     {
         public readonly string Path;
         public readonly ulong Offset;
@@ -35,7 +34,7 @@ internal sealed class ObjectAccessor : IDisposable
 #if DEBUG
         public int HitCount;
 #endif
-        public StreamCacheHolder(
+        public ObjectStreamCacheHolder(
             string path, ulong offset, ObjectTypes type,
             WrappedStream stream, DateTime limit)
         {
@@ -47,12 +46,12 @@ internal sealed class ObjectAccessor : IDisposable
         }
     }
 
-    private readonly FileAccessor fileAccessor;
+    private readonly FileStreamCache fileStreamCache;
     private readonly string objectsBasePath;
     private readonly string packedBasePath;
     private readonly AsyncLock locker = new();
     private readonly Dictionary<string, IndexEntry> indexCache = new();
-    private readonly LinkedList<StreamCacheHolder> streamLRUCache = new();
+    private readonly LinkedList<ObjectStreamCacheHolder> streamLRUCache = new();
     private readonly Timer streamLRUCacheExhaustTimer;
 #if DEBUG
     internal int hitCount;
@@ -60,9 +59,9 @@ internal sealed class ObjectAccessor : IDisposable
 #endif
 
     public ObjectAccessor(
-        FileAccessor fileAccessor, string gitPath)
+        FileStreamCache fileStreamCache, string gitPath)
     {
-        this.fileAccessor = fileAccessor;
+        this.fileStreamCache = fileStreamCache;
         this.objectsBasePath = Utilities.Combine(
             gitPath,
             "objects");
@@ -118,7 +117,7 @@ internal sealed class ObjectAccessor : IDisposable
             throw new InvalidDataException(
                 $"Could not parse the object. Hash={hash}, Step={step}");
 
-        var fs = this.fileAccessor.Open(objectPath);
+        var fs = this.fileStreamCache.Open(objectPath);
 
         try
         {
@@ -364,7 +363,7 @@ internal sealed class ObjectAccessor : IDisposable
         lock (this.streamLRUCache)
         {
             this.streamLRUCache.AddFirst(
-                new StreamCacheHolder(packedFilePath, offset, type, heldStream, limit));
+                new ObjectStreamCacheHolder(packedFilePath, offset, type, heldStream, limit));
 
             while (this.streamLRUCache.Count > maxStreamCache)
             {
@@ -447,7 +446,7 @@ internal sealed class ObjectAccessor : IDisposable
             throw new InvalidDataException(
                 $"Could not parse the object. File={packedFilePath}, Offset={offset}, Step={step}");
 
-        var fs = this.fileAccessor.Open(packedFilePath);
+        var fs = this.fileStreamCache.Open(packedFilePath);
 
         try
         {

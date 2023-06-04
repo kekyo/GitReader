@@ -66,12 +66,6 @@ public static class Program
         static async ValueTask ExtractBlobAsync(
             TreeBlobEntry blob, string path)
         {
-#if false
-            if (blob.Name == "gitk")
-            {
-                Debugger.Break();
-            }
-#endif
             var openBlobAsync = blob.OpenBlobAsync();
 
             var basePath = Path.GetDirectoryName(path)!;

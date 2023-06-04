@@ -99,7 +99,7 @@ internal static class RepositoryAccessor
             return new(new());
         }
 
-        using var fs = repository.fileAccessor.Open(path);
+        using var fs = repository.fileStreamCache.Open(path);
         var tr = new StreamReader(fs, Encoding.UTF8, true);
 
         var remotes = new Dictionary<string, string>();
@@ -173,7 +173,7 @@ internal static class RepositoryAccessor
             return new(new(new()), new(new()), new(new()));
         }
 
-        using var fs = repository.fileAccessor.Open(path);
+        using var fs = repository.fileStreamCache.Open(path);
         var tr = new StreamReader(fs, Encoding.UTF8, true);
 
         var remoteBranches = new Dictionary<string, Hash>();
@@ -265,7 +265,7 @@ internal static class RepositoryAccessor
             return new(new(new()), new(new()), new(new()));
         }
 
-        using var fs = repository.fileAccessor.Open(path);
+        using var fs = repository.fileStreamCache.Open(path);
         var tr = new StreamReader(fs, Encoding.UTF8, true);
 
         var branches = new Dictionary<string, Hash>();
@@ -372,7 +372,7 @@ internal static class RepositoryAccessor
                 return null;
             }
 
-            using var fs = repository.fileAccessor.Open(path);
+            using var fs = repository.fileStreamCache.Open(path);
             var tr = new StreamReader(fs, Encoding.UTF8, true);
 
             var line = await tr.ReadLineAsync().WaitAsync(ct);
@@ -409,7 +409,7 @@ internal static class RepositoryAccessor
             return new PrimitiveReflogEntry[]{};
         }
 
-        using var fs = repository.fileAccessor.Open(path);
+        using var fs = repository.fileStreamCache.Open(path);
         var tr = new StreamReader(fs, Encoding.UTF8, true);
 
         var entries = new List<PrimitiveReflogEntry>();
