@@ -19,7 +19,7 @@ using System.Threading.Tasks;
 
 namespace GitReader.Structures;
 
-internal static class RepositoryFacade
+internal static class StructuredRepositoryFacade
 {
     public readonly struct RepositoryReferenceExtracted
     {

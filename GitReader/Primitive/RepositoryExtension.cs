@@ -21,22 +21,22 @@ public static class RepositoryExtension
     public static Task<PrimitiveReference?> GetCurrentHeadReferenceAsync(
         this PrimitiveRepository repository,
         CancellationToken ct = default) =>
-        RepositoryFacade.GetCurrentHeadReferenceAsync(repository, ct);
+        PrimitiveRepositoryFacade.GetCurrentHeadReferenceAsync(repository, ct);
 
     public static Task<PrimitiveReference> GetBranchHeadReferenceAsync(
         this PrimitiveRepository repository,
         string branchName, CancellationToken ct = default) =>
-        RepositoryFacade.GetBranchHeadReferenceAsync(repository, branchName, ct);
+        PrimitiveRepositoryFacade.GetBranchHeadReferenceAsync(repository, branchName, ct);
 
     public static Task<PrimitiveReference> GetRemoteBranchHeadReferenceAsync(
         this PrimitiveRepository repository,
         string branchName, CancellationToken ct = default) =>
-        RepositoryFacade.GetRemoteBranchHeadReferenceAsync(repository, branchName, ct);
+        PrimitiveRepositoryFacade.GetRemoteBranchHeadReferenceAsync(repository, branchName, ct);
 
     public static Task<PrimitiveReference> GetTagReferenceAsync(
         this PrimitiveRepository repository,
         string tagName, CancellationToken ct = default) =>
-        RepositoryFacade.GetTagReferenceAsync(repository, tagName, ct);
+        PrimitiveRepositoryFacade.GetTagReferenceAsync(repository, tagName, ct);
 
     public static Task<PrimitiveCommit?> GetCommitAsync(
         this PrimitiveRepository repository,

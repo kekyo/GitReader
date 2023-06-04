@@ -17,5 +17,5 @@ public static class RepositoryFactoryExtension
     public static Task<PrimitiveRepository> OpenPrimitiveAsync(
         this RepositoryFactory _,
         string path, CancellationToken ct = default) =>
-        RepositoryFacade.OpenPrimitiveAsync(path, ct);
+        PrimitiveRepositoryFacade.OpenPrimitiveAsync(path, ct);
 }

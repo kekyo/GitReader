@@ -70,7 +70,7 @@ public sealed class Commit :
             {
                 // Beginning of race condition section,
                 // but will discard dict later silently.
-                this.branches = RepositoryFacade.GetRelatedBranches(this);
+                this.branches = StructuredRepositoryFacade.GetRelatedBranches(this);
             }
             return this.branches;
         }
@@ -84,7 +84,7 @@ public sealed class Commit :
             {
                 // Beginning of race condition section,
                 // but will discard dict later silently.
-                this.remoteBranches = RepositoryFacade.GetRelatedRemoteBranches(this);
+                this.remoteBranches = StructuredRepositoryFacade.GetRelatedRemoteBranches(this);
             }
             return this.remoteBranches;
         }
@@ -98,7 +98,7 @@ public sealed class Commit :
             {
                 // Beginning of race condition section,
                 // but will discard dict later silently.
-                this.tags = RepositoryFacade.GetRelatedTags(this);
+                this.tags = StructuredRepositoryFacade.GetRelatedTags(this);
             }
             return this.tags;
         }

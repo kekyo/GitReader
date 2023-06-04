@@ -22,59 +22,59 @@ module public RepositoryExtension =
             | null -> None
             | _ -> Some repository.head
         member repository.getCommit(commit: Hash, ?ct: CancellationToken) = async {
-            let! c = RepositoryFacade.GetCommitDirectlyAsync(
+            let! c = StructuredRepositoryFacade.GetCommitDirectlyAsync(
                 repository, commit, unwrapCT ct) |> Async.AwaitTask
             return match c with
                    | null -> None
                    | _ -> Some c
         }
         member repository.getHeadReflogs(?ct: CancellationToken) =
-            RepositoryFacade.GetHeadReflogsAsync(
+            StructuredRepositoryFacade.GetHeadReflogsAsync(
                 repository, new WeakReference(repository), unwrapCT ct) |> Async.AwaitTask
 
     type Branch with
         member branch.getHeadCommit(?ct: CancellationToken) =
-            RepositoryFacade.GetCommitAsync(
+            StructuredRepositoryFacade.GetCommitAsync(
                 branch, unwrapCT ct) |> Async.AwaitTask
 
     type Commit with
         member commit.getPrimaryParentCommit(?ct: CancellationToken) = async {
-            let! c = RepositoryFacade.GetPrimaryParentAsync(
+            let! c = StructuredRepositoryFacade.GetPrimaryParentAsync(
                 commit, unwrapCT ct) |> Async.AwaitTask
             return match c with
                    | null -> None
                    | _ -> Some c
         }
         member commit.getParentCommits(?ct: CancellationToken) =
-            RepositoryFacade.GetParentsAsync(
+            StructuredRepositoryFacade.GetParentsAsync(
                 commit, unwrapCT ct) |> Async.AwaitTask
         member commit.getTreeRoot(?ct: CancellationToken) =
-            RepositoryFacade.GetTreeAsync(
+            StructuredRepositoryFacade.GetTreeAsync(
                 commit, unwrapCT ct) |> Async.AwaitTask
         member commit.getMessage() =
             commit.message
             
     type CommitTag with
         member tag.getCommit(?ct: CancellationToken) =
-            RepositoryFacade.GetCommitAsync(
+            StructuredRepositoryFacade.GetCommitAsync(
                 tag, unwrapCT ct) |> Async.AwaitTask
             
     type Stash with
         member stash.getCommit(?ct: CancellationToken) =
-            RepositoryFacade.GetCommitAsync(
+            StructuredRepositoryFacade.GetCommitAsync(
                 stash, unwrapCT ct) |> Async.AwaitTask
             
     type ReflogEntry with
         member reflog.getCurrentCommit(?ct: CancellationToken) =
-            RepositoryFacade.GetCommitAsync(
+            StructuredRepositoryFacade.GetCommitAsync(
                 reflog, reflog.Commit, unwrapCT ct) |> Async.AwaitTask
         member reflog.getOldCommit(?ct: CancellationToken) =
-            RepositoryFacade.GetCommitAsync(
+            StructuredRepositoryFacade.GetCommitAsync(
                 reflog, reflog.OldCommit, unwrapCT ct) |> Async.AwaitTask
 
     type TreeBlobEntry with
         member entry.openBlob(?ct: CancellationToken) =
-            RepositoryFacade.OpenBlobAsync(
+            StructuredRepositoryFacade.OpenBlobAsync(
                 entry, unwrapCT ct) |> Async.AwaitTask
 
     let (|Repository|) (repository: StructuredRepository) =

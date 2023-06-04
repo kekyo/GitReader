@@ -371,7 +371,7 @@ while (current != null)
 The high-level interface is implemented internally using these primitive interfaces.
 We do not have a complete list of all examples, so we recommend referring to the GitReader code if you need information.
 
-* You may want to start with [RepositoryFacade class](/GitReader.Core/Structures/RepositoryFacade.cs).
+* You may want to start with [StructuredRepositoryFacade class](/GitReader.Core/Structures/StructuredRepositoryFacade.cs).
 
 ### Read current head commit
 

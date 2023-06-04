@@ -26,52 +26,52 @@ public static class RepositoryExtension
     public static Task<Commit?> GetCommitAsync(
         this StructuredRepository repository,
         Hash commit, CancellationToken ct = default) =>
-        RepositoryFacade.GetCommitDirectlyAsync(repository, commit, ct);
+        StructuredRepositoryFacade.GetCommitDirectlyAsync(repository, commit, ct);
 
     public static Task<Commit> GetHeadCommitAsync(
         this Branch branch,
         CancellationToken ct = default) =>
-        RepositoryFacade.GetCommitAsync(branch, ct);
+        StructuredRepositoryFacade.GetCommitAsync(branch, ct);
 
     public static Task<Commit> GetCommitAsync(
         this CommitTag tag,
         CancellationToken ct = default) =>
-        RepositoryFacade.GetCommitAsync(tag, ct);
+        StructuredRepositoryFacade.GetCommitAsync(tag, ct);
 
     public static Task<Commit> GetCommitAsync(
         this Stash stash,
         CancellationToken ct = default) =>
-        RepositoryFacade.GetCommitAsync(stash, ct);
+        StructuredRepositoryFacade.GetCommitAsync(stash, ct);
 
     public static Task<Commit> GetCurrentCommitAsync(
         this ReflogEntry reflog,
         CancellationToken ct = default) =>
-        RepositoryFacade.GetCommitAsync(reflog, reflog.Commit, ct);
+        StructuredRepositoryFacade.GetCommitAsync(reflog, reflog.Commit, ct);
 
     public static Task<Commit> GetOldCommitAsync(
         this ReflogEntry reflog,
         CancellationToken ct = default) =>
-        RepositoryFacade.GetCommitAsync(reflog, reflog.OldCommit, ct);
+        StructuredRepositoryFacade.GetCommitAsync(reflog, reflog.OldCommit, ct);
 
     public static Task<Commit?> GetPrimaryParentCommitAsync(
         this Commit commit,
         CancellationToken ct = default) =>
-        RepositoryFacade.GetPrimaryParentAsync(commit, ct);
+        StructuredRepositoryFacade.GetPrimaryParentAsync(commit, ct);
 
     public static Task<Commit[]> GetParentCommitsAsync(
         this Commit commit,
         CancellationToken ct = default) =>
-        RepositoryFacade.GetParentsAsync(commit, ct);
+        StructuredRepositoryFacade.GetParentsAsync(commit, ct);
 
     public static Task<TreeRoot> GetTreeRootAsync(
         this Commit commit,
         CancellationToken ct = default) =>
-        RepositoryFacade.GetTreeAsync(commit, ct);
+        StructuredRepositoryFacade.GetTreeAsync(commit, ct);
 
     public static Task<Stream> OpenBlobAsync(
         this TreeBlobEntry entry,
         CancellationToken ct = default) =>
-        RepositoryFacade.OpenBlobAsync(entry, ct);
+        StructuredRepositoryFacade.OpenBlobAsync(entry, ct);
 
     public static string GetMessage(
         this Commit commit) =>
@@ -79,7 +79,7 @@ public static class RepositoryExtension
     
     public static Task<ReflogEntry[]> GetHeadReflogsAsync(
         this StructuredRepository repository, CancellationToken ct = default) =>
-        RepositoryFacade.GetHeadReflogsAsync(
+        StructuredRepositoryFacade.GetHeadReflogsAsync(
             repository, new WeakReference(repository), ct);
 
     public static void Deconstruct(

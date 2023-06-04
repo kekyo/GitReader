@@ -16,7 +16,7 @@ using System.Threading.Tasks;
 
 namespace GitReader.Primitive;
 
-internal static class RepositoryFacade
+internal static class PrimitiveRepositoryFacade
 {
     public static async Task<PrimitiveRepository> OpenPrimitiveAsync(
         string path, CancellationToken ct)

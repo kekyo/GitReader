@@ -366,7 +366,7 @@ while (current != null)
 ハイレベルインターフェイスは、内部でこれらのプリミティブインターフェイスを使用して実装しています。
 全ての例を網羅していないため、情報が必要であればGitReaderのコードを参照する事をお勧めします。
 
-* [RepositoryFacadeクラス](/GitReader.Core/Structures/RepositoryFacade.cs) から始めると良いでしょう。
+* [StructuredRepositoryFacadeクラス](/GitReader.Core/Structures/StructuredRepositoryFacade.cs) から始めると良いでしょう。
 
 ### 現在のHEADの情報を取得
 

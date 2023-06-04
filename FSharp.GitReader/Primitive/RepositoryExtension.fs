@@ -19,19 +19,19 @@ module public RepositoryExtension =
 
     type PrimitiveRepository with
         member repository.getCurrentHeadReference(?ct: CancellationToken) =
-            RepositoryFacade.GetCurrentHeadReferenceAsync(
+            PrimitiveRepositoryFacade.GetCurrentHeadReferenceAsync(
                 repository, unwrapCT ct) |> asAsync
 
         member repository.getBranchHeadReference(branchName: string, ?ct: CancellationToken) =
-            RepositoryFacade.GetBranchHeadReferenceAsync(
+            PrimitiveRepositoryFacade.GetBranchHeadReferenceAsync(
                 repository, branchName, unwrapCT ct) |> Async.AwaitTask
 
         member repository.getRemoteBranchHeadReference(branchName: string, ?ct: CancellationToken) =
-            RepositoryFacade.GetRemoteBranchHeadReferenceAsync(
+            PrimitiveRepositoryFacade.GetRemoteBranchHeadReferenceAsync(
                 repository, branchName, unwrapCT ct) |> Async.AwaitTask
 
         member repository.getTagReference(tagName: string, ?ct: CancellationToken) =
-            RepositoryFacade.GetTagReferenceAsync(
+            PrimitiveRepositoryFacade.GetTagReferenceAsync(
                 repository, tagName, unwrapCT ct) |> Async.AwaitTask
 
         member repository.getStashes(?ct: CancellationToken) =

@@ -33,9 +33,9 @@ public static class RepositoryExtension
     [EditorBrowsable(EditorBrowsableState.Advanced)]
     public static Task<ObjectStreamResult> OpenRawObjectStreamAsync(
         this Repository repository,
-        Hash hash,
+        Hash objectId,
         CancellationToken ct = default) =>
-        RepositoryAccessor.OpenRawObjectStreamAsync(repository, hash, ct);
+        RepositoryAccessor.OpenRawObjectStreamAsync(repository, objectId, ct);
 
     public static void Deconstruct(
         this Hash hash, out byte[] hashCode) =>

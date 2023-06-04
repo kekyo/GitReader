@@ -29,9 +29,9 @@ module public RepositoryExtension =
     
     type Repository with
         [<EditorBrowsable(EditorBrowsableState.Advanced)>]
-        member repository.openRawObjectStream(hash: Hash, ?ct: CancellationToken) =
+        member repository.openRawObjectStream(objectId: Hash, ?ct: CancellationToken) =
             RepositoryAccessor.OpenRawObjectStreamAsync(
-                repository, hash, unwrapCT ct) |> Async.AwaitTask
+                repository, objectId, unwrapCT ct) |> Async.AwaitTask
 
     let (|Hash|) (hash: Hash) =
         (hash.HashCode, hash.ToString())
