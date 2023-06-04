@@ -8,7 +8,9 @@
 ////////////////////////////////////////////////////////////////////////////
 
 using GitReader.Collections;
+using GitReader.Internal;
 using System;
+using System.ComponentModel;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;

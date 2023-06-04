@@ -835,4 +835,19 @@ internal static class RepositoryAccessor
             throw;
         }
     }
+
+    public static async Task<ObjectStreamResult> OpenRawObjectStreamAsync(
+        Repository repository,
+        Hash hash,
+        CancellationToken ct)
+    {
+        var accessor = GetObjectAccessor(repository);
+        if (await accessor.OpenAsync(hash, true, ct) is not { } streamResult)
+        {
+            throw new InvalidDataException(
+                $"Couldn't find tree object: {hash}");
+        }
+
+        return streamResult;
+    }
 }

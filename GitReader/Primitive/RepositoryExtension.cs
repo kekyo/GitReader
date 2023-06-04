@@ -9,10 +9,10 @@
 
 using GitReader.Internal;
 using GitReader.Collections;
-using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using System.ComponentModel;
 
 namespace GitReader.Primitive;
 

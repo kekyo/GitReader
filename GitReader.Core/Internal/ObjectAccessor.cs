@@ -16,21 +16,9 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using GitReader.IO;
+using GitReader.Primitive;
 
 namespace GitReader.Internal;
-
-internal readonly struct ObjectStreamResult
-{
-    public readonly Stream Stream;
-    public readonly ObjectTypes Type;
-
-    public ObjectStreamResult(
-        Stream stream, ObjectTypes type)
-    {
-        this.Stream = stream;
-        this.Type = type;
-    }
-}
 
 internal sealed class ObjectAccessor : IDisposable
 {

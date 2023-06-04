@@ -11,6 +11,8 @@ namespace GitReader
 
 open GitReader.Internal
 open System
+open System.Threading
+open System.ComponentModel
 
 [<AutoOpen>]
 module public RepositoryExtension =
@@ -24,7 +26,13 @@ module public RepositoryExtension =
     type Signature with
         member signature.toGitAuthorString() =
             Utilities.ToGitAuthorString(signature)
-            
+    
+    type Repository with
+        [<EditorBrowsable(EditorBrowsableState.Advanced)>]
+        member repository.openRawObjectStream(hash: Hash, ?ct: CancellationToken) =
+            RepositoryAccessor.OpenRawObjectStreamAsync(
+                repository, hash, unwrapCT ct) |> Async.AwaitTask
+
     let (|Hash|) (hash: Hash) =
         (hash.HashCode, hash.ToString())
 
