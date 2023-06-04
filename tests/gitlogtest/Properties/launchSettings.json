@@ -3,7 +3,7 @@
     "gitlogtest": {
         "commandName": "Project",
         "commandLineArgs": ".",
-        "workingDirectory": "D:\\Projects\\git"
+        "workingDirectory": "C:\\Projects\\git"
     }
   }
 }
