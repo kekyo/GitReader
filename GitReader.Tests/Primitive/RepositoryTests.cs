@@ -73,7 +73,7 @@ public sealed class RepositoryTests
         using var repository = await Repository.Factory.OpenPrimitiveAsync(
             RepositoryTestsSetUp.BasePath);
 
-        var headref = await repository.GetRemoteBranchHeadReferenceAsync("origin/devel");
+        var headref = await repository.GetBranchHeadReferenceAsync("origin/devel");
         var commit = await repository.GetCommitAsync(headref);
 
         await Verifier.Verify(commit);

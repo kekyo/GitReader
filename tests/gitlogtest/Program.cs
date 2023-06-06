@@ -124,7 +124,8 @@ public static class Program
 #else
         var hashedCommits = new HashSet<Commit>(
             await Task.WhenAll(
-                repository.RemoteBranches.Values.
+                repository.Branches.Values.
+                Where(branch => branch.IsRemote).
                 Select(branch => branch.GetHeadCommitAsync())),
             CommitComparer.Instance);
         var sortedCommits = new SortedCommitMap(

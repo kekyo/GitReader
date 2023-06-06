@@ -156,22 +156,7 @@ if (await repository.GetCommitAsync(
 Branch branch = repository.Branches["develop"];
 
 Console.WriteLine($"Name: {branch.Name}");
-
-Commit commit = await branch.GetHeadCommitAsync();
-
-Console.WriteLine($"Hash: {commit.Hash}");
-Console.WriteLine($"Author: {commit.Author}");
-Console.WriteLine($"Committer: {commit.Committer}");
-Console.WriteLine($"Subject: {commit.Subject}");
-Console.WriteLine($"Body: {commit.Body}");
-```
-
-### 指定されたリモートブランチの情報を取得
-
-```csharp
-Branch branch = repository.RemoteBranches["origin/develop"];
-
-Console.WriteLine($"Name: {branch.Name}");
+Console.WriteLine($"IsRemote: {branch.IsRemote}");
 
 Commit commit = await branch.GetHeadCommitAsync();
 
@@ -213,7 +198,6 @@ if (await repository.GetCommitAsync(
     // ReadOnlyArray<T>クラスは、内部の配列を保護するために使用されます。
     // 使用方法はList<T>のような一般的なコレクションと同じです。
     ReadOnlyArray<Branch> branches = commit.Branches;
-    ReadOnlyArray<Branch> remoteBranches = commit.RemoteBranches;
     ReadOnlyArray<Tag> tags = commit.Tags;
 
     // ...
@@ -226,6 +210,7 @@ if (await repository.GetCommitAsync(
 foreach (Branch branch in repository.Branches.Values)
 {
     Console.WriteLine($"Name: {branch.Name}");
+    Console.WriteLine($"IsRemote: {branch.IsRemote}");
 
     Commit commit = await branch.GetHeadCommitAsync();
 
@@ -342,6 +327,7 @@ Gitのコミットは、複数の親コミットを持つ事があります。
 Branch branch = repository.Branches["develop"];
 
 Console.WriteLine($"Name: {branch.Name}");
+Console.WriteLine($"IsRemote: {branch.IsRemote}");
 
 Commit? current = await branch.GetHeadCommitAsync();
 
@@ -421,6 +407,18 @@ if (await repository.GetCommitAsync(head) is PrimitiveCommit commit)
 
 ```csharp
 PrimitiveReference[] branches = await repository.GetBranchHeadReferencesAsync();
+
+foreach (PrimitiveReference branch in branches)
+{
+    Console.WriteLine($"Name: {branch.Name}");
+    Console.WriteLine($"Commit: {branch.Commit}");
+}
+```
+
+### このリポジトリのリモートブランチ群の情報を取得
+
+```csharp
+PrimitiveReference[] branches = await repository.GetRemoteBranchHeadReferencesAsync();
 
 foreach (PrimitiveReference branch in branches)
 {

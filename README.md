@@ -158,22 +158,7 @@ if (await repository.GetCommitAsync(
 Branch branch = repository.Branches["develop"];
 
 Console.WriteLine($"Name: {branch.Name}");
-
-Commit commit = await branch.GetHeadCommitAsync();
-
-Console.WriteLine($"Hash: {commit.Hash}");
-Console.WriteLine($"Author: {commit.Author}");
-Console.WriteLine($"Committer: {commit.Committer}");
-Console.WriteLine($"Subject: {commit.Subject}");
-Console.WriteLine($"Body: {commit.Body}");
-```
-
-### Get a remote branch head commit
-
-```csharp
-Branch branch = repository.RemoteBranches["origin/develop"];
-
-Console.WriteLine($"Name: {branch.Name}");
+Console.WriteLine($"IsRemote: {branch.IsRemote}");
 
 Commit commit = await branch.GetHeadCommitAsync();
 
@@ -215,7 +200,6 @@ if (await repository.GetCommitAsync(
     // The ReadOnlyArray<T> class is used to protect the inner array.
     // Usage is the same as for general collections such as List<T>.
     ReadOnlyArray<Branch> branches = commit.Branches;
-    ReadOnlyArray<Branch> remoteBranches = commit.RemoteBranches;
     ReadOnlyArray<Tag> tags = commit.Tags;
 
     // ...
@@ -228,6 +212,7 @@ if (await repository.GetCommitAsync(
 foreach (Branch branch in repository.Branches.Values)
 {
     Console.WriteLine($"Name: {branch.Name}");
+    Console.WriteLine($"IsRemote: {branch.IsRemote}");
 
     Commit commit = await branch.GetHeadCommitAsync();
 
@@ -347,6 +332,7 @@ The following example recursively searches for a parent commit from a child comm
 Branch branch = repository.Branches["develop"];
 
 Console.WriteLine($"Name: {branch.Name}");
+Console.WriteLine($"IsRemote: {branch.IsRemote}");
 
 Commit? current = await branch.GetHeadCommitAsync();
 
@@ -426,6 +412,18 @@ if (await repository.GetCommitAsync(head) is PrimitiveCommit commit)
 
 ```csharp
 PrimitiveReference[] branches = await repository.GetBranchHeadReferencesAsync();
+
+foreach (PrimitiveReference branch in branches)
+{
+    Console.WriteLine($"Name: {branch.Name}");
+    Console.WriteLine($"Commit: {branch.Commit}");
+}
+```
+
+### Enumerate remote branches
+
+```csharp
+PrimitiveReference[] branches = await repository.GetRemoteBranchHeadReferencesAsync();
 
 foreach (PrimitiveReference branch in branches)
 {

@@ -2,5 +2,6 @@
   Head: {
     HashCode: f2f51b6fe6076ca630ca66c5c9f451217762652a
   },
-  Name: origin/devel
+  Name: origin/devel,
+  IsRemote: true
 }

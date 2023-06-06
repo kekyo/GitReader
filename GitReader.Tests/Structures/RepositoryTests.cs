@@ -71,7 +71,7 @@ public sealed class RepositoryTests
         using var repository = await Repository.Factory.OpenStructureAsync(
             RepositoryTestsSetUp.BasePath);
 
-        var branch = repository.RemoteBranches["origin/devel"];
+        var branch = repository.Branches["origin/devel"];
 
         await Verifier.Verify(branch);
     }
@@ -137,7 +137,7 @@ public sealed class RepositoryTests
 
         var commit = await repository.GetCommitAsync(
             "f690f0e7bf703582a1fad7e6f1c2d1586390f43d");
-        var branches = commit!.RemoteBranches;
+        var branches = commit!.Branches;
 
         await Verifier.Verify(
             await Task.WhenAll(

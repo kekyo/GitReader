@@ -56,7 +56,7 @@ type public StructuredRepositoryTests() =
     member _.GetRemoteBranch() = task {
         use! repository = Repository.Factory.openStructured(
             RepositoryTestsSetUp.BasePath)
-        let branch = repository.RemoteBranches["origin/devel"]
+        let branch = repository.Branches["origin/devel"]
         do! verify(branch)
     }
 
@@ -110,7 +110,7 @@ type public StructuredRepositoryTests() =
         let! commit = repository.getCommit(
             "f690f0e7bf703582a1fad7e6f1c2d1586390f43d") |> unwrapOptionAsy
         let! results = Task.WhenAll(
-            commit.RemoteBranches
+            commit.Branches
             |> Seq.sortBy(fun br -> br.Name)
             |> Seq.map(fun br -> task {
                 let! head = br.getHeadCommit()

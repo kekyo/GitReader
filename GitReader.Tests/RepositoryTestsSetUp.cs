@@ -38,6 +38,8 @@ public sealed class RepositoryTestsSetUp
                 writer.WriteStartObject();
                 writer.WritePropertyName("Name");
                 writer.WriteValue(branch.Name);
+                writer.WritePropertyName("IsRemote");
+                writer.WriteValue(branch.IsRemote);
                 writer.WriteEndObject();
             }
             writer.WriteEndArray();

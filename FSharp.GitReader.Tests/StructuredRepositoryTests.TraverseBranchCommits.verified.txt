@@ -19,7 +19,8 @@
     Body: ,
     Branches: [
       {
-        Name: master
+        Name: master,
+        IsRemote: false
       }
     ]
   },
@@ -135,9 +136,10 @@
     },
     Subject: Updates test nuget refs.,
     Body: ,
-    RemoteBranches: [
+    Branches: [
       {
-        Name: origin/devel
+        Name: origin/devel,
+        IsRemote: true
       }
     ]
   },

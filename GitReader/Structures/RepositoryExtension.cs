@@ -88,14 +88,12 @@ public static class RepositoryExtension
         out ReadOnlyDictionary<string, string> remoteUrls,
         out Branch? head,
         out ReadOnlyDictionary<string, Branch> branches,
-        out ReadOnlyDictionary<string, Branch> remoteBranches,
         out ReadOnlyDictionary<string, Tag> tags)
     {
         gitPath = repository.GitPath;
         remoteUrls = repository.RemoteUrls;
         head = repository.head;
         branches = repository.branches;
-        remoteBranches = repository.remoteBranches;
         tags = repository.tags;
     }
 

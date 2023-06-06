@@ -84,7 +84,6 @@ module public RepositoryExtension =
           | null -> None
           | _ -> Some repository.head),
          repository.branches,
-         repository.remoteBranches,
          repository.tags)
 
     let (|Branch|) (branch: Branch) =

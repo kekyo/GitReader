@@ -59,7 +59,7 @@ type public PrimitiveRepositoryTests() =
     member _.GetRemoteBranchHead() = task {
         use! repository = Repository.Factory.openPrimitive(
             RepositoryTestsSetUp.BasePath)
-        let! headref = repository.getRemoteBranchHeadReference("origin/devel")
+        let! headref = repository.getBranchHeadReference("origin/devel")
         let! commit = repository.getCommit(headref) |> unwrapOptionAsy
         do! verify(commit)
     }

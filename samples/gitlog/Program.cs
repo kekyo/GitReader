@@ -185,8 +185,7 @@ public static class Program
         var refs = string.Join(", ",
             commit.Tags.
             Select(t => $"tag: {t.Name}").
-            Concat(commit.RemoteBranches.
-                Concat(commit.Branches).
+            Concat(commit.Branches.
                 // If a HEAD commit references a particular branch, this is where it is determined.
                 Select(b => head?.Name == b.Name ? $"HEAD -> {b.Name}" : b.Name)).
             OrderBy(name => name, StringComparer.Ordinal).  // deterministic
@@ -242,8 +241,8 @@ public static class Program
 
         // HashSet to check if the commit has already been output.
         // Initially, insert HEAD commit for all local branches and remote branches.
-        var headCommits = await Task.WhenAll(repository.Branches.Values.
-            Concat(repository.RemoteBranches.Values).
+        var headCommits = await Task.WhenAll(
+            repository.Branches.Values.
             Select(branch => branch.GetHeadCommitAsync()));
 
         var hashedCommits = new HashSet<Commit>(

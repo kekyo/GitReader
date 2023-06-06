@@ -46,7 +46,6 @@ public class GitRepo
         using var repository = await Repository.Factory.OpenStructureAsync(gitPath);
         var stashes = repository.Stashes.ToArray();
         var branches = repository.Branches.Values.ToArray();
-        var remoteBranches = repository.RemoteBranches.Values.ToArray();
         var tags = repository.Tags.Values.ToArray();
         var currentBranch = repository.GetCurrentHead();
     }
@@ -56,8 +55,7 @@ public class GitRepo
     {
         var repository = new LibGit2Sharp.Repository(gitPath);
         var stashes = repository.Stashes.ToArray();
-        var branches = repository.Branches.Where(x => !x.IsRemote).ToArray();
-        var remoteBranches = repository.Branches.Where(x => x.IsRemote).ToArray();
+        var branches = repository.Branches.ToArray();
         var tags = repository.Tags.ToArray();
         var currentBranch = repository.Head;
         var currentTrackedBranch = repository.Head?.TrackedBranch;

@@ -62,7 +62,7 @@ internal static class StructuredRepositoryFacade
         if (await RepositoryAccessor.ReadHashAsync(
             repository, "HEAD", ct) is { } results)
         {
-            return new(rwr, results.Names.Last(), results.Hash);
+            return new(rwr, results.Names.Last(), results.Hash, false);
         }
         else
         {
@@ -79,35 +79,16 @@ internal static class StructuredRepositoryFacade
     {
         Debug.Assert(object.ReferenceEquals(rwr.Target, repository));
 
-        var references = await RepositoryAccessor.ReadReferencesAsync(
-            repository, ReferenceTypes.Branches, ct);
+        var (references, remoteReferences) = await Utilities.Join(
+            RepositoryAccessor.ReadReferencesAsync(
+                repository, ReferenceTypes.Branches, ct),
+            RepositoryAccessor.ReadReferencesAsync(
+                repository, ReferenceTypes.RemoteBranches, ct));
 
         return references.
-            ToDictionary(
-                reference => reference.Name,
-                reference => new Branch(
-                    rwr,
-                    reference.Name,
-                    reference.Target));
-    }
-
-    private static async Task<ReadOnlyDictionary<string, Branch>> GetStructuredRemoteBranchesAsync(
-        StructuredRepository repository,
-        WeakReference rwr,
-        CancellationToken ct)
-    {
-        Debug.Assert(object.ReferenceEquals(rwr.Target, repository));
-
-        var references = await RepositoryAccessor.ReadReferencesAsync(
-            repository, ReferenceTypes.RemoteBranches, ct);
-
-        return references.
-            ToDictionary(
-                reference => reference.Name,
-                reference => new Branch(
-                    rwr,
-                    reference.Name,
-                    reference.Target));
+            Select(r => new Branch(rwr, r.Name, r.Target, false)).
+            Concat(remoteReferences.Select(r => new Branch(rwr, r.Name, r.Target, true))).
+            ToDictionary(b => b.Name);
     }
 
     private static async Task<ReadOnlyDictionary<string, Tag>> GetStructuredTagsAsync(
@@ -201,16 +182,14 @@ internal static class StructuredRepositoryFacade
 
             // Read all other requirements.
             var rwr = new WeakReference(repository);
-            var (head, branches, remoteBranches, tags, stashes) = await Utilities.Join(
+            var (head, branches, tags, stashes) = await Utilities.Join(
                 GetCurrentHeadAsync(repository, rwr, ct),
                 GetStructuredBranchesAsync(repository, rwr, ct),
-                GetStructuredRemoteBranchesAsync(repository, rwr, ct),
                 GetStructuredTagsAsync(repository, rwr, ct),
                 GetStructuredStashesAsync(repository, rwr, ct));
 
             repository.head = head;
             repository.branches = branches;
-            repository.remoteBranches = remoteBranches;
             repository.tags = tags;
             repository.stashes = stashes;
 
@@ -301,15 +280,6 @@ internal static class StructuredRepositoryFacade
         var (repository, _) = GetRelatedRepository(commit);
 
         return repository.Branches.Values.
-            Collect(branch => branch.Head.Equals(commit.Hash) ? branch : null).
-            ToArray();
-    }
-
-    public static Branch[] GetRelatedRemoteBranches(Commit commit)
-    {
-        var (repository, _) = GetRelatedRepository(commit);
-
-        return repository.RemoteBranches.Values.
             Collect(branch => branch.Head.Equals(commit.Hash) ? branch : null).
             ToArray();
     }

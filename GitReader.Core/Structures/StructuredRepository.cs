@@ -23,7 +23,6 @@ public sealed class StructuredRepository : Repository
 {
     internal Branch? head;
     internal ReadOnlyDictionary<string, Branch> branches = null!;
-    internal ReadOnlyDictionary<string, Branch> remoteBranches = null!;
     internal ReadOnlyDictionary<string, Tag> tags = null!;
     internal ReadOnlyArray<Stash> stashes = null!;
 
@@ -35,8 +34,6 @@ public sealed class StructuredRepository : Repository
 
     public ReadOnlyDictionary<string, Branch> Branches =>
         this.branches;
-    public ReadOnlyDictionary<string, Branch> RemoteBranches =>
-        this.remoteBranches;
     public ReadOnlyDictionary<string, Tag> Tags =>
         this.tags;    
     public ReadOnlyArray<Stash> Stashes =>

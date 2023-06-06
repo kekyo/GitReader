@@ -71,24 +71,16 @@ internal static class PrimitiveRepositoryFacade
         string branchName,
         CancellationToken ct)
     {
-        var relativePathOrLocation = $"refs/heads/{branchName}";
-        var results = await RepositoryAccessor.ReadHashAsync(
-            repository, relativePathOrLocation, ct);
+        var path = $"refs/heads/{branchName}";
+        var remotePath = $"refs/remotes/{branchName}";
+        var (results, remoteResults) = await Utilities.Join(
+            RepositoryAccessor.ReadHashAsync(repository, path, ct),
+            RepositoryAccessor.ReadHashAsync(repository, remotePath, ct));
         return results is { } r ?
-            new PrimitiveReference(branchName, relativePathOrLocation, r.Hash) :
+            new PrimitiveReference(branchName, path, r.Hash) :
+            remoteResults is { } rr ?
+            new PrimitiveReference(branchName, remotePath, rr.Hash) :
             throw new ArgumentException($"Could not find a branch: {branchName}");
-    }
-
-    public static async Task<PrimitiveReference> GetRemoteBranchHeadReferenceAsync(
-        Repository repository,
-        string branchName, CancellationToken ct)
-    {
-        var relativePathOrLocation = $"refs/remotes/{branchName}";
-        var results = await RepositoryAccessor.ReadHashAsync(
-            repository, relativePathOrLocation, ct);
-        return results is { } r ?
-            new PrimitiveReference(branchName, relativePathOrLocation, r.Hash) :
-            throw new ArgumentException($"Could not find a remote branch: {branchName}");
     }
 
     public static async Task<PrimitiveReference> GetTagReferenceAsync(

@@ -23,7 +23,6 @@ public sealed class Commit :
     internal readonly Hash treeRoot;
 
     private ReadOnlyArray<Branch>? branches;
-    private ReadOnlyArray<Branch>? remoteBranches;
     private ReadOnlyArray<Tag>? tags;
 
     public readonly Hash Hash;
@@ -73,20 +72,6 @@ public sealed class Commit :
                 this.branches = StructuredRepositoryFacade.GetRelatedBranches(this);
             }
             return this.branches;
-        }
-    }
-
-    public ReadOnlyArray<Branch> RemoteBranches
-    {
-        get
-        {
-            if (this.remoteBranches == null)
-            {
-                // Beginning of race condition section,
-                // but will discard dict later silently.
-                this.remoteBranches = StructuredRepositoryFacade.GetRelatedRemoteBranches(this);
-            }
-            return this.remoteBranches;
         }
     }
 
