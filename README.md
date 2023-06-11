@@ -123,7 +123,7 @@ using StructuredRepository repository =
         "/home/kekyo/Projects/YourOwnLocalGitRepo");
 
 // Found current head
-if (repository.GetCurrentHead() is Branch head)
+if (repository.Head is Branch head)
 {
     Console.WriteLine($"Name: {head.Name}");
 
@@ -175,17 +175,24 @@ Console.WriteLine($"Body: {commit.Body}");
 Tag tag = repository.Tags["1.2.3"];
 
 Console.WriteLine($"Name: {tag.Name}");
+Console.WriteLine($"Type: {tag.Type}");
+Console.WriteLine($"ObjectHash: {tag.ObjectHash}");
 
-Console.WriteLine($"Hash: {tag.Hash}");
-Console.WriteLine($"Author: {tag.Author}");
-Console.WriteLine($"Committer: {tag.Committer}");
-Console.WriteLine($"Message: {tag.Message}");
+// If present the annotation?
+if (tag.HasAnnotation)
+{
+    // Get tag annotation.
+    Annotation annotation = await tag.GetAnnotationAsync();
+
+    Console.WriteLine($"Tagger: {annotation.Tagger}");
+    Console.WriteLine($"Message: {annotation.Message}");
+}
 
 // If tag is a commit tag?
-if (tag is CommitTag ct)
+if (tag.Type == ObjectTypes.Commit)
 {
     // Get the commit indicated by the tag.
-    Commit commit = await ct.GetCommitAsync();
+    Commit commit = await tag.GetCommitAsync();
 
     // ...
 }
@@ -230,11 +237,8 @@ foreach (Branch branch in repository.Branches.Values)
 foreach (Tag tag in repository.Tags.Values)
 {
     Console.WriteLine($"Name: {tag.Name}");
-
-    Console.WriteLine($"Hash: {tag.Hash}");
-    Console.WriteLine($"Author: {tag.Author}");
-    Console.WriteLine($"Committer: {tag.Committer}");
-    Console.WriteLine($"Message: {tag.Message}");
+    Console.WriteLine($"Type: {tag.Type}");
+    Console.WriteLine($"ObjectHash: {tag.ObjectHash}");
 }
 ```
 
@@ -435,9 +439,9 @@ foreach (PrimitiveReference branch in branches)
 ### Enumerate tags
 
 ```csharp
-PrimitiveReference[] tagReferences = await repository.GetTagReferencesAsync();
+PrimitiveTagReference[] tagReferences = await repository.GetTagReferencesAsync();
 
-foreach (PrimitiveReference tagReference in tagReferences)
+foreach (PrimitiveTagReference tagReference in tagReferences)
 {
     PrimitiveTag tag = await repository.GetTagAsync(tagReference);
 

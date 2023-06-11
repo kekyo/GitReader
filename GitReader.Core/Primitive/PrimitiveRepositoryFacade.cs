@@ -83,7 +83,7 @@ internal static class PrimitiveRepositoryFacade
             throw new ArgumentException($"Could not find a branch: {branchName}");
     }
 
-    public static async Task<PrimitiveReference> GetTagReferenceAsync(
+    public static async Task<PrimitiveTagReference> GetTagReferenceAsync(
         Repository repository,
         string tagName, CancellationToken ct)
     {
@@ -91,7 +91,7 @@ internal static class PrimitiveRepositoryFacade
         var results = await RepositoryAccessor.ReadHashAsync(
             repository, relativePathOrLocation, ct);
         return results is { } r ?
-            new PrimitiveReference(tagName, relativePathOrLocation, r.Hash) :
+            new PrimitiveTagReference(tagName, relativePathOrLocation, r.Hash, null) :
             throw new ArgumentException($"Could not find a tag: {tagName}");
     }
 }

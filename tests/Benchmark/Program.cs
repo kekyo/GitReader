@@ -47,7 +47,7 @@ public class GitRepo
         var stashes = repository.Stashes.ToArray();
         var branches = repository.Branches.Values.ToArray();
         var tags = repository.Tags.Values.ToArray();
-        var currentBranch = repository.GetCurrentHead();
+        var currentBranch = repository.Head;
     }
 
     [Benchmark]

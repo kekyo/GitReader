@@ -44,11 +44,12 @@
     Body: ,
     Tags: [
       {
-        Hash: {
+        Type: Commit,
+        ObjectHash: {
           HashCode: 30aaea993cc0a3cb1dad2968d3e5f4d90a287e25
         },
         Name: 2.1.0,
-        Type: Commit
+        HasAnnotation: false
       }
     ]
   },
@@ -91,11 +92,12 @@
     Body: ,
     Tags: [
       {
-        Hash: {
+        Type: Commit,
+        ObjectHash: {
           HashCode: 3195237679829c06b3ca764484b0554ccb67562a
         },
         Name: 2.0.22,
-        Type: Commit
+        HasAnnotation: false
       }
     ]
   },
@@ -182,11 +184,12 @@
     Body: ,
     Tags: [
       {
-        Hash: {
+        Type: Commit,
+        ObjectHash: {
           HashCode: 1205dc34ce48bda28fc543daaf9525a9bb6e6d10
         },
         Name: 2.0.18,
-        Type: Commit
+        HasAnnotation: false
       }
     ]
   },
@@ -210,11 +213,12 @@
     Body: ,
     Tags: [
       {
-        Hash: {
+        Type: Commit,
+        ObjectHash: {
           HashCode: 0fad4e52989d259eea5c68afc74516b5b8358bc7
         },
         Name: 2.0.17,
-        Type: Commit
+        HasAnnotation: false
       }
     ]
   },
@@ -238,11 +242,12 @@
     Body: ,
     Tags: [
       {
-        Hash: {
+        Type: Commit,
+        ObjectHash: {
           HashCode: 001ea63de0c2967a898a0ef96caff6ee8f7c6b52
         },
         Name: 2.0.16,
-        Type: Commit
+        HasAnnotation: false
       }
     ]
   },
@@ -266,11 +271,12 @@
     Body: ,
     Tags: [
       {
-        Hash: {
+        Type: Commit,
+        ObjectHash: {
           HashCode: 828bfa5f9794d78ebc58af03500e8bfeed8f8dda
         },
         Name: 2.0.15,
-        Type: Commit
+        HasAnnotation: false
       }
     ]
   },
@@ -332,11 +338,12 @@
     Body: ,
     Tags: [
       {
-        Hash: {
+        Type: Commit,
+        ObjectHash: {
           HashCode: d852c9b28e21cfd6d32fda05bc316528c6805ce7
         },
         Name: 2.0.12,
-        Type: Commit
+        HasAnnotation: false
       }
     ]
   },
@@ -569,11 +576,12 @@
     Body: ,
     Tags: [
       {
-        Hash: {
+        Type: Commit,
+        ObjectHash: {
           HashCode: f64de5e3ad34528757207109e68f626bf8cc1a31
         },
         Name: 2.0.0,
-        Type: Commit
+        HasAnnotation: false
       }
     ]
   },
@@ -635,18 +643,15 @@
     Body: ,
     Tags: [
       {
-        Hash: {
+        TagHash: {
+          HashCode: 8641a1e6608d72aec10bedf62b937d585f6d746a
+        },
+        Type: Commit,
+        ObjectHash: {
           HashCode: 6961a50ef3ad4e43ed9774daffd8457d32cf5e75
         },
         Name: 1.1.1,
-        Tagger: {
-          Name: Kouji Matsui,
-          MailAddress: k@kekyo.net,
-          Date: 2016-02-23 11:21:54 +9,
-          RawFormat: Kouji Matsui <k@kekyo.net> 1456194114 0900
-        },
-        Message: ,
-        Type: Commit
+        HasAnnotation: true
       }
     ]
   },
@@ -670,18 +675,15 @@
     Body: ,
     Tags: [
       {
-        Hash: {
+        TagHash: {
+          HashCode: f690a87062ac0f833e7c250db8ba30ccbc130f15
+        },
+        Type: Commit,
+        ObjectHash: {
           HashCode: d53bc0fa81fc8b2a4cd57d7e327a115ff338bb0c
         },
         Name: 1.1.0,
-        Tagger: {
-          Name: Kouji Matsui,
-          MailAddress: k@kekyo.net,
-          Date: 2016-02-22 13:44:46 +9,
-          RawFormat: Kouji Matsui <k@kekyo.net> 1456116286 0900
-        },
-        Message: ,
-        Type: Commit
+        HasAnnotation: true
       }
     ]
   },
@@ -781,18 +783,15 @@
     Body: ,
     Tags: [
       {
-        Hash: {
+        TagHash: {
+          HashCode: f64b3080ed198060dc4878d86085111b49e36df8
+        },
+        Type: Commit,
+        ObjectHash: {
           HashCode: 3b0431e8764dbb627a44aeaca55bd41336c3b4a7
         },
         Name: 1.0.0,
-        Tagger: {
-          Name: Kouji Matsui,
-          MailAddress: k@kekyo.net,
-          Date: 2016-02-01 22:32:12 +9,
-          RawFormat: Kouji Matsui <k@kekyo.net> 1454333532 0900
-        },
-        Message: ,
-        Type: Commit
+        HasAnnotation: true
       }
     ]
   },
@@ -816,18 +815,15 @@
     Body: ,
     Tags: [
       {
-        Hash: {
+        TagHash: {
+          HashCode: 6f0ea23fc9acf42ba547fa7886d1a57f7724c24e
+        },
+        Type: Commit,
+        ObjectHash: {
           HashCode: 819ad16b1d3b7ffa0f315dd417eb61e4b7264c53
         },
         Name: 0.9.7,
-        Tagger: {
-          Name: Kouji Matsui,
-          MailAddress: k@kekyo.net,
-          Date: 2016-01-30 20:28:13 +9,
-          RawFormat: Kouji Matsui <k@kekyo.net> 1454153293 0900
-        },
-        Message: ,
-        Type: Commit
+        HasAnnotation: true
       }
     ]
   },
@@ -908,18 +904,15 @@
     Body: ,
     Tags: [
       {
-        Hash: {
+        TagHash: {
+          HashCode: 907b533f97fe2a5cefb51d73d856953872efc51c
+        },
+        Type: Commit,
+        ObjectHash: {
           HashCode: a7187601f4b4b9dacc3c78895397bb2911d190d6
         },
         Name: 0.9.6,
-        Tagger: {
-          Name: Kouji Matsui,
-          MailAddress: k@kekyo.net,
-          Date: 2016-01-29 23:44:10 +9,
-          RawFormat: Kouji Matsui <k@kekyo.net> 1454078650 0900
-        },
-        Message: ,
-        Type: Commit
+        HasAnnotation: true
       }
     ]
   },
@@ -962,18 +955,15 @@
     Body: ,
     Tags: [
       {
-        Hash: {
+        TagHash: {
+          HashCode: 3ef21313178355e27bd787db51ed86c190236760
+        },
+        Type: Commit,
+        ObjectHash: {
           HashCode: 63723bd7bc1321ffdd2b72c3bc743fa57455d137
         },
         Name: 0.9.5,
-        Tagger: {
-          Name: Kouji Matsui,
-          MailAddress: k@kekyo.net,
-          Date: 2016-01-29 23:10:56 +9,
-          RawFormat: Kouji Matsui <k@kekyo.net> 1454076656 0900
-        },
-        Message: ,
-        Type: Commit
+        HasAnnotation: true
       }
     ]
   },

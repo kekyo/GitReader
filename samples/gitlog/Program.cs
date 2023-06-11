@@ -256,9 +256,7 @@ public static class Program
         // Insert all tag commits in hashedCommits and sortedCommits.
         // Although not common, Git tags can also be applied to trees and file objects.
         // Therefore, here we only extract tags applied to commits.
-        foreach (var tag in repository.Tags.Values.
-            Select(tag => tag is CommitTag ct ? ct : null!).
-            Where(tag => tag != null))
+        foreach (var tag in repository.Tags.Values)
         {
             var commit = await tag.GetCommitAsync();
 
@@ -270,8 +268,7 @@ public static class Program
         }
 
         // Also add a HEAD commit for the repository if exists.
-        var head = repository.GetCurrentHead();
-        if (head is { })
+        if (repository.Head is { } head)
         {
             var headCommit = await head.GetHeadCommitAsync();
 
@@ -288,7 +285,7 @@ public static class Program
             var commit = sortedCommits.Front!;
 
             // Execute the output of this commit to obtain the parent commit group of this commit.
-            var parents = await WriteLogAsync(tw, commit, head, default);
+            var parents = await WriteLogAsync(tw, commit, repository.Head, default);
 
             // Remove this commit from sortedCommits because it is complete.
             sortedCommits.RemoveFront();

@@ -131,9 +131,7 @@ public static class Program
         var sortedCommits = new SortedCommitMap(
             hashedCommits);
 
-        foreach (var tag in repository.Tags.Values.
-            Select(tag => tag is CommitTag ct ? ct : null!).
-            Where(tag => tag != null))
+        foreach (var tag in repository.Tags.Values)
         {
             var c = await tag.GetCommitAsync();
 
@@ -143,7 +141,7 @@ public static class Program
             }
         }
 
-        if (repository.GetCurrentHead() is { } head)
+        if (repository.Head is { } head)
         {
             var c = await head.GetHeadCommitAsync();
 

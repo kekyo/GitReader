@@ -18,11 +18,12 @@
   Body: ,
   Tags: [
     {
-      Hash: {
+      Type: Commit,
+      ObjectHash: {
         HashCode: 1205dc34ce48bda28fc543daaf9525a9bb6e6d10
       },
       Name: 2.0.18,
-      Type: Commit
+      HasAnnotation: false
     }
   ]
 }

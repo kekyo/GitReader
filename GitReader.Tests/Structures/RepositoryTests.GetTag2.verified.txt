@@ -19,33 +19,27 @@
     Body: ,
     Tags: [
       {
-        Hash: {
+        TagHash: {
+          HashCode: 907b533f97fe2a5cefb51d73d856953872efc51c
+        },
+        Type: Commit,
+        ObjectHash: {
           HashCode: a7187601f4b4b9dacc3c78895397bb2911d190d6
         },
         Name: 0.9.6,
-        Tagger: {
-          Name: Kouji Matsui,
-          MailAddress: k@kekyo.net,
-          Date: 2016-01-29 23:44:10 +9,
-          RawFormat: Kouji Matsui <k@kekyo.net> 1454078650 0900
-        },
-        Message: ,
-        Type: Commit
+        HasAnnotation: true
       }
     ]
   },
   Tag: {
-    Hash: {
+    TagHash: {
+      HashCode: 907b533f97fe2a5cefb51d73d856953872efc51c
+    },
+    Type: Commit,
+    ObjectHash: {
       HashCode: a7187601f4b4b9dacc3c78895397bb2911d190d6
     },
     Name: 0.9.6,
-    Tagger: {
-      Name: Kouji Matsui,
-      MailAddress: k@kekyo.net,
-      Date: 2016-01-29 23:44:10 +9,
-      RawFormat: Kouji Matsui <k@kekyo.net> 1454078650 0900
-    },
-    Message: ,
-    Type: Commit
+    HasAnnotation: true
   }
 }

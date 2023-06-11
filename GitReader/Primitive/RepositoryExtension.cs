@@ -12,7 +12,6 @@ using GitReader.Collections;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using System.ComponentModel;
 
 namespace GitReader.Primitive;
 
@@ -28,7 +27,7 @@ public static class RepositoryExtension
         string branchName, CancellationToken ct = default) =>
         PrimitiveRepositoryFacade.GetBranchHeadReferenceAsync(repository, branchName, ct);
 
-    public static Task<PrimitiveReference> GetTagReferenceAsync(
+    public static Task<PrimitiveTagReference> GetTagReferenceAsync(
         this PrimitiveRepository repository,
         string tagName, CancellationToken ct = default) =>
         PrimitiveRepositoryFacade.GetTagReferenceAsync(repository, tagName, ct);
@@ -40,9 +39,9 @@ public static class RepositoryExtension
 
     public static async Task<PrimitiveTag> GetTagAsync(
         this PrimitiveRepository repository,
-        PrimitiveReference tag, CancellationToken ct = default) =>
-        await RepositoryAccessor.ReadTagAsync(repository, tag, ct) is { } t ?
-            t : new(tag, ObjectTypes.Commit, tag.Name, null, null);
+        PrimitiveTagReference tag, CancellationToken ct = default) =>
+        await RepositoryAccessor.ReadTagAsync(repository, tag.ObjectOrCommitHash, ct) is { } t ?
+            t : new(tag.ObjectOrCommitHash, ObjectTypes.Commit, tag.Name, null, null);
 
     public static Task<PrimitiveReference[]> GetBranchHeadReferencesAsync(
         this PrimitiveRepository repository,
@@ -54,10 +53,10 @@ public static class RepositoryExtension
         CancellationToken ct = default) =>
         RepositoryAccessor.ReadReferencesAsync(repository, ReferenceTypes.RemoteBranches, ct);
 
-    public static Task<PrimitiveReference[]> GetTagReferencesAsync(
+    public static Task<PrimitiveTagReference[]> GetTagReferencesAsync(
         this PrimitiveRepository repository,
         CancellationToken ct = default) =>
-        RepositoryAccessor.ReadReferencesAsync(repository, ReferenceTypes.Tags, ct);
+        RepositoryAccessor.ReadTagReferencesAsync(repository, ct);
     
     public static Task<PrimitiveReflogEntry[]> GetStashesAsync(
         this PrimitiveRepository repository,
@@ -94,10 +93,25 @@ public static class RepositoryExtension
     public static void Deconstruct(
         this PrimitiveReference reference,
         out string name,
+        out string relativePath,
         out Hash target)
     {
         name = reference.Name;
+        relativePath = reference.RelativePath;
         target = reference.Target;
+    }
+
+    public static void Deconstruct(
+        this PrimitiveTagReference tagReference,
+        out string name,
+        out string relativePath,
+        out Hash objectOrCommitHash,
+        out Hash? commitHash)
+    {
+        name = tagReference.Name;
+        relativePath = tagReference.RelativePath;
+        objectOrCommitHash = tagReference.ObjectOrCommitHash;
+        commitHash = tagReference.CommitHash;
     }
 
     public static void Deconstruct(

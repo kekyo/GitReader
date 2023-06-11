@@ -10,17 +10,13 @@
 namespace GitReader.Structures
 
 open GitReader
-open System.Threading
 open System
+open System.Threading
 
 [<AutoOpen>]
 module public RepositoryExtension =
 
     type StructuredRepository with
-        member repository.getCurrentHead() =
-            match repository.head with
-            | null -> None
-            | _ -> Some repository.head
         member repository.getCommit(commit: Hash, ?ct: CancellationToken) = async {
             let! c = StructuredRepositoryFacade.GetCommitDirectlyAsync(
                 repository, commit, unwrapCT ct) |> Async.AwaitTask
@@ -54,11 +50,14 @@ module public RepositoryExtension =
         member commit.getMessage() =
             commit.message
             
-    type CommitTag with
+    type Tag with
         member tag.getCommit(?ct: CancellationToken) =
-            StructuredRepositoryFacade.GetCommitAsync(
-                tag, unwrapCT ct) |> Async.AwaitTask
-            
+            match tag.Type with
+            | ObjectTypes.Commit -> StructuredRepositoryFacade.GetCommitAsync(tag, unwrapCT ct) |> Async.AwaitTask
+            | _ -> raise (InvalidOperationException $"Could not get commit: Type={tag.Type}")
+        member tag.getAnnotation(?ct: CancellationToken) =
+            StructuredRepositoryFacade.GetAnnotationAsync(tag, unwrapCT ct) |> Async.AwaitTask
+       
     type Stash with
         member stash.getCommit(?ct: CancellationToken) =
             StructuredRepositoryFacade.GetCommitAsync(
@@ -77,7 +76,7 @@ module public RepositoryExtension =
             StructuredRepositoryFacade.OpenBlobAsync(
                 entry, unwrapCT ct) |> Async.AwaitTask
 
-    let (|Repository|) (repository: StructuredRepository) =
+    let (|StructuredRepository|) (repository: StructuredRepository) =
         (repository.GitPath,
          repository.RemoteUrls,
          (match repository.head with
@@ -93,19 +92,15 @@ module public RepositoryExtension =
         (commit.Hash, commit.Author, commit.Committer, commit.Subject, commit.Body)
 
     let (|Tag|) (tag: Tag) =
-        (tag.Hash, tag.Name, tag.Type,
-         (match tag.Tagger.HasValue with
-          | false -> None
-          | _ -> Some tag.Tagger.Value),
-         (match tag.Message with
-          | null -> None
-          | _ -> Some tag.Message))
+        ((match tag.TagHash.HasValue with
+         | false -> None
+         | _ -> Some tag.TagHash.Value),
+         tag.Type, tag.ObjectHash, tag.Name)
 
-    let (|CommitTag|) (tag: CommitTag) =
-        (tag.Hash, tag.Name,
-         (match tag.Tagger.HasValue with
+    let (|Annotation|) (annotation: Annotation) =
+        ((match annotation.Tagger.HasValue with
           | false -> None
-          | _ -> Some tag.Tagger.Value),
-         (match tag.Message with
+          | _ -> Some annotation.Tagger.Value),
+         (match annotation.Message with
           | null -> None
-          | _ -> Some tag.Message))
+          | _ -> Some annotation.Message))
