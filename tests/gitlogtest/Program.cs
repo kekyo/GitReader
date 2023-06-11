@@ -133,11 +133,14 @@ public static class Program
 
         foreach (var tag in repository.Tags.Values)
         {
-            var c = await tag.GetCommitAsync();
-
-            if (hashedCommits.Add(c))
+            if (tag.Type == ObjectTypes.Commit)
             {
-                sortedCommits.Add(c);
+                var c = await tag.GetCommitAsync();
+
+                if (hashedCommits.Add(c))
+                {
+                    sortedCommits.Add(c);
+                }
             }
         }
 

@@ -258,12 +258,16 @@ public static class Program
         // Therefore, here we only extract tags applied to commits.
         foreach (var tag in repository.Tags.Values)
         {
-            var commit = await tag.GetCommitAsync();
-
-            // Ignore commits that already exist.
-            if (hashedCommits.Add(commit))
+            // Only commit tag.
+            if (tag.Type == ObjectTypes.Commit)
             {
-                sortedCommits.Add(commit);
+                var commit = await tag.GetCommitAsync();
+
+                // Ignore commits that already exist.
+                if (hashedCommits.Add(commit))
+                {
+                    sortedCommits.Add(commit);
+                }
             }
         }
 
