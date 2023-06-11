@@ -121,7 +121,7 @@ using StructuredRepository repository =
         "/home/kekyo/Projects/YourOwnLocalGitRepo");
 
 // 現在のHEADが見つかった
-if (repository.GetCurrentHead() is Branch head)
+if (repository.Head is Branch head)
 {
     Console.WriteLine($"Name: {head.Name}");
 
@@ -156,6 +156,7 @@ if (await repository.GetCommitAsync(
 Branch branch = repository.Branches["develop"];
 
 Console.WriteLine($"Name: {branch.Name}");
+Console.WriteLine($"IsRemote: {branch.IsRemote}");
 
 Commit commit = await branch.GetHeadCommitAsync();
 
@@ -166,39 +167,30 @@ Console.WriteLine($"Subject: {commit.Subject}");
 Console.WriteLine($"Body: {commit.Body}");
 ```
 
-### 指定されたリモートブランチの情報を取得
-
-```csharp
-Branch branch = repository.RemoteBranches["origin/develop"];
-
-Console.WriteLine($"Name: {branch.Name}");
-
-Commit commit = await branch.GetHeadCommitAsync();
-
-Console.WriteLine($"Hash: {commit.Hash}");
-Console.WriteLine($"Author: {commit.Author}");
-Console.WriteLine($"Committer: {commit.Committer}");
-Console.WriteLine($"Subject: {commit.Subject}");
-Console.WriteLine($"Body: {commit.Body}");
-```
-
-### タグの情報を取得
+### 指定されたタグの情報を取得
 
 ```csharp
 Tag tag = repository.Tags["1.2.3"];
 
 Console.WriteLine($"Name: {tag.Name}");
+Console.WriteLine($"Type: {tag.Type}");
+Console.WriteLine($"ObjectHash: {tag.ObjectHash}");
 
-Console.WriteLine($"Hash: {tag.Hash}");
-Console.WriteLine($"Author: {tag.Author}");
-Console.WriteLine($"Committer: {tag.Committer}");
-Console.WriteLine($"Message: {tag.Message}");
+// アノテーションが存在すれば
+if (tag.HasAnnotation)
+{
+    // タグのアノテーションを取得
+    Annotation annotation = await tag.GetAnnotationAsync();
 
-// タグがコミットタグなら
-if (tag is CommitTag ct)
+    Console.WriteLine($"Tagger: {annotation.Tagger}");
+    Console.WriteLine($"Message: {annotation.Message}");
+}
+
+// コミットタグなら
+if (tag.Type == ObjectTypes.Commit)
 {
     // タグが示すコミットを取得
-    Commit commit = await ct.GetCommitAsync();
+    Commit commit = await tag.GetCommitAsync();
 
     // ...
 }
@@ -213,7 +205,6 @@ if (await repository.GetCommitAsync(
     // ReadOnlyArray<T>クラスは、内部の配列を保護するために使用されます。
     // 使用方法はList<T>のような一般的なコレクションと同じです。
     ReadOnlyArray<Branch> branches = commit.Branches;
-    ReadOnlyArray<Branch> remoteBranches = commit.RemoteBranches;
     ReadOnlyArray<Tag> tags = commit.Tags;
 
     // ...
@@ -226,6 +217,7 @@ if (await repository.GetCommitAsync(
 foreach (Branch branch in repository.Branches.Values)
 {
     Console.WriteLine($"Name: {branch.Name}");
+    Console.WriteLine($"IsRemote: {branch.IsRemote}");
 
     Commit commit = await branch.GetHeadCommitAsync();
 
@@ -243,11 +235,8 @@ foreach (Branch branch in repository.Branches.Values)
 foreach (Tag tag in repository.Tags.Values)
 {
     Console.WriteLine($"Name: {tag.Name}");
-
-    Console.WriteLine($"Hash: {tag.Hash}");
-    Console.WriteLine($"Author: {tag.Author}");
-    Console.WriteLine($"Committer: {tag.Committer}");
-    Console.WriteLine($"Message: {tag.Message}");
+    Console.WriteLine($"Type: {tag.Type}");
+    Console.WriteLine($"ObjectHash: {tag.ObjectHash}");
 }
 ```
 
@@ -342,6 +331,7 @@ Gitのコミットは、複数の親コミットを持つ事があります。
 Branch branch = repository.Branches["develop"];
 
 Console.WriteLine($"Name: {branch.Name}");
+Console.WriteLine($"IsRemote: {branch.IsRemote}");
 
 Commit? current = await branch.GetHeadCommitAsync();
 
@@ -366,7 +356,7 @@ while (current != null)
 ハイレベルインターフェイスは、内部でこれらのプリミティブインターフェイスを使用して実装しています。
 全ての例を網羅していないため、情報が必要であればGitReaderのコードを参照する事をお勧めします。
 
-* [RepositoryFacadeクラス](/GitReader.Core/Structures/RepositoryFacade.cs) から始めると良いでしょう。
+* [StructuredRepositoryFacadeクラス](/GitReader.Core/Structures/StructuredRepositoryFacade.cs) から始めると良いでしょう。
 
 ### 現在のHEADの情報を取得
 
@@ -429,12 +419,24 @@ foreach (PrimitiveReference branch in branches)
 }
 ```
 
+### このリポジトリのリモートブランチ群の情報を取得
+
+```csharp
+PrimitiveReference[] branches = await repository.GetRemoteBranchHeadReferencesAsync();
+
+foreach (PrimitiveReference branch in branches)
+{
+    Console.WriteLine($"Name: {branch.Name}");
+    Console.WriteLine($"Commit: {branch.Commit}");
+}
+```
+
 ### このリポジトリのタグ群の情報を取得
 
 ```csharp
-PrimitiveReference[] tagReferences = await repository.GetTagReferencesAsync();
+PrimitiveTagReference[] tagReferences = await repository.GetTagReferencesAsync();
 
-foreach (PrimitiveReference tagReference in tagReferences)
+foreach (PrimitiveTagReference tagReference in tagReferences)
 {
     PrimitiveTag tag = await repository.GetTagAsync(tagReference);
 
@@ -550,11 +552,6 @@ foreach (KeyValuePair<string, string> entry in repository.RemoteUrls)
 }
 ```
 
-----
-
-## TODO
-
-* [英語READMEを参照してください](https://github.com/kekyo/GitReader)
 
 ----
 

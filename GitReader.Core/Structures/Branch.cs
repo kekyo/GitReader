@@ -21,15 +21,18 @@ public sealed class Branch :
     public readonly Hash Head;
 
     public readonly string Name;
+    public readonly bool IsRemote;
 
     internal Branch(
         WeakReference rwr,
         string name,
-        Hash head)
+        Hash head,
+        bool isRemote)
     {
         this.rwr = rwr;
         this.Head = head;
         this.Name = name;
+        this.IsRemote = isRemote;
     }
 
     Hash ICommitReference.Hash =>
@@ -41,7 +44,8 @@ public sealed class Branch :
     public bool Equals(Branch rhs) =>
         rhs is { } &&
         this.Name.Equals(rhs.Name) &&
-        this.Head.Equals(rhs.Head);
+        this.Head.Equals(rhs.Head) &&
+        this.IsRemote == rhs.IsRemote;
 
     bool IEquatable<Branch>.Equals(Branch? rhs) =>
         this.Equals(rhs!);
@@ -55,10 +59,11 @@ public sealed class Branch :
         {
             var hashCode = this.Name.GetHashCode();
             hashCode = (hashCode * 397) ^ this.Head.GetHashCode();
+            hashCode = (hashCode * 397) ^ this.IsRemote.GetHashCode();
             return hashCode;
         }
     }
 
     public override string ToString() =>
-        $"{this.Head}: {this.Name}";
+        $"{this.Head}: {this.Name}{(this.IsRemote ? " [remote]" : "")}";
 }

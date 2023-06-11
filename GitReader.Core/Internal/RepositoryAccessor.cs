@@ -24,19 +24,30 @@ internal enum ReferenceTypes
 {
     Branches,
     RemoteBranches,
-    Tags,
+}
+
+internal readonly struct TagReference
+{
+    public readonly Hash ObjectOrCommitHash;
+    public readonly Hash? CommitHash;
+
+    public TagReference(Hash objectOrCommitHash, Hash? commitHash)
+    {
+        this.ObjectOrCommitHash = objectOrCommitHash;
+        this.CommitHash = commitHash;
+    }
 }
 
 internal readonly struct ReferenceCache
 {
     public readonly ReadOnlyDictionary<string, Hash> Branches;
     public readonly ReadOnlyDictionary<string, Hash> RemoteBranches;
-    public readonly ReadOnlyDictionary<string, Hash> Tags;
+    public readonly ReadOnlyDictionary<string, TagReference> Tags;
 
     public ReferenceCache(
         ReadOnlyDictionary<string, Hash> branches,
         ReadOnlyDictionary<string, Hash> remoteBranches,
-        ReadOnlyDictionary<string, Hash> tags)
+        ReadOnlyDictionary<string, TagReference> tags)
     {
         this.Branches = branches;
         this.RemoteBranches = remoteBranches;
@@ -85,7 +96,6 @@ internal static class RepositoryAccessor
         {
             ReferenceTypes.Branches => "heads",
             ReferenceTypes.RemoteBranches => "remotes",
-            ReferenceTypes.Tags => "tags",
             _ => throw new ArgumentException(),
         };
 
@@ -99,7 +109,7 @@ internal static class RepositoryAccessor
             return new(new());
         }
 
-        using var fs = repository.fileAccessor.Open(path);
+        using var fs = repository.fileStreamCache.Open(path);
         var tr = new StreamReader(fs, Encoding.UTF8, true);
 
         var remotes = new Dictionary<string, string>();
@@ -173,11 +183,11 @@ internal static class RepositoryAccessor
             return new(new(new()), new(new()), new(new()));
         }
 
-        using var fs = repository.fileAccessor.Open(path);
+        using var fs = repository.fileStreamCache.Open(path);
         var tr = new StreamReader(fs, Encoding.UTF8, true);
 
         var remoteBranches = new Dictionary<string, Hash>();
-        var tags = new Dictionary<string, Hash>();
+        var tags = new Dictionary<string, TagReference>();
 
         while (true)
         {
@@ -236,7 +246,7 @@ internal static class RepositoryAccessor
                 }
                 else
                 {
-                    tags[name] = hash;
+                    tags[name] = new(hash, null);
                 }
             }
             else
@@ -247,7 +257,7 @@ internal static class RepositoryAccessor
                 }
                 else
                 {
-                    tags[descriptorString] = hash;
+                    tags[descriptorString] = new(hash, null);
                 }
             }
         }
@@ -265,14 +275,17 @@ internal static class RepositoryAccessor
             return new(new(new()), new(new()), new(new()));
         }
 
-        using var fs = repository.fileAccessor.Open(path);
+        using var fs = repository.fileStreamCache.Open(path);
         var tr = new StreamReader(fs, Encoding.UTF8, true);
 
         var branches = new Dictionary<string, Hash>();
         var remoteBranches = new Dictionary<string, Hash>();
-        var tags = new Dictionary<string, Hash>();
+        var tags = new Dictionary<string, TagReference>();
 
         var separators = new[] { ' ' };
+
+        string? tagName = null;
+        Hash? tagHash = null;
 
         while (true)
         {
@@ -290,11 +303,29 @@ internal static class RepositoryAccessor
 
             var hashCodeString = columns[0];
 
-            // Ignored peeled tag entry.
-            if (columns.Length == 1 &&
-                hashCodeString.StartsWith("^"))
+            // Scheduled tag.
+            if (tagName is { } tn && tagHash is { } th)
             {
-                continue;
+                tagName = null;
+                tagHash = null;
+
+                // Detected peeled-tag.
+                if (columns.Length == 1 &&
+                    hashCodeString.StartsWith("^") &&
+                    Hash.TryParse(hashCodeString.Substring(1), out var commitHash))
+                {
+                    // Provided commit hash.
+                    tags![tn] = new(th, commitHash);
+                    continue;
+                }
+                else
+                {
+                    // Unspecified tag.
+                    // This could be a tag object hash or a commit object hash.
+                    // We cannot use this hash to determine without reading the object.
+                    // See `StructuredRepositoryFacade.GetStructuredTagsAsync()`.
+                    tags![tn] = new(th, null);
+                }
             }
 
             if (columns.Length != 2 ||
@@ -316,9 +347,17 @@ internal static class RepositoryAccessor
             }
             else if (referenceString.StartsWith("refs/tags/"))
             {
-                var name = referenceString.Substring("refs/tags/".Length);
-                tags[name] = hash;
+                // Scheduled unspecified tag.
+                tagName = referenceString.Substring("refs/tags/".Length);
+                tagHash = hash;
             }
+        }
+
+        // Scheduled tag.
+        if (tagName is { } tn2 && tagHash is { } th2)
+        {
+            // Unspecified tag.
+            tags![tn2] = new(th2, null);
         }
 
         return new(branches, remoteBranches, tags);
@@ -363,16 +402,16 @@ internal static class RepositoryAccessor
                     }
                 }
                 else if (currentLocation.StartsWith("refs/tags/") &&
-                    repository.referenceCache.Tags.TryGetValue(name, out var tagHash))
+                    repository.referenceCache.Tags.TryGetValue(name, out var tagReferenceHash))
                 {
-                    return new(tagHash, names.ToArray());
+                    return new(tagReferenceHash.ObjectOrCommitHash, names.ToArray());
                 }
 
                 // Not found.
                 return null;
             }
 
-            using var fs = repository.fileAccessor.Open(path);
+            using var fs = repository.fileStreamCache.Open(path);
             var tr = new StreamReader(fs, Encoding.UTF8, true);
 
             var line = await tr.ReadLineAsync().WaitAsync(ct);
@@ -409,7 +448,7 @@ internal static class RepositoryAccessor
             return new PrimitiveReflogEntry[]{};
         }
 
-        using var fs = repository.fileAccessor.Open(path);
+        using var fs = repository.fileStreamCache.Open(path);
         var tr = new StreamReader(fs, Encoding.UTF8, true);
 
         var entries = new List<PrimitiveReflogEntry>();
@@ -467,7 +506,7 @@ internal static class RepositoryAccessor
             CollectValue(reference => reference).
             ToDictionary(reference => reference.Name);
 
-        // Remote branches and tags may not all be placed in `refs/*/`.
+        // Branches may not all be placed in `refs/*/`.
         // Therefore, information obtained from FETCH_HEAD and packed-refs is also covered.
         switch (type)
         {
@@ -478,7 +517,7 @@ internal static class RepositoryAccessor
                     {
                         references.Add(
                             entry.Key,
-                            new(entry.Key,$"refs/heads/{entry.Key}", entry.Value));
+                            new(entry.Key, $"refs/heads/{entry.Key}", entry.Value));
                     }
                 }
                 break;
@@ -489,21 +528,64 @@ internal static class RepositoryAccessor
                     {
                         references.Add(
                             entry.Key,
-                            new(entry.Key,$"refs/remotes/{entry.Key}", entry.Value));
+                            new(entry.Key, $"refs/remotes/{entry.Key}", entry.Value));
                     }
                 }
                 break;
-            case ReferenceTypes.Tags:
-                foreach (var entry in repository.referenceCache.Tags)
+            default:
+                throw new InvalidOperationException();
+        }
+
+        return references.Values.ToArray();
+    }
+
+    public static async Task<PrimitiveTagReference[]> ReadTagReferencesAsync(
+        Repository repository,
+        CancellationToken ct)
+    {
+        var headsPath = Utilities.Combine(
+            repository.GitPath, "refs", "tags");
+        var references = (await Utilities.WhenAll(
+            Utilities.EnumerateFiles(headsPath, "*").
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
+            Select((Func<string, ValueTask<PrimitiveTagReference?>>)(async path =>
+#else
+            Select(async path =>
+#endif
+            {
+                if (await ReadHashAsync(
+                    repository,
+                    path.Substring(repository.GitPath.Length + 1),
+                    ct) is not { } results)
                 {
-                    if (!references.ContainsKey(entry.Key))
-                    {
-                        references.Add(
-                            entry.Key,
-                            new(entry.Key, $"refs/tags/{entry.Key}", entry.Value));
-                    }
+                    return default(PrimitiveTagReference?);
                 }
-                break;
+                else
+                {
+                    return new(
+                        path.Substring(headsPath.Length + 1).Replace(Path.DirectorySeparatorChar, '/'),
+                        path.Substring(repository.GitPath.Length + 1).Replace(Path.DirectorySeparatorChar, '/'),
+                        results.Hash,
+                        null);
+                }
+            }
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
+            )
+#endif
+            ))).
+            CollectValue(reference => reference).
+            ToDictionary(reference => reference.Name);
+
+        // Tags may not all be placed in `refs/*/`.
+        // Therefore, information obtained from FETCH_HEAD and packed-refs is also covered.
+        foreach (var entry in repository.referenceCache.Tags)
+        {
+            if (!references.ContainsKey(entry.Key))
+            {
+                references.Add(
+                    entry.Key,
+                    new(entry.Key, $"refs/tags/{entry.Key}", entry.Value.ObjectOrCommitHash, entry.Value.CommitHash));
+            }
         }
 
         return references.Values.ToArray();
@@ -834,5 +916,20 @@ internal static class RepositoryAccessor
             streamResult.Stream.Dispose();
             throw;
         }
+    }
+
+    public static async Task<ObjectStreamResult> OpenRawObjectStreamAsync(
+        Repository repository,
+        Hash objectId,
+        CancellationToken ct)
+    {
+        var accessor = GetObjectAccessor(repository);
+        if (await accessor.OpenAsync(objectId, true, ct) is not { } streamResult)
+        {
+            throw new InvalidDataException(
+                $"Couldn't find an object: {objectId}");
+        }
+
+        return streamResult;
     }
 }

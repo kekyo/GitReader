@@ -24,9 +24,7 @@ public sealed class RepositoryTests
         using var repository = await Repository.Factory.OpenStructureAsync(
             RepositoryTestsSetUp.BasePath);
 
-        var head = repository.GetCurrentHead();
-
-        await Verifier.Verify(head);
+        await Verifier.Verify(repository.Head);
     }
 
     [Test]
@@ -71,7 +69,7 @@ public sealed class RepositoryTests
         using var repository = await Repository.Factory.OpenStructureAsync(
             RepositoryTestsSetUp.BasePath);
 
-        var branch = repository.RemoteBranches["origin/devel"];
+        var branch = repository.Branches["origin/devel"];
 
         await Verifier.Verify(branch);
     }
@@ -82,7 +80,7 @@ public sealed class RepositoryTests
         using var repository = await Repository.Factory.OpenStructureAsync(
             RepositoryTestsSetUp.BasePath);
 
-        var tag = (CommitTag)repository.Tags["2.0.0"];
+        var tag = repository.Tags["2.0.0"];
         var commit = await tag.GetCommitAsync();
 
         await Verifier.Verify(new { Commit = commit, Tag = tag, });
@@ -94,10 +92,22 @@ public sealed class RepositoryTests
         using var repository = await Repository.Factory.OpenStructureAsync(
             RepositoryTestsSetUp.BasePath);
 
-        var tag = (CommitTag)repository.Tags["0.9.6"];
+        var tag = repository.Tags["0.9.6"];
         var commit = await tag.GetCommitAsync();
 
         await Verifier.Verify(new { Commit = commit, Tag = tag, });
+    }
+
+    [Test]
+    public async Task GetAnnotation()
+    {
+        using var repository = await Repository.Factory.OpenStructureAsync(
+            RepositoryTestsSetUp.BasePath);
+
+        var tag = repository.Tags["0.9.6"];
+        var annotation = await tag.GetAnnotationAsync();
+
+        await Verifier.Verify(new { Tag = tag, Annotation = annotation });
     }
 
     [Test]
@@ -137,7 +147,7 @@ public sealed class RepositoryTests
 
         var commit = await repository.GetCommitAsync(
             "f690f0e7bf703582a1fad7e6f1c2d1586390f43d");
-        var branches = commit!.RemoteBranches;
+        var branches = commit!.Branches;
 
         await Verifier.Verify(
             await Task.WhenAll(

@@ -123,7 +123,7 @@ using StructuredRepository repository =
         "/home/kekyo/Projects/YourOwnLocalGitRepo");
 
 // Found current head
-if (repository.GetCurrentHead() is Branch head)
+if (repository.Head is Branch head)
 {
     Console.WriteLine($"Name: {head.Name}");
 
@@ -158,22 +158,7 @@ if (await repository.GetCommitAsync(
 Branch branch = repository.Branches["develop"];
 
 Console.WriteLine($"Name: {branch.Name}");
-
-Commit commit = await branch.GetHeadCommitAsync();
-
-Console.WriteLine($"Hash: {commit.Hash}");
-Console.WriteLine($"Author: {commit.Author}");
-Console.WriteLine($"Committer: {commit.Committer}");
-Console.WriteLine($"Subject: {commit.Subject}");
-Console.WriteLine($"Body: {commit.Body}");
-```
-
-### Get a remote branch head commit
-
-```csharp
-Branch branch = repository.RemoteBranches["origin/develop"];
-
-Console.WriteLine($"Name: {branch.Name}");
+Console.WriteLine($"IsRemote: {branch.IsRemote}");
 
 Commit commit = await branch.GetHeadCommitAsync();
 
@@ -190,17 +175,24 @@ Console.WriteLine($"Body: {commit.Body}");
 Tag tag = repository.Tags["1.2.3"];
 
 Console.WriteLine($"Name: {tag.Name}");
+Console.WriteLine($"Type: {tag.Type}");
+Console.WriteLine($"ObjectHash: {tag.ObjectHash}");
 
-Console.WriteLine($"Hash: {tag.Hash}");
-Console.WriteLine($"Author: {tag.Author}");
-Console.WriteLine($"Committer: {tag.Committer}");
-Console.WriteLine($"Message: {tag.Message}");
+// If present the annotation?
+if (tag.HasAnnotation)
+{
+    // Get tag annotation.
+    Annotation annotation = await tag.GetAnnotationAsync();
+
+    Console.WriteLine($"Tagger: {annotation.Tagger}");
+    Console.WriteLine($"Message: {annotation.Message}");
+}
 
 // If tag is a commit tag?
-if (tag is CommitTag ct)
+if (tag.Type == ObjectTypes.Commit)
 {
     // Get the commit indicated by the tag.
-    Commit commit = await ct.GetCommitAsync();
+    Commit commit = await tag.GetCommitAsync();
 
     // ...
 }
@@ -215,7 +207,6 @@ if (await repository.GetCommitAsync(
     // The ReadOnlyArray<T> class is used to protect the inner array.
     // Usage is the same as for general collections such as List<T>.
     ReadOnlyArray<Branch> branches = commit.Branches;
-    ReadOnlyArray<Branch> remoteBranches = commit.RemoteBranches;
     ReadOnlyArray<Tag> tags = commit.Tags;
 
     // ...
@@ -228,6 +219,7 @@ if (await repository.GetCommitAsync(
 foreach (Branch branch in repository.Branches.Values)
 {
     Console.WriteLine($"Name: {branch.Name}");
+    Console.WriteLine($"IsRemote: {branch.IsRemote}");
 
     Commit commit = await branch.GetHeadCommitAsync();
 
@@ -245,11 +237,8 @@ foreach (Branch branch in repository.Branches.Values)
 foreach (Tag tag in repository.Tags.Values)
 {
     Console.WriteLine($"Name: {tag.Name}");
-
-    Console.WriteLine($"Hash: {tag.Hash}");
-    Console.WriteLine($"Author: {tag.Author}");
-    Console.WriteLine($"Committer: {tag.Committer}");
-    Console.WriteLine($"Message: {tag.Message}");
+    Console.WriteLine($"Type: {tag.Type}");
+    Console.WriteLine($"ObjectHash: {tag.ObjectHash}");
 }
 ```
 
@@ -347,6 +336,7 @@ The following example recursively searches for a parent commit from a child comm
 Branch branch = repository.Branches["develop"];
 
 Console.WriteLine($"Name: {branch.Name}");
+Console.WriteLine($"IsRemote: {branch.IsRemote}");
 
 Commit? current = await branch.GetHeadCommitAsync();
 
@@ -371,7 +361,7 @@ while (current != null)
 The high-level interface is implemented internally using these primitive interfaces.
 We do not have a complete list of all examples, so we recommend referring to the GitReader code if you need information.
 
-* You may want to start with [RepositoryFacade class](/GitReader.Core/Structures/RepositoryFacade.cs).
+* You may want to start with [StructuredRepositoryFacade class](/GitReader.Core/Structures/StructuredRepositoryFacade.cs).
 
 ### Read current head commit
 
@@ -434,12 +424,24 @@ foreach (PrimitiveReference branch in branches)
 }
 ```
 
+### Enumerate remote branches
+
+```csharp
+PrimitiveReference[] branches = await repository.GetRemoteBranchHeadReferencesAsync();
+
+foreach (PrimitiveReference branch in branches)
+{
+    Console.WriteLine($"Name: {branch.Name}");
+    Console.WriteLine($"Commit: {branch.Commit}");
+}
+```
+
 ### Enumerate tags
 
 ```csharp
-PrimitiveReference[] tagReferences = await repository.GetTagReferencesAsync();
+PrimitiveTagReference[] tagReferences = await repository.GetTagReferencesAsync();
 
-foreach (PrimitiveReference tagReference in tagReferences)
+foreach (PrimitiveTagReference tagReference in tagReferences)
 {
     PrimitiveTag tag = await repository.GetTagAsync(tagReference);
 
@@ -555,12 +557,6 @@ foreach (KeyValuePair<string, string> entry in repository.RemoteUrls)
 }
 ```
 
-----
-
-## TODO
-
-* Read submodule information.
-* Makes configurable minor execution parameters.
 
 ----
 
@@ -574,6 +570,11 @@ Apache-v2
 
 ## History
 
+* 0.12.0:
+  * Reduced the time taken to open structured repository when peeled-tag is available from packed-refs.
+  * The Tags interface has been rearranged.
+  * Added raw stream opener interfaces.
+  * Some bug fixed.
 * 0.11.0:
   * The structured interface no longer reads commit information when it opens.
     Instead, you must explicitly call `Branch.GetHeadCommitAsync()`,

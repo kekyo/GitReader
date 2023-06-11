@@ -19,19 +19,21 @@
     Body: ,
     Tags: [
       {
-        Hash: {
+        Type: Commit,
+        ObjectHash: {
           HashCode: f64de5e3ad34528757207109e68f626bf8cc1a31
         },
         Name: 2.0.0,
-        Type: Commit
+        HasAnnotation: false
       }
     ]
   },
   Tag: {
-    Hash: {
+    Type: Commit,
+    ObjectHash: {
       HashCode: f64de5e3ad34528757207109e68f626bf8cc1a31
     },
     Name: 2.0.0,
-    Type: Commit
+    HasAnnotation: false
   }
 }

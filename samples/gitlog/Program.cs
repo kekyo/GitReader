@@ -185,8 +185,7 @@ public static class Program
         var refs = string.Join(", ",
             commit.Tags.
             Select(t => $"tag: {t.Name}").
-            Concat(commit.RemoteBranches.
-                Concat(commit.Branches).
+            Concat(commit.Branches.
                 // If a HEAD commit references a particular branch, this is where it is determined.
                 Select(b => head?.Name == b.Name ? $"HEAD -> {b.Name}" : b.Name)).
             OrderBy(name => name, StringComparer.Ordinal).  // deterministic
@@ -242,8 +241,8 @@ public static class Program
 
         // HashSet to check if the commit has already been output.
         // Initially, insert HEAD commit for all local branches and remote branches.
-        var headCommits = await Task.WhenAll(repository.Branches.Values.
-            Concat(repository.RemoteBranches.Values).
+        var headCommits = await Task.WhenAll(
+            repository.Branches.Values.
             Select(branch => branch.GetHeadCommitAsync()));
 
         var hashedCommits = new HashSet<Commit>(
@@ -257,22 +256,23 @@ public static class Program
         // Insert all tag commits in hashedCommits and sortedCommits.
         // Although not common, Git tags can also be applied to trees and file objects.
         // Therefore, here we only extract tags applied to commits.
-        foreach (var tag in repository.Tags.Values.
-            Select(tag => tag is CommitTag ct ? ct : null!).
-            Where(tag => tag != null))
+        foreach (var tag in repository.Tags.Values)
         {
-            var commit = await tag.GetCommitAsync();
-
-            // Ignore commits that already exist.
-            if (hashedCommits.Add(commit))
+            // Only commit tag.
+            if (tag.Type == ObjectTypes.Commit)
             {
-                sortedCommits.Add(commit);
+                var commit = await tag.GetCommitAsync();
+
+                // Ignore commits that already exist.
+                if (hashedCommits.Add(commit))
+                {
+                    sortedCommits.Add(commit);
+                }
             }
         }
 
         // Also add a HEAD commit for the repository if exists.
-        var head = repository.GetCurrentHead();
-        if (head is { })
+        if (repository.Head is { } head)
         {
             var headCommit = await head.GetHeadCommitAsync();
 
@@ -289,7 +289,7 @@ public static class Program
             var commit = sortedCommits.Front!;
 
             // Execute the output of this commit to obtain the parent commit group of this commit.
-            var parents = await WriteLogAsync(tw, commit, head, default);
+            var parents = await WriteLogAsync(tw, commit, repository.Head, default);
 
             // Remove this commit from sortedCommits because it is complete.
             sortedCommits.RemoveFront();

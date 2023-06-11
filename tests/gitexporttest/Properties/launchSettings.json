@@ -2,7 +2,7 @@
   "profiles": {
     "gitexporttest": {
         "commandName": "Project",
-        "commandLineArgs": "D:\\Projects\\git 5597cfdf47db94825213fefe78c4485e6a5702d8 export",
+        "commandLineArgs": "C:\\Projects\\git 69c786637d7a7fe3b2b8f7d989af095f5f49c3a8 export",
         "workingDirectory": "bin\\Debug\\net48"
     }
   }

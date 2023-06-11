@@ -16,7 +16,7 @@ using System.Threading.Tasks;
 
 namespace GitReader.Primitive;
 
-internal static class RepositoryFacade
+internal static class PrimitiveRepositoryFacade
 {
     public static async Task<PrimitiveRepository> OpenPrimitiveAsync(
         string path, CancellationToken ct)
@@ -71,27 +71,19 @@ internal static class RepositoryFacade
         string branchName,
         CancellationToken ct)
     {
-        var relativePathOrLocation = $"refs/heads/{branchName}";
-        var results = await RepositoryAccessor.ReadHashAsync(
-            repository, relativePathOrLocation, ct);
+        var path = $"refs/heads/{branchName}";
+        var remotePath = $"refs/remotes/{branchName}";
+        var (results, remoteResults) = await Utilities.Join(
+            RepositoryAccessor.ReadHashAsync(repository, path, ct),
+            RepositoryAccessor.ReadHashAsync(repository, remotePath, ct));
         return results is { } r ?
-            new PrimitiveReference(branchName, relativePathOrLocation, r.Hash) :
+            new PrimitiveReference(branchName, path, r.Hash) :
+            remoteResults is { } rr ?
+            new PrimitiveReference(branchName, remotePath, rr.Hash) :
             throw new ArgumentException($"Could not find a branch: {branchName}");
     }
 
-    public static async Task<PrimitiveReference> GetRemoteBranchHeadReferenceAsync(
-        Repository repository,
-        string branchName, CancellationToken ct)
-    {
-        var relativePathOrLocation = $"refs/remotes/{branchName}";
-        var results = await RepositoryAccessor.ReadHashAsync(
-            repository, relativePathOrLocation, ct);
-        return results is { } r ?
-            new PrimitiveReference(branchName, relativePathOrLocation, r.Hash) :
-            throw new ArgumentException($"Could not find a remote branch: {branchName}");
-    }
-
-    public static async Task<PrimitiveReference> GetTagReferenceAsync(
+    public static async Task<PrimitiveTagReference> GetTagReferenceAsync(
         Repository repository,
         string tagName, CancellationToken ct)
     {
@@ -99,7 +91,7 @@ internal static class RepositoryFacade
         var results = await RepositoryAccessor.ReadHashAsync(
             repository, relativePathOrLocation, ct);
         return results is { } r ?
-            new PrimitiveReference(tagName, relativePathOrLocation, r.Hash) :
+            new PrimitiveTagReference(tagName, relativePathOrLocation, r.Hash, null) :
             throw new ArgumentException($"Could not find a tag: {tagName}");
     }
 }

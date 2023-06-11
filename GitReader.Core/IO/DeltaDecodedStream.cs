@@ -357,7 +357,7 @@ internal sealed class DeltaDecodedStream : Stream
             {
                 if (this.deltaBufferIndex >= this.deltaBufferCount)
                 {
-                    if (!await PrepareAsync(ct))
+                    if (!await this.PrepareAsync(ct))
                     {
                         return read;
                     }

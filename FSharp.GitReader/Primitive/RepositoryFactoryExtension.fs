@@ -17,5 +17,5 @@ module public RepositoryFactoryExtension =
 
     type RepositoryFactory with
         member _.openPrimitive(path: string, ?ct: CancellationToken) =
-            RepositoryFacade.OpenPrimitiveAsync(
+            PrimitiveRepositoryFacade.OpenPrimitiveAsync(
                 path, unwrapCT ct) |> Async.AwaitTask

@@ -21,7 +21,8 @@
       Body: ,
       Branches: [
         {
-          Name: master
+          Name: master,
+          IsRemote: false
         }
       ]
     }

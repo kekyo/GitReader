@@ -22,8 +22,7 @@ type public StructuredRepositoryTests() =
     member _.GetCurrentHead() = task {
         use! repository = Repository.Factory.openStructured(
             RepositoryTestsSetUp.BasePath)
-        let head = repository.getCurrentHead() |> unwrapOption
-        do! verify(head)
+        do! verify(repository.Head)
     }
 
     [<Test>]
@@ -56,7 +55,7 @@ type public StructuredRepositoryTests() =
     member _.GetRemoteBranch() = task {
         use! repository = Repository.Factory.openStructured(
             RepositoryTestsSetUp.BasePath)
-        let branch = repository.RemoteBranches["origin/devel"]
+        let branch = repository.Branches["origin/devel"]
         do! verify(branch)
     }
 
@@ -64,7 +63,7 @@ type public StructuredRepositoryTests() =
     member _.GetTag() = task {
         use! repository = Repository.Factory.openStructured(
             RepositoryTestsSetUp.BasePath)
-        let tag = repository.Tags["2.0.0"] :?> CommitTag
+        let tag = repository.Tags["2.0.0"]
         let! commit = tag.getCommit()
         do! verify((commit, tag))
     }
@@ -73,9 +72,18 @@ type public StructuredRepositoryTests() =
     member _.GetTag2() = task {
         use! repository = Repository.Factory.openStructured(
             RepositoryTestsSetUp.BasePath)
-        let tag = repository.Tags["0.9.6"] :?> CommitTag
+        let tag = repository.Tags["0.9.6"]
         let! commit = tag.getCommit()
         do! verify((commit, tag))
+    }
+
+    [<Test>]
+    member _.GetAnnotation() = task {
+        use! repository = Repository.Factory.openStructured(
+            RepositoryTestsSetUp.BasePath)
+        let tag = repository.Tags["0.9.6"]
+        let! annotation = tag.getAnnotation()
+        do! verify((tag, annotation))
     }
 
     [<Test>]
@@ -110,7 +118,7 @@ type public StructuredRepositoryTests() =
         let! commit = repository.getCommit(
             "f690f0e7bf703582a1fad7e6f1c2d1586390f43d") |> unwrapOptionAsy
         let! results = Task.WhenAll(
-            commit.RemoteBranches
+            commit.Branches
             |> Seq.sortBy(fun br -> br.Name)
             |> Seq.map(fun br -> task {
                 let! head = br.getHeadCommit()

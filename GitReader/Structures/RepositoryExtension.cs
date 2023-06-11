@@ -17,59 +17,64 @@ namespace GitReader.Structures;
 
 public static class RepositoryExtension
 {
-    public static Branch? GetCurrentHead(
-        this StructuredRepository repository) =>
-        repository.head;
-
     public static Task<Commit?> GetCommitAsync(
         this StructuredRepository repository,
         Hash commit, CancellationToken ct = default) =>
-        RepositoryFacade.GetCommitDirectlyAsync(repository, commit, ct);
+        StructuredRepositoryFacade.GetCommitDirectlyAsync(repository, commit, ct);
 
     public static Task<Commit> GetHeadCommitAsync(
         this Branch branch,
         CancellationToken ct = default) =>
-        RepositoryFacade.GetCommitAsync(branch, ct);
+        StructuredRepositoryFacade.GetCommitAsync(branch, ct);
 
     public static Task<Commit> GetCommitAsync(
-        this CommitTag tag,
+        this Tag tag,
         CancellationToken ct = default) =>
-        RepositoryFacade.GetCommitAsync(tag, ct);
+        tag.Type switch
+        {
+            ObjectTypes.Commit => StructuredRepositoryFacade.GetCommitAsync(tag, ct),
+            _ => throw new InvalidOperationException($"Could not get commit: Type={tag.Type}"),
+        };
+
+    public static Task<Annotation> GetAnnotationAsync(
+        this Tag tag,
+        CancellationToken ct = default) =>
+        StructuredRepositoryFacade.GetAnnotationAsync(tag, ct);
 
     public static Task<Commit> GetCommitAsync(
         this Stash stash,
         CancellationToken ct = default) =>
-        RepositoryFacade.GetCommitAsync(stash, ct);
+        StructuredRepositoryFacade.GetCommitAsync(stash, ct);
 
     public static Task<Commit> GetCurrentCommitAsync(
         this ReflogEntry reflog,
         CancellationToken ct = default) =>
-        RepositoryFacade.GetCommitAsync(reflog, reflog.Commit, ct);
+        StructuredRepositoryFacade.GetCommitAsync(reflog, reflog.Commit, ct);
 
     public static Task<Commit> GetOldCommitAsync(
         this ReflogEntry reflog,
         CancellationToken ct = default) =>
-        RepositoryFacade.GetCommitAsync(reflog, reflog.OldCommit, ct);
+        StructuredRepositoryFacade.GetCommitAsync(reflog, reflog.OldCommit, ct);
 
     public static Task<Commit?> GetPrimaryParentCommitAsync(
         this Commit commit,
         CancellationToken ct = default) =>
-        RepositoryFacade.GetPrimaryParentAsync(commit, ct);
+        StructuredRepositoryFacade.GetPrimaryParentAsync(commit, ct);
 
     public static Task<Commit[]> GetParentCommitsAsync(
         this Commit commit,
         CancellationToken ct = default) =>
-        RepositoryFacade.GetParentsAsync(commit, ct);
+        StructuredRepositoryFacade.GetParentsAsync(commit, ct);
 
     public static Task<TreeRoot> GetTreeRootAsync(
         this Commit commit,
         CancellationToken ct = default) =>
-        RepositoryFacade.GetTreeAsync(commit, ct);
+        StructuredRepositoryFacade.GetTreeAsync(commit, ct);
 
     public static Task<Stream> OpenBlobAsync(
         this TreeBlobEntry entry,
         CancellationToken ct = default) =>
-        RepositoryFacade.OpenBlobAsync(entry, ct);
+        StructuredRepositoryFacade.OpenBlobAsync(entry, ct);
 
     public static string GetMessage(
         this Commit commit) =>
@@ -77,7 +82,7 @@ public static class RepositoryExtension
     
     public static Task<ReflogEntry[]> GetHeadReflogsAsync(
         this StructuredRepository repository, CancellationToken ct = default) =>
-        RepositoryFacade.GetHeadReflogsAsync(
+        StructuredRepositoryFacade.GetHeadReflogsAsync(
             repository, new WeakReference(repository), ct);
 
     public static void Deconstruct(
@@ -86,14 +91,12 @@ public static class RepositoryExtension
         out ReadOnlyDictionary<string, string> remoteUrls,
         out Branch? head,
         out ReadOnlyDictionary<string, Branch> branches,
-        out ReadOnlyDictionary<string, Branch> remoteBranches,
         out ReadOnlyDictionary<string, Tag> tags)
     {
         gitPath = repository.GitPath;
         remoteUrls = repository.RemoteUrls;
         head = repository.head;
         branches = repository.branches;
-        remoteBranches = repository.remoteBranches;
         tags = repository.tags;
     }
 
@@ -136,42 +139,23 @@ public static class RepositoryExtension
 
     public static void Deconstruct(
         this Tag tag,
-        out Hash hash,
-        out string name,
-        out Signature? tagger,
-        out string? message)
-    {
-        hash = tag.Hash;
-        name = tag.Name;
-        tagger = tag.Tagger;
-        message = tag.Message;
-    }
-
-    public static void Deconstruct(
-        this Tag tag,
-        out Hash hash,
-        out string name,
+        out Hash? tagHash,
         out ObjectTypes type,
-        out Signature? tagger,
-        out string? message)
+        out Hash objectHash,
+        out string name)
     {
-        hash = tag.Hash;
-        name = tag.Name;
+        tagHash = tag.TagHash;
         type = tag.Type;
-        tagger = tag.Tagger;
-        message = tag.Message;
+        objectHash = tag.ObjectHash;
+        name = tag.Name;
     }
 
     public static void Deconstruct(
-        this CommitTag tag,
-        out Hash hash,
-        out string name,
+        this Annotation annotation,
         out Signature? tagger,
         out string? message)
     {
-        hash = tag.Hash;
-        name = tag.Name;
-        tagger = tag.Tagger;
-        message = tag.Message;
+        tagger = annotation.Tagger;
+        message = annotation.Message;
     }
 }

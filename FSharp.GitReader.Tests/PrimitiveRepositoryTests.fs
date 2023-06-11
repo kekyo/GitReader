@@ -13,8 +13,9 @@ open GitReader
 open GitReader.Primitive
 open NUnit.Framework
 open System.Collections.Generic
-open System.Threading.Tasks
 open System.IO
+open System.Text
+open System.Threading.Tasks
 
 type public PrimitiveRepositoryTests() =
 
@@ -58,7 +59,7 @@ type public PrimitiveRepositoryTests() =
     member _.GetRemoteBranchHead() = task {
         use! repository = Repository.Factory.openPrimitive(
             RepositoryTestsSetUp.BasePath)
-        let! headref = repository.getRemoteBranchHeadReference("origin/devel")
+        let! headref = repository.getBranchHeadReference("origin/devel")
         let! commit = repository.getCommit(headref) |> unwrapOptionAsy
         do! verify(commit)
     }
@@ -168,4 +169,15 @@ type public PrimitiveRepositoryTests() =
         let! headRef = repository.getCurrentHeadReference()
         let! reflogs = repository.getRelatedReflogs(headRef.Value)
         return! verify(reflogs |> Array.sortByDescending(fun reflog -> reflog.Committer.Date))
+    }
+    
+    [<Test>]
+    member _.OpenRawObjectStream() = task {
+        use! repository = Repository.Factory.openPrimitive(
+            RepositoryTestsSetUp.BasePath);
+        use! result = repository.openRawObjectStream(
+            "1205dc34ce48bda28fc543daaf9525a9bb6e6d10")
+        let tr = new StreamReader(result.Stream, Encoding.UTF8, true)
+        let! body = tr.ReadToEndAsync()
+        return! verify((result.Type, body))
     }

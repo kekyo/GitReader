@@ -27,7 +27,11 @@ public static class Program
     [DebuggerStepThrough]
     public static async ValueTask WhenAll(IEnumerable<ValueTask> tasks)
     {
-        foreach (var task in tasks.ToArray())
+        foreach (var task in tasks
+#if !DEBUG
+            .ToArray()
+#endif
+            )
         {
             await task;
         }
@@ -76,10 +80,11 @@ public static class Program
                 }
             }
 
-            var stream = await openBlobAsync;
-
             using var fs = new FileStream(
                 path, FileMode.Create, FileAccess.ReadWrite, FileShare.None, 65536, true);
+
+            var stream = await openBlobAsync;
+
             await stream.CopyToAsync(fs);
             await fs.FlushAsync();
         }

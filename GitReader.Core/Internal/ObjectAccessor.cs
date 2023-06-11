@@ -7,6 +7,7 @@
 //
 ////////////////////////////////////////////////////////////////////////////
 
+using GitReader.IO;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -15,29 +16,15 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using GitReader.IO;
 
 namespace GitReader.Internal;
-
-internal readonly struct ObjectStreamResult
-{
-    public readonly Stream Stream;
-    public readonly ObjectTypes Type;
-
-    public ObjectStreamResult(
-        Stream stream, ObjectTypes type)
-    {
-        this.Stream = stream;
-        this.Type = type;
-    }
-}
 
 internal sealed class ObjectAccessor : IDisposable
 {
     private const int preloadBufferSize = 65536;
     private static readonly int maxStreamCache = 16;
 
-    private sealed class StreamCacheHolder
+    private sealed class ObjectStreamCacheHolder
     {
         public readonly string Path;
         public readonly ulong Offset;
@@ -47,7 +34,7 @@ internal sealed class ObjectAccessor : IDisposable
 #if DEBUG
         public int HitCount;
 #endif
-        public StreamCacheHolder(
+        public ObjectStreamCacheHolder(
             string path, ulong offset, ObjectTypes type,
             WrappedStream stream, DateTime limit)
         {
@@ -59,12 +46,12 @@ internal sealed class ObjectAccessor : IDisposable
         }
     }
 
-    private readonly FileAccessor fileAccessor;
+    private readonly FileStreamCache fileStreamCache;
     private readonly string objectsBasePath;
     private readonly string packedBasePath;
     private readonly AsyncLock locker = new();
     private readonly Dictionary<string, IndexEntry> indexCache = new();
-    private readonly LinkedList<StreamCacheHolder> streamLRUCache = new();
+    private readonly LinkedList<ObjectStreamCacheHolder> streamLRUCache = new();
     private readonly Timer streamLRUCacheExhaustTimer;
 #if DEBUG
     internal int hitCount;
@@ -72,9 +59,9 @@ internal sealed class ObjectAccessor : IDisposable
 #endif
 
     public ObjectAccessor(
-        FileAccessor fileAccessor, string gitPath)
+        FileStreamCache fileStreamCache, string gitPath)
     {
-        this.fileAccessor = fileAccessor;
+        this.fileStreamCache = fileStreamCache;
         this.objectsBasePath = Utilities.Combine(
             gitPath,
             "objects");
@@ -130,7 +117,7 @@ internal sealed class ObjectAccessor : IDisposable
             throw new InvalidDataException(
                 $"Could not parse the object. Hash={hash}, Step={step}");
 
-        var fs = this.fileAccessor.Open(objectPath);
+        var fs = this.fileStreamCache.Open(objectPath);
 
         try
         {
@@ -332,7 +319,7 @@ internal sealed class ObjectAccessor : IDisposable
             {
                 if (holder.Value.Limit <= now)
                 {
-                    holder.Value.Stream.Dispose();
+                    holder.Value.Stream.Dispose();  // [1]
                     this.streamLRUCache.Remove(holder);
                 }
 
@@ -341,7 +328,7 @@ internal sealed class ObjectAccessor : IDisposable
 
             if (this.streamLRUCache.Count >= 1)
             {
-                var dueTime = this.streamLRUCache.First!.Value.Limit - DateTime.Now;
+                var dueTime = this.streamLRUCache.First!.Value.Limit - now;
                 if (dueTime < TimeSpan.Zero)
                 {
                     dueTime = TimeSpan.Zero;
@@ -367,13 +354,16 @@ internal sealed class ObjectAccessor : IDisposable
             return stream;
         }
 
-        var cachedStream = new WrappedStream(stream);
-        var limit = DateTime.Now.Add(TimeSpan.FromSeconds(10));
+        var heldStream = new WrappedStream(stream);
+        var cachedStream = heldStream.Clone();   // [1]
+
+        var now = DateTime.Now;
+        var limit = now.Add(TimeSpan.FromSeconds(10));
 
         lock (this.streamLRUCache)
         {
             this.streamLRUCache.AddFirst(
-                new StreamCacheHolder(packedFilePath, offset, type, cachedStream, limit));
+                new ObjectStreamCacheHolder(packedFilePath, offset, type, heldStream, limit));
 
             while (this.streamLRUCache.Count > maxStreamCache)
             {
@@ -394,18 +384,23 @@ internal sealed class ObjectAccessor : IDisposable
 
             if (this.streamLRUCache.Count >= 1)
             {
-                var dueTime = this.streamLRUCache.First!.Value.Limit - DateTime.Now;
+                var dueTime = this.streamLRUCache.First!.Value.Limit - now;
                 if (dueTime < TimeSpan.Zero)
                 {
                     dueTime = TimeSpan.Zero;
                 }
 
+                // Race condition [1]:
+                // If dueTime is zero here, ExhaustStreamCache is called directly in same thread context.
+                // Within ExhaustStreamCache, the heldStream will be released,
+                // when it returns here, the counter of the stream may be 0.
+                // Therefore, cachedStreams for return are cloned in advance so that the counter does not become 0.
                 this.streamLRUCacheExhaustTimer.Change(
                     dueTime, Utilities.Infinite);
             }
         }
 
-        return cachedStream.Clone();
+        return cachedStream;
     }
 
 #if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
@@ -451,7 +446,7 @@ internal sealed class ObjectAccessor : IDisposable
             throw new InvalidDataException(
                 $"Could not parse the object. File={packedFilePath}, Offset={offset}, Step={step}");
 
-        var fs = this.fileAccessor.Open(packedFilePath);
+        var fs = this.fileStreamCache.Open(packedFilePath);
 
         try
         {

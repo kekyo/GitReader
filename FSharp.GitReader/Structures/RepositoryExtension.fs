@@ -10,81 +10,79 @@
 namespace GitReader.Structures
 
 open GitReader
-open System.Threading
 open System
+open System.Threading
 
 [<AutoOpen>]
 module public RepositoryExtension =
 
     type StructuredRepository with
-        member repository.getCurrentHead() =
-            match repository.head with
-            | null -> None
-            | _ -> Some repository.head
         member repository.getCommit(commit: Hash, ?ct: CancellationToken) = async {
-            let! c = RepositoryFacade.GetCommitDirectlyAsync(
+            let! c = StructuredRepositoryFacade.GetCommitDirectlyAsync(
                 repository, commit, unwrapCT ct) |> Async.AwaitTask
             return match c with
                    | null -> None
                    | _ -> Some c
         }
         member repository.getHeadReflogs(?ct: CancellationToken) =
-            RepositoryFacade.GetHeadReflogsAsync(
+            StructuredRepositoryFacade.GetHeadReflogsAsync(
                 repository, new WeakReference(repository), unwrapCT ct) |> Async.AwaitTask
 
     type Branch with
         member branch.getHeadCommit(?ct: CancellationToken) =
-            RepositoryFacade.GetCommitAsync(
+            StructuredRepositoryFacade.GetCommitAsync(
                 branch, unwrapCT ct) |> Async.AwaitTask
 
     type Commit with
         member commit.getPrimaryParentCommit(?ct: CancellationToken) = async {
-            let! c = RepositoryFacade.GetPrimaryParentAsync(
+            let! c = StructuredRepositoryFacade.GetPrimaryParentAsync(
                 commit, unwrapCT ct) |> Async.AwaitTask
             return match c with
                    | null -> None
                    | _ -> Some c
         }
         member commit.getParentCommits(?ct: CancellationToken) =
-            RepositoryFacade.GetParentsAsync(
+            StructuredRepositoryFacade.GetParentsAsync(
                 commit, unwrapCT ct) |> Async.AwaitTask
         member commit.getTreeRoot(?ct: CancellationToken) =
-            RepositoryFacade.GetTreeAsync(
+            StructuredRepositoryFacade.GetTreeAsync(
                 commit, unwrapCT ct) |> Async.AwaitTask
         member commit.getMessage() =
             commit.message
             
-    type CommitTag with
+    type Tag with
         member tag.getCommit(?ct: CancellationToken) =
-            RepositoryFacade.GetCommitAsync(
-                tag, unwrapCT ct) |> Async.AwaitTask
-            
+            match tag.Type with
+            | ObjectTypes.Commit -> StructuredRepositoryFacade.GetCommitAsync(tag, unwrapCT ct) |> Async.AwaitTask
+            | _ -> raise (InvalidOperationException $"Could not get commit: Type={tag.Type}")
+        member tag.getAnnotation(?ct: CancellationToken) =
+            StructuredRepositoryFacade.GetAnnotationAsync(tag, unwrapCT ct) |> Async.AwaitTask
+       
     type Stash with
         member stash.getCommit(?ct: CancellationToken) =
-            RepositoryFacade.GetCommitAsync(
+            StructuredRepositoryFacade.GetCommitAsync(
                 stash, unwrapCT ct) |> Async.AwaitTask
             
     type ReflogEntry with
         member reflog.getCurrentCommit(?ct: CancellationToken) =
-            RepositoryFacade.GetCommitAsync(
+            StructuredRepositoryFacade.GetCommitAsync(
                 reflog, reflog.Commit, unwrapCT ct) |> Async.AwaitTask
         member reflog.getOldCommit(?ct: CancellationToken) =
-            RepositoryFacade.GetCommitAsync(
+            StructuredRepositoryFacade.GetCommitAsync(
                 reflog, reflog.OldCommit, unwrapCT ct) |> Async.AwaitTask
 
     type TreeBlobEntry with
         member entry.openBlob(?ct: CancellationToken) =
-            RepositoryFacade.OpenBlobAsync(
+            StructuredRepositoryFacade.OpenBlobAsync(
                 entry, unwrapCT ct) |> Async.AwaitTask
 
-    let (|Repository|) (repository: StructuredRepository) =
+    let (|StructuredRepository|) (repository: StructuredRepository) =
         (repository.GitPath,
          repository.RemoteUrls,
          (match repository.head with
           | null -> None
           | _ -> Some repository.head),
          repository.branches,
-         repository.remoteBranches,
          repository.tags)
 
     let (|Branch|) (branch: Branch) =
@@ -94,19 +92,15 @@ module public RepositoryExtension =
         (commit.Hash, commit.Author, commit.Committer, commit.Subject, commit.Body)
 
     let (|Tag|) (tag: Tag) =
-        (tag.Hash, tag.Name, tag.Type,
-         (match tag.Tagger.HasValue with
-          | false -> None
-          | _ -> Some tag.Tagger.Value),
-         (match tag.Message with
-          | null -> None
-          | _ -> Some tag.Message))
+        ((match tag.TagHash.HasValue with
+         | false -> None
+         | _ -> Some tag.TagHash.Value),
+         tag.Type, tag.ObjectHash, tag.Name)
 
-    let (|CommitTag|) (tag: CommitTag) =
-        (tag.Hash, tag.Name,
-         (match tag.Tagger.HasValue with
+    let (|Annotation|) (annotation: Annotation) =
+        ((match annotation.Tagger.HasValue with
           | false -> None
-          | _ -> Some tag.Tagger.Value),
-         (match tag.Message with
+          | _ -> Some annotation.Tagger.Value),
+         (match annotation.Message with
           | null -> None
-          | _ -> Some tag.Message))
+          | _ -> Some annotation.Message))

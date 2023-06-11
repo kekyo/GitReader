@@ -11,6 +11,7 @@ using NUnit.Framework;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using VerifyNUnit;
 
@@ -72,7 +73,7 @@ public sealed class RepositoryTests
         using var repository = await Repository.Factory.OpenPrimitiveAsync(
             RepositoryTestsSetUp.BasePath);
 
-        var headref = await repository.GetRemoteBranchHeadReferenceAsync("origin/devel");
+        var headref = await repository.GetBranchHeadReferenceAsync("origin/devel");
         var commit = await repository.GetCommitAsync(headref);
 
         await Verifier.Verify(commit);
@@ -228,5 +229,21 @@ public sealed class RepositoryTests
         var reflogs = await repository.GetRelatedReflogsAsync(headRef!.Value);
 
         await Verifier.Verify(reflogs.OrderByDescending(reflog => reflog.Committer.Date).ToArray());
+    }
+
+    [Test]
+    public async Task OpenRawObjectStream()
+    {
+        using var repository = await Repository.Factory.OpenPrimitiveAsync(
+            RepositoryTestsSetUp.BasePath);
+
+        using var result = await repository.OpenRawObjectStreamAsync(
+            "1205dc34ce48bda28fc543daaf9525a9bb6e6d10");
+
+        var body = await new StreamReader(
+            result.Stream, Encoding.UTF8, true).
+            ReadToEndAsync();
+
+        await Verifier.Verify(new { Type = result.Type, Body = body });
     }
 }

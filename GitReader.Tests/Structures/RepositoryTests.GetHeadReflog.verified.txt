@@ -20,7 +20,8 @@
       Body: ,
       Branches: [
         {
-          Name: master
+          Name: master,
+          IsRemote: false
         }
       ]
     },
@@ -44,7 +45,8 @@
       Body: ,
       Branches: [
         {
-          Name: master
+          Name: master,
+          IsRemote: false
         }
       ]
     },
@@ -85,7 +87,8 @@
       Body: ,
       Branches: [
         {
-          Name: master
+          Name: master,
+          IsRemote: false
         }
       ]
     },
@@ -109,7 +112,8 @@
       Body: ,
       Branches: [
         {
-          Name: master
+          Name: master,
+          IsRemote: false
         }
       ]
     },
@@ -150,7 +154,8 @@
       Body: ,
       Branches: [
         {
-          Name: master
+          Name: master,
+          IsRemote: false
         }
       ]
     },
@@ -172,12 +177,14 @@
       },
       Subject: Updated GA script.,
       Body: ,
-      RemoteBranches: [
+      Branches: [
         {
-          Name: origin/HEAD
+          Name: origin/HEAD,
+          IsRemote: true
         },
         {
-          Name: origin/master
+          Name: origin/master,
+          IsRemote: true
         }
       ]
     },
@@ -216,12 +223,14 @@
       },
       Subject: Updated GA script.,
       Body: ,
-      RemoteBranches: [
+      Branches: [
         {
-          Name: origin/HEAD
+          Name: origin/HEAD,
+          IsRemote: true
         },
         {
-          Name: origin/master
+          Name: origin/master,
+          IsRemote: true
         }
       ]
     },
@@ -243,12 +252,14 @@
       },
       Subject: Updated GA script.,
       Body: ,
-      RemoteBranches: [
+      Branches: [
         {
-          Name: origin/HEAD
+          Name: origin/HEAD,
+          IsRemote: true
         },
         {
-          Name: origin/master
+          Name: origin/master,
+          IsRemote: true
         }
       ]
     },
@@ -287,12 +298,14 @@
       },
       Subject: Updated GA script.,
       Body: ,
-      RemoteBranches: [
+      Branches: [
         {
-          Name: origin/HEAD
+          Name: origin/HEAD,
+          IsRemote: true
         },
         {
-          Name: origin/master
+          Name: origin/master,
+          IsRemote: true
         }
       ]
     },
@@ -316,7 +329,8 @@
       Body: ,
       Branches: [
         {
-          Name: master
+          Name: master,
+          IsRemote: false
         }
       ]
     },
@@ -357,7 +371,8 @@
       Body: ,
       Branches: [
         {
-          Name: master
+          Name: master,
+          IsRemote: false
         }
       ]
     },
@@ -381,7 +396,8 @@
       Body: ,
       Branches: [
         {
-          Name: master
+          Name: master,
+          IsRemote: false
         }
       ]
     },
@@ -422,7 +438,8 @@
       Body: ,
       Branches: [
         {
-          Name: master
+          Name: master,
+          IsRemote: false
         }
       ]
     },
@@ -446,7 +463,8 @@
       Body: ,
       Branches: [
         {
-          Name: master
+          Name: master,
+          IsRemote: false
         }
       ]
     },
@@ -487,7 +505,8 @@
       Body: ,
       Branches: [
         {
-          Name: master
+          Name: master,
+          IsRemote: false
         }
       ]
     },
@@ -511,7 +530,8 @@
       Body: ,
       Branches: [
         {
-          Name: master
+          Name: master,
+          IsRemote: false
         }
       ]
     },

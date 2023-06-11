@@ -9,6 +9,10 @@
 
 using GitReader.Internal;
 using System;
+using System.ComponentModel;
+using System.IO;
+using System.Threading.Tasks;
+using System.Threading;
 
 namespace GitReader;
 
@@ -26,6 +30,13 @@ public static class RepositoryExtension
         this Signature signature) =>
         Utilities.ToGitAuthorString(signature);
 
+    [EditorBrowsable(EditorBrowsableState.Advanced)]
+    public static Task<ObjectStreamResult> OpenRawObjectStreamAsync(
+        this Repository repository,
+        Hash objectId,
+        CancellationToken ct = default) =>
+        RepositoryAccessor.OpenRawObjectStreamAsync(repository, objectId, ct);
+
     public static void Deconstruct(
         this Hash hash, out byte[] hashCode) =>
         hashCode = hash.HashCode;
@@ -41,5 +52,14 @@ public static class RepositoryExtension
         name = signature.Name;
         mailAddress = signature.MailAddress;
         date = signature.Date;
+    }
+
+    public static void Deconstruct(
+        this ObjectStreamResult result,
+        out Stream stream,
+        out ObjectTypes type)
+    {
+        stream = result.Stream;
+        type = result.Type;
     }
 }

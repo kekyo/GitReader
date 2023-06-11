@@ -17,5 +17,5 @@ module public RepositoryFactoryExtension =
 
     type RepositoryFactory with
         member _.openStructured(path: string, ?ct: CancellationToken) =
-            RepositoryFacade.OpenStructuredAsync(
+            StructuredRepositoryFacade.OpenStructuredAsync(
                 path, unwrapCT ct) |> Async.AwaitTask

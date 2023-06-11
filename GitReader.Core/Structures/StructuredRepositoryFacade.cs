@@ -19,7 +19,7 @@ using System.Threading.Tasks;
 
 namespace GitReader.Structures;
 
-internal static class RepositoryFacade
+internal static class StructuredRepositoryFacade
 {
     public readonly struct RepositoryReferenceExtracted
     {
@@ -62,7 +62,7 @@ internal static class RepositoryFacade
         if (await RepositoryAccessor.ReadHashAsync(
             repository, "HEAD", ct) is { } results)
         {
-            return new(rwr, results.Names.Last(), results.Hash);
+            return new(rwr, results.Names.Last(), results.Hash, false);
         }
         else
         {
@@ -79,35 +79,16 @@ internal static class RepositoryFacade
     {
         Debug.Assert(object.ReferenceEquals(rwr.Target, repository));
 
-        var references = await RepositoryAccessor.ReadReferencesAsync(
-            repository, ReferenceTypes.Branches, ct);
+        var (references, remoteReferences) = await Utilities.Join(
+            RepositoryAccessor.ReadReferencesAsync(
+                repository, ReferenceTypes.Branches, ct),
+            RepositoryAccessor.ReadReferencesAsync(
+                repository, ReferenceTypes.RemoteBranches, ct));
 
         return references.
-            ToDictionary(
-                reference => reference.Name,
-                reference => new Branch(
-                    rwr,
-                    reference.Name,
-                    reference.Target));
-    }
-
-    private static async Task<ReadOnlyDictionary<string, Branch>> GetStructuredRemoteBranchesAsync(
-        StructuredRepository repository,
-        WeakReference rwr,
-        CancellationToken ct)
-    {
-        Debug.Assert(object.ReferenceEquals(rwr.Target, repository));
-
-        var references = await RepositoryAccessor.ReadReferencesAsync(
-            repository, ReferenceTypes.RemoteBranches, ct);
-
-        return references.
-            ToDictionary(
-                reference => reference.Name,
-                reference => new Branch(
-                    rwr,
-                    reference.Name,
-                    reference.Target));
+            Select(r => new Branch(rwr, r.Name, r.Target, false)).
+            Concat(remoteReferences.Select(r => new Branch(rwr, r.Name, r.Target, true))).
+            ToDictionary(b => b.Name);
     }
 
     private static async Task<ReadOnlyDictionary<string, Tag>> GetStructuredTagsAsync(
@@ -115,29 +96,40 @@ internal static class RepositoryFacade
         WeakReference rwr,
         CancellationToken ct)
     {
-        var references = await RepositoryAccessor.ReadReferencesAsync(
-            repository, ReferenceTypes.Tags, ct);
+        var tagReferences = await RepositoryAccessor.ReadTagReferencesAsync(
+            repository, ct);
 
         var tags = await Utilities.WhenAll(
-            references.Select(async reference =>
+            tagReferences.Select(async tagReference =>
             {
-                // Tag object is read.
-                if (await RepositoryAccessor.ReadTagAsync(
-                    repository, reference.Target, ct) is { } tag)
+                // If produced a peeled-tag, we can get the commit hash with no additional costs.
+                if (tagReference.CommitHash is { } commitTarget)
                 {
-                    // TODO: Currently does not support any other tag types.
-                    if (tag.Type == ObjectTypes.Commit)
-                    {
-                        return (Tag)new CommitTag(
-                            rwr, tag.Hash, tag.Name, tag.Tagger, tag.Message);
-                    }
+                    var tagHash = tagReference.ObjectOrCommitHash;
+                    return new Tag(rwr, tagHash,
+                        ObjectTypes.Commit, commitTarget, tagReference.Name,
+                        null);
                 }
+                // If peeled-tags are not provided by the 'packed-refs' file at open time,
+                // a tag object will be read occur here. This is expensive and extends open time.
+                // However, since the commit hash cannot be identified without reading the tag object
+                // (given that this is a high-level interface), a compromise is made.
+                else if (await RepositoryAccessor.ReadTagAsync(
+                    repository, tagReference.ObjectOrCommitHash, ct) is { } tag)
+                {
+                    var tagHash = tagReference.ObjectOrCommitHash;
+                    return new Tag(rwr, tagHash,
+                        tag.Type, tag.Hash, tagReference.Name,
+                        new(tag.Tagger, tag.Message));
+                }
+                // If the read result shows that it is not a tag object, it is a commit object.
                 else
                 {
-                    return (Tag)new CommitTag(
-                        rwr, reference.Target, reference.Name, null, null);
+                    var commitHash = tagReference.ObjectOrCommitHash;
+                    return new Tag(rwr, null,
+                        ObjectTypes.Commit, commitHash, tagReference.Name,
+                        null);
                 }
-                return null!;
             }));
 
         return tags.
@@ -145,7 +137,7 @@ internal static class RepositoryFacade
             DistinctBy(tag => tag!.Name).
             ToDictionary(tag => tag!.Name, tag => tag!);
     }
-    
+
     private static async Task<Stash[]> GetStructuredStashesAsync(
         StructuredRepository repository,
         WeakReference rwr,
@@ -201,16 +193,14 @@ internal static class RepositoryFacade
 
             // Read all other requirements.
             var rwr = new WeakReference(repository);
-            var (head, branches, remoteBranches, tags, stashes) = await Utilities.Join(
+            var (head, branches, tags, stashes) = await Utilities.Join(
                 GetCurrentHeadAsync(repository, rwr, ct),
                 GetStructuredBranchesAsync(repository, rwr, ct),
-                GetStructuredRemoteBranchesAsync(repository, rwr, ct),
                 GetStructuredTagsAsync(repository, rwr, ct),
                 GetStructuredStashesAsync(repository, rwr, ct));
 
             repository.head = head;
             repository.branches = branches;
-            repository.remoteBranches = remoteBranches;
             repository.tags = tags;
             repository.stashes = stashes;
 
@@ -259,6 +249,31 @@ internal static class RepositoryFacade
         return new(rwr, commit.Value);
     }
 
+    public static async Task<Annotation> GetAnnotationAsync(
+        Tag tag,
+        CancellationToken ct)
+    {
+        if (tag.annotation is not { } annotation)
+        {
+            if (tag.TagHash is { } tagHash)
+            {
+                var (repository, _) = GetRelatedRepository(tag);
+
+                var t = await RepositoryAccessor.ReadTagAsync(
+                    repository, tagHash, ct);
+
+                annotation = new(t.Value.Tagger, t.Value.Message);
+                Interlocked.CompareExchange(ref tag.annotation, annotation, null);
+            }
+            else
+            {
+                throw new InvalidOperationException(
+                    $"Tag {tag.Name} does not have annotation.");
+            }
+        }
+        return annotation;
+    }
+
     public static async Task<Commit?> GetPrimaryParentAsync(
         Commit commit,
         CancellationToken ct)
@@ -305,23 +320,12 @@ internal static class RepositoryFacade
             ToArray();
     }
 
-    public static Branch[] GetRelatedRemoteBranches(Commit commit)
-    {
-        var (repository, _) = GetRelatedRepository(commit);
-
-        return repository.RemoteBranches.Values.
-            Collect(branch => branch.Head.Equals(commit.Hash) ? branch : null).
-            ToArray();
-    }
-
     public static Tag[] GetRelatedTags(Commit commit)
     {
         var (repository, _) = GetRelatedRepository(commit);
 
         return repository.Tags.Values.
-            Collect(tag =>
-                (tag is CommitTag &&
-                 tag.Hash.Equals(commit.Hash)) ? tag : null).
+            Collect(tag => (tag.ObjectHash is { } oh && oh.Equals(commit.Hash)) ? tag : null).
             ToArray();
     }
 

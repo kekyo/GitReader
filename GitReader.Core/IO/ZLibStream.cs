@@ -61,7 +61,7 @@ internal static class ZLibStream
                 break;
         }
 
-        // TODO: One way to improve performance is to make DelateStream compatible
+        // TODO: One way to improve performance is to make DeflateStream compatible
         // with IValueTaskStream from in to out.
         // This is a low priority since it would mean re-implementing DeflateStream,
         // but from observation, it may make sense to implement it
