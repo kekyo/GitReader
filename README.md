@@ -557,12 +557,6 @@ foreach (KeyValuePair<string, string> entry in repository.RemoteUrls)
 }
 ```
 
-----
-
-## TODO
-
-* Read submodule information.
-* Makes configurable minor execution parameters.
 
 ----
 
@@ -576,6 +570,11 @@ Apache-v2
 
 ## History
 
+* 0.12.0:
+  * Reduced the time taken to open structured repository when peeled-tag is available from packed-refs.
+  * The Tags interface has been rearranged.
+  * Added raw stream opener interfaces.
+  * Some bug fixed.
 * 0.11.0:
   * The structured interface no longer reads commit information when it opens.
     Instead, you must explicitly call `Branch.GetHeadCommitAsync()`,

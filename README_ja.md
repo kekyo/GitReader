@@ -552,11 +552,6 @@ foreach (KeyValuePair<string, string> entry in repository.RemoteUrls)
 }
 ```
 
-----
-
-## TODO
-
-* [英語READMEを参照してください](https://github.com/kekyo/GitReader)
 
 ----
 
