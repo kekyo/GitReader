@@ -32,14 +32,17 @@ Example:
 using GitReader;
 using GitReader.Structures;
 
+// Open repository (With high-level interface)
 using var repository =
     await Repository.Factory.OpenStructureAsync(
         "/home/kekyo/Projects/YourOwnLocalGitRepo");
 
-if (repository.GetCurrentHead() is { } head)
+// Found current head.
+if (repository.Head is { } head)
 {
     Console.WriteLine($"Name: {head.Name}");
 
+    // Get head commit.
     var commit = await head.GetHeadCommitAsync();
 
     Console.WriteLine($"Hash: {commit.Hash}");
@@ -73,6 +76,7 @@ It primarily fits the purpose of easily extracting commit information from a Git
 ### F# specialized binding
 
 F# 5.0 or upper, it contains F# friendly signature definition.
+(Asynchronous operations with `Async` type, elimination of null values with `Option`, etc.)
 
 * .NET 7.0 to 5.0
 * .NET Core 3.1 to 2.0

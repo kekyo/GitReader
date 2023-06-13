@@ -32,14 +32,17 @@ GitReaderは、幅広い.NET環境に対応し、マネージドコードだけ�
 using GitReader;
 using GitReader.Structures;
 
+// リポジトリをオープン (高レベルインターフェイスを使用)
 using var repository =
     await Repository.Factory.OpenStructureAsync(
         "/home/kekyo/Projects/YourOwnLocalGitRepo");
 
-if (repository.GetCurrentHead() is { } head)
+// HEADが存在すれば
+if (repository.Head is { } head)
 {
     Console.WriteLine($"Name: {head.Name}");
 
+    // HEADのコミットを得る
     var commit = await head.GetHeadCommitAsync();
 
     Console.WriteLine($"Hash: {commit.Hash}");
@@ -74,6 +77,7 @@ if (repository.GetCurrentHead() is { } head)
 ### F#専用のバインディング
 
 F# 5.0以上が対象で、F#フレンドリーなシグネチャ定義が含まれています。
+(`Async`型による非同期操作、`Option`によるnull値排除など)
 
 * .NET 7.0 to 5.0
 * .NET Core 3.1 to 2.0
@@ -561,4 +565,4 @@ Apache-v2
 
 ## History
 
-* [英語READMEを参照してください](https://github.com/kekyo/GitReader)
+* [英語READMEを参照してください](https://github.com/kekyo/GitReader#history)
