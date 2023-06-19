@@ -9,10 +9,12 @@
 
 using System;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading;
 
 namespace GitReader.Internal;
 
+[DebuggerStepThrough]
 internal struct BufferPoolBuffer : IDisposable
 {
     private byte[] buffer;
@@ -43,6 +45,7 @@ internal struct BufferPoolBuffer : IDisposable
         buffer.buffer;
 }
 
+[DebuggerStepThrough]
 internal readonly struct DetachedBufferPoolBuffer
 {
     private readonly byte[] buffer;
@@ -56,104 +59,64 @@ internal readonly struct DetachedBufferPoolBuffer
         new(buffer.buffer);
 }
 
+[DebuggerStepThrough]
 internal static class BufferPool
 {
+    // Tried and tested, but simple strategies were the fastest.
+    // Probably because each buffer table and lookup fragments on the CPU cache.
+
+    private const int MaxReservedBufferElements = 32;
+    private const int BufferHolders = 13;
+
+    [DebuggerStepThrough]
     private sealed class BufferHolder
     {
-        private volatile BufferHolder? next;
-        private readonly WeakReference bwr;
-
-        public BufferHolder() =>
-            this.bwr = new(null);
-
-        private BufferHolder(byte[] buffer) =>
-            this.bwr = new(buffer);
+        private readonly byte[]?[] buffers = new byte[MaxReservedBufferElements][];
 
         public byte[] Take(int size)
         {
-            var current = this;
-            do
+            for (var index = 0; index < MaxReservedBufferElements; index++)
             {
-                if (current.bwr.Target is byte[] buffer &&
-                    buffer.Length == size)
+                var buffer = this.buffers[index];
+                if (buffer != null && buffer.Length == size)
                 {
-                    lock (current.bwr)
+                    if (Interlocked.CompareExchange(ref this.buffers[index], null, buffer) == buffer)
                     {
-                        if (current.bwr.Target is byte[] b &&
-                            b.Length == size)
-                        {
-                            current.bwr.Target = null;
-                            return b;
-                        }
+                        return buffer!;
                     }
                 }
-                current = current.next;
             }
-            while (current != null);
 
             return new byte[size];
         }
 
         public void Release(byte[] buffer)
         {
-            var current = this;
-            BufferHolder last;
-            do
+            for (var index = 0; index < MaxReservedBufferElements; index++)
             {
-                if (current.bwr.Target == null)
+                if (this.buffers[index] == null)
                 {
-                    lock (current.bwr)
+                    if (Interlocked.CompareExchange(ref this.buffers[index], buffer, null) == null)
                     {
-                        if (current.bwr.Target == null)
-                        {
-                            current.bwr.Target = buffer;
-                            return;
-                        }
+                        break;
                     }
                 }
-                last = current;
-                current = current.next;
             }
-            while (current != null);
 
-            var next = new BufferHolder(buffer);
-
-            while (true)
-            {
-                if (Interlocked.CompareExchange(ref last.next, next, null) is not { } cnext)
-                {
-                    return;
-                }
-                last = cnext;
-            }
+            // It was better to simply discard a buffer instance than the cost of extending the table.
         }
     }
 
-    private static readonly BufferHolder[] bufferHolders = new[]
-    {
-        new BufferHolder(),  // 0 - 12
-        new BufferHolder(),
-        new BufferHolder(),
-        new BufferHolder(),
-        new BufferHolder(),
-        new BufferHolder(),
-        new BufferHolder(),
-        new BufferHolder(),
-        new BufferHolder(),
-        new BufferHolder(),
-        new BufferHolder(),
-        new BufferHolder(),
-        new BufferHolder(),
-    };
+    private static readonly BufferHolder[] bufferHolders;
 
-    static BufferPool()
-    {
-        Debug.Assert(bufferHolders.Length == 13);
-    }
+    static BufferPool() =>
+        bufferHolders = Enumerable.Range(0, BufferHolders).
+        Select(_ => new BufferHolder()).
+        ToArray();
 
     public static BufferPoolBuffer Take(int size)
     {
-        var bufferHolder = bufferHolders[size % 13];
+        var bufferHolder = bufferHolders[size % BufferHolders];
         return bufferHolder.Take(size);
     }
 
@@ -161,7 +124,7 @@ internal static class BufferPool
     {
         if (Interlocked.Exchange(ref buffer, null!) is { } b)
         {
-            var bufferHolder = bufferHolders[b.Length % 13];
+            var bufferHolder = bufferHolders[b.Length % BufferHolders];
             bufferHolder.Release(b);
         }
     }
