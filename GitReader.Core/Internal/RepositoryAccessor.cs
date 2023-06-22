@@ -8,6 +8,7 @@
 ////////////////////////////////////////////////////////////////////////////
 
 using GitReader.Collections;
+using GitReader.IO;
 using GitReader.Primitive;
 using System;
 using System.Collections.Generic;
@@ -110,14 +111,14 @@ internal static class RepositoryAccessor
         }
 
         using var fs = repository.fileStreamCache.Open(path);
-        var tr = new StreamReader(fs, Encoding.UTF8, true);
+        var tr = new AsyncTextReader(fs);
 
         var remotes = new Dictionary<string, string>();
         var remoteName = default(string);
 
         while (true)
         {
-            var line = await tr.ReadLineAsync().WaitAsync(ct);
+            var line = await tr.ReadLineAsync(ct);
             if (line == null)
             {
                 break;
@@ -184,14 +185,14 @@ internal static class RepositoryAccessor
         }
 
         using var fs = repository.fileStreamCache.Open(path);
-        var tr = new StreamReader(fs, Encoding.UTF8, true);
+        var tr = new AsyncTextReader(fs);
 
         var remoteBranches = new Dictionary<string, Hash>();
         var tags = new Dictionary<string, TagReference>();
 
         while (true)
         {
-            var line = await tr.ReadLineAsync().WaitAsync(ct);
+            var line = await tr.ReadLineAsync(ct);
             if (line == null)
             {
                 break;
@@ -276,7 +277,7 @@ internal static class RepositoryAccessor
         }
 
         using var fs = repository.fileStreamCache.Open(path);
-        var tr = new StreamReader(fs, Encoding.UTF8, true);
+        var tr = new AsyncTextReader(fs);
 
         var branches = new Dictionary<string, Hash>();
         var remoteBranches = new Dictionary<string, Hash>();
@@ -289,7 +290,7 @@ internal static class RepositoryAccessor
 
         while (true)
         {
-            var line = await tr.ReadLineAsync().WaitAsync(ct);
+            var line = await tr.ReadLineAsync(ct);
             if (line == null)
             {
                 break;
@@ -412,9 +413,9 @@ internal static class RepositoryAccessor
             }
 
             using var fs = repository.fileStreamCache.Open(path);
-            var tr = new StreamReader(fs, Encoding.UTF8, true);
+            var tr = new AsyncTextReader(fs);
 
-            var line = await tr.ReadLineAsync().WaitAsync(ct);
+            var line = await tr.ReadLineAsync(ct);
             if (line == null)
             {
                 throw new InvalidDataException(
@@ -449,12 +450,12 @@ internal static class RepositoryAccessor
         }
 
         using var fs = repository.fileStreamCache.Open(path);
-        var tr = new StreamReader(fs, Encoding.UTF8, true);
+        var tr = new AsyncTextReader(fs);
 
         var entries = new List<PrimitiveReflogEntry>();
         while (true)
         {
-            var line = await tr.ReadLineAsync().WaitAsync(ct);
+            var line = await tr.ReadLineAsync(ct);
             if (line == null)
             {
                 break;
@@ -624,10 +625,8 @@ internal static class RepositoryAccessor
                 return null;
             }
 
-            // TODO: The cost of asynchronous access to StreamReader is high and will eventually be replaced.
-            // It would be a good idea to have IValueTaskStream support then.
-            var tr = new StreamReader(streamResult.Stream, Encoding.UTF8, true);
-            var body = await tr.ReadToEndAsync().WaitAsync(ct);
+            var tr = new AsyncTextReader(streamResult.Stream);
+            var body = await tr.ReadToEndAsync(ct);
 
             var start = 0;
             var index = 0;
