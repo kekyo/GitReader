@@ -574,6 +574,8 @@ Apache-v2
 
 ## History
 
+* 0.13.0:
+  * Improved performance.
 * 0.12.0:
   * Reduced the time taken to open structured repository when peeled-tag is available from packed-refs.
   * The Tags interface has been rearranged.

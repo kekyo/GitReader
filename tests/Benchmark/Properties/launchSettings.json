@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "gitlogtest": {
+        "commandName": "Project",
+        "commandLineArgs": "D:\\Projects\\git",
+    }
+  }
+}

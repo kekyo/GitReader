@@ -119,39 +119,34 @@ internal sealed class AsyncLock
 
     private void Unlock()
     {
-#if false
-        ThreadPool.QueueUserWorkItem(_ =>
-        {
-            lock (this.queue)
-            {
-                this.InternalUnlock();
-            }
-        });
-#else
         try
         {
             // Will cause stack overflow when a lot of continuation queued and ran it series.
-            // So it is splitted reentrancy continuation execution each 10 times.
-            if (counter.Value++ >= 10)
+            // So it is splitted reentrancy continuation execution each 30 times.
+            var count = counter.Value++;
+            if (count >= 30)
             {
                 ThreadPool.QueueUserWorkItem(_ =>
                 {
                     this.Unlock();
                 });
             }
-            else
+            else if (count == 0)
             {
                 lock (this.queue)
                 {
                     this.InternalUnlock();
                 }
             }
+            else
+            {
+                this.InternalUnlock();
+            }
         }
         finally
         {
             counter.Value--;
         }
-#endif
     }
 
     public sealed class Disposer : IDisposable

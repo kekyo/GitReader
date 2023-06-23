@@ -47,18 +47,26 @@ public static class Program
             Directory.CreateDirectory(toPath);
         }
 
+        var sw = new Stopwatch();
+
+        sw.Start();
         using var repository =
             await Repository.Factory.OpenStructureAsync(repositoryPath);
+        sw.Stop();
 
-        tw.WriteLine("Opened");
+        tw.WriteLine($"Opened: {sw.Elapsed}");
 
+        sw.Restart();
         var commit = await repository.GetCommitAsync(commitId);
+        sw.Stop();
 
-        tw.WriteLine("Got commit");
+        tw.WriteLine($"Got commit: {sw.Elapsed}");
 
+        sw.Restart();
         var tree = await commit!.GetTreeRootAsync();
+        sw.Stop();
 
-        tw.WriteLine("Got tree");
+        tw.WriteLine($"Got tree: {sw.Elapsed}");
 
         var directories = 0;
         var files = 0;
@@ -116,9 +124,11 @@ public static class Program
                 }
             }));
 
+        sw.Restart();
         await ExtractTreeAsync(tree.Children, toPath);
+        sw.Stop();
 
-        tw.WriteLine("Extracted");
+        tw.WriteLine($"Extracted: {sw.Elapsed}");
 
         tw.WriteLine();
 
