@@ -7,11 +7,12 @@
 //
 ////////////////////////////////////////////////////////////////////////////
 
+using GitReader.Internal;
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using GitReader.Internal;
 
 namespace GitReader.IO;
 
@@ -82,110 +83,97 @@ internal sealed class MemoizedStream : Stream
         }
     }
 
-    private long PrepareSeek(
+    private long GetTargetPosition(
         long offset, SeekOrigin origin)
     {
-        var position = origin switch
+        var targetPosition = origin switch
         {
             SeekOrigin.Begin => offset,
             SeekOrigin.Current => this.memoized.Position + offset,
             _ => this.Length - offset,
         };
 
-        if (position > this.Length)
+        if (targetPosition > this.Length)
         {
-            position = this.Length;
+            targetPosition = this.Length;
         }
 
-        return position;
+        return targetPosition;
     }
 
     public override long Seek(
         long offset, SeekOrigin origin)
     {
-        var position = PrepareSeek(offset, origin);
-
-        if (position < this.memoized.Length)
+        var targetPosition = this.GetTargetPosition(offset, origin);
+        if (targetPosition < this.memoized.Length)
         {
             this.memoized.Seek(
-                position, SeekOrigin.Begin);
-            return position;
+                targetPosition, SeekOrigin.Begin);
+            return targetPosition;
         }
 
         this.memoized.Seek(
             this.memoized.Length, SeekOrigin.Begin);
 
-        var current = this.memoized.Length;
-        while (current < position)
+        var currentPosition = this.memoized.Length;
+        while (currentPosition < targetPosition)
         {
             var length = Math.Min(
-                position - current,
+                targetPosition - currentPosition,
                 this.temporaryBuffer.Length);
 
-            var read = this.parent.Read(
+            var r = this.Read(
                 this.temporaryBuffer, 0, (int)length);
-            if (read == 0)
+            if (r == 0)
             {
                 break;
             }
 
-            this.memoized.Write(
-                this.temporaryBuffer, 0, read);
-
-            current += read;
+            currentPosition += r;
         }
 
-        return current;
+        Debug.Assert(this.memoized.Position == currentPosition);
+        Debug.Assert(this.memoized.Length == currentPosition);
+
+        return currentPosition;
     }
 
 #if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
     public async ValueTask<long> SeekValueTaskAsync(
         long offset, SeekOrigin origin, CancellationToken ct)
     {
-        var position = PrepareSeek(offset, origin);
-
-        if (position < this.memoized.Length)
+        var targetPosition = this.GetTargetPosition(offset, origin);
+        if (targetPosition < this.memoized.Length)
         {
             this.memoized.Seek(
-                position, SeekOrigin.Begin);
-            return position;
+                targetPosition, SeekOrigin.Begin);
+            return targetPosition;
         }
 
         this.memoized.Seek(
             this.memoized.Length, SeekOrigin.Begin);
 
-        var current = this.memoized.Length;
-        while (current < position)
+        var currentPosition = this.memoized.Length;
+        while (currentPosition < targetPosition)
         {
             var length = Math.Min(
-                position - current,
+                targetPosition - currentPosition,
                 this.temporaryBuffer.Length);
 
-            var read = this.parent is IValueTaskStream vts ?
-                await vts.ReadValueTaskAsync(
-                    this.temporaryBuffer, 0, (int)length, ct) :
-                await this.parent.ReadAsync(
-                    this.temporaryBuffer, 0, (int)length, ct);
-            if (read == 0)
+            var r = await this.ReadValueTaskAsync(
+                this.temporaryBuffer, 0, (int)length, ct);
+            if (r == 0)
             {
                 break;
             }
 
-            if (this.memoized is MemoryStream)
-            {
-                this.memoized.Write(
-                    this.temporaryBuffer, 0, read);
-            }
-            else
-            {
-                await this.memoized.WriteAsync(
-                    this.temporaryBuffer, 0, read, ct);
-            }
-
-            current += read;
+            currentPosition += r;
         }
 
-        return current;
+        Debug.Assert(this.memoized.Position == currentPosition);
+        Debug.Assert(this.memoized.Length == currentPosition);
+
+        return currentPosition;
     }
 
     public Task<long> SeekAsync(
@@ -197,33 +185,45 @@ internal sealed class MemoizedStream : Stream
     {
         var read = 0;
 
-        if (count >= 1)
+        while (true)
         {
-            if (this.memoized.Position < this.memoized.Length)
+            var length = Math.Min(
+                count, this.memoized.Length - this.memoized.Position);
+            if (length <= 0)
             {
-                read = this.memoized.Read(buffer, offset, count);
-
-                offset += read;
-                count -= read;
+                break;
             }
 
-            if (count >= 1)
+            var r = this.memoized.Read(buffer, offset, (int)length);
+            Debug.Assert(r == length);
+
+            offset += r;
+            count -= r;
+            read += r;
+        }
+
+        while (true)
+        {
+            var length = Math.Min(
+                count, this.Length - this.memoized.Position);
+            if (length <= 0)
             {
-                if (this.memoized.Position >= this.memoized.Length)
-                {
-                    var length = Math.Min(
-                        count, Length - this.memoized.Position);
-                    if (length >= 1)
-                    {
-                        var r = this.parent.Read(buffer, offset, (int)length);
-                        if (r >= 1)
-                        {
-                            this.memoized.Write(buffer, offset, r);
-                            read += r;
-                        }
-                    }
-                }
+                break;
             }
+
+            var r = this.parent.Read(buffer, offset, (int)length);
+            if (r == 0)
+            {
+                break;
+            }
+
+            Debug.Assert(this.memoized.Position == this.memoized.Length);
+
+            this.memoized.Write(buffer, offset, r);
+
+            offset += r;
+            count -= r;
+            read += r;
         }
 
         return read;
@@ -235,45 +235,56 @@ internal sealed class MemoizedStream : Stream
     {
         var read = 0;
 
-        if (count >= 1)
+        while (true)
         {
-            if (this.memoized.Position < this.memoized.Length)
+            var length = Math.Min(
+                count, this.memoized.Length - this.memoized.Position);
+            if (length <= 0)
             {
-                read = this.memoized is MemoryStream ?
-                    this.memoized.Read(buffer, offset, count) :
-                    await this.memoized.ReadAsync(buffer, offset, count, ct);
-
-                offset += read;
-                count -= read;
+                break;
             }
 
-            if (count >= 1)
-            {
-                if (this.memoized.Position >= this.memoized.Length)
-                {
-                    var length = Math.Min(
-                        count, this.Length - this.memoized.Position);
-                    if (length >= 1)
-                    {
-                        var r = this.parent is IValueTaskStream vts ?
-                            await vts.ReadValueTaskAsync(buffer, offset, (int)length, ct) :
-                            await this.parent.ReadAsync(buffer, offset, (int)length, ct);
+            var r = this.memoized is MemoryStream ?
+                this.memoized.Read(buffer, offset, (int)length) :
+                await this.memoized.ReadAsync(buffer, offset, (int)length, ct);
+            Debug.Assert(r == length);
 
-                        if (r >= 1)
-                        {
-                            if (this.memoized is MemoryStream)
-                            {
-                                this.memoized.Write(buffer, offset, r);
-                            }
-                            else
-                            {
-                                await this.memoized.WriteAsync(buffer, offset, r, ct);
-                            }
-                            read += r;
-                        }
-                    }
-                }
+            offset += r;
+            count -= r;
+            read += r;
+        }
+
+        while (true)
+        {
+            var length = Math.Min(
+                count, this.Length - this.memoized.Position);
+            if (length <= 0)
+            {
+                break;
             }
+
+            var r = this.parent is IValueTaskStream vts ?
+                await vts.ReadValueTaskAsync(buffer, offset, (int)length, ct) :
+                await this.parent.ReadAsync(buffer, offset, (int)length, ct);
+            if (r == 0)
+            {
+                break;
+            }
+
+            Debug.Assert(this.memoized.Position == this.memoized.Length);
+
+            if (this.memoized is MemoryStream)
+            {
+                this.memoized.Write(buffer, offset, r);
+            }
+            else
+            {
+                await this.memoized.WriteAsync(buffer, offset, r, ct);
+            }
+
+            offset += r;
+            count -= r;
+            read += r;
         }
 
         return read;

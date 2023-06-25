@@ -174,7 +174,7 @@ internal sealed class ObjectAccessor : IDisposable
 
             var stream = new RangedStream(
                 new ConcatStream(
-                    new PreloadedStream(preloadBuffer.Detach(), preloadIndex, preloadBuffer.Length - preloadIndex),
+                    new PreloadedStream(preloadBuffer.Detach(), preloadIndex, read),
                     zlibStream),
                 (long)length);
 
@@ -490,7 +490,7 @@ internal sealed class ObjectAccessor : IDisposable
                         }
 
                         var stream = new ConcatStream(
-                            new PreloadedStream(preloadBuffer.Detach(), preloadIndex, read - preloadIndex),
+                            new PreloadedStream(preloadBuffer.Detach(), preloadIndex, read),
                             fs);
 
                         var (zlibStream, objectEntry) = await Utilities.Join(
@@ -532,7 +532,7 @@ internal sealed class ObjectAccessor : IDisposable
                         var referenceHash = new Hash(hashCode);
 
                         var stream = new ConcatStream(
-                            new PreloadedStream(preloadBuffer.Detach(), preloadIndex, read - preloadIndex),
+                            new PreloadedStream(preloadBuffer.Detach(), preloadIndex, read),
                             fs);
 
                         var (zlibStream, objectEntry) = await Utilities.Join(
@@ -572,7 +572,7 @@ internal sealed class ObjectAccessor : IDisposable
                 case RawObjectTypes.Tag:
                     {
                         var stream = new ConcatStream(
-                            new PreloadedStream(preloadBuffer.Detach(), preloadIndex, read - preloadIndex),
+                            new PreloadedStream(preloadBuffer.Detach(), preloadIndex, read),
                             fs);
 
                         var zlibStream = await ZLibStream.CreateAsync(stream, ct);

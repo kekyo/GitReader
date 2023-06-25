@@ -7,11 +7,11 @@
 //
 ////////////////////////////////////////////////////////////////////////////
 
+using GitReader.Internal;
 using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using GitReader.Internal;
 
 namespace GitReader.IO;
 
@@ -25,12 +25,11 @@ internal sealed class PreloadedStream : Stream
     private int preloadedIndex;
 
     public PreloadedStream(
-        DetachedBufferPoolBuffer buffer, int initialIndex, int length)
+        DetachedBufferPoolBuffer buffer, int initialIndex, int totalLength)
     {
         this.preloadedBuffer = buffer;
-        this.preloadedLength = length;
+        this.preloadedLength = totalLength;
         this.preloadedIndex = initialIndex;
-        this.Length = length - initialIndex;
     }
 
     public override bool CanRead =>
@@ -39,8 +38,6 @@ internal sealed class PreloadedStream : Stream
         false;
     public override bool CanWrite =>
         false;
-
-    public override long Length { get; }
 
 #if !NETSTANDARD1_6
     public override void Close()
@@ -61,7 +58,8 @@ internal sealed class PreloadedStream : Stream
 
     public override int Read(byte[] buffer, int offset, int count)
     {
-        var length = Math.Min(count, this.preloadedLength - this.preloadedIndex);
+        var length = Math.Min(
+            count, this.preloadedLength - this.preloadedIndex);
         if (length >= 1)
         {
             Array.Copy(this.preloadedBuffer, this.preloadedIndex, buffer, offset, length);
@@ -76,25 +74,16 @@ internal sealed class PreloadedStream : Stream
 
 #if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
     public ValueTask<int> ReadValueTaskAsync(
-        byte[] buffer, int offset, int count, CancellationToken ct)
-    {
-        var length = Math.Min(count, this.preloadedLength - this.preloadedIndex);
-        if (length >= 1)
-        {
-            Array.Copy(this.preloadedBuffer, this.preloadedIndex, buffer, offset, length);
-            this.preloadedIndex += length;
-            return new(length);
-        }
-        else
-        {
-            return new(0);
-        }
-    }
+        byte[] buffer, int offset, int count, CancellationToken ct) =>
+        new(this.Read(buffer, offset, count));
 
     public override Task<int> ReadAsync(
         byte[] buffer, int offset, int count, CancellationToken ct) =>
         this.ReadValueTaskAsync(buffer, offset, count, ct).AsTask();
 #endif
+
+    public override long Length =>
+        throw new NotImplementedException();
 
     public override long Position
     {
