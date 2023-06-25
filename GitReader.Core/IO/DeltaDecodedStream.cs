@@ -7,12 +7,12 @@
 //
 ////////////////////////////////////////////////////////////////////////////
 
+using GitReader.Internal;
 using System;
 using System.Diagnostics;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using GitReader.Internal;
 
 namespace GitReader.IO;
 
@@ -29,9 +29,22 @@ internal sealed class DeltaDecodedStream : Stream
     {
         public readonly uint Size;
         public uint Position;
+#if DEBUG
+        public readonly uint Offset;
+#endif
 
-        public CopyState(uint size) =>
+        public CopyState(uint offset, uint size)
+        {
             this.Size = size;
+#if DEBUG
+            this.Offset = offset;
+#endif
+        }
+
+#if DEBUG
+        public override string ToString() =>
+            $"Copy: Offset=0x{this.Offset:x}, Size={this.Size}";
+#endif
     }
 
     private sealed class InsertState : State
@@ -41,6 +54,11 @@ internal sealed class DeltaDecodedStream : Stream
 
         public InsertState(byte size) =>
             this.Size = size;
+
+#if DEBUG
+        public override string ToString() =>
+            $"Insert: Size={Size}";
+#endif
     }
 
     private const int preloadBufferSize = 65536;
@@ -238,7 +256,7 @@ internal sealed class DeltaDecodedStream : Stream
                     this.baseObjectStream.Seek(
                         baseObjectOffset, SeekOrigin.Begin);
 
-                    this.state = new CopyState(baseObjectSize);
+                    this.state = new CopyState(baseObjectOffset, baseObjectSize);
                 }
                 // Insert opcode
                 else
@@ -471,7 +489,7 @@ internal sealed class DeltaDecodedStream : Stream
                     await this.baseObjectStream.SeekValueTaskAsync(
                         baseObjectOffset, SeekOrigin.Begin, ct);
 
-                    this.state = new CopyState(baseObjectSize);
+                    this.state = new CopyState(baseObjectOffset, baseObjectSize);
                 }
                 // Insert opcode
                 else
@@ -495,7 +513,6 @@ internal sealed class DeltaDecodedStream : Stream
 
                 var r = await this.baseObjectStream.ReadValueTaskAsync(
                     buffer, offset, (int)length, ct);
-
                 if (r == 0)
                 {
                     return read;
