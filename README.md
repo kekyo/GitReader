@@ -574,6 +574,9 @@ Apache-v2
 
 ## History
 
+* 1.0.0:
+  * Reached 1.0.0 :tada:
+  * Fixed broken decoded stream for deltified stream with derived from large-base-stream.
 * 0.13.0:
   * Improved performance.
 * 0.12.0:
