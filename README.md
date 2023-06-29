@@ -6,7 +6,7 @@ Lightweight Git local repository traversal library.
 
 # Status
 
-[![Project Status: WIP – Initial development is in progress, but there has not yet been a stable, usable release suitable for the public.](https://www.repostatus.org/badges/latest/wip.svg)](https://www.repostatus.org/#wip)
+[![Project Status: Active – The project has reached a stable, usable state and is being actively developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
 
 |Target|Pakcage|
 |:----|:----|
@@ -59,7 +59,7 @@ It has the following features:
 * Branch tree traversal.
 * Read only interface makes immutability.
 * Both high-level and primitive interfaces ready.
-* Fully asynchronous operation.
+* Fully asynchronous operation without any sync-over-async implementation.
 * Only contains 100% managed code. Independent of any external libraries other than the BCL and its compliant libraries.
 * Reliable zlib decompression using the .NET standard deflate implementation.
 
@@ -576,7 +576,7 @@ Apache-v2
 
 * 1.0.0:
   * Reached 1.0.0 :tada:
-  * Fixed broken decoded stream for deltified stream with derived from large-base-stream.
+  * Fixed broken decoded stream for deltified stream with derived large-base-stream.
 * 0.13.0:
   * Improved performance.
 * 0.12.0:
