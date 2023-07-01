@@ -8,12 +8,14 @@
 ////////////////////////////////////////////////////////////////////////////
 
 using System;
+using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using GitReader.Internal;
 
 namespace GitReader;
 
+[DebuggerDisplay("{PrettyPrint}")]
 public readonly struct Signature : IEquatable<Signature>
 {
     private static readonly char[] separators = new[] { ' ' };
@@ -46,6 +48,9 @@ public readonly struct Signature : IEquatable<Signature>
 
     public string RawFormat =>
         $"{Utilities.ToGitAuthorString(this)} {this.RawDate}";
+
+    private string PrettyPrint =>
+        this.ToString();
 
     public bool Equals(Signature rhs) =>
         this.Name == rhs.Name &&

@@ -574,6 +574,9 @@ Apache-v2
 
 ## History
 
+* 1.1.0:
+  * Fixed causing path not found exception when lack these directories.
+  * Added debugger display attribute on some types.
 * 1.0.0:
   * Reached 1.0.0 :tada:
   * Fixed broken decoded stream for deltified stream with derived large-base-stream.

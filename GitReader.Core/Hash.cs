@@ -8,10 +8,12 @@
 ////////////////////////////////////////////////////////////////////////////
 
 using System;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 
 namespace GitReader;
 
+[DebuggerDisplay("{PrettyPrint}")]
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
 public unsafe struct Hash : IEquatable<Hash>
 {
@@ -70,6 +72,9 @@ public unsafe struct Hash : IEquatable<Hash>
             return hashCode;
         }
     }
+
+    private string PrettyPrint =>
+        this.ToString();
 
     public bool Equals(Hash rhs) =>
         this.hashCode0 == rhs.hashCode0 &&

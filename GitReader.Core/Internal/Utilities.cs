@@ -219,10 +219,14 @@ internal static class Utilities
 
 #if NET35
     public static IEnumerable<string> EnumerateFiles(string basePath, string match) =>
-        Directory.GetFiles(basePath, match, SearchOption.AllDirectories);
+        Directory.Exists(basePath) ?
+            Directory.GetFiles(basePath, match, SearchOption.AllDirectories) :
+            Empty<string>();
 #else
     public static IEnumerable<string> EnumerateFiles(string basePath, string match) =>
-        Directory.EnumerateFiles(basePath, match, SearchOption.AllDirectories);
+        Directory.Exists(basePath) ?
+            Directory.EnumerateFiles(basePath, match, SearchOption.AllDirectories) :
+            Empty<string>();
 #endif
 
 #if NET35
