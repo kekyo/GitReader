@@ -10,9 +10,11 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace GitReader.Collections;
 
+[DebuggerDisplay("Count={Count}")]
 public sealed class ReadOnlyDictionary<TKey, TValue> :
     IDictionary<TKey, TValue>
 #if !NET35 && !NET40

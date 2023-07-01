@@ -10,10 +10,12 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 
 namespace GitReader.Collections;
 
+[DebuggerDisplay("Count={Count}")]
 public sealed class ReadOnlyArray<TValue> :
     IList<TValue>
 #if !NET35 && !NET40
