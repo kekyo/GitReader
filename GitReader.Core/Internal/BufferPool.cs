@@ -17,30 +17,39 @@ namespace GitReader.Internal;
 [DebuggerStepThrough]
 internal struct BufferPoolBuffer : IDisposable
 {
+    private readonly BufferPool? pool; 
     private byte[] buffer;
 
-    internal BufferPoolBuffer(byte[] buffer)
+    internal BufferPoolBuffer(
+        BufferPool? pool, byte[] buffer, int length)
     {
+        this.pool = pool;
         this.buffer = buffer;
-        this.Length = buffer.Length;
+        this.Length = length;
     }
 
     public void Dispose() =>
-        BufferPool.Release(ref this.buffer);
+        this.pool?.Release(ref this.buffer);
 
     public int Length { get; }
 
     public byte this[int index]
     {
-        get => this.buffer[index];
-        set => this.buffer[index] = value;
+        get
+        {
+            Debug.Assert(index < this.Length);
+            return this.buffer[index];
+        }
+        set
+        {
+            Debug.Assert(index < this.Length);
+            this.buffer[index] = value;
+        }
     }
 
     public DetachedBufferPoolBuffer Detach() =>
-        new(Interlocked.Exchange(ref this.buffer, null!));
+        new(this.pool, Interlocked.Exchange(ref this.buffer, null!), this.Length);
 
-    public static implicit operator BufferPoolBuffer(byte[] buffer) =>
-        new(buffer);
     public static implicit operator byte[](BufferPoolBuffer buffer) =>
         buffer.buffer;
 }
@@ -48,20 +57,37 @@ internal struct BufferPoolBuffer : IDisposable
 [DebuggerStepThrough]
 internal readonly struct DetachedBufferPoolBuffer
 {
+    private readonly BufferPool? pool;
     private readonly byte[] buffer;
+    private readonly int length;
 
-    internal DetachedBufferPoolBuffer(byte[] buffer) =>
+    internal DetachedBufferPoolBuffer(
+        BufferPool? pool, byte[] buffer, int length)
+    {
+        this.pool = pool;
         this.buffer = buffer;
+        this.length = length;
+    }
 
-    public static implicit operator DetachedBufferPoolBuffer(byte[] buffer) =>
-        new(buffer);
     public static implicit operator BufferPoolBuffer(DetachedBufferPoolBuffer buffer) =>
-        new(buffer.buffer);
+        new(buffer.pool, buffer.buffer, buffer.length);
 }
 
 [DebuggerStepThrough]
-internal static class BufferPool
+internal sealed class BufferPool
 {
+#if NETCOREAPP || NETSTANDARD2_1
+    public BufferPoolBuffer Take(int size) =>
+        new(this, System.Buffers.ArrayPool<byte>.Shared.Rent(size), size);
+
+    internal void Release(ref byte[] buffer)
+    {
+        if (Interlocked.Exchange(ref buffer, null!) is { } b)
+        {
+            System.Buffers.ArrayPool<byte>.Shared.Return(b);
+        }
+    }
+#else
     // Tried and tested, but simple strategies were the fastest.
     // Probably because each buffer table and lookup fragments on the CPU cache.
 
@@ -107,25 +133,26 @@ internal static class BufferPool
         }
     }
 
-    private static readonly BufferHolder[] bufferHolders;
+    private readonly BufferHolder[] bufferHolders;
 
-    static BufferPool() =>
+    public BufferPool() =>
         bufferHolders = Enumerable.Range(0, BufferHolders).
         Select(_ => new BufferHolder()).
         ToArray();
 
-    public static BufferPoolBuffer Take(int size)
+    public BufferPoolBuffer Take(int size)
     {
-        var bufferHolder = bufferHolders[size % BufferHolders];
-        return bufferHolder.Take(size);
+        var bufferHolder = this.bufferHolders[size % BufferHolders];
+        return new(this, bufferHolder.Take(size), size);
     }
 
-    internal static void Release(ref byte[] buffer)
+    internal void Release(ref byte[] buffer)
     {
         if (Interlocked.Exchange(ref buffer, null!) is { } b)
         {
-            var bufferHolder = bufferHolders[b.Length % BufferHolders];
+            var bufferHolder = this.bufferHolders[b.Length % BufferHolders];
             bufferHolder.Release(b);
         }
     }
+#endif
 }

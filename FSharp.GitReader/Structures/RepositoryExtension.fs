@@ -17,6 +17,10 @@ open System.Threading
 module public RepositoryExtension =
 
     type StructuredRepository with
+        member repository.getCurrentHead() =
+            match repository.Head with
+            | null -> None
+            | _ -> Some repository.Head
         member repository.getCommit(commit: Hash, ?ct: CancellationToken) = async {
             let! c = StructuredRepositoryFacade.GetCommitDirectlyAsync(
                 repository, commit, unwrapCT ct) |> Async.AwaitTask

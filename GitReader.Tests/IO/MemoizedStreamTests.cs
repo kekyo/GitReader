@@ -7,6 +7,7 @@
 //
 ////////////////////////////////////////////////////////////////////////////
 
+using GitReader.Internal;
 using NUnit.Framework;
 using System.IO;
 using System.Linq;
@@ -16,6 +17,8 @@ namespace GitReader.IO;
 
 public sealed class MemoizedStreamTests
 {
+    private readonly BufferPool pool = new();
+
     [Test]
     public void MemoizedStream1()
     {
@@ -23,7 +26,7 @@ public sealed class MemoizedStreamTests
 
         var parent = new MemoryStream(expected);
         var memoized = new MemoryStream();
-        var s = new MemoizedStream(parent, parent.Length, null, memoized);
+        var s = new MemoizedStream(parent, parent.Length, null, memoized, this.pool);
 
         Assert.AreEqual(parent.Length, s.Length);
         Assert.AreEqual(parent.Position, s.Position);
@@ -53,7 +56,7 @@ public sealed class MemoizedStreamTests
 
         var parent = new MemoryStream(expected);
         var memoized = new MemoryStream();
-        var s = new MemoizedStream(parent, parent.Length, null, memoized);
+        var s = new MemoizedStream(parent, parent.Length, null, memoized, this.pool);
 
         Assert.AreEqual(parent.Length, s.Length);
         Assert.AreEqual(parent.Position, s.Position);
@@ -83,7 +86,7 @@ public sealed class MemoizedStreamTests
 
         var parent = new MemoryStream(expected);
         var memoized = new MemoryStream();
-        var s = new MemoizedStream(parent, parent.Length, null, memoized);
+        var s = new MemoizedStream(parent, parent.Length, null, memoized, this.pool);
 
         Assert.AreEqual(parent.Length, s.Length);
         Assert.AreEqual(parent.Position, s.Position);
@@ -113,7 +116,7 @@ public sealed class MemoizedStreamTests
 
         var parent = new MemoryStream(expected);
         var memoized = new MemoryStream();
-        var s = new MemoizedStream(parent, parent.Length, null, memoized);
+        var s = new MemoizedStream(parent, parent.Length, null, memoized, this.pool);
 
         Assert.AreEqual(parent.Length, s.Length);
         Assert.AreEqual(parent.Position, s.Position);
@@ -156,7 +159,7 @@ public sealed class MemoizedStreamTests
 
         var parent = new MemoryStream(expected);
         var memoized = new MemoryStream();
-        var s = new MemoizedStream(parent, parent.Length, null, memoized);
+        var s = new MemoizedStream(parent, parent.Length, null, memoized, this.pool);
 
         Assert.AreEqual(parent.Length, s.Length);
         Assert.AreEqual(parent.Position, s.Position);
@@ -211,7 +214,7 @@ public sealed class MemoizedStreamTests
 
         var parent = new MemoryStream(expected);
         var memoized = new MemoryStream();
-        var s = new MemoizedStream(parent, parent.Length, null, memoized);
+        var s = new MemoizedStream(parent, parent.Length, null, memoized, this.pool);
 
         Assert.AreEqual(parent.Length, s.Length);
         Assert.AreEqual(parent.Position, s.Position);
@@ -241,7 +244,7 @@ public sealed class MemoizedStreamTests
 
         var parent = new MemoryStream(expected);
         var memoized = new MemoryStream();
-        var s = new MemoizedStream(parent, parent.Length, null, memoized);
+        var s = new MemoizedStream(parent, parent.Length, null, memoized, this.pool);
 
         Assert.AreEqual(parent.Length, s.Length);
         Assert.AreEqual(parent.Position, s.Position);
@@ -271,7 +274,7 @@ public sealed class MemoizedStreamTests
 
         var parent = new MemoryStream(expected);
         var memoized = new MemoryStream();
-        var s = new MemoizedStream(parent, parent.Length, null, memoized);
+        var s = new MemoizedStream(parent, parent.Length, null, memoized, this.pool);
 
         Assert.AreEqual(parent.Length, s.Length);
         Assert.AreEqual(parent.Position, s.Position);
@@ -301,7 +304,7 @@ public sealed class MemoizedStreamTests
 
         var parent = new MemoryStream(expected);
         var memoized = new MemoryStream();
-        var s = new MemoizedStream(parent, parent.Length, null, memoized);
+        var s = new MemoizedStream(parent, parent.Length, null, memoized, this.pool);
 
         Assert.AreEqual(parent.Length, s.Length);
         Assert.AreEqual(parent.Position, s.Position);
@@ -344,7 +347,7 @@ public sealed class MemoizedStreamTests
 
         var parent = new MemoryStream(expected);
         var memoized = new MemoryStream();
-        var s = new MemoizedStream(parent, parent.Length, null, memoized);
+        var s = new MemoizedStream(parent, parent.Length, null, memoized, this.pool);
 
         Assert.AreEqual(parent.Length, s.Length);
         Assert.AreEqual(parent.Position, s.Position);
@@ -399,7 +402,7 @@ public sealed class MemoizedStreamTests
 
         var parent = new MemoryStream(expected);
         var memoized = new MemoryStream();
-        var s = new MemoizedStream(parent, parent.Length, null, memoized);
+        var s = new MemoizedStream(parent, parent.Length, null, memoized, this.pool);
 
         Assert.AreEqual(parent.Length, s.Length);
         Assert.AreEqual(parent.Position, s.Position);
@@ -429,7 +432,7 @@ public sealed class MemoizedStreamTests
 
         var parent = new MemoryStream(expected);
         var memoized = new MemoryStream();
-        var s = new MemoizedStream(parent, parent.Length, null, memoized);
+        var s = new MemoizedStream(parent, parent.Length, null, memoized, this.pool);
 
         Assert.AreEqual(parent.Length, s.Length);
         Assert.AreEqual(parent.Position, s.Position);
@@ -459,7 +462,7 @@ public sealed class MemoizedStreamTests
 
         var parent = new MemoryStream(expected);
         var memoized = new MemoryStream();
-        var s = new MemoizedStream(parent, parent.Length, null, memoized);
+        var s = new MemoizedStream(parent, parent.Length, null, memoized, this.pool);
 
         Assert.AreEqual(parent.Length, s.Length);
         Assert.AreEqual(parent.Position, s.Position);
@@ -489,7 +492,7 @@ public sealed class MemoizedStreamTests
 
         var parent = new MemoryStream(expected);
         var memoized = new MemoryStream();
-        var s = new MemoizedStream(parent, parent.Length, null, memoized);
+        var s = new MemoizedStream(parent, parent.Length, null, memoized, this.pool);
 
         Assert.AreEqual(parent.Length, s.Length);
         Assert.AreEqual(parent.Position, s.Position);
@@ -532,7 +535,7 @@ public sealed class MemoizedStreamTests
 
         var parent = new MemoryStream(expected);
         var memoized = new MemoryStream();
-        var s = new MemoizedStream(parent, parent.Length, null, memoized);
+        var s = new MemoizedStream(parent, parent.Length, null, memoized, this.pool);
 
         Assert.AreEqual(parent.Length, s.Length);
         Assert.AreEqual(parent.Position, s.Position);

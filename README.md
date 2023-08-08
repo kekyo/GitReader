@@ -574,6 +574,9 @@ Apache-v2
 
 ## History
 
+* 1.2.0:
+  * Added `Repository.getCurrentHead()` function on F# interface.
+  * Uses ArrayPool on both netcoreapp and netstandard2.1.
 * 1.1.0:
   * Fixed causing path not found exception when lack these directories.
   * Added debugger display attribute on some types.

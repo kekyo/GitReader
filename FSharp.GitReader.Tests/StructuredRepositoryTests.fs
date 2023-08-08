@@ -22,7 +22,8 @@ type public StructuredRepositoryTests() =
     member _.GetCurrentHead() = task {
         use! repository = Repository.Factory.openStructured(
             RepositoryTestsSetUp.BasePath)
-        do! verify(repository.Head)
+        let head = repository.getCurrentHead() |> unwrapOption
+        do! verify(head)
     }
 
     [<Test>]
@@ -39,7 +40,7 @@ type public StructuredRepositoryTests() =
         use! repository = Repository.Factory.openStructured(
             RepositoryTestsSetUp.BasePath)
         let! commit = repository.getCommit(
-            "0000000000000000000000000000000000000000")
+            "0000000000000000000000000000000000000000") |> unwrapOptionAsy
         do! verify(commit)
     }
 

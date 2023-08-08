@@ -808,7 +808,7 @@ internal static class RepositoryAccessor
             }
 
             var ms = new MemoryStream();
-            await streamResult.Stream.CopyToAsync(ms, 4096, ct);
+            await streamResult.Stream.CopyToAsync(ms, 4096, repository.pool, ct);
 
             var buffer = ms.ToArray();
 

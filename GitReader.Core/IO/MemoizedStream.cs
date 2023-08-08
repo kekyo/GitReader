@@ -23,19 +23,22 @@ internal sealed class MemoizedStream : Stream
 {
     private const int memoizeToFileSize = 1024 * 1024;
 
-    private readonly BufferPoolBuffer temporaryBuffer = BufferPool.Take(memoizeToFileSize);
+    private readonly BufferPoolBuffer temporaryBuffer;
 
     private Stream parent;
     private Stream memoized;
     private TemporaryFile? temporaryFile;
 
     internal MemoizedStream(
-        Stream parent, long parentLength, TemporaryFile? temporaryFile, Stream memoized)
+        Stream parent, long parentLength,
+        TemporaryFile? temporaryFile, Stream memoized,
+        BufferPool pool)
     {
         this.parent = parent;
         this.Length = parentLength;
         this.temporaryFile = temporaryFile;
         this.memoized = memoized;
+        this.temporaryBuffer = pool.Take(memoizeToFileSize);
     }
 
     public override bool CanRead =>
@@ -306,27 +309,27 @@ internal sealed class MemoizedStream : Stream
 
 #if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
     public static async ValueTask<MemoizedStream> CreateAsync(
-        Stream parent, long parentLength, CancellationToken ct)
+        Stream parent, long parentLength, BufferPool pool, CancellationToken ct)
 #else
     public static async Task<MemoizedStream> CreateAsync(
-        Stream parent, long parentLength, CancellationToken ct)
+        Stream parent, long parentLength, BufferPool pool, CancellationToken ct)
 #endif
     {
         if (parentLength >= memoizeToFileSize)
         {
             var temporaryFile = TemporaryFile.CreateFile();
-            return new(parent, parentLength, temporaryFile, temporaryFile.Stream);
+            return new(parent, parentLength, temporaryFile, temporaryFile.Stream, pool);
         }
         else if (parentLength < 0)
         {
             var ms = new MemoryStream();
-            await parent.CopyToAsync(ms, 65536, ct);
+            await parent.CopyToAsync(ms, 65536, pool, ct);
             ms.Position = 0;
-            return new(ms, ms.Length, null, ms);
+            return new(ms, ms.Length, null, ms, pool);
         }
         else
         {
-            return new(parent, parentLength, null, new MemoryStream((int)parentLength));
+            return new(parent, parentLength, null, new MemoryStream((int)parentLength), pool);
         }
     }
 }

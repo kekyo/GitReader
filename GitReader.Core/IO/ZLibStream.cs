@@ -19,17 +19,17 @@ internal static class ZLibStream
 {
 #if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
     public static async ValueTask<Stream> CreateAsync(
-        Stream parent, CancellationToken ct)
+        Stream parent, BufferPool pool, CancellationToken ct)
 #else
     public static async Task<Stream> CreateAsync(
-        Stream parent, CancellationToken ct)
+        Stream parent, BufferPool pool, CancellationToken ct)
 #endif
     {
         void Throw(int step) =>
             throw new InvalidDataException(
                 $"Could not parse zlib stream. Step={step}");
 
-        using var buffer = BufferPool.Take(2);
+        using var buffer = pool.Take(2);
 
 #if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
         var read = parent is IValueTaskStream vts ?
