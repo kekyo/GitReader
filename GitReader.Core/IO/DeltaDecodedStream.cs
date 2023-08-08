@@ -611,10 +611,12 @@ internal sealed class DeltaDecodedStream : Stream
 
 #if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
     public static async ValueTask<DeltaDecodedStream> CreateAsync(
-        Stream baseObjectStream, Stream deltaStream, CancellationToken ct)
+        Stream baseObjectStream, Stream deltaStream,
+        BufferPool pool, CancellationToken ct)
 #else
     public static async Task<DeltaDecodedStream> CreateAsync(
-        Stream baseObjectStream, Stream deltaStream, CancellationToken ct)
+        Stream baseObjectStream, Stream deltaStream,
+        BufferPool pool, CancellationToken ct)
 #endif
     {
         void Throw(int step) =>
@@ -622,7 +624,7 @@ internal sealed class DeltaDecodedStream : Stream
                 $"Could not parse the object. Step={step}");
 
         var preloadIndex = 0;
-        using var preloadBuffer = BufferPool.Take(preloadBufferSize);
+        using var preloadBuffer = pool.Take(preloadBufferSize);
 
         var read = await deltaStream.ReadAsync(preloadBuffer, 0, preloadBuffer.Length, ct);
         if (read == 0)
@@ -651,7 +653,7 @@ internal sealed class DeltaDecodedStream : Stream
         }
 
         return new(
-            await MemoizedStream.CreateAsync(baseObjectStream, (long)baseObjectLength, ct),
+            await MemoizedStream.CreateAsync(baseObjectStream, (long)baseObjectLength, pool, ct),
             deltaStream,
             preloadBuffer.Detach(), preloadIndex, read, (long)decodedObjectLength);
     }

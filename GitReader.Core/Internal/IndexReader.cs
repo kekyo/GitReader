@@ -33,10 +33,10 @@ internal static class IndexReader
 
 #if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
     public static async ValueTask<Dictionary<Hash, ObjectEntry>> ReadIndexAsync(
-        string indexPath, CancellationToken ct)
+        string indexPath, BufferPool pool, CancellationToken ct)
 #else
     public static async Task<Dictionary<Hash, ObjectEntry>> ReadIndexAsync(
-        string indexPath, CancellationToken ct)
+        string indexPath, BufferPool pool, CancellationToken ct)
 #endif
     {
         void Throw(int step) =>
@@ -46,7 +46,7 @@ internal static class IndexReader
         using var fs = new FileStream(
             indexPath, FileMode.Open, FileAccess.Read, FileShare.Read, 65536, true);
 
-        using var header = BufferPool.Take(8);
+        using var header = pool.Take(8);
         var read = await fs.ReadAsync(header, 0, header.Length, ct);
         if (read != header.Length)
         {
@@ -69,7 +69,7 @@ internal static class IndexReader
         }
 
         // Skip fanout table.
-        using var fanoutTableBuffer = BufferPool.Take(256 * 4);
+        using var fanoutTableBuffer = pool.Take(256 * 4);
         read = await fs.ReadAsync(fanoutTableBuffer, 0, fanoutTableBuffer.Length, ct);
         if (read != fanoutTableBuffer.Length)
         {
@@ -90,7 +90,7 @@ internal static class IndexReader
 
         // Read hash table.
         var sha1List = new Hash[objectCount];
-        using var hashTableBuffer = BufferPool.Take(hashTableBufferCount * Hash.Size);
+        using var hashTableBuffer = pool.Take(hashTableBufferCount * Hash.Size);
 
         for (var index = 0; index < objectCount; )
         {
@@ -103,7 +103,7 @@ internal static class IndexReader
 
             for (var i = 0; i < read; i += Hash.Size)
             {
-                using var buffer = BufferPool.Take(Hash.Size);
+                using var buffer = pool.Take(Hash.Size);
                 Array.Copy(hashTableBuffer, i, buffer, 0, buffer.Length);
 
                 // (Copied, made safer buffer pooled array)
@@ -113,7 +113,7 @@ internal static class IndexReader
         }
 
         // Read CRC32 table.
-        using var crc32TableBuffer = BufferPool.Take((int)objectCount * 4);
+        using var crc32TableBuffer = pool.Take((int)objectCount * 4);
         read = await fs.ReadAsync(crc32TableBuffer, 0, crc32TableBuffer.Length, ct);
         if (read != crc32TableBuffer.Length)
         {
@@ -121,7 +121,7 @@ internal static class IndexReader
         }
 
         // Read offset table.
-        using var offsetTableBuffer = BufferPool.Take((int)objectCount * 4);
+        using var offsetTableBuffer = pool.Take((int)objectCount * 4);
         read = await fs.ReadAsync(offsetTableBuffer, 0, offsetTableBuffer.Length, ct);
         if (read != offsetTableBuffer.Length)
         {
@@ -151,7 +151,7 @@ internal static class IndexReader
         // Read large offset table.
         if (largeOffsetOffset.Count >= 1)
         {
-            using var largeOffsetTableBuffer = BufferPool.Take(largeOffsetOffset.Count * 8);
+            using var largeOffsetTableBuffer = pool.Take(largeOffsetOffset.Count * 8);
             read = await fs.ReadAsync(largeOffsetTableBuffer, 0, largeOffsetTableBuffer.Length, ct);
             if (read != largeOffsetTableBuffer.Length)
             {

@@ -620,10 +620,10 @@ internal static class Utilities
 
 #if NET35
     public static Task CopyToAsync(
-        this Stream from, Stream to, int bufferSize, CancellationToken ct) =>
+        this Stream from, Stream to, int bufferSize, BufferPool pool, CancellationToken ct) =>
         Task.Factory.StartNew(() =>
         {
-            using var buffer = BufferPool.Take(bufferSize);
+            using var buffer = pool.Take(bufferSize);
 
             while (true)
             {
@@ -640,6 +640,10 @@ internal static class Utilities
                 to.Write(buffer, 0, read);
             }
         }, ct);
+#else
+    public static Task CopyToAsync(
+        this Stream from, Stream to, int bufferSize, BufferPool pool, CancellationToken ct) =>
+        from.CopyToAsync(to, bufferSize, ct);
 #endif
 
     public static int GetProcessId() =>

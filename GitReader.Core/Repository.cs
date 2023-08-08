@@ -17,6 +17,7 @@ namespace GitReader;
 
 public abstract class Repository : IDisposable
 {
+    internal BufferPool pool = new();
     internal FileStreamCache fileStreamCache = new();
     internal ObjectAccessor objectAccessor;
     internal ReadOnlyDictionary<string, string> remoteUrls = null!;
@@ -26,7 +27,7 @@ public abstract class Repository : IDisposable
         string gitPath)
     {
         this.GitPath = gitPath;
-        this.objectAccessor = new(this.fileStreamCache, gitPath);
+        this.objectAccessor = new(this.pool, this.fileStreamCache, gitPath);
     }
 
     public void Dispose()

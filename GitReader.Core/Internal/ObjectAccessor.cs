@@ -46,6 +46,7 @@ internal sealed class ObjectAccessor : IDisposable
         }
     }
 
+    private readonly BufferPool pool;
     private readonly FileStreamCache fileStreamCache;
     private readonly string objectsBasePath;
     private readonly string packedBasePath;
@@ -59,8 +60,9 @@ internal sealed class ObjectAccessor : IDisposable
 #endif
 
     public ObjectAccessor(
-        FileStreamCache fileStreamCache, string gitPath)
+        BufferPool pool, FileStreamCache fileStreamCache, string gitPath)
     {
+        this.pool = pool;
         this.fileStreamCache = fileStreamCache;
         this.objectsBasePath = Utilities.Combine(
             gitPath,
@@ -121,9 +123,9 @@ internal sealed class ObjectAccessor : IDisposable
 
         try
         {
-            var zlibStream = await ZLibStream.CreateAsync(fs, ct);
+            var zlibStream = await ZLibStream.CreateAsync(fs, this.pool, ct);
 
-            using var preloadBuffer = BufferPool.Take(preloadBufferSize);
+            using var preloadBuffer = this.pool.Take(preloadBufferSize);
             var read = await zlibStream.ReadAsync(
                 preloadBuffer, 0, preloadBuffer.Length, ct);
 
@@ -218,7 +220,9 @@ internal sealed class ObjectAccessor : IDisposable
         }
 
         var dict = await IndexReader.ReadIndexAsync(
-            Utilities.Combine(this.packedBasePath, indexFileRelativePath), ct);
+            Utilities.Combine(this.packedBasePath, indexFileRelativePath),
+            this.pool,
+            ct);
         cachedEntry = new(
             Utilities.Combine(
                 Utilities.GetDirectoryPath(indexFileRelativePath),
@@ -452,7 +456,7 @@ internal sealed class ObjectAccessor : IDisposable
         {
             fs.Seek((long)offset, SeekOrigin.Begin);
 
-            using var preloadBuffer = BufferPool.Take(preloadBufferSize);
+            using var preloadBuffer = this.pool.Take(preloadBufferSize);
             var read = await fs.ReadAsync(preloadBuffer, 0, preloadBuffer.Length, ct);
             if (read == 0)
             {
@@ -494,7 +498,7 @@ internal sealed class ObjectAccessor : IDisposable
                             fs);
 
                         var (zlibStream, objectEntry) = await Utilities.Join(
-                            ZLibStream.CreateAsync(stream, ct),
+                            ZLibStream.CreateAsync(stream, this.pool, ct),
                             this.OpenFromPackedFileAsync(packedFilePath, referenceOffset, disableCaching, ct));
 
                         try
@@ -502,11 +506,12 @@ internal sealed class ObjectAccessor : IDisposable
                             var deltaDecodedStream = await DeltaDecodedStream.CreateAsync(
                                 objectEntry.Stream,
                                 new RangedStream(zlibStream, (long)objectSize),
+                                this.pool,
                                 ct);
 
                             var wrappedStream = this.AddToCache(
                                 packedFilePath, offset, objectEntry.Type,
-                                await MemoizedStream.CreateAsync(deltaDecodedStream, -1, ct),
+                                await MemoizedStream.CreateAsync(deltaDecodedStream, -1, this.pool, ct),
                                 disableCaching);
 
                             return new(wrappedStream, objectEntry.Type);
@@ -526,7 +531,7 @@ internal sealed class ObjectAccessor : IDisposable
                             Throw(6);
                         }
 
-                        using var hashCode = BufferPool.Take(20);
+                        using var hashCode = this.pool.Take(20);
                         Array.Copy(preloadBuffer, preloadIndex, hashCode, 0, hashCode.Length);
                         preloadIndex += hashCode.Length;
                         var referenceHash = new Hash(hashCode);
@@ -536,7 +541,7 @@ internal sealed class ObjectAccessor : IDisposable
                             fs);
 
                         var (zlibStream, objectEntry) = await Utilities.Join(
-                            ZLibStream.CreateAsync(stream, ct),
+                            ZLibStream.CreateAsync(stream, this.pool, ct),
                             this.OpenAsync(referenceHash, disableCaching, ct));
 
                         try
@@ -549,11 +554,12 @@ internal sealed class ObjectAccessor : IDisposable
                             var deltaDecodedStream = await DeltaDecodedStream.CreateAsync(
                                 oe.Stream,
                                 new RangedStream(zlibStream, (long)objectSize),
+                                this.pool,
                                 ct);
 
                             var wrappedStream = this.AddToCache(
                                 packedFilePath, offset, oe.Type,
-                                await MemoizedStream.CreateAsync(deltaDecodedStream, -1, ct),
+                                await MemoizedStream.CreateAsync(deltaDecodedStream, -1, this.pool, ct),
                                 disableCaching);
 
                             return new(wrappedStream, oe.Type);
@@ -575,12 +581,12 @@ internal sealed class ObjectAccessor : IDisposable
                             new PreloadedStream(preloadBuffer.Detach(), preloadIndex, read),
                             fs);
 
-                        var zlibStream = await ZLibStream.CreateAsync(stream, ct);
+                        var zlibStream = await ZLibStream.CreateAsync(stream, this.pool, ct);
                         var objectType = (ObjectTypes)(int)type;
 
                         var wrappedStream = this.AddToCache(
                             packedFilePath, offset, objectType,
-                            await MemoizedStream.CreateAsync(zlibStream, (long)objectSize, ct),
+                            await MemoizedStream.CreateAsync(zlibStream, (long)objectSize, this.pool, ct),
                             disableCaching);
 
                         return new(wrappedStream, objectType);

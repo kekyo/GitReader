@@ -8,7 +8,6 @@
 ////////////////////////////////////////////////////////////////////////////
 
 using NUnit.Framework;
-using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -21,7 +20,7 @@ public sealed class PreloadedStreamTests
     {
         var expected = new byte[] { 0, 1, 2 };
 
-        var s = new PreloadedStream(expected, 0, expected.Length);
+        var s = new PreloadedStream(new(null, expected), 0, expected.Length);
 
         var b = new byte[3];
         var read = s.Read(b, 0, b.Length);
@@ -35,7 +34,7 @@ public sealed class PreloadedStreamTests
     {
         var expected = new byte[] { 0, 1, 2 };
 
-        var s = new PreloadedStream(expected, 0, expected.Length);
+        var s = new PreloadedStream(new(null, expected), 0, expected.Length);
 
         var b = new byte[4];
         var read = s.Read(b, 0, b.Length);
@@ -49,7 +48,7 @@ public sealed class PreloadedStreamTests
     {
         var expected = new byte[] { 0, 1, 2 };
 
-        var s = new PreloadedStream(expected, 0, expected.Length);
+        var s = new PreloadedStream(new(null, expected), 0, expected.Length);
 
         var b = new byte[2];
         var read = s.Read(b, 0, b.Length);
@@ -63,7 +62,7 @@ public sealed class PreloadedStreamTests
     {
         var expected = new byte[] { 0, 1, 2 };
 
-        var s = new PreloadedStream(expected, 1, expected.Length);
+        var s = new PreloadedStream(new(null, expected), 1, expected.Length);
 
         var b = new byte[3];
         var read = s.Read(b, 0, b.Length);
@@ -77,7 +76,7 @@ public sealed class PreloadedStreamTests
     {
         var expected = new byte[] { 0, 1, 2 };
 
-        var s = new PreloadedStream(expected, 0, expected.Length);
+        var s = new PreloadedStream(new(null, expected), 0, expected.Length);
 
         var b = new byte[2];
         var read1 = s.Read(b, 0, b.Length);
@@ -98,7 +97,7 @@ public sealed class PreloadedStreamTests
     {
         var expected = new byte[] { 0, 1, 2 };
 
-        var s = new PreloadedStream(expected, 0, expected.Length);
+        var s = new PreloadedStream(new(null, expected), 0, expected.Length);
 
         var b = new byte[3];
         var read = await s.ReadAsync(b, 0, b.Length, default);
@@ -112,7 +111,7 @@ public sealed class PreloadedStreamTests
     {
         var expected = new byte[] { 0, 1, 2 };
 
-        var s = new PreloadedStream(expected, 0, expected.Length);
+        var s = new PreloadedStream(new(null, expected), 0, expected.Length);
 
         var b = new byte[4];
         var read = await s.ReadAsync(b, 0, b.Length, default);
@@ -126,7 +125,7 @@ public sealed class PreloadedStreamTests
     {
         var expected = new byte[] { 0, 1, 2 };
 
-        var s = new PreloadedStream(expected, 0, expected.Length);
+        var s = new PreloadedStream(new(null, expected), 0, expected.Length);
 
         var b = new byte[2];
         var read = await s.ReadAsync(b, 0, b.Length, default);
@@ -140,7 +139,7 @@ public sealed class PreloadedStreamTests
     {
         var expected = new byte[] { 0, 1, 2 };
 
-        var s = new PreloadedStream(expected, 1, expected.Length);
+        var s = new PreloadedStream(new(null, expected), 1, expected.Length);
 
         var b = new byte[3];
         var read = await s.ReadAsync(b, 0, b.Length, default);
@@ -154,7 +153,7 @@ public sealed class PreloadedStreamTests
     {
         var expected = new byte[] { 0, 1, 2 };
 
-        var s = new PreloadedStream(expected, 0, expected.Length);
+        var s = new PreloadedStream(new(null, expected), 0, expected.Length);
 
         var b = new byte[2];
         var read1 = await s.ReadAsync(b, 0, b.Length, default);
@@ -175,7 +174,7 @@ public sealed class PreloadedStreamTests
     {
         var expected = new byte[] { 0, 1, 2 };
 
-        var s = new PreloadedStream(expected, 0, expected.Length);
+        var s = new PreloadedStream(new(null, expected), 0, expected.Length);
 
         var b = new byte[3];
         var read = await s.ReadValueTaskAsync(b, 0, b.Length, default);
@@ -189,7 +188,7 @@ public sealed class PreloadedStreamTests
     {
         var expected = new byte[] { 0, 1, 2 };
 
-        var s = new PreloadedStream(expected, 0, expected.Length);
+        var s = new PreloadedStream(new(null, expected), 0, expected.Length);
 
         var b = new byte[4];
         var read = await s.ReadValueTaskAsync(b, 0, b.Length, default);
@@ -203,7 +202,7 @@ public sealed class PreloadedStreamTests
     {
         var expected = new byte[] { 0, 1, 2 };
 
-        var s = new PreloadedStream(expected, 0, expected.Length);
+        var s = new PreloadedStream(new(null, expected), 0, expected.Length);
 
         var b = new byte[2];
         var read = await s.ReadValueTaskAsync(b, 0, b.Length, default);
@@ -217,7 +216,7 @@ public sealed class PreloadedStreamTests
     {
         var expected = new byte[] { 0, 1, 2 };
 
-        var s = new PreloadedStream(expected, 1, expected.Length);
+        var s = new PreloadedStream(new(null, expected), 1, expected.Length);
 
         var b = new byte[3];
         var read = await s.ReadValueTaskAsync(b, 0, b.Length, default);
@@ -231,7 +230,7 @@ public sealed class PreloadedStreamTests
     {
         var expected = new byte[] { 0, 1, 2 };
 
-        var s = new PreloadedStream(expected, 0, expected.Length);
+        var s = new PreloadedStream(new(null, expected), 0, expected.Length);
 
         var b = new byte[2];
         var read1 = await s.ReadValueTaskAsync(b, 0, b.Length, default);
