@@ -20,11 +20,12 @@ internal struct BufferPoolBuffer : IDisposable
     private readonly BufferPool? pool; 
     private byte[] buffer;
 
-    internal BufferPoolBuffer(BufferPool? pool, byte[] buffer)
+    internal BufferPoolBuffer(
+        BufferPool? pool, byte[] buffer, int length)
     {
         this.pool = pool;
         this.buffer = buffer;
-        this.Length = buffer.Length;
+        this.Length = length;
     }
 
     public void Dispose() =>
@@ -34,12 +35,20 @@ internal struct BufferPoolBuffer : IDisposable
 
     public byte this[int index]
     {
-        get => this.buffer[index];
-        set => this.buffer[index] = value;
+        get
+        {
+            Debug.Assert(index < this.Length);
+            return this.buffer[index];
+        }
+        set
+        {
+            Debug.Assert(index < this.Length);
+            this.buffer[index] = value;
+        }
     }
 
     public DetachedBufferPoolBuffer Detach() =>
-        new(this.pool, Interlocked.Exchange(ref this.buffer, null!));
+        new(this.pool, Interlocked.Exchange(ref this.buffer, null!), this.Length);
 
     public static implicit operator byte[](BufferPoolBuffer buffer) =>
         buffer.buffer;
@@ -50,20 +59,35 @@ internal readonly struct DetachedBufferPoolBuffer
 {
     private readonly BufferPool? pool;
     private readonly byte[] buffer;
+    private readonly int length;
 
-    internal DetachedBufferPoolBuffer(BufferPool? pool, byte[] buffer)
+    internal DetachedBufferPoolBuffer(
+        BufferPool? pool, byte[] buffer, int length)
     {
         this.pool = pool;
         this.buffer = buffer;
+        this.length = length;
     }
 
     public static implicit operator BufferPoolBuffer(DetachedBufferPoolBuffer buffer) =>
-        new(buffer.pool, buffer.buffer);
+        new(buffer.pool, buffer.buffer, buffer.length);
 }
 
 [DebuggerStepThrough]
 internal sealed class BufferPool
 {
+#if NETCOREAPP || NETSTANDARD2_1
+    public BufferPoolBuffer Take(int size) =>
+        new(this, System.Buffers.ArrayPool<byte>.Shared.Rent(size), size);
+
+    internal void Release(ref byte[] buffer)
+    {
+        if (Interlocked.Exchange(ref buffer, null!) is { } b)
+        {
+            System.Buffers.ArrayPool<byte>.Shared.Return(b);
+        }
+    }
+#else
     // Tried and tested, but simple strategies were the fastest.
     // Probably because each buffer table and lookup fragments on the CPU cache.
 
@@ -119,7 +143,7 @@ internal sealed class BufferPool
     public BufferPoolBuffer Take(int size)
     {
         var bufferHolder = this.bufferHolders[size % BufferHolders];
-        return new(this, bufferHolder.Take(size));
+        return new(this, bufferHolder.Take(size), size);
     }
 
     internal void Release(ref byte[] buffer)
@@ -130,4 +154,5 @@ internal sealed class BufferPool
             bufferHolder.Release(b);
         }
     }
+#endif
 }
