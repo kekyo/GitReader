@@ -7,7 +7,10 @@
 //
 ////////////////////////////////////////////////////////////////////////////
 
+using GitReader.IO;
+using GitReader.Structures;
 using NUnit.Framework;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -207,9 +210,9 @@ public sealed class RepositoryTests
 
         await Verifier.Verify(repository.RemoteUrls);
     }
-    
+
     [Test]
-    public async Task GetStashes()  
+    public async Task GetStashes()
     {
         using var repository = await Repository.Factory.OpenPrimitiveAsync(
             RepositoryTestsSetUp.BasePath);
@@ -218,17 +221,38 @@ public sealed class RepositoryTests
 
         await Verifier.Verify(stashes.OrderByDescending(stash => stash.Committer.Date).ToArray());
     }
-    
+
     [Test]
-    public async Task GetHeadReflog()  
+    public async Task GetHeadReflog()
     {
         using var repository = await Repository.Factory.OpenPrimitiveAsync(
             RepositoryTestsSetUp.BasePath);
-        
+
         var headRef = await repository.GetCurrentHeadReferenceAsync();
         var reflogs = await repository.GetRelatedReflogsAsync(headRef!.Value);
 
         await Verifier.Verify(reflogs.OrderByDescending(reflog => reflog.Committer.Date).ToArray());
+    }
+
+    [Test]
+    public async Task CacheFileStreamDisposeProperly()
+    {
+        var repositoryPath = RepositoryTestsSetUp.GetBasePath("test2");
+
+        using (var repository = await Repository.Factory.OpenStructureAsync(repositoryPath))
+        {
+            // simulate work with repository
+
+            Assert.NotNull(repository.Head);
+            Assert.AreEqual("main", repository.Head!.Name);
+        }
+
+        var path = Path.Combine(repositoryPath, ".git", "refs", "heads", "main");
+
+        // simulate commiting to main branch
+        var fileStream = new FileStream(path, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite, 10, true);
+
+        fileStream.Dispose();
     }
 
     [Test]
@@ -241,8 +265,8 @@ public sealed class RepositoryTests
             "1205dc34ce48bda28fc543daaf9525a9bb6e6d10");
 
         var body = await new StreamReader(
-            result.Stream, Encoding.UTF8, true).
-            ReadToEndAsync();
+            result.Stream, Encoding.UTF8, true)
+            .ReadToEndAsync();
 
         await Verifier.Verify(new { Type = result.Type, Body = body });
     }

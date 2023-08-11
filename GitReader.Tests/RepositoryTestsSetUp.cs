@@ -49,6 +49,8 @@ public sealed class RepositoryTestsSetUp
     public static readonly string BasePath =
         Path.Combine("tests", $"{DateTime.Now:yyyyMMdd_HHmmss}");
 
+    public static string GetBasePath(string artifact) => Path.Combine(BasePath, artifact);
+
     static RepositoryTestsSetUp()
     {
         VerifierSettings.DontScrubDateTimes();
@@ -69,6 +71,7 @@ public sealed class RepositoryTestsSetUp
             }
 
             ZipFile.ExtractToDirectory("artifacts/test1.zip", BasePath);
+            ZipFile.ExtractToDirectory("artifacts/test2.zip", GetBasePath("test2"));
         }
     }
 }

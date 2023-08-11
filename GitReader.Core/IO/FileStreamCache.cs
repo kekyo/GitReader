@@ -57,7 +57,7 @@ internal sealed class FileStreamCache : IDisposable
         }
     }
 
-    private static readonly int MaxReservedStreams = Environment.ProcessorCount * 2;
+    internal static readonly int MaxReservedStreams = Environment.ProcessorCount * 2;
 
     private readonly Dictionary<string, LinkedList<CachedStream>> reserved = new();
     private readonly LinkedList<CachedStream> streamsLRU = new();
