@@ -53,9 +53,14 @@ type public RepositoryTestsSetUp() =
                 Directory.CreateDirectory(basePath) |> ignore
             with
             | _ -> ()
-        ZipFile.ExtractToDirectory(
-            "artifacts/test1.zip", basePath)
-    static member BasePath = basePath
+        Directory.EnumerateFiles(
+            "artifacts", "*.zip", SearchOption.AllDirectories)
+            |> Seq.iter (fun path ->
+                let baseName = Path.GetFileNameWithoutExtension path
+                ZipFile.ExtractToDirectory(
+                    path, RepositoryTestsSetUp.getBasePath baseName))
+    static member getBasePath(artifact: string) =
+        Path.Combine(basePath, artifact)
 
 [<AutoOpen>]
 module public Utilities =

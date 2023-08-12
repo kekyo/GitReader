@@ -22,7 +22,7 @@ type public PrimitiveRepositoryTests() =
     [<Test>]
     member _.GetCommitDirectly() = task {
         use! repository = Repository.Factory.openPrimitive(
-            RepositoryTestsSetUp.BasePath)
+            RepositoryTestsSetUp.getBasePath("test1"))
         let! commit = repository.getCommit(
             "1205dc34ce48bda28fc543daaf9525a9bb6e6d10") |> unwrapOptionAsy
         do! verify(commit)
@@ -31,7 +31,7 @@ type public PrimitiveRepositoryTests() =
     [<Test>]
     member _.CommitNotFound() = task {
         use! repository = Repository.Factory.openPrimitive(
-            RepositoryTestsSetUp.BasePath)
+            RepositoryTestsSetUp.getBasePath("test1"))
         let! commit = repository.getCommit(
             "0000000000000000000000000000000000000000") |> unwrapOptionAsy
         do! verify(commit)
@@ -40,7 +40,7 @@ type public PrimitiveRepositoryTests() =
     [<Test>]
     member _.GetCurrentHead() = task {
         use! repository = Repository.Factory.openPrimitive(
-            RepositoryTestsSetUp.BasePath)
+            RepositoryTestsSetUp.getBasePath("test1"))
         let! headref = repository.getCurrentHeadReference() |> unwrapOptionAsy
         let! commit = repository.getCommit(headref) |> unwrapOptionAsy
         do! verify(commit)
@@ -49,7 +49,7 @@ type public PrimitiveRepositoryTests() =
     [<Test>]
     member _.GetBranchHead() = task {
         use! repository = Repository.Factory.openPrimitive(
-            RepositoryTestsSetUp.BasePath)
+            RepositoryTestsSetUp.getBasePath("test1"))
         let! headref = repository.getBranchHeadReference("master")
         let! commit = repository.getCommit(headref) |> unwrapOptionAsy
         do! verify(commit)
@@ -58,7 +58,7 @@ type public PrimitiveRepositoryTests() =
     [<Test>]
     member _.GetRemoteBranchHead() = task {
         use! repository = Repository.Factory.openPrimitive(
-            RepositoryTestsSetUp.BasePath)
+            RepositoryTestsSetUp.getBasePath("test1"))
         let! headref = repository.getBranchHeadReference("origin/devel")
         let! commit = repository.getCommit(headref) |> unwrapOptionAsy
         do! verify(commit)
@@ -67,7 +67,7 @@ type public PrimitiveRepositoryTests() =
     [<Test>]
     member _.GetTag() = task {
         use! repository = Repository.Factory.openPrimitive(
-            RepositoryTestsSetUp.BasePath)
+            RepositoryTestsSetUp.getBasePath("test1"))
         let! tagref = repository.getTagReference("2.0.0")
         let! tag = repository.getTag(tagref)
         do! verify(tag)
@@ -76,7 +76,7 @@ type public PrimitiveRepositoryTests() =
     [<Test>]
     member _.GetTag2() = task {
         use! repository = Repository.Factory.openPrimitive(
-            RepositoryTestsSetUp.BasePath)
+            RepositoryTestsSetUp.getBasePath("test1"))
         let! tagref = repository.getTagReference("0.9.6")
         let! tag = repository.getTag(tagref)
         do! verify(tag)
@@ -85,7 +85,7 @@ type public PrimitiveRepositoryTests() =
     [<Test>]
     member _.GetBranchHeads() = task {
         use! repository = Repository.Factory.openPrimitive(
-            RepositoryTestsSetUp.BasePath)
+            RepositoryTestsSetUp.getBasePath("test1"))
         let! branchrefs = repository.getBranchHeadReferences()
         do! verify(branchrefs |> Array.sortBy(fun br -> br.Name))
     }
@@ -93,7 +93,7 @@ type public PrimitiveRepositoryTests() =
     [<Test>]
     member _.GetRemoteBranchHeads() = task {
         use! repository = Repository.Factory.openPrimitive(
-            RepositoryTestsSetUp.BasePath)
+            RepositoryTestsSetUp.getBasePath("test1"))
         let! branchrefs = repository.getRemoteBranchHeadReferences()
         do! verify(branchrefs |> Array.sortBy(fun br -> br.Name))
     }
@@ -101,7 +101,7 @@ type public PrimitiveRepositoryTests() =
     [<Test>]
     member _.GetTags() = task {
         use! repository = Repository.Factory.openPrimitive(
-            RepositoryTestsSetUp.BasePath)
+            RepositoryTestsSetUp.getBasePath("test1"))
         let! tagrefs = repository.getTagReferences()
         let! tags = Task.WhenAll(
             tagrefs |>
@@ -112,7 +112,7 @@ type public PrimitiveRepositoryTests() =
     [<Test>]
     member _.GetTree() = task {
         use! repository = Repository.Factory.openPrimitive(
-            RepositoryTestsSetUp.BasePath)
+            RepositoryTestsSetUp.getBasePath("test1"))
         let! commit = repository.getCommit(
             "1205dc34ce48bda28fc543daaf9525a9bb6e6d10") |> unwrapOptionAsy
         let! tree = repository.getTree(commit.TreeRoot);
@@ -122,7 +122,7 @@ type public PrimitiveRepositoryTests() =
     [<Test>]
     member _.OpenBlob() = task {
         use! repository = Repository.Factory.openPrimitive(
-            RepositoryTestsSetUp.BasePath)
+            RepositoryTestsSetUp.getBasePath("test1"))
         let! commit = repository.getCommit(
             "1205dc34ce48bda28fc543daaf9525a9bb6e6d10") |> unwrapOptionAsy
         let! tree = repository.getTree(commit.TreeRoot);
@@ -135,7 +135,7 @@ type public PrimitiveRepositoryTests() =
     [<Test>]
     member _.TraverseBranchCommits() = task {
         use! repository = Repository.Factory.openPrimitive(
-            RepositoryTestsSetUp.BasePath)
+            RepositoryTestsSetUp.getBasePath("test1"))
         let! branchref = repository.getBranchHeadReference("master")
         let! commit = repository.getCommit(branchref) |> unwrapOptionAsy
         let mutable c = commit
@@ -157,7 +157,7 @@ type public PrimitiveRepositoryTests() =
     [<Test>]
     member _.GetStashes() = task {
         use! repository = Repository.Factory.openPrimitive(
-            RepositoryTestsSetUp.BasePath)
+            RepositoryTestsSetUp.getBasePath("test1"))
         let! stashes = repository.getStashes()
         return! verify(stashes |> Array.sortByDescending(fun stash -> stash.Committer.Date))
     }
@@ -165,7 +165,7 @@ type public PrimitiveRepositoryTests() =
     [<Test>]
     member _.GetHeadReflogs() = task {
         use! repository = Repository.Factory.openPrimitive(
-            RepositoryTestsSetUp.BasePath)
+            RepositoryTestsSetUp.getBasePath("test1"))
         let! headRef = repository.getCurrentHeadReference()
         let! reflogs = repository.getRelatedReflogs(headRef.Value)
         return! verify(reflogs |> Array.sortByDescending(fun reflog -> reflog.Committer.Date))
@@ -174,7 +174,7 @@ type public PrimitiveRepositoryTests() =
     [<Test>]
     member _.OpenRawObjectStream() = task {
         use! repository = Repository.Factory.openPrimitive(
-            RepositoryTestsSetUp.BasePath);
+            RepositoryTestsSetUp.getBasePath("test1"));
         use! result = repository.openRawObjectStream(
             "1205dc34ce48bda28fc543daaf9525a9bb6e6d10")
         let tr = new StreamReader(result.Stream, Encoding.UTF8, true)

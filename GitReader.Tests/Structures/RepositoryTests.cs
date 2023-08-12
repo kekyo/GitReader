@@ -22,7 +22,7 @@ public sealed class RepositoryTests
     public async Task GetCurrentHead()
     {
         using var repository = await Repository.Factory.OpenStructureAsync(
-            RepositoryTestsSetUp.BasePath);
+            RepositoryTestsSetUp.GetBasePath("test1"));
 
         await Verifier.Verify(repository.Head);
     }
@@ -31,7 +31,7 @@ public sealed class RepositoryTests
     public async Task GetCommitDirectly()
     {
         using var repository = await Repository.Factory.OpenStructureAsync(
-            RepositoryTestsSetUp.BasePath);
+            RepositoryTestsSetUp.GetBasePath("test1"));
 
         var commit = await repository.GetCommitAsync(
             "1205dc34ce48bda28fc543daaf9525a9bb6e6d10");
@@ -43,7 +43,7 @@ public sealed class RepositoryTests
     public async Task CommitNotFound()
     {
         using var repository = await Repository.Factory.OpenStructureAsync(
-            RepositoryTestsSetUp.BasePath);
+            RepositoryTestsSetUp.GetBasePath("test1"));
 
         var commit = await repository.GetCommitAsync(
             "0000000000000000000000000000000000000000");
@@ -55,7 +55,7 @@ public sealed class RepositoryTests
     public async Task GetBranch()
     {
         using var repository = await Repository.Factory.OpenStructureAsync(
-            RepositoryTestsSetUp.BasePath);
+            RepositoryTestsSetUp.GetBasePath("test1"));
 
         var branch = repository.Branches["master"];
         var headCommit = await branch.GetHeadCommitAsync();
@@ -67,7 +67,7 @@ public sealed class RepositoryTests
     public async Task GetRemoteBranch()
     {
         using var repository = await Repository.Factory.OpenStructureAsync(
-            RepositoryTestsSetUp.BasePath);
+            RepositoryTestsSetUp.GetBasePath("test1"));
 
         var branch = repository.Branches["origin/devel"];
 
@@ -78,7 +78,7 @@ public sealed class RepositoryTests
     public async Task GetTag()
     {
         using var repository = await Repository.Factory.OpenStructureAsync(
-            RepositoryTestsSetUp.BasePath);
+            RepositoryTestsSetUp.GetBasePath("test1"));
 
         var tag = repository.Tags["2.0.0"];
         var commit = await tag.GetCommitAsync();
@@ -90,7 +90,7 @@ public sealed class RepositoryTests
     public async Task GetTag2()
     {
         using var repository = await Repository.Factory.OpenStructureAsync(
-            RepositoryTestsSetUp.BasePath);
+            RepositoryTestsSetUp.GetBasePath("test1"));
 
         var tag = repository.Tags["0.9.6"];
         var commit = await tag.GetCommitAsync();
@@ -102,7 +102,7 @@ public sealed class RepositoryTests
     public async Task GetAnnotation()
     {
         using var repository = await Repository.Factory.OpenStructureAsync(
-            RepositoryTestsSetUp.BasePath);
+            RepositoryTestsSetUp.GetBasePath("test1"));
 
         var tag = repository.Tags["0.9.6"];
         var annotation = await tag.GetAnnotationAsync();
@@ -114,7 +114,7 @@ public sealed class RepositoryTests
     public async Task GetBranchesFromCommit()
     {
         using var repository = await Repository.Factory.OpenStructureAsync(
-            RepositoryTestsSetUp.BasePath);
+            RepositoryTestsSetUp.GetBasePath("test1"));
 
         var commit = await repository.GetCommitAsync(
             "9bb78d13405cab568d3e213130f31beda1ce21d1");
@@ -130,7 +130,7 @@ public sealed class RepositoryTests
     public async Task GetTagsFromCommit()
     {
         using var repository = await Repository.Factory.OpenStructureAsync(
-            RepositoryTestsSetUp.BasePath);
+            RepositoryTestsSetUp.GetBasePath("test1"));
 
         var commit = await repository.GetCommitAsync(
             "f64de5e3ad34528757207109e68f626bf8cc1a31");
@@ -143,7 +143,7 @@ public sealed class RepositoryTests
     public async Task GetRemoteBranchesFromCommit()
     {
         using var repository = await Repository.Factory.OpenStructureAsync(
-            RepositoryTestsSetUp.BasePath);
+            RepositoryTestsSetUp.GetBasePath("test1"));
 
         var commit = await repository.GetCommitAsync(
             "f690f0e7bf703582a1fad7e6f1c2d1586390f43d");
@@ -159,7 +159,7 @@ public sealed class RepositoryTests
     public async Task GetParentCommits()
     {
         using var repository = await Repository.Factory.OpenStructureAsync(
-            RepositoryTestsSetUp.BasePath);
+            RepositoryTestsSetUp.GetBasePath("test1"));
 
         var commit = await repository.GetCommitAsync(
             "dc45301eeb49ec94ee043755124802497d0079ec");
@@ -172,7 +172,7 @@ public sealed class RepositoryTests
     public async Task GetTreeRoot()
     {
         using var repository = await Repository.Factory.OpenStructureAsync(
-            RepositoryTestsSetUp.BasePath);
+            RepositoryTestsSetUp.GetBasePath("test1"));
 
         var commit = await repository.GetCommitAsync(
             "1205dc34ce48bda28fc543daaf9525a9bb6e6d10");
@@ -186,7 +186,7 @@ public sealed class RepositoryTests
     public async Task OpenBlob()
     {
         using var repository = await Repository.Factory.OpenStructureAsync(
-            RepositoryTestsSetUp.BasePath);
+            RepositoryTestsSetUp.GetBasePath("test1"));
 
         var commit = await repository.GetCommitAsync(
             "1205dc34ce48bda28fc543daaf9525a9bb6e6d10");
@@ -206,7 +206,7 @@ public sealed class RepositoryTests
     public async Task TraverseBranchCommits()
     {
         using var repository = await Repository.Factory.OpenStructureAsync(
-            RepositoryTestsSetUp.BasePath);
+            RepositoryTestsSetUp.GetBasePath("test1"));
 
         var branch = repository.Branches["master"];
 
@@ -228,15 +228,15 @@ public sealed class RepositoryTests
     public async Task GetRemoteUrls()
     {
         using var repository = await Repository.Factory.OpenStructureAsync(
-            RepositoryTestsSetUp.BasePath);
+            RepositoryTestsSetUp.GetBasePath("test1"));
 
         await Verifier.Verify(repository.RemoteUrls);
     }
-    
+
     [Test]
-    public async Task GetStashes()  
+    public async Task GetStashes()
     {
-        using var repository = await Repository.Factory.OpenStructureAsync(RepositoryTestsSetUp.BasePath);
+        using var repository = await Repository.Factory.OpenStructureAsync(RepositoryTestsSetUp.GetBasePath("test1"));
 
         var stashes = await Task.WhenAll(
             repository.Stashes.
@@ -245,11 +245,11 @@ public sealed class RepositoryTests
 
         await Verifier.Verify(stashes);
     }
-    
+
     [Test]
-    public async Task GetHeadReflog()  
+    public async Task GetHeadReflog()
     {
-        using var repository = await Repository.Factory.OpenStructureAsync(RepositoryTestsSetUp.BasePath);
+        using var repository = await Repository.Factory.OpenStructureAsync(RepositoryTestsSetUp.GetBasePath("test1"));
 
         var reflogs = await repository.GetHeadReflogsAsync();
 
@@ -263,5 +263,26 @@ public sealed class RepositoryTests
             }));
 
         await Verifier.Verify(results);
+    }
+
+    [Test]
+    public async Task CacheFileStreamDisposeProperly()
+    {
+        var repositoryPath = RepositoryTestsSetUp.GetBasePath("test2");
+
+        using (var repository = await Repository.Factory.OpenStructureAsync(repositoryPath))
+        {
+            // simulate work with repository
+
+            Assert.NotNull(repository.Head);
+            Assert.AreEqual("main", repository.Head!.Name);
+        }
+
+        var path = Path.Combine(repositoryPath, ".git", "refs", "heads", "main");
+
+        // simulate commiting to main branch
+        var fileStream = new FileStream(path, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite, 10, true);
+
+        fileStream.Dispose();
     }
 }
