@@ -12,21 +12,44 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace GitReader.IO;
 
 internal sealed class FileStreamCache : IDisposable
 {
-    private sealed class CachedStream : FileStream
+    private sealed class CachedStream : Stream
     {
+        // This stream is not actually closed when closed from the public interface.
+        // The real stream is finally closed when CloseExact() is called,
+        // and the timing is managed by FileStreamCache.
+
         private FileStreamCache parent;
+        private FileStream rawStream;
         internal readonly string path;
 
-        public CachedStream(FileStreamCache parent, string path) :
-            base(path, FileMode.Open, FileAccess.Read, FileShare.Read, 65536, true)
+        public CachedStream(FileStreamCache parent, string path)
         {
             this.parent = parent;
             this.path = path;
+            this.rawStream = new(
+                path, FileMode.Open, FileAccess.Read, FileShare.Read, 65536, true);
+        }
+
+        public override bool CanRead =>
+            true;
+        public override bool CanSeek =>
+            true;
+        public override bool CanWrite =>
+            false;
+
+        public override long Length =>
+            this.rawStream.Length;
+
+        public override long Position
+        {
+            get => this.rawStream.Position;
+            set => throw new NotImplementedException();
         }
 
 #if NETSTANDARD1_6
@@ -37,7 +60,8 @@ internal sealed class FileStreamCache : IDisposable
         {
             if (Interlocked.Exchange(ref this.parent, null!) is { } parent)
             {
-                parent.Release(this);
+                // Temporary (pseudo) closing, this stream will back into cache.
+                parent.Return(this);
             }
         }
 
@@ -49,12 +73,47 @@ internal sealed class FileStreamCache : IDisposable
             }
         }
 
-        public void CloseExact()
+        internal void Resurrect(FileStreamCache parent)
         {
+            Debug.Assert(this.parent == null);
+
+            // Re-enabled this stream.
+            this.parent = parent;
+        }
+
+        internal void CloseExact()
+        {
+            Debug.Assert(this.parent == null);
+            Debug.Assert(this.rawStream != null);
+
+            // Completely discards this stream.
             this.parent = null!;
             base.Dispose(true);
+            this.rawStream!.Dispose();
+            this.rawStream = null!;
             GC.SuppressFinalize(this);
         }
+
+        public override int Read(byte[] buffer, int offset, int count) =>
+            this.rawStream.Read(buffer, offset, count);
+
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
+        public override Task<int> ReadAsync(
+            byte[] buffer, int offset, int count, CancellationToken ct) =>
+            this.rawStream.ReadAsync(buffer, offset, count, ct);
+#endif
+
+        public override long Seek(long offset, SeekOrigin origin) =>
+            this.rawStream.Seek(offset, origin);
+
+        public override void SetLength(long value) =>
+             this.rawStream.SetLength(value);
+
+        public override void Write(byte[] buffer, int offset, int count) =>
+            throw new NotImplementedException();
+
+        public override void Flush() =>
+            throw new NotImplementedException();
     }
 
     internal static readonly int MaxReservedStreams = Environment.ProcessorCount * 2;
@@ -96,7 +155,7 @@ internal sealed class FileStreamCache : IDisposable
         }
     }
 
-    private void Release(CachedStream stream)
+    private void Return(CachedStream stream)
     {
         stream.Seek(0, SeekOrigin.Begin);
 
@@ -132,6 +191,8 @@ internal sealed class FileStreamCache : IDisposable
 
                 var rd = this.streamsLRU.Remove(stream);
                 Debug.Assert(rd);
+
+                stream.Resurrect(this);
 
                 return stream;
             }
