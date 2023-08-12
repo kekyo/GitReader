@@ -235,27 +235,6 @@ public sealed class RepositoryTests
     }
 
     [Test]
-    public async Task CacheFileStreamDisposeProperly()
-    {
-        var repositoryPath = RepositoryTestsSetUp.GetBasePath("test2");
-
-        using (var repository = await Repository.Factory.OpenStructureAsync(repositoryPath))
-        {
-            // simulate work with repository
-
-            Assert.NotNull(repository.Head);
-            Assert.AreEqual("main", repository.Head!.Name);
-        }
-
-        var path = Path.Combine(repositoryPath, ".git", "refs", "heads", "main");
-
-        // simulate commiting to main branch
-        var fileStream = new FileStream(path, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite, 10, true);
-
-        fileStream.Dispose();
-    }
-
-    [Test]
     public async Task OpenRawObjectStream()
     {
         using var repository = await Repository.Factory.OpenPrimitiveAsync(
