@@ -46,10 +46,11 @@ public sealed class RepositoryTestsSetUp
         }
     }
 
-    public static readonly string BasePath =
+    private static readonly string basePath =
         Path.Combine("tests", $"{DateTime.Now:yyyyMMdd_HHmmss}");
 
-    public static string GetBasePath(string artifact) => Path.Combine(BasePath, artifact);
+    public static string GetBasePath(string artifact) =>
+        Path.Combine(basePath, artifact);
 
     static RepositoryTestsSetUp()
     {
@@ -60,18 +61,21 @@ public sealed class RepositoryTestsSetUp
             setting.Converters.Add(new BranchArrayConverter());
         });
 
-        if (!Directory.Exists(BasePath))
+        if (!Directory.Exists(basePath))
         {
             try
             {
-                Directory.CreateDirectory(BasePath);
+                Directory.CreateDirectory(basePath);
             }
             catch
             {
             }
 
-            ZipFile.ExtractToDirectory("artifacts/test1.zip", BasePath);
-            ZipFile.ExtractToDirectory("artifacts/test2.zip", GetBasePath("test2"));
+            foreach (var path in Directory.EnumerateFiles("artifacts", "*.zip", SearchOption.AllDirectories))
+            {
+                var baseName = Path.GetFileNameWithoutExtension(path);
+                ZipFile.ExtractToDirectory(path, GetBasePath(baseName));
+            }
         }
     }
 }

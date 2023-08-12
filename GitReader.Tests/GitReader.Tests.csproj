@@ -25,10 +25,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="artifacts\test1.zip">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="artifacts\test2.zip">
+    <None Update="artifacts\*.zip" LinkBase="artifacts/">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>

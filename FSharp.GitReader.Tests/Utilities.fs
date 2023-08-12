@@ -55,7 +55,8 @@ type public RepositoryTestsSetUp() =
             | _ -> ()
         ZipFile.ExtractToDirectory(
             "artifacts/test1.zip", basePath)
-    static member BasePath = basePath
+    static member getBasePath(artifact: string) =
+        Path.Combine(basePath, artifact)
 
 [<AutoOpen>]
 module public Utilities =

@@ -22,7 +22,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="..\GitReader.Tests\artifacts\test1.zip" LinkBase="artifacts/">
+    <None Include="..\GitReader.Tests\artifacts\*.zip" LinkBase="artifacts/">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <Compile Include="Utilities.fs" />
