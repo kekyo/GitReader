@@ -21,7 +21,7 @@ type public StructuredRepositoryTests() =
     [<Test>]
     member _.GetCurrentHead() = task {
         use! repository = Repository.Factory.openStructured(
-            RepositoryTestsSetUp.BasePath)
+            RepositoryTestsSetUp.getBasePath("test1"))
         let head = repository.getCurrentHead() |> unwrapOption
         do! verify(head)
     }
@@ -29,7 +29,7 @@ type public StructuredRepositoryTests() =
     [<Test>]
     member _.GetCommitDirectly() = task {
         use! repository = Repository.Factory.openStructured(
-            RepositoryTestsSetUp.BasePath)
+            RepositoryTestsSetUp.getBasePath("test1"))
         let! commit = repository.getCommit(
             "1205dc34ce48bda28fc543daaf9525a9bb6e6d10") |> unwrapOptionAsy
         do! verify(commit)
@@ -38,7 +38,7 @@ type public StructuredRepositoryTests() =
     [<Test>]
     member _.CommitNotFound() = task {
         use! repository = Repository.Factory.openStructured(
-            RepositoryTestsSetUp.BasePath)
+            RepositoryTestsSetUp.getBasePath("test1"))
         let! commit = repository.getCommit(
             "0000000000000000000000000000000000000000") |> unwrapOptionAsy
         do! verify(commit)
@@ -47,7 +47,7 @@ type public StructuredRepositoryTests() =
     [<Test>]
     member _.GetBranch() = task {
         use! repository = Repository.Factory.openStructured(
-            RepositoryTestsSetUp.BasePath)
+            RepositoryTestsSetUp.getBasePath("test1"))
         let branch = repository.Branches["master"]
         do! verify(branch)
     }
@@ -55,7 +55,7 @@ type public StructuredRepositoryTests() =
     [<Test>]
     member _.GetRemoteBranch() = task {
         use! repository = Repository.Factory.openStructured(
-            RepositoryTestsSetUp.BasePath)
+            RepositoryTestsSetUp.getBasePath("test1"))
         let branch = repository.Branches["origin/devel"]
         do! verify(branch)
     }
@@ -63,7 +63,7 @@ type public StructuredRepositoryTests() =
     [<Test>]
     member _.GetTag() = task {
         use! repository = Repository.Factory.openStructured(
-            RepositoryTestsSetUp.BasePath)
+            RepositoryTestsSetUp.getBasePath("test1"))
         let tag = repository.Tags["2.0.0"]
         let! commit = tag.getCommit()
         do! verify((commit, tag))
@@ -72,7 +72,7 @@ type public StructuredRepositoryTests() =
     [<Test>]
     member _.GetTag2() = task {
         use! repository = Repository.Factory.openStructured(
-            RepositoryTestsSetUp.BasePath)
+            RepositoryTestsSetUp.getBasePath("test1"))
         let tag = repository.Tags["0.9.6"]
         let! commit = tag.getCommit()
         do! verify((commit, tag))
@@ -81,7 +81,7 @@ type public StructuredRepositoryTests() =
     [<Test>]
     member _.GetAnnotation() = task {
         use! repository = Repository.Factory.openStructured(
-            RepositoryTestsSetUp.BasePath)
+            RepositoryTestsSetUp.getBasePath("test1"))
         let tag = repository.Tags["0.9.6"]
         let! annotation = tag.getAnnotation()
         do! verify((tag, annotation))
@@ -90,7 +90,7 @@ type public StructuredRepositoryTests() =
     [<Test>]
     member _.GetBranchesFromCommit() = task {
         use! repository = Repository.Factory.openStructured(
-            RepositoryTestsSetUp.BasePath)
+            RepositoryTestsSetUp.getBasePath("test1"))
         let! commit = repository.getCommit(
             "9bb78d13405cab568d3e213130f31beda1ce21d1") |> unwrapOptionAsy
         let! results = Task.WhenAll(
@@ -105,7 +105,7 @@ type public StructuredRepositoryTests() =
     [<Test>]
     member _.GetTagsFromCommit() = task {
         use! repository = Repository.Factory.openStructured(
-            RepositoryTestsSetUp.BasePath)
+            RepositoryTestsSetUp.getBasePath("test1"))
         let! commit = repository.getCommit(
             "f64de5e3ad34528757207109e68f626bf8cc1a31") |> unwrapOptionAsy
         let tags = commit.Tags
@@ -115,7 +115,7 @@ type public StructuredRepositoryTests() =
     [<Test>]
     member _.GetRemoteBranchesFromCommit() = task {
         use! repository = Repository.Factory.openStructured(
-            RepositoryTestsSetUp.BasePath)
+            RepositoryTestsSetUp.getBasePath("test1"))
         let! commit = repository.getCommit(
             "f690f0e7bf703582a1fad7e6f1c2d1586390f43d") |> unwrapOptionAsy
         let! results = Task.WhenAll(
@@ -130,7 +130,7 @@ type public StructuredRepositoryTests() =
     [<Test>]
     member _.GetParentCommits() = task {
         use! repository = Repository.Factory.openStructured(
-            RepositoryTestsSetUp.BasePath)
+            RepositoryTestsSetUp.getBasePath("test1"))
         let! commit = repository.getCommit(
             "dc45301eeb49ec94ee043755124802497d0079ec") |> unwrapOptionAsy
         let! parents = commit.getParentCommits()
@@ -140,7 +140,7 @@ type public StructuredRepositoryTests() =
     [<Test>]
     member _.GetTreeRoot() = task {
         use! repository = Repository.Factory.openStructured(
-            RepositoryTestsSetUp.BasePath)
+            RepositoryTestsSetUp.getBasePath("test1"))
         let! commit = repository.getCommit(
             "1205dc34ce48bda28fc543daaf9525a9bb6e6d10") |> unwrapOptionAsy
         let! treeRoot = commit.getTreeRoot()
@@ -150,7 +150,7 @@ type public StructuredRepositoryTests() =
     [<Test>]
     member _.OpenBlob() = task {
         use! repository = Repository.Factory.openStructured(
-            RepositoryTestsSetUp.BasePath)
+            RepositoryTestsSetUp.getBasePath("test1"))
         let! commit = repository.getCommit(
             "1205dc34ce48bda28fc543daaf9525a9bb6e6d10") |> unwrapOptionAsy
         let! tree = commit.getTreeRoot()
@@ -163,7 +163,7 @@ type public StructuredRepositoryTests() =
     [<Test>]
     member _.TraverseBranchCommits() = task {
         use! repository = Repository.Factory.openStructured(
-            RepositoryTestsSetUp.BasePath)
+            RepositoryTestsSetUp.getBasePath("test1"))
         let branch = repository.Branches["master"]
         let commits = new List<Commit>()
         let! head = branch.getHeadCommit();
@@ -179,14 +179,14 @@ type public StructuredRepositoryTests() =
     [<Test>]
     member _.GetRemoteUrls() = task {
         use! repository = Repository.Factory.openStructured(
-            RepositoryTestsSetUp.BasePath)
+            RepositoryTestsSetUp.getBasePath("test1"))
         do! verify(repository.RemoteUrls)
     }
 
     [<Test>]
     member _.GetStashes() = task {
         use! repository = Repository.Factory.openStructured(
-            RepositoryTestsSetUp.BasePath)
+            RepositoryTestsSetUp.getBasePath("test1"))
         let! results = Task.WhenAll(repository.Stashes
             |> Seq.sortByDescending(fun stash -> stash.Committer.Date)
             |> Seq.map(fun stash -> task {
@@ -198,7 +198,7 @@ type public StructuredRepositoryTests() =
     [<Test>]
     member _.GetHeadReflog() = task {
         use! repository = Repository.Factory.openStructured(
-            RepositoryTestsSetUp.BasePath)
+            RepositoryTestsSetUp.getBasePath("test1"))
         let! reflogs = repository.getHeadReflogs()
         let! results = Task.WhenAll(reflogs
             |> Seq.sortByDescending(fun reflog -> reflog.Committer.Date)

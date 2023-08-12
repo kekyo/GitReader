@@ -7,7 +7,10 @@
 //
 ////////////////////////////////////////////////////////////////////////////
 
+using GitReader.IO;
+using GitReader.Structures;
 using NUnit.Framework;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -23,7 +26,7 @@ public sealed class RepositoryTests
     public async Task GetCommitDirectly()
     {
         using var repository = await Repository.Factory.OpenPrimitiveAsync(
-            RepositoryTestsSetUp.BasePath);
+            RepositoryTestsSetUp.GetBasePath("test1"));
 
         var commit = await repository.GetCommitAsync(
             "1205dc34ce48bda28fc543daaf9525a9bb6e6d10");
@@ -35,7 +38,7 @@ public sealed class RepositoryTests
     public async Task CommitNotFound()
     {
         using var repository = await Repository.Factory.OpenPrimitiveAsync(
-            RepositoryTestsSetUp.BasePath);
+            RepositoryTestsSetUp.GetBasePath("test1"));
 
         var commit = await repository.GetCommitAsync(
             "0000000000000000000000000000000000000000");
@@ -47,7 +50,7 @@ public sealed class RepositoryTests
     public async Task GetCurrentHead()
     {
         using var repository = await Repository.Factory.OpenPrimitiveAsync(
-            RepositoryTestsSetUp.BasePath);
+            RepositoryTestsSetUp.GetBasePath("test1"));
 
         var headref = await repository.GetCurrentHeadReferenceAsync();
         var commit = await repository.GetCommitAsync(headref.Value);
@@ -59,7 +62,7 @@ public sealed class RepositoryTests
     public async Task GetBranchHead()
     {
         using var repository = await Repository.Factory.OpenPrimitiveAsync(
-            RepositoryTestsSetUp.BasePath);
+            RepositoryTestsSetUp.GetBasePath("test1"));
 
         var headref = await repository.GetBranchHeadReferenceAsync("master");
         var commit = await repository.GetCommitAsync(headref);
@@ -71,7 +74,7 @@ public sealed class RepositoryTests
     public async Task GetRemoteBranchHead()
     {
         using var repository = await Repository.Factory.OpenPrimitiveAsync(
-            RepositoryTestsSetUp.BasePath);
+            RepositoryTestsSetUp.GetBasePath("test1"));
 
         var headref = await repository.GetBranchHeadReferenceAsync("origin/devel");
         var commit = await repository.GetCommitAsync(headref);
@@ -83,7 +86,7 @@ public sealed class RepositoryTests
     public async Task GetTag()
     {
         using var repository = await Repository.Factory.OpenPrimitiveAsync(
-            RepositoryTestsSetUp.BasePath);
+            RepositoryTestsSetUp.GetBasePath("test1"));
 
         var tagref = await repository.GetTagReferenceAsync("2.0.0");
         var tag = await repository.GetTagAsync(tagref);
@@ -95,7 +98,7 @@ public sealed class RepositoryTests
     public async Task GetTag2()
     {
         using var repository = await Repository.Factory.OpenPrimitiveAsync(
-            RepositoryTestsSetUp.BasePath);
+            RepositoryTestsSetUp.GetBasePath("test1"));
 
         var tagref = await repository.GetTagReferenceAsync("0.9.6");
         var tag = await repository.GetTagAsync(tagref);
@@ -107,7 +110,7 @@ public sealed class RepositoryTests
     public async Task GetBranchHeads()
     {
         using var repository = await Repository.Factory.OpenPrimitiveAsync(
-            RepositoryTestsSetUp.BasePath);
+            RepositoryTestsSetUp.GetBasePath("test1"));
 
         var branchrefs = await repository.GetBranchHeadReferencesAsync();
 
@@ -118,7 +121,7 @@ public sealed class RepositoryTests
     public async Task GetRemoteBranchHeads()
     {
         using var repository = await Repository.Factory.OpenPrimitiveAsync(
-            RepositoryTestsSetUp.BasePath);
+            RepositoryTestsSetUp.GetBasePath("test1"));
 
         var branchrefs = await repository.GetRemoteBranchHeadReferencesAsync();
 
@@ -129,7 +132,7 @@ public sealed class RepositoryTests
     public async Task GetTags()
     {
         using var repository = await Repository.Factory.OpenPrimitiveAsync(
-            RepositoryTestsSetUp.BasePath);
+            RepositoryTestsSetUp.GetBasePath("test1"));
 
         var tagrefs = await repository.GetTagReferencesAsync();
         var tags = await Task.WhenAll(
@@ -142,7 +145,7 @@ public sealed class RepositoryTests
     public async Task GetTree()
     {
         using var repository = await Repository.Factory.OpenPrimitiveAsync(
-            RepositoryTestsSetUp.BasePath);
+            RepositoryTestsSetUp.GetBasePath("test1"));
 
         var commit = await repository.GetCommitAsync(
             "1205dc34ce48bda28fc543daaf9525a9bb6e6d10");
@@ -156,7 +159,7 @@ public sealed class RepositoryTests
     public async Task OpenBlob()
     {
         using var repository = await Repository.Factory.OpenPrimitiveAsync(
-            RepositoryTestsSetUp.BasePath);
+            RepositoryTestsSetUp.GetBasePath("test1"));
 
         var commit = await repository.GetCommitAsync(
             "1205dc34ce48bda28fc543daaf9525a9bb6e6d10");
@@ -175,7 +178,7 @@ public sealed class RepositoryTests
     public async Task TraverseBranchCommits()
     {
         using var repository = await Repository.Factory.OpenPrimitiveAsync(
-            RepositoryTestsSetUp.BasePath);
+            RepositoryTestsSetUp.GetBasePath("test1"));
 
         var branchref = await repository.GetBranchHeadReferenceAsync("master");
         var commit = (await repository.GetCommitAsync(branchref))!.Value;
@@ -203,28 +206,28 @@ public sealed class RepositoryTests
     public async Task GetRemoteUrls()
     {
         using var repository = await Repository.Factory.OpenPrimitiveAsync(
-            RepositoryTestsSetUp.BasePath);
+            RepositoryTestsSetUp.GetBasePath("test1"));
 
         await Verifier.Verify(repository.RemoteUrls);
     }
-    
+
     [Test]
-    public async Task GetStashes()  
+    public async Task GetStashes()
     {
         using var repository = await Repository.Factory.OpenPrimitiveAsync(
-            RepositoryTestsSetUp.BasePath);
+            RepositoryTestsSetUp.GetBasePath("test1"));
 
         var stashes = await repository.GetStashesAsync();
 
         await Verifier.Verify(stashes.OrderByDescending(stash => stash.Committer.Date).ToArray());
     }
-    
+
     [Test]
-    public async Task GetHeadReflog()  
+    public async Task GetHeadReflog()
     {
         using var repository = await Repository.Factory.OpenPrimitiveAsync(
-            RepositoryTestsSetUp.BasePath);
-        
+            RepositoryTestsSetUp.GetBasePath("test1"));
+
         var headRef = await repository.GetCurrentHeadReferenceAsync();
         var reflogs = await repository.GetRelatedReflogsAsync(headRef!.Value);
 
@@ -235,14 +238,14 @@ public sealed class RepositoryTests
     public async Task OpenRawObjectStream()
     {
         using var repository = await Repository.Factory.OpenPrimitiveAsync(
-            RepositoryTestsSetUp.BasePath);
+            RepositoryTestsSetUp.GetBasePath("test1"));
 
         using var result = await repository.OpenRawObjectStreamAsync(
             "1205dc34ce48bda28fc543daaf9525a9bb6e6d10");
 
         var body = await new StreamReader(
-            result.Stream, Encoding.UTF8, true).
-            ReadToEndAsync();
+            result.Stream, Encoding.UTF8, true)
+            .ReadToEndAsync();
 
         await Verifier.Verify(new { Type = result.Type, Body = body });
     }
