@@ -574,6 +574,8 @@ Apache-v2
 
 ## History
 
+* 1.3.0:
+  * Fixed internal cached streams locked when disposed the repository. (#9)
 * 1.2.0:
   * Added `Repository.getCurrentHead()` function on F# interface.
   * Uses ArrayPool on both netcoreapp and netstandard2.1.
