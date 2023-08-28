@@ -574,6 +574,8 @@ Apache-v2
 
 ## History
 
+* 1.4.0:
+  * Improved stability to open metadata files, avoids file sharing violation.
 * 1.3.0:
   * Fixed internal cached streams locked when disposed the repository. (#9)
 * 1.2.0:

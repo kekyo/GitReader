@@ -92,6 +92,46 @@ internal readonly struct HashResults
 
 internal static class RepositoryAccessor
 {
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
+    private static async ValueTask<Stream> OpenFileAsync(
+        string path, CancellationToken ct)
+#else
+    private static async Task<Stream> OpenFileAsync(
+    string path, CancellationToken ct)
+#endif
+    {
+        // Many Git clients are supposed to be OK to use at the same time.
+        // If we try to open a file with the FileShare.Read share flag (i.e., write-protected),
+        // an error will occur when another Git client is opening (with non-read-sharable) the file.
+        // Retry here as this situation is expected to take a short time to complete.
+        // However, if multiple files are opened sequentially,
+        // a deadlock may occur depending on the order in which they are opened.
+        // Because they are not processed as transactions.
+        // If a constraint is imposed by the number of open attempts,
+        // and if the file cannot be opened by any means,
+        // degrade to FileShare.ReadWrite and attempt to open it.
+        // (In this case it might read the wrong, that is the value in the process of writing...)
+        for (var count = 0; count < 10; count++)
+        {
+            try
+            {
+                return new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, 65536, true);
+            }
+            catch (FileNotFoundException)
+            {
+                throw;
+            }
+            catch (IOException)
+            {
+            }
+
+            await Utilities.Delay(TimeSpan.FromMilliseconds(500), ct);
+        }
+
+        // Gave up and will try to open with read-write...
+        return new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 65536, true);
+    }
+
     public static string GetReferenceTypeName(ReferenceTypes type) =>
         type switch
         {
@@ -110,7 +150,7 @@ internal static class RepositoryAccessor
             return new(new());
         }
 
-        using var fs = repository.fileStreamCache.Open(path);
+        using var fs = await OpenFileAsync(path, ct);
         var tr = new AsyncTextReader(fs);
 
         var remotes = new Dictionary<string, string>();
@@ -184,7 +224,7 @@ internal static class RepositoryAccessor
             return new(new(new()), new(new()), new(new()));
         }
 
-        using var fs = repository.fileStreamCache.Open(path);
+        using var fs = await OpenFileAsync(path, ct);
         var tr = new AsyncTextReader(fs);
 
         var remoteBranches = new Dictionary<string, Hash>();
@@ -276,7 +316,7 @@ internal static class RepositoryAccessor
             return new(new(new()), new(new()), new(new()));
         }
 
-        using var fs = repository.fileStreamCache.Open(path);
+        using var fs = await OpenFileAsync(path, ct);
         var tr = new AsyncTextReader(fs);
 
         var branches = new Dictionary<string, Hash>();
@@ -412,7 +452,7 @@ internal static class RepositoryAccessor
                 return null;
             }
 
-            using var fs = repository.fileStreamCache.Open(path);
+            using var fs = await OpenFileAsync(path, ct);
             var tr = new AsyncTextReader(fs);
 
             var line = await tr.ReadLineAsync(ct);
@@ -449,7 +489,7 @@ internal static class RepositoryAccessor
             return new PrimitiveReflogEntry[]{};
         }
 
-        using var fs = repository.fileStreamCache.Open(path);
+        using var fs = await OpenFileAsync(path, ct);
         var tr = new AsyncTextReader(fs);
 
         var entries = new List<PrimitiveReflogEntry>();
