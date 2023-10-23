@@ -10,5 +10,5 @@ echo "==========================================================="
 echo "Build GitReader"
 echo ""
 
-dotnet build -p:Configuration=Release GitReader.sln
-dotnet pack -p:Configuration=Release -o artifacts GitReader.sln
+dotnet build -p:Configuration=Release -p:Platform="Any CPU" -p:RestoreNoCache=True GitReader.sln
+dotnet pack -p:Configuration=Release -p:Platform="Any CPU" -o artifacts GitReader.sln

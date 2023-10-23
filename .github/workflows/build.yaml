@@ -45,15 +45,12 @@ jobs:
 
     #-----------------------------------------------------------------------
     # Build
-    
-    - name: NuGet restore
-      run: dotnet restore -p:Configuration=Release GitReader.sln
 
     - name: Build
-      run: dotnet build -p:Configuration=Release -p:BuildIdentifier=${GITHUB_RUN_NUMBER} GitReader.sln
+      run: dotnet build -p:Configuration=Release -p:Platform="Any CPU" -p:RestoreNoCache=True -p:BuildIdentifier=${GITHUB_RUN_NUMBER} GitReader.sln
 
     - name: Build NuGet packages
-      run: dotnet pack -p:Configuration=Release -p:BuildIdentifier=${GITHUB_RUN_NUMBER} -o artifacts GitReader.sln
+      run: dotnet pack -p:Configuration=Release -p:Platform="Any CPU" -p:BuildIdentifier=${GITHUB_RUN_NUMBER} -o artifacts GitReader.sln
 
     #-----------------------------------------------------------------------
     # Test
