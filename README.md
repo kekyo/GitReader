@@ -574,6 +574,8 @@ Apache-v2
 
 ## History
 
+* 1.5.0:
+  * Included .NET 8.0 RC2 assembly (`net8.0`).
 * 1.4.0:
   * Improved stability to open metadata files, avoids file sharing violation.
 * 1.3.0:
