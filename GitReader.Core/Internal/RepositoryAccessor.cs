@@ -166,40 +166,51 @@ internal static class RepositoryAccessor
 
             line = line.Trim();
 
+            static void ExtractIf(string line, ref string? remoteName)
+            {
+                var sectionName = line.Substring(1, line.Length - 2).Trim();
+                if (sectionName.Length >= 1)
+                {
+                    if (sectionName.StartsWith("remote "))
+                    {
+                        var startIndex = sectionName.IndexOf('"', 7);
+                        if (startIndex >= 0)
+                        {
+                            var endIndex = sectionName.IndexOf('"', startIndex + 1);
+                            if (endIndex >= 0)
+                            {
+                                var name = sectionName.Substring(
+                                    startIndex + 1, endIndex - startIndex - 1);
+                                if (name.Length >= 1)
+                                {
+                                    remoteName = name;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
             switch (remoteName)
             {
                 case null:
                     if (line.StartsWith("[") && line.EndsWith("]"))
                     {
-                        var sectionName = line.Substring(1, line.Length - 2).Trim();
-                        if (sectionName.Length >= 1)
-                        {
-                            if (sectionName.StartsWith("remote "))
-                            {
-                                var startIndex = sectionName.IndexOf('"', 7);
-                                if (startIndex >= 0)
-                                {
-                                    var endIndex = sectionName.IndexOf('"', startIndex + 1);
-                                    if (endIndex >= 0)
-                                    {
-                                        var name = sectionName.Substring(
-                                            startIndex + 1, endIndex - startIndex - 1);
-                                        if (name.Length >= 1)
-                                        {
-                                            remoteName = name;
-                                        }
-                                    }
-                                }
-                            }
-                        }
+                        ExtractIf(line, ref remoteName);
                     }
                     break;
                 default:
-                    if (line.StartsWith("url"))
+                    if (line.StartsWith("[") && line.EndsWith("]"))
+                    {
+                        remoteName = null;
+                        ExtractIf(line, ref remoteName);
+                    }
+                    else if (line.StartsWith("url"))
                     {
                         if (line.Split('=').ElementAtOrDefault(1)?.Trim() is { } urlString)
                         {
                             remotes[remoteName] = urlString;
+                            remoteName = null;
                         }
                     }
                     break;
