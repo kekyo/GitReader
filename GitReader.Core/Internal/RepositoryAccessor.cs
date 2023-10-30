@@ -140,6 +140,37 @@ internal static class RepositoryAccessor
             _ => throw new ArgumentException(),
         };
 
+    private static bool TryExtractRemoteName(string line, out string remoteName)
+    {
+        if (line.StartsWith("[") && line.EndsWith("]"))
+        {
+            var sectionName = line.Substring(1, line.Length - 2).Trim();
+            if (sectionName.Length >= 1)
+            {
+                if (sectionName.StartsWith("remote "))
+                {
+                    var startIndex = sectionName.IndexOf('"', 7);
+                    if (startIndex >= 0)
+                    {
+                        var endIndex = sectionName.IndexOf('"', startIndex + 1);
+                        if (endIndex >= 0)
+                        {
+                            var name = sectionName.Substring(
+                                startIndex + 1, endIndex - startIndex - 1);
+                            if (name.Length >= 1)
+                            {
+                                remoteName = name;
+                                return true;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        remoteName = null!;
+        return false;
+    }
+
     public static async Task<ReadOnlyDictionary<string, string>> ReadRemoteReferencesAsync(
         Repository repository,
         CancellationToken ct)
@@ -166,54 +197,17 @@ internal static class RepositoryAccessor
 
             line = line.Trim();
 
-            static void ExtractIf(string line, ref string? remoteName)
+            if (TryExtractRemoteName(line, out var rn))
             {
-                var sectionName = line.Substring(1, line.Length - 2).Trim();
-                if (sectionName.Length >= 1)
-                {
-                    if (sectionName.StartsWith("remote "))
-                    {
-                        var startIndex = sectionName.IndexOf('"', 7);
-                        if (startIndex >= 0)
-                        {
-                            var endIndex = sectionName.IndexOf('"', startIndex + 1);
-                            if (endIndex >= 0)
-                            {
-                                var name = sectionName.Substring(
-                                    startIndex + 1, endIndex - startIndex - 1);
-                                if (name.Length >= 1)
-                                {
-                                    remoteName = name;
-                                }
-                            }
-                        }
-                    }
-                }
+                remoteName = rn;
             }
-
-            switch (remoteName)
+            else if (remoteName != null && line.StartsWith("url"))
             {
-                case null:
-                    if (line.StartsWith("[") && line.EndsWith("]"))
-                    {
-                        ExtractIf(line, ref remoteName);
-                    }
-                    break;
-                default:
-                    if (line.StartsWith("[") && line.EndsWith("]"))
-                    {
-                        remoteName = null;
-                        ExtractIf(line, ref remoteName);
-                    }
-                    else if (line.StartsWith("url"))
-                    {
-                        if (line.Split('=').ElementAtOrDefault(1)?.Trim() is { } urlString)
-                        {
-                            remotes[remoteName] = urlString;
-                            remoteName = null;
-                        }
-                    }
-                    break;
+                if (line.Split('=').ElementAtOrDefault(1)?.Trim() is { } urlString)
+                {
+                    remotes[remoteName] = urlString;
+                    remoteName = null;
+                }
             }
         }
 
