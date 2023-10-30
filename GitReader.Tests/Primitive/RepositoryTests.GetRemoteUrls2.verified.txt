@@ -1,0 +1,5 @@
+﻿{
+  origin: https://github.com/kekyo/GitReader.Test3,
+  test1: https://github.com/kekyo/GitReader.Test3.1,
+  test2: https://github.com/kekyo/GitReader.Test3.2
+}

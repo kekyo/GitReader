@@ -7,10 +7,8 @@
 //
 ////////////////////////////////////////////////////////////////////////////
 
-using GitReader.IO;
 using GitReader.Structures;
 using NUnit.Framework;
-using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -207,6 +205,15 @@ public sealed class RepositoryTests
     {
         using var repository = await Repository.Factory.OpenPrimitiveAsync(
             RepositoryTestsSetUp.GetBasePath("test1"));
+
+        await Verifier.Verify(repository.RemoteUrls);
+    }
+
+    [Test]
+    public async Task GetRemoteUrls2()
+    {
+        using var repository = await Repository.Factory.OpenStructureAsync(
+            RepositoryTestsSetUp.GetBasePath("test3"));
 
         await Verifier.Verify(repository.RemoteUrls);
     }
