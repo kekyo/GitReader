@@ -92,12 +92,37 @@ internal readonly struct HashResults
 
 internal static class RepositoryAccessor
 {
+    public static string DetectLocalRepositoryPath(
+        string startPath)
+    {
+        var currentPath = Path.GetFullPath(startPath);
+
+        while (true)
+        {
+            var repositoryPath = Path.GetFileName(currentPath) != ".git" ?
+                Utilities.Combine(currentPath, ".git") : currentPath;
+
+            if (Directory.Exists(repositoryPath) &&
+                File.Exists(Path.Combine(repositoryPath, "config")))
+            {
+                return repositoryPath;
+            }
+
+            if (Path.GetPathRoot(currentPath) == currentPath)
+            {
+                throw new ArgumentException("Repository does not exist.");
+            }
+
+            currentPath = Utilities.GetDirectoryPath(currentPath);
+        }
+    }
+
 #if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
     private static async ValueTask<Stream> OpenFileAsync(
         string path, CancellationToken ct)
 #else
     private static async Task<Stream> OpenFileAsync(
-    string path, CancellationToken ct)
+        string path, CancellationToken ct)
 #endif
     {
         // Many Git clients are supposed to be OK to use at the same time.

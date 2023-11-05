@@ -81,6 +81,12 @@ public static class RepositoryExtension
         CancellationToken ct = default) =>
         RepositoryAccessor.OpenBlobAsync(repository, blob, ct);
 
+    public static Task<PrimitiveRepository> OpenSubModuleAsync(
+        this PrimitiveRepository repository,
+        PrimitiveTreeEntry[] treePath,
+        CancellationToken ct = default) =>
+        PrimitiveRepositoryFacade.OpenSubModuleAsync(repository, treePath, ct);
+
     public static void Deconstruct(
         this PrimitiveRepository repository,
         out string gitPath,

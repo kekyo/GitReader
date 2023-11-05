@@ -166,17 +166,9 @@ internal static class StructuredRepositoryFacade
 
     //////////////////////////////////////////////////////////////////////////
 
-    public static async Task<StructuredRepository> OpenStructuredAsync(
-        string path, CancellationToken ct)
+    private static async Task<StructuredRepository> InternalOpenStructuredAsync(
+        string repositoryPath, CancellationToken ct)
     {
-        var repositoryPath = Path.GetFileName(path) != ".git" ?
-            Utilities.Combine(path, ".git") : path;
-
-        if (!Directory.Exists(repositoryPath))
-        {
-            throw new ArgumentException("Repository does not exist.");
-        }
-
         var repository = new StructuredRepository(repositoryPath);
 
         try
@@ -211,6 +203,12 @@ internal static class StructuredRepositoryFacade
             repository.Dispose();
             throw;
         }
+    }
+    public static Task<StructuredRepository> OpenStructuredAsync(
+        string path, CancellationToken ct)
+    {
+        var repositoryPath = RepositoryAccessor.DetectLocalRepositoryPath(path);
+        return InternalOpenStructuredAsync(repositoryPath, ct);
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -341,7 +339,8 @@ internal static class StructuredRepositoryFacade
 #if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
         // This is a rather aggressive algorithm that recursively and in parallel searches all entries
         // in the tree and builds all elements.
-        async ValueTask<TreeEntry[]> GetChildrenAsync(ReadOnlyArray<PrimitiveTreeEntry> entries) =>
+        async ValueTask<TreeEntry[]> GetChildrenAsync(
+            ReadOnlyArray<PrimitiveTreeEntry> entries, Tree parent) =>
             (await Utilities.WhenAll(
                 entries.Select((Func<PrimitiveTreeEntry, ValueTask<TreeEntry>>)(async entry =>
                 {
@@ -351,12 +350,17 @@ internal static class StructuredRepositoryFacade
                         case PrimitiveSpecialModes.Directory:
                             var tree = await RepositoryAccessor.ReadTreeAsync(
                                 repository!, entry.Hash, ct);
-                            var children = await GetChildrenAsync(tree.Children);
-                            return new TreeDirectoryEntry(
-                                entry.Hash, entry.Name, modeFlags, children);
+                            var directory = new TreeDirectoryEntry(
+                                entry.Hash, entry.Name, modeFlags, parent);
+                            var children = await GetChildrenAsync(tree.Children, directory);
+                            directory.SetChildren(children);
+                            return directory;
                         case PrimitiveSpecialModes.Blob:
                             return new TreeBlobEntry(
-                                rwr, entry.Hash, entry.Name, modeFlags);
+                                rwr, entry.Hash, entry.Name, modeFlags, parent);
+                        case PrimitiveSpecialModes.SubModule:
+                            return new TreeSubModuleEntry(
+                                rwr, entry.Hash, entry.Name, modeFlags, parent);
                         default:
                             // TODO:
                             return null!;
@@ -367,7 +371,8 @@ internal static class StructuredRepositoryFacade
 #else
         // This is a rather aggressive algorithm that recursively and in parallel searches all entries
         // in the tree and builds all elements.
-        async Task<TreeEntry[]> GetChildrenAsync(ReadOnlyArray<PrimitiveTreeEntry> entries) =>
+        async Task<TreeEntry[]> GetChildrenAsync(
+            ReadOnlyArray<PrimitiveTreeEntry> entries, Tree parent) =>
             (await Utilities.WhenAll(
                 entries.Select(async entry =>
                 {
@@ -377,12 +382,17 @@ internal static class StructuredRepositoryFacade
                         case PrimitiveSpecialModes.Directory:
                             var tree = await RepositoryAccessor.ReadTreeAsync(
                                 repository!, entry.Hash, ct);
-                            var children = await GetChildrenAsync(tree.Children);
-                            return (TreeEntry)new TreeDirectoryEntry(
-                                entry.Hash, entry.Name, modeFlags, children);
+                            var directory = new TreeDirectoryEntry(
+                                entry.Hash, entry.Name, modeFlags, parent);
+                            var children = await GetChildrenAsync(tree.Children, directory);
+                            directory.SetChildren(children);
+                            return (TreeEntry)directory;
                         case PrimitiveSpecialModes.Blob:
                             return new TreeBlobEntry(
-                                rwr, entry.Hash, entry.Name, modeFlags);
+                                rwr, entry.Hash, entry.Name, modeFlags, parent);
+                        case PrimitiveSpecialModes.SubModule:
+                            return new TreeSubModuleEntry(
+                                rwr, entry.Hash, entry.Name, modeFlags, parent);
                         default:
                             // TODO:
                             return null!;
@@ -392,9 +402,34 @@ internal static class StructuredRepositoryFacade
             ToArray();
 #endif
 
-        var children = await GetChildrenAsync(rootTree.Children);
+        var treeRoot = new TreeRoot(commit.Hash);
+        var children = await GetChildrenAsync(rootTree.Children, treeRoot);
+        treeRoot.SetChildren(children);
 
-        return new(commit.Hash, children);
+        return treeRoot;
+    }
+
+    public static Task<StructuredRepository> OpenSubModuleAsync(
+        TreeSubModuleEntry subModule,
+        CancellationToken ct)
+    {
+        var (repository, _) = GetRelatedRepository(subModule);
+
+        var repositoryPath = Utilities.Combine(
+            repository.GitPath,
+            "modules",
+            Utilities.Combine(subModule.
+                Traverse<TreeEntry>(tree => tree.Parent as TreeEntry).
+                Select(tree => tree.Name).
+                Reverse().
+                ToArray()));
+
+        if (!Directory.Exists(repositoryPath))
+        {
+            throw new ArgumentException("Submodule repository does not exist.");
+        }
+
+        return InternalOpenStructuredAsync(repositoryPath, ct);
     }
 
     public static Task<Stream> OpenBlobAsync(

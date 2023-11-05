@@ -297,6 +297,23 @@ internal static class Utilities
         }
     }
 
+    [DebuggerStepThrough]
+    public static IEnumerable<T> Traverse<T>(
+        this T value,
+        Func<T, T?> selector)
+        where T : class
+    {
+        while (true)
+        {
+            yield return value;
+            if (selector(value) is not { } selected)
+            {
+                break;
+            }
+            value = selected;
+        }
+    }
+
 #if !NET6_0_OR_GREATER
     private sealed class DistinctKeyComparer<T, TKey> : IEqualityComparer<T>
     {

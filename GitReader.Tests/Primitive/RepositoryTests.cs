@@ -173,6 +173,27 @@ public sealed class RepositoryTests
     }
 
     [Test]
+    public async Task OpenSubModule()
+    {
+        using var repository = await Repository.Factory.OpenPrimitiveAsync(
+            RepositoryTestsSetUp.GetBasePath("test4"));
+
+        var commit = await repository.GetCommitAsync(
+            "37021d38937107d5782f063f78f502f2da14c751");
+
+        var tree = await repository.GetTreeAsync(commit.Value.TreeRoot);
+
+        var subModule = tree.Children.First(child => child.Name == "GitReader");
+
+        using var subModuleRepository = await repository.OpenSubModuleAsync(new[] { subModule });
+
+        var subModuleCommit = await subModuleRepository.GetCommitAsync(
+            "ce68b633419a8b16d642e6ea1ec3492cdbdf2584");
+
+        await Verifier.Verify(subModuleCommit);
+    }
+
+    [Test]
     public async Task TraverseBranchCommits()
     {
         using var repository = await Repository.Factory.OpenPrimitiveAsync(

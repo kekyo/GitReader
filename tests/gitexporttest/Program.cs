@@ -97,6 +97,16 @@ public static class Program
             await fs.FlushAsync();
         }
 
+        async ValueTask ExtractSubModule(TreeSubModuleEntry subModule, string basePath)
+        {
+            using var subModuleRepository = await subModule.OpenSubModuleAsync();
+
+            var subModuleCommit = await subModuleRepository.GetCommitAsync(subModule);
+            var subModuleRootTree = await subModuleCommit!.GetTreeRootAsync();
+
+            await ExtractTreeAsync(subModuleRootTree.Children, basePath);
+        }
+
         ValueTask ExtractTreeAsync(TreeEntry[] entries, string basePath) =>
             WhenAll(entries.Select(entry =>
             {
@@ -119,6 +129,19 @@ public static class Program
                     case TreeBlobEntry blob:
                         Interlocked.Increment(ref files);
                         return ExtractBlobAsync(blob, path);
+                    case TreeSubModuleEntry subModule:
+                        Interlocked.Increment(ref directories);
+                        while (!Directory.Exists(path))
+                        {
+                            try
+                            {
+                                Directory.CreateDirectory(path);
+                            }
+                            catch
+                            {
+                            }
+                        }
+                        return ExtractSubModule(subModule, path);
                     default:
                         return default;
                 }
