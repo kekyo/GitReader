@@ -204,11 +204,12 @@ internal static class StructuredRepositoryFacade
             throw;
         }
     }
-    public static Task<StructuredRepository> OpenStructuredAsync(
+
+    public static async Task<StructuredRepository> OpenStructuredAsync(
         string path, CancellationToken ct)
     {
-        var repositoryPath = RepositoryAccessor.DetectLocalRepositoryPath(path);
-        return InternalOpenStructuredAsync(repositoryPath, ct);
+        var repositoryPath = await RepositoryAccessor.DetectLocalRepositoryPathAsync(path, ct);
+        return await InternalOpenStructuredAsync(repositoryPath, ct);
     }
 
     //////////////////////////////////////////////////////////////////////////

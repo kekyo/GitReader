@@ -8,10 +8,10 @@
 ////////////////////////////////////////////////////////////////////////////
 
 using NUnit.Framework;
-using System;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace GitReader.Internal;
 
@@ -19,11 +19,11 @@ public sealed class RepositoryAccessorTests
 {
     [TestCase(1)]
     [TestCase(2)]
-    public void DetectLocalRepositoryPath(int depth)
+    public async Task DetectLocalRepositoryPath(int depth)
     {
         var basePath = Path.GetFullPath(
             RepositoryTestsSetUp.GetBasePath(
-                $"DetectLocalRepositoryPath1_{depth}"));
+                $"DetectLocalRepositoryPath_{depth}"));
         var innerPath = Path.Combine(
             basePath,
             Path.Combine(Enumerable.Range(0, depth).Select(_ => "inner").ToArray()));
@@ -34,8 +34,26 @@ public sealed class RepositoryAccessorTests
             Path.Combine("artifacts", "test1.zip"),
             basePath);
 
-        var actual = RepositoryAccessor.DetectLocalRepositoryPath(innerPath);
+        var actual = await RepositoryAccessor.DetectLocalRepositoryPathAsync(innerPath, default);
 
         Assert.AreEqual(Path.Combine(basePath, ".git"), actual);
+    }
+
+    [Test]
+    public async Task DetectLocalRepositoryPathFromDotGitFile()
+    {
+        var basePath = Path.GetFullPath(
+            RepositoryTestsSetUp.GetBasePath(
+                $"DetectLocalRepositoryPathFromDotGitFile"));
+
+        ZipFile.ExtractToDirectory(
+            Path.Combine("artifacts", "test5.zip"),
+            basePath);
+
+        var innerPath = Path.Combine(basePath, "GitReader");
+
+        var actual = await RepositoryAccessor.DetectLocalRepositoryPathAsync(innerPath, default);
+
+        Assert.AreEqual(Path.Combine(basePath, ".git", "modules", "GitReader"), actual);
     }
 }

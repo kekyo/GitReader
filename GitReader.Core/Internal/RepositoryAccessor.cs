@@ -92,31 +92,6 @@ internal readonly struct HashResults
 
 internal static class RepositoryAccessor
 {
-    public static string DetectLocalRepositoryPath(
-        string startPath)
-    {
-        var currentPath = Path.GetFullPath(startPath);
-
-        while (true)
-        {
-            var repositoryPath = Path.GetFileName(currentPath) != ".git" ?
-                Utilities.Combine(currentPath, ".git") : currentPath;
-
-            if (Directory.Exists(repositoryPath) &&
-                File.Exists(Path.Combine(repositoryPath, "config")))
-            {
-                return repositoryPath;
-            }
-
-            if (Path.GetPathRoot(currentPath) == currentPath)
-            {
-                throw new ArgumentException("Repository does not exist.");
-            }
-
-            currentPath = Utilities.GetDirectoryPath(currentPath);
-        }
-    }
-
 #if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
     private static async ValueTask<Stream> OpenFileAsync(
         string path, CancellationToken ct)
@@ -155,6 +130,73 @@ internal static class RepositoryAccessor
 
         // Gave up and will try to open with read-write...
         return new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 65536, true);
+    }
+
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
+    public static async ValueTask<string> DetectLocalRepositoryPathAsync(
+        string startPath, CancellationToken ct)
+#else
+    public static async Task<string> DetectLocalRepositoryPathAsync(
+        string startPath, CancellationToken ct)
+#endif
+    {
+        var currentPath = Path.GetFullPath(startPath);
+
+        while (true)
+        {
+            ct.ThrowIfCancellationRequested();
+
+            var candidatePath = Path.GetFileName(currentPath) != ".git" ?
+                Utilities.Combine(currentPath, ".git") : currentPath;
+
+            if (Directory.Exists(candidatePath) &&
+                File.Exists(Path.Combine(candidatePath, "config")))
+            {
+                return candidatePath;
+            }
+
+            // Issue #11
+            if (File.Exists(candidatePath))
+            {
+                using var fs = await OpenFileAsync(candidatePath, ct);
+                var tr = new AsyncTextReader(fs);
+
+                while (true)
+                {
+                    var line = await tr.ReadLineAsync(ct);
+                    if (line == null)
+                    {
+                        break;
+                    }
+
+                    line = line.Trim();
+                    if (line.StartsWith("gitdir:"))
+                    {
+                        // Resolve to full path (And normalize path directory separators)
+                        var gitDirPath = line.Substring(7).TrimStart();
+                        candidatePath = Utilities.ResolveRelativePath(currentPath, gitDirPath);
+
+                        if (Directory.Exists(candidatePath) &&
+                            File.Exists(Path.Combine(candidatePath, "config")))
+                        {
+                            return candidatePath;
+                        }
+
+                        break;
+                    }
+                }
+
+                throw new ArgumentException(
+                    "Repository does not exist. `.git` file exists. But failed to `gitdir` or specified directory is not exists.");
+            }
+
+            if (Path.GetPathRoot(currentPath) == currentPath)
+            {
+                throw new ArgumentException("Repository does not exist.");
+            }
+
+            currentPath = Utilities.GetDirectoryPath(currentPath);
+        }
     }
 
     public static string GetReferenceTypeName(ReferenceTypes type) =>

@@ -44,11 +44,11 @@ internal static class PrimitiveRepositoryFacade
         }
     }
 
-    public static Task<PrimitiveRepository> OpenPrimitiveAsync(
+    public static async Task<PrimitiveRepository> OpenPrimitiveAsync(
         string path, CancellationToken ct)
     {
-        var repositoryPath = RepositoryAccessor.DetectLocalRepositoryPath(path);
-        return InternalOpenPrimitiveAsync(repositoryPath, ct);
+        var repositoryPath = await RepositoryAccessor.DetectLocalRepositoryPathAsync(path, ct);
+        return await InternalOpenPrimitiveAsync(repositoryPath, ct);
     }
 
     //////////////////////////////////////////////////////////////////////////
