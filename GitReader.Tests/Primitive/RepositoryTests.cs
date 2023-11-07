@@ -233,7 +233,7 @@ public sealed class RepositoryTests
     [Test]
     public async Task GetRemoteUrls2()
     {
-        using var repository = await Repository.Factory.OpenStructureAsync(
+        using var repository = await Repository.Factory.OpenPrimitiveAsync(
             RepositoryTestsSetUp.GetBasePath("test3"));
 
         await Verifier.Verify(repository.RemoteUrls);
