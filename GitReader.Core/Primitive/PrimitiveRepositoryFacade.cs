@@ -18,17 +18,9 @@ namespace GitReader.Primitive;
 
 internal static class PrimitiveRepositoryFacade
 {
-    public static async Task<PrimitiveRepository> OpenPrimitiveAsync(
-        string path, CancellationToken ct)
+    private static async Task<PrimitiveRepository> InternalOpenPrimitiveAsync(
+        string repositoryPath, CancellationToken ct)
     {
-        var repositoryPath = Path.GetFileName(path) != ".git" ?
-            Utilities.Combine(path, ".git") : path;
-
-        if (!Directory.Exists(repositoryPath))
-        {
-            throw new ArgumentException("Repository does not exist.");
-        }
-
         var repository = new PrimitiveRepository(repositoryPath);
 
         try
@@ -50,6 +42,13 @@ internal static class PrimitiveRepositoryFacade
             repository.Dispose();
             throw;
         }
+    }
+
+    public static async Task<PrimitiveRepository> OpenPrimitiveAsync(
+        string path, CancellationToken ct)
+    {
+        var repositoryPath = await RepositoryAccessor.DetectLocalRepositoryPathAsync(path, ct);
+        return await InternalOpenPrimitiveAsync(repositoryPath, ct);
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -93,5 +92,30 @@ internal static class PrimitiveRepositoryFacade
         return results is { } r ?
             new PrimitiveTagReference(tagName, relativePathOrLocation, r.Hash, null) :
             throw new ArgumentException($"Could not find a tag: {tagName}");
+    }
+
+    public static Task<PrimitiveRepository> OpenSubModuleAsync(
+        Repository repository,
+        PrimitiveTreeEntry[] treePath, CancellationToken ct)
+    {
+        if (treePath.Length == 0)
+        {
+            throw new ArgumentException("Could not empty tree path.");
+        }
+        if (treePath[treePath.Length - 1].SpecialModes != PrimitiveSpecialModes.SubModule)
+        {
+            throw new ArgumentException($"Could not use non-submodule entry: {treePath[treePath.Length - 1]}");
+        }
+
+        var repositoryPath = Utilities.Combine(
+            repository.GitPath, "modules",
+            Utilities.Combine(treePath.Select(tree => tree.Name).ToArray()));
+
+        if (!Directory.Exists(repositoryPath))
+        {
+            throw new ArgumentException("Submodule repository does not exist.");
+        }
+
+        return InternalOpenPrimitiveAsync(repositoryPath, ct);
     }
 }

@@ -7,10 +7,8 @@
 //
 ////////////////////////////////////////////////////////////////////////////
 
-using GitReader.IO;
 using GitReader.Structures;
 using NUnit.Framework;
-using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -175,6 +173,27 @@ public sealed class RepositoryTests
     }
 
     [Test]
+    public async Task OpenSubModule()
+    {
+        using var repository = await Repository.Factory.OpenPrimitiveAsync(
+            RepositoryTestsSetUp.GetBasePath("test4"));
+
+        var commit = await repository.GetCommitAsync(
+            "37021d38937107d5782f063f78f502f2da14c751");
+
+        var tree = await repository.GetTreeAsync(commit.Value.TreeRoot);
+
+        var subModule = tree.Children.First(child => child.Name == "GitReader");
+
+        using var subModuleRepository = await repository.OpenSubModuleAsync(new[] { subModule });
+
+        var subModuleCommit = await subModuleRepository.GetCommitAsync(
+            "ce68b633419a8b16d642e6ea1ec3492cdbdf2584");
+
+        await Verifier.Verify(subModuleCommit);
+    }
+
+    [Test]
     public async Task TraverseBranchCommits()
     {
         using var repository = await Repository.Factory.OpenPrimitiveAsync(
@@ -207,6 +226,15 @@ public sealed class RepositoryTests
     {
         using var repository = await Repository.Factory.OpenPrimitiveAsync(
             RepositoryTestsSetUp.GetBasePath("test1"));
+
+        await Verifier.Verify(repository.RemoteUrls);
+    }
+
+    [Test]
+    public async Task GetRemoteUrls2()
+    {
+        using var repository = await Repository.Factory.OpenPrimitiveAsync(
+            RepositoryTestsSetUp.GetBasePath("test3"));
 
         await Verifier.Verify(repository.RemoteUrls);
     }

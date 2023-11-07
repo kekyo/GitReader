@@ -135,6 +135,18 @@ internal static class Utilities
     private const long UnixEpochTicks = DaysTo1970 * TicksPerDay;
     private const long UnixEpochSeconds = UnixEpochTicks / TimeSpan.TicksPerSecond;
 
+    private static readonly bool isWindows =
+#if NETSTANDARD1_6
+        !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("HOMEDRIVE"));
+#else
+        Environment.OSVersion.Platform.ToString().Contains("Win");
+#endif
+
+    private static readonly string homePath =
+        Path.GetFullPath(isWindows ?
+            $"{Environment.GetEnvironmentVariable("HOMEDRIVE") ?? "C:"}{Environment.GetEnvironmentVariable("HOMEPATH") ?? "\\"}" :
+            (Environment.GetEnvironmentVariable("HOME") ?? "/"));
+
     public static DateTimeOffset FromUnixTimeSeconds(long seconds, TimeSpan offset)
     {
         var ticks = seconds * TimeSpan.TicksPerSecond + UnixEpochTicks;
@@ -294,6 +306,23 @@ internal static class Utilities
             {
                 yield return selected;
             }
+        }
+    }
+
+    [DebuggerStepThrough]
+    public static IEnumerable<T> Traverse<T>(
+        this T value,
+        Func<T, T?> selector)
+        where T : class
+    {
+        while (true)
+        {
+            yield return value;
+            if (selector(value) is not { } selected)
+            {
+                break;
+            }
+            value = selected;
         }
     }
 
@@ -675,4 +704,11 @@ internal static class Utilities
         Signature signature) =>
         signature.MailAddress is { } mailAddress ?
             $"{signature.Name} <{mailAddress}>" : signature.Name;
+
+    public static string ResolveRelativePath(string basePath, string path) =>
+        Path.GetFullPath(Path.IsPathRooted(path) ?
+            path :
+            path.StartsWith("~/") ?
+                Combine(homePath, path.Substring(2)) :
+                Combine(basePath, path));
 }

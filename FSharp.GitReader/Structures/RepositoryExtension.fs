@@ -80,6 +80,11 @@ module public RepositoryExtension =
             StructuredRepositoryFacade.OpenBlobAsync(
                 entry, unwrapCT ct) |> Async.AwaitTask
 
+    type TreeSubModuleEntry with
+        member entry.openSubModule(?ct: CancellationToken) =
+            StructuredRepositoryFacade.OpenSubModuleAsync(
+                entry, unwrapCT ct) |> Async.AwaitTask
+
     let (|StructuredRepository|) (repository: StructuredRepository) =
         (repository.GitPath,
          repository.RemoteUrls,

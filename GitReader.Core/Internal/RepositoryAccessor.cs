@@ -97,7 +97,7 @@ internal static class RepositoryAccessor
         string path, CancellationToken ct)
 #else
     private static async Task<Stream> OpenFileAsync(
-    string path, CancellationToken ct)
+        string path, CancellationToken ct)
 #endif
     {
         // Many Git clients are supposed to be OK to use at the same time.
@@ -132,6 +132,73 @@ internal static class RepositoryAccessor
         return new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 65536, true);
     }
 
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
+    public static async ValueTask<string> DetectLocalRepositoryPathAsync(
+        string startPath, CancellationToken ct)
+#else
+    public static async Task<string> DetectLocalRepositoryPathAsync(
+        string startPath, CancellationToken ct)
+#endif
+    {
+        var currentPath = Path.GetFullPath(startPath);
+
+        while (true)
+        {
+            ct.ThrowIfCancellationRequested();
+
+            var candidatePath = Path.GetFileName(currentPath) != ".git" ?
+                Utilities.Combine(currentPath, ".git") : currentPath;
+
+            if (Directory.Exists(candidatePath) &&
+                File.Exists(Path.Combine(candidatePath, "config")))
+            {
+                return candidatePath;
+            }
+
+            // Issue #11
+            if (File.Exists(candidatePath))
+            {
+                using var fs = await OpenFileAsync(candidatePath, ct);
+                var tr = new AsyncTextReader(fs);
+
+                while (true)
+                {
+                    var line = await tr.ReadLineAsync(ct);
+                    if (line == null)
+                    {
+                        break;
+                    }
+
+                    line = line.Trim();
+                    if (line.StartsWith("gitdir:"))
+                    {
+                        // Resolve to full path (And normalize path directory separators)
+                        var gitDirPath = line.Substring(7).TrimStart();
+                        candidatePath = Utilities.ResolveRelativePath(currentPath, gitDirPath);
+
+                        if (Directory.Exists(candidatePath) &&
+                            File.Exists(Path.Combine(candidatePath, "config")))
+                        {
+                            return candidatePath;
+                        }
+
+                        break;
+                    }
+                }
+
+                throw new ArgumentException(
+                    "Repository does not exist. `.git` file exists. But failed to `gitdir` or specified directory is not exists.");
+            }
+
+            if (Path.GetPathRoot(currentPath) == currentPath)
+            {
+                throw new ArgumentException("Repository does not exist.");
+            }
+
+            currentPath = Utilities.GetDirectoryPath(currentPath);
+        }
+    }
+
     public static string GetReferenceTypeName(ReferenceTypes type) =>
         type switch
         {
@@ -139,6 +206,37 @@ internal static class RepositoryAccessor
             ReferenceTypes.RemoteBranches => "remotes",
             _ => throw new ArgumentException(),
         };
+
+    private static bool TryExtractRemoteName(string line, out string remoteName)
+    {
+        if (line.StartsWith("[") && line.EndsWith("]"))
+        {
+            var sectionName = line.Substring(1, line.Length - 2).Trim();
+            if (sectionName.Length >= 1)
+            {
+                if (sectionName.StartsWith("remote "))
+                {
+                    var startIndex = sectionName.IndexOf('"', 7);
+                    if (startIndex >= 0)
+                    {
+                        var endIndex = sectionName.IndexOf('"', startIndex + 1);
+                        if (endIndex >= 0)
+                        {
+                            var name = sectionName.Substring(
+                                startIndex + 1, endIndex - startIndex - 1);
+                            if (name.Length >= 1)
+                            {
+                                remoteName = name;
+                                return true;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        remoteName = null!;
+        return false;
+    }
 
     public static async Task<ReadOnlyDictionary<string, string>> ReadRemoteReferencesAsync(
         Repository repository,
@@ -166,43 +264,17 @@ internal static class RepositoryAccessor
 
             line = line.Trim();
 
-            switch (remoteName)
+            if (TryExtractRemoteName(line, out var rn))
             {
-                case null:
-                    if (line.StartsWith("[") && line.EndsWith("]"))
-                    {
-                        var sectionName = line.Substring(1, line.Length - 2).Trim();
-                        if (sectionName.Length >= 1)
-                        {
-                            if (sectionName.StartsWith("remote "))
-                            {
-                                var startIndex = sectionName.IndexOf('"', 7);
-                                if (startIndex >= 0)
-                                {
-                                    var endIndex = sectionName.IndexOf('"', startIndex + 1);
-                                    if (endIndex >= 0)
-                                    {
-                                        var name = sectionName.Substring(
-                                            startIndex + 1, endIndex - startIndex - 1);
-                                        if (name.Length >= 1)
-                                        {
-                                            remoteName = name;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    break;
-                default:
-                    if (line.StartsWith("url"))
-                    {
-                        if (line.Split('=').ElementAtOrDefault(1)?.Trim() is { } urlString)
-                        {
-                            remotes[remoteName] = urlString;
-                        }
-                    }
-                    break;
+                remoteName = rn;
+            }
+            else if (remoteName != null && line.StartsWith("url"))
+            {
+                if (line.Split('=').ElementAtOrDefault(1)?.Trim() is { } urlString)
+                {
+                    remotes[remoteName] = urlString;
+                    remoteName = null;
+                }
             }
         }
 

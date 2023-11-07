@@ -1,8 +1,19 @@
 ﻿{
+  Hash: {
+    HashCode: 1205dc34ce48bda28fc543daaf9525a9bb6e6d10
+  },
   Children: [
     {
+      Name: .github,
+      Hash: {
+        HashCode: 8efbe3e1a885781cd4af635fc36c8f7c3e4a61b4
+      },
       Children: [
         {
+          Name: workflows,
+          Hash: {
+            HashCode: 9f13238c667645041aa83159e66e125afd0ff3ce
+          },
           Children: [
             {
               Name: build.yml,
@@ -11,17 +22,9 @@
                 HashCode: 9e1cb4c6ea6b897bbb34488312365c8b3135b172
               }
             }
-          ],
-          Name: workflows,
-          Hash: {
-            HashCode: 9f13238c667645041aa83159e66e125afd0ff3ce
-          }
+          ]
         }
-      ],
-      Name: .github,
-      Hash: {
-        HashCode: 8efbe3e1a885781cd4af635fc36c8f7c3e4a61b4
-      }
+      ]
     },
     {
       Name: .gitignore,
@@ -38,6 +41,10 @@
       }
     },
     {
+      Name: CenterCLR.NamingFormatter,
+      Hash: {
+        HashCode: deeac68f4a9e88e0e9c01c83deee1aceb3a05cdb
+      },
       Children: [
         {
           Name: CenterCLR.NamingFormatter.csproj,
@@ -82,6 +89,10 @@
           }
         },
         {
+          Name: Internal,
+          Hash: {
+            HashCode: 01d6075020c7c7b5741b7c5f3649420d11d01e88
+          },
           Children: [
             {
               Name: ValueTuple.cs,
@@ -90,11 +101,7 @@
                 HashCode: 0a6b12f8df4cd69e1b12ec969c8cd7e70589f0c8
               }
             }
-          ],
-          Name: Internal,
-          Hash: {
-            HashCode: 01d6075020c7c7b5741b7c5f3649420d11d01e88
-          }
+          ]
         },
         {
           Name: Named.cs,
@@ -117,13 +124,13 @@
             HashCode: 62afd008687eca2557ba3aeb4e79c3c14c9ac2af
           }
         }
-      ],
-      Name: CenterCLR.NamingFormatter,
-      Hash: {
-        HashCode: deeac68f4a9e88e0e9c01c83deee1aceb3a05cdb
-      }
+      ]
     },
     {
+      Name: CenterCLR.NamingFormatterTests,
+      Hash: {
+        HashCode: c53d90ac78df69109f6bac85e7496ad52fcde4a7
+      },
       Children: [
         {
           Name: CenterCLR.NamingFormatterTests.csproj,
@@ -160,13 +167,13 @@
             HashCode: ab60b99121ba537ebeb3327a5d9ed896696c917c
           }
         }
-      ],
-      Name: CenterCLR.NamingFormatterTests,
-      Hash: {
-        HashCode: c53d90ac78df69109f6bac85e7496ad52fcde4a7
-      }
+      ]
     },
     {
+      Name: Images,
+      Hash: {
+        HashCode: d4cb9825ee137b53148b9776a20ba093debb8ef5
+      },
       Children: [
         {
           Name: CenterCLR.NamingFormatter.100.png,
@@ -196,11 +203,7 @@
             HashCode: d9a13dc7f3de1f0a7aa8e4e2b0d3f00e77bb8e3a
           }
         }
-      ],
-      Name: Images,
-      Hash: {
-        HashCode: d4cb9825ee137b53148b9776a20ba093debb8ef5
-      }
+      ]
     },
     {
       Name: README.md,
@@ -216,8 +219,5 @@
         HashCode: 0dc4f6eba2a37054088754456f63dd7b34b24753
       }
     }
-  ],
-  Hash: {
-    HashCode: 1205dc34ce48bda28fc543daaf9525a9bb6e6d10
-  }
+  ]
 }

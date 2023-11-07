@@ -203,6 +203,28 @@ public sealed class RepositoryTests
     }
 
     [Test]
+    public async Task OpenSubModule()
+    {
+        using var repository = await Repository.Factory.OpenStructureAsync(
+            RepositoryTestsSetUp.GetBasePath("test4"));
+
+        var commit = await repository.GetCommitAsync(
+            "37021d38937107d5782f063f78f502f2da14c751");
+
+        var tree = await commit!.GetTreeRootAsync();
+
+        var subModule = tree.Children.OfType<TreeSubModuleEntry>().
+            First(child => child.Name == "GitReader");
+
+        using var subModuleRepository = await subModule.OpenSubModuleAsync();
+
+        var subModuleCommit = await subModuleRepository.GetCommitAsync(
+            "ce68b633419a8b16d642e6ea1ec3492cdbdf2584");
+
+        await Verifier.Verify(subModuleCommit);
+    }
+
+    [Test]
     public async Task TraverseBranchCommits()
     {
         using var repository = await Repository.Factory.OpenStructureAsync(
@@ -229,6 +251,15 @@ public sealed class RepositoryTests
     {
         using var repository = await Repository.Factory.OpenStructureAsync(
             RepositoryTestsSetUp.GetBasePath("test1"));
+
+        await Verifier.Verify(repository.RemoteUrls);
+    }
+
+    [Test]
+    public async Task GetRemoteUrls2()
+    {
+        using var repository = await Repository.Factory.OpenStructureAsync(
+            RepositoryTestsSetUp.GetBasePath("test3"));
 
         await Verifier.Verify(repository.RemoteUrls);
     }

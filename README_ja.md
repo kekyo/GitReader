@@ -69,7 +69,7 @@ if (repository.Head is { } head)
 
 ### 対応する.NETプラットフォーム
 
-* .NET 7.0 to 5.0
+* .NET 8.0 to 5.0
 * .NET Core 3.1 to 2.0
 * .NET Standard 2.1 to 1.6
 * .NET Framework 4.8.1 to 3.5
@@ -79,7 +79,7 @@ if (repository.Head is { } head)
 F# 5.0以上が対象で、F#フレンドリーなシグネチャ定義が含まれています。
 (`Async`型による非同期操作、`Option`によるnull値排除など)
 
-* .NET 7.0 to 5.0
+* .NET 8.0 to 5.0
 * .NET Core 3.1 to 2.0
 * .NET Standard 2.1, 2.0
 * .NET Framework 4.8.1 to 4.6.1
@@ -259,7 +259,7 @@ foreach (Stash stash in repository.Stashes)
 
 ```csharp
 if (await repository.GetCommitAsync(
-    "6961a50ef3ad4e43ed9774daffd8457d32cf5e75") is Command commit)
+    "6961a50ef3ad4e43ed9774daffd8457d32cf5e75") is Commit commit)
 {
     Commit[] parents = await commit.GetParentCommitsAsync();
 
@@ -281,7 +281,7 @@ if (await repository.GetCommitAsync(
 
 ```csharp
 if (await repository.GetCommitAsync(
-    "6961a50ef3ad4e43ed9774daffd8457d32cf5e75") is Command commit)
+    "6961a50ef3ad4e43ed9774daffd8457d32cf5e75") is Commit commit)
 {
     TreeRoot treeRoot = await commit.GetTreeRootAsync();
 
@@ -298,7 +298,7 @@ if (await repository.GetCommitAsync(
 
 ```csharp
 if (await repository.GetCommitAsync(
-    "6961a50ef3ad4e43ed9774daffd8457d32cf5e75") is Command commit)
+    "6961a50ef3ad4e43ed9774daffd8457d32cf5e75") is Commit commit)
 {
     TreeRoot treeRoot = await commit.GetTreeRootAsync();
 
@@ -310,6 +310,37 @@ if (await repository.GetCommitAsync(
             using var stream = await blob.OpenBlobAsync();
 
             // (Blobにアクセスすることができます...)
+        }
+    }
+}
+```
+
+### コミット内のサブモジュールの読み取り
+
+サブモジュールへの参照を識別することも出来ます。
+但し、サブモジュール内の情報を参照する場合は、新たにリポジトリをオープンすることになります。
+これを実現するのが、 `OpenSubModuleAsync()` です。
+
+```csharp
+if (await repository.GetCommitAsync(
+    "6961a50ef3ad4e43ed9774daffd8457d32cf5e75") is Commit commit)
+{
+    TreeRoot treeRoot = await commit.GetTreeRootAsync();
+
+    foreach (TreeEntry entry in treeRoot.Children)
+    {
+        // サブモジュールの場合はインスタンスの型が`TreeSubModuleEntry`です
+        if (entry is TreeSubModuleEntry subModule)
+        {
+            // サブモジュールリポジトリをオープンします
+            using var subModuleRepository = await subModule.OpenSubModuleAsync();
+
+            // 元のリポジトリで指定されているコミットを参照して取得します
+            if (await subModuleRepository.GetCommitAsync(
+                subModule.Hash) is Commit subModuleCommit)
+            {
+                // ...
+            }
         }
     }
 }
@@ -487,6 +518,36 @@ if (await repository.GetCommitAsync(
             using var stream = await repository.OpenBlobAsync(child.Hash);
 
             // (You can access the blob...)
+        }
+    }
+}
+```
+
+### コミット内のサブモジュールの読み取り
+
+```csharp
+if (await repository.GetCommitAsync(
+    "1205dc34ce48bda28fc543daaf9525a9bb6e6d10") is PrimitiveCommit commit)
+{
+    PrimitiveTree tree = await repository.GetTreeAsync(commit.TreeRoot);
+
+    foreach (Hash childHash in tree.Children)
+    {
+        PrimitiveTreeEntry child = await repository.GetTreeAsync(childHash);
+
+        // このツリーエントリがサブモジュールの場合
+        if (child.SpecialModes == PrimitiveSpecialModes.SubModule)
+        {
+            // 引数には「ツリーパス」が必要です。
+            // これは、このエントリに至るまでの、リポジトリルートからの全てのパス列です。
+            using var subModuleRepository = await repository.OpenSubModuleAsync(
+                new[] { child });
+
+            if (await repository.GetCommitAsync(
+                child.Hash) is PrimitiveCommit subModuleCommit)
+            {
+                // ...
+            }
         }
     }
 }
