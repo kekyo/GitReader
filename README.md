@@ -68,7 +68,7 @@ It primarily fits the purpose of easily extracting commit information from a Git
 
 ### Target .NET platforms
 
-* .NET 7.0 to 5.0
+* .NET 8.0 to 5.0
 * .NET Core 3.1 to 2.0
 * .NET Standard 2.1 to 1.6
 * .NET Framework 4.8.1 to 3.5
@@ -78,7 +78,7 @@ It primarily fits the purpose of easily extracting commit information from a Git
 F# 5.0 or upper, it contains F# friendly signature definition.
 (Asynchronous operations with `Async` type, elimination of null values with `Option`, etc.)
 
-* .NET 7.0 to 5.0
+* .NET 8.0 to 5.0
 * .NET Core 3.1 to 2.0
 * .NET Standard 2.1, 2.0
 * .NET Framework 4.8.1 to 4.6.1
@@ -261,7 +261,7 @@ foreach (Stash stash in repository.Stashes)
 
 ```csharp
 if (await repository.GetCommitAsync(
-    "6961a50ef3ad4e43ed9774daffd8457d32cf5e75") is Command commit)
+    "6961a50ef3ad4e43ed9774daffd8457d32cf5e75") is Commit commit)
 {
     Commit[] parents = await commit.GetParentCommitsAsync();
 
@@ -283,7 +283,7 @@ The code shown here does not actually 'check out', but reads these structures as
 
 ```csharp
 if (await repository.GetCommitAsync(
-    "6961a50ef3ad4e43ed9774daffd8457d32cf5e75") is Command commit)
+    "6961a50ef3ad4e43ed9774daffd8457d32cf5e75") is Commit commit)
 {
     TreeRoot treeRoot = await commit.GetTreeRootAsync();
 
@@ -300,7 +300,7 @@ if (await repository.GetCommitAsync(
 
 ```csharp
 if (await repository.GetCommitAsync(
-    "6961a50ef3ad4e43ed9774daffd8457d32cf5e75") is Command commit)
+    "6961a50ef3ad4e43ed9774daffd8457d32cf5e75") is Commit commit)
 {
     TreeRoot treeRoot = await commit.GetTreeRootAsync();
 
@@ -312,6 +312,37 @@ if (await repository.GetCommitAsync(
             using Stream stream = await blob.OpenBlobAsync();
 
             // (You can access the blob...)
+        }
+    }
+}
+```
+
+### Reading a submodule in commit tree.
+
+You can also identify references to submodules.
+However, if you want to reference information in a submodule, you must open a new repository.
+This is accomplished with `OpenSubModuleAsync()`.
+
+```csharp
+if (await repository.GetCommitAsync(
+    "6961a50ef3ad4e43ed9774daffd8457d32cf5e75") is Commit commit)
+{
+    TreeRoot treeRoot = await commit.GetTreeRootAsync();
+
+    foreach (TreeEntry entry in treeRoot.Children)
+    {
+        // For a submodule, the instance type is `TreeSubModuleEntry`.
+        if (entry is TreeSubModuleEntry subModule)
+        {
+            // Open this submodule repository.
+            using var subModuleRepository = await subModule.OpenSubModuleAsync();
+
+            // Retreive the commit hash specified in the original repository.
+            if (await subModuleRepository.GetCommitAsync(
+                subModule.Hash) is Commit subModuleCommit)
+            {
+                // ...
+            }
         }
     }
 }
@@ -497,6 +528,36 @@ if (await repository.GetCommitAsync(
 }
 ```
 
+### Reading a submodule in commit tree.
+
+```csharp
+if (await repository.GetCommitAsync(
+    "1205dc34ce48bda28fc543daaf9525a9bb6e6d10") is PrimitiveCommit commit)
+{
+    PrimitiveTree tree = await repository.GetTreeAsync(commit.TreeRoot);
+
+    foreach (Hash childHash in tree.Children)
+    {
+        PrimitiveTreeEntry child = await repository.GetTreeAsync(childHash);
+
+        // If this tree entry is a submodule.
+        if (child.SpecialModes == PrimitiveSpecialModes.SubModule)
+        {
+            // The argument must be a "tree path".
+            // It is the sequence of all paths from the repository root up to this entry.
+            using var subModuleRepository = await repository.OpenSubModuleAsync(
+                new[] { child });
+
+            if (await repository.GetCommitAsync(
+                child.Hash) is PrimitiveCommit subModuleCommit)
+            {
+                // ...
+            }
+        }
+    }
+}
+```
+
 ### Traverse a commit through primary commits
 
 ```csharp
@@ -574,6 +635,9 @@ Apache-v2
 
 ## History
 
+* 1.6.0:
+  * Added submodule accessor.
+  * Fixed invalid remote url entries at multiple declaration. (#10)
 * 1.5.0:
   * Included .NET 8.0 RC2 assembly (`net8.0`).
 * 1.4.0:
