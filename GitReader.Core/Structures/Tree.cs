@@ -53,15 +53,18 @@ public abstract class TreeEntry : Tree
 {
     public readonly string Name;
     public readonly ModeFlags Modes;
+    public readonly Tree Parent;
 
     private protected TreeEntry(
         Hash hash,
         string name,
-        ModeFlags modes) :
+        ModeFlags modes,
+        Tree parent) :
         base(hash)
     {
         this.Name = name;
         this.Modes = modes;
+        this.Parent = parent;
     }
 }
 
@@ -74,8 +77,9 @@ public sealed class TreeBlobEntry :
         WeakReference rwr,
         Hash hash,
         string name,
-        ModeFlags modes) :
-        base(hash, name, modes) =>
+        ModeFlags modes,
+        Tree parent) :
+        base(hash, name, modes, parent) =>
         this.rwr = rwr;
 
     WeakReference IRepositoryReference.Repository =>
@@ -102,16 +106,26 @@ public sealed class TreeBlobEntry :
         $"File: {this.Modes}: {this.Name}: {this.Hash}";
 }
 
-public sealed class TreeDirectoryEntry : TreeEntry
+public interface IParentTreeEntry
 {
-    public readonly TreeEntry[] Children;
+    TreeEntry[] Children { get; }
+}
 
+public sealed class TreeDirectoryEntry :
+    TreeEntry, IParentTreeEntry
+{
     internal TreeDirectoryEntry(
         Hash hash,
         string name,
         ModeFlags modes,
-        TreeEntry[] children) :
-        base(hash, name, modes) =>
+        Tree parent) :
+        base(hash, name, modes, parent)
+    {
+    }
+
+    public TreeEntry[] Children { get; private set; } = null!;
+
+    internal void SetChildren(TreeEntry[] children) =>
         this.Children = children;
 
     public override bool Equals(Tree rhs) =>
@@ -144,13 +158,55 @@ public sealed class TreeDirectoryEntry : TreeEntry
         $"Directory: {this.Modes}: {this.Name}: {this.Hash}";
 }
 
-public sealed class TreeRoot : Tree
+public sealed class TreeSubModuleEntry :
+    TreeEntry, IRepositoryReference
 {
-    public readonly TreeEntry[] Children;
+    private readonly WeakReference rwr;
 
-    internal TreeRoot(
-        Hash hash, TreeEntry[] children) :
-        base(hash) =>
+    internal TreeSubModuleEntry(
+        WeakReference rwr,
+        Hash hash,
+        string name,
+        ModeFlags modes,
+        Tree parent) :
+        base(hash, name, modes, parent) =>
+        this.rwr = rwr;
+
+    WeakReference IRepositoryReference.Repository =>
+        this.rwr;
+
+    public override bool Equals(Tree rhs) =>
+        rhs is TreeSubModuleEntry r &&
+        this.Hash.Equals(r.Hash) &&
+        this.Name.Equals(r.Name) &&
+        this.Modes == r.Modes;
+
+    public override int GetHashCode()
+    {
+        unchecked
+        {
+            var hashCode = this.Hash.GetHashCode();
+            hashCode = (hashCode * 397) ^ this.Name.GetHashCode();
+            hashCode = (hashCode * 397) ^ this.Modes.GetHashCode();
+            return hashCode;
+        }
+    }
+
+    public override string ToString() =>
+        $"SubModule: {this.Name}: {this.Hash}";
+}
+
+public sealed class TreeRoot :
+    Tree, IParentTreeEntry
+{
+    internal TreeRoot(Hash hash) :
+        base(hash)
+    {
+    }
+
+    public TreeEntry[] Children { get; private set; } = null!;
+
+    internal void SetChildren(TreeEntry[] children) =>
         this.Children = children;
 
     public override bool Equals(Tree rhs) =>

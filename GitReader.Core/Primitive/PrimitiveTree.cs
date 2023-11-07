@@ -65,6 +65,7 @@ public readonly struct PrimitiveTreeEntry : IEquatable<PrimitiveTreeEntry>
             PrimitiveModeFlags.Blob => PrimitiveSpecialModes.Blob,
             PrimitiveModeFlags.SubModule => PrimitiveSpecialModes.SubModule,
             PrimitiveModeFlags.Tree => PrimitiveSpecialModes.Tree,
+            (PrimitiveModeFlags.Directory | PrimitiveModeFlags.Tree) => PrimitiveSpecialModes.SubModule,
             _ => PrimitiveSpecialModes.Unknown,
         };
 

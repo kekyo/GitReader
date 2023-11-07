@@ -1,0 +1,32 @@
+﻿{
+  Hash: {
+    HashCode: ce68b633419a8b16d642e6ea1ec3492cdbdf2584
+  },
+  TreeRoot: {
+    HashCode: bca060b0a96f256444f3891694d259af5e6286ff
+  },
+  Author: {
+    Name: Kouji Matsui,
+    MailAddress: k@kekyo.net,
+    Date: 2023-10-25 10:49:19 +9,
+    RawFormat: Kouji Matsui <k@kekyo.net> 1698198559 0900
+  },
+  Committer: {
+    Name: Kouji Matsui,
+    MailAddress: k@kekyo.net,
+    Date: 2023-10-25 10:49:19 +9,
+    RawFormat: Kouji Matsui <k@kekyo.net> 1698198559 0900
+  },
+  Parents: [
+    {
+      HashCode: 4126738704ee8b6e330e99c6bc81e9de8bc925c9
+    },
+    {
+      HashCode: 61015068ffcad4dfd44c5239b2b7c41152786594
+    }
+  ],
+  Message:
+Merge branch 'develop' into main
+
+
+}

@@ -1,0 +1,43 @@
+﻿{
+  Hash: {
+    HashCode: ce68b633419a8b16d642e6ea1ec3492cdbdf2584
+  },
+  Author: {
+    Name: Kouji Matsui,
+    MailAddress: k@kekyo.net,
+    Date: 2023-10-25 10:49:19 +9,
+    RawFormat: Kouji Matsui <k@kekyo.net> 1698198559 0900
+  },
+  Committer: {
+    Name: Kouji Matsui,
+    MailAddress: k@kekyo.net,
+    Date: 2023-10-25 10:49:19 +9,
+    RawFormat: Kouji Matsui <k@kekyo.net> 1698198559 0900
+  },
+  Subject: Merge branch 'develop' into main,
+  Body: ,
+  Branches: [
+    {
+      Name: main,
+      IsRemote: false
+    },
+    {
+      Name: origin/HEAD,
+      IsRemote: true
+    },
+    {
+      Name: origin/main,
+      IsRemote: true
+    }
+  ],
+  Tags: [
+    {
+      Type: Commit,
+      ObjectHash: {
+        HashCode: ce68b633419a8b16d642e6ea1ec3492cdbdf2584
+      },
+      Name: 1.5.0,
+      HasAnnotation: false
+    }
+  ]
+}

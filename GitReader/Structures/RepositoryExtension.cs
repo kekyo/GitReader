@@ -76,6 +76,11 @@ public static class RepositoryExtension
         CancellationToken ct = default) =>
         StructuredRepositoryFacade.OpenBlobAsync(entry, ct);
 
+    public static Task<StructuredRepository> OpenSubModuleAsync(
+        this TreeSubModuleEntry subModule,
+        CancellationToken ct = default) =>
+        StructuredRepositoryFacade.OpenSubModuleAsync(subModule, ct);
+
     public static string GetMessage(
         this Commit commit) =>
         commit.message;
