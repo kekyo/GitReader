@@ -635,6 +635,8 @@ Apache-v2
 
 ## History
 
+* 1.7.0:
+  * Rebuilt on .NET 8.0 SDK.
 * 1.6.0:
   * Added submodule accessor.
   * Fixed invalid remote url entries at multiple declaration. (#10)
