@@ -7,6 +7,7 @@
 //
 ////////////////////////////////////////////////////////////////////////////
 
+using GitReader.IO;
 using NUnit.Framework;
 using System.IO;
 using System.IO.Compression;
@@ -34,7 +35,10 @@ public sealed class RepositoryAccessorTests
             Path.Combine("artifacts", "test1.zip"),
             basePath);
 
-        var actual = await RepositoryAccessor.DetectLocalRepositoryPathAsync(innerPath, default);
+        var actual = await RepositoryAccessor.DetectLocalRepositoryPathAsync(
+            innerPath,
+            new StandardFileSystem(65536),
+            default);
 
         Assert.AreEqual(Path.Combine(basePath, ".git"), actual);
     }
@@ -52,7 +56,10 @@ public sealed class RepositoryAccessorTests
 
         var innerPath = Path.Combine(basePath, "GitReader");
 
-        var actual = await RepositoryAccessor.DetectLocalRepositoryPathAsync(innerPath, default);
+        var actual = await RepositoryAccessor.DetectLocalRepositoryPathAsync(
+            innerPath,
+            new StandardFileSystem(65536),
+            default);
 
         Assert.AreEqual(Path.Combine(basePath, ".git", "modules", "GitReader"), actual);
     }

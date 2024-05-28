@@ -7,6 +7,7 @@
 //
 ////////////////////////////////////////////////////////////////////////////
 
+using GitReader.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -17,5 +18,10 @@ public static class RepositoryFactoryExtension
     public static Task<StructuredRepository> OpenStructureAsync(
         this RepositoryFactory _,
         string path, CancellationToken ct = default) =>
-        StructuredRepositoryFacade.OpenStructuredAsync(path, ct);
+        StructuredRepositoryFacade.OpenStructuredAsync(path, new StandardFileSystem(65536), ct);
+
+    public static Task<StructuredRepository> OpenStructureAsync(
+        this RepositoryFactory _,
+        string path, IFileSystem fileSystem, CancellationToken ct = default) =>
+        StructuredRepositoryFacade.OpenStructuredAsync(path, fileSystem,ct);
 }

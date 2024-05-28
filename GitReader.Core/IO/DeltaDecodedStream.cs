@@ -612,11 +612,13 @@ internal sealed class DeltaDecodedStream : Stream
 #if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
     public static async ValueTask<DeltaDecodedStream> CreateAsync(
         Stream baseObjectStream, Stream deltaStream,
-        BufferPool pool, CancellationToken ct)
+        BufferPool pool, IFileSystem fileSystem,
+        CancellationToken ct)
 #else
     public static async Task<DeltaDecodedStream> CreateAsync(
         Stream baseObjectStream, Stream deltaStream,
-        BufferPool pool, CancellationToken ct)
+        BufferPool pool, IFileSystem fileSystem,
+        CancellationToken ct)
 #endif
     {
         void Throw(int step) =>
@@ -653,7 +655,7 @@ internal sealed class DeltaDecodedStream : Stream
         }
 
         return new(
-            await MemoizedStream.CreateAsync(baseObjectStream, (long)baseObjectLength, pool, ct),
+            await MemoizedStream.CreateAsync(baseObjectStream, (long)baseObjectLength, pool, fileSystem, ct),
             deltaStream,
             preloadBuffer.Detach(), preloadIndex, read, (long)decodedObjectLength);
     }

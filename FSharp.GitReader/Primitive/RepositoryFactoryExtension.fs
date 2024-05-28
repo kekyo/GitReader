@@ -10,6 +10,7 @@
 namespace GitReader.Primitive
 
 open GitReader
+open GitReader.IO
 open System.Threading
 
 [<AutoOpen>]
@@ -18,4 +19,7 @@ module public RepositoryFactoryExtension =
     type RepositoryFactory with
         member _.openPrimitive(path: string, ?ct: CancellationToken) =
             PrimitiveRepositoryFacade.OpenPrimitiveAsync(
-                path, unwrapCT ct) |> Async.AwaitTask
+                path, new StandardFileSystem(65536), unwrapCT ct) |> Async.AwaitTask
+        member _.openPrimitive(path: string, fileSystem: IFileSystem, ?ct: CancellationToken) =
+            PrimitiveRepositoryFacade.OpenPrimitiveAsync(
+                path, fileSystem, unwrapCT ct) |> Async.AwaitTask

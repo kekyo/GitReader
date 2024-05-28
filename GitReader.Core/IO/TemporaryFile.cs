@@ -12,6 +12,10 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Threading;
+using System.Threading.Tasks;
+
+
 
 #if !NETSTANDARD1_6
 using System.Runtime.ConstrainedExecution;
@@ -72,18 +76,15 @@ internal sealed class TemporaryFile :
     public string Path =>
         (string)this.pathHandle.Target!;
 
-    public static TemporaryFile CreateFile()
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
+    public static async ValueTask<TemporaryFile> CreateFileAsync(
+        IFileSystem fileSystem, CancellationToken ct)
+#else
+    public static async Task<TemporaryFile> CreateFileAsync(
+        IFileSystem fileSystem, CancellationToken ct)
+#endif
     {
-        var path = Utilities.Combine(
-            System.IO.Path.GetTempPath(),
-            System.IO.Path.GetTempFileName());
-
-        var stream = new FileStream(
-            path,
-            FileMode.Create,
-            FileAccess.ReadWrite,
-            FileShare.None);
-
+        var (path, stream) = await fileSystem.CreateTemporaryAsync(ct);
         return new TemporaryFile(path, stream);
     }
 }

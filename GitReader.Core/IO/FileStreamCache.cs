@@ -11,6 +11,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Runtime.InteropServices.ComTypes;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -25,15 +26,14 @@ internal sealed class FileStreamCache : IDisposable
         // and the timing is managed by FileStreamCache.
 
         private FileStreamCache parent;
-        private FileStream rawStream;
+        private Stream rawStream;
         internal readonly string path;
 
-        public CachedStream(FileStreamCache parent, string path)
+        public CachedStream(FileStreamCache parent, string path, Stream rawStream)
         {
             this.parent = parent;
             this.path = path;
-            this.rawStream = new(
-                path, FileMode.Open, FileAccess.Read, FileShare.Read, 65536, true);
+            this.rawStream = rawStream;
         }
 
         public override bool CanRead =>
@@ -118,8 +118,12 @@ internal sealed class FileStreamCache : IDisposable
 
     internal static readonly int MaxReservedStreams = Environment.ProcessorCount * 2;
 
+    private readonly IFileSystem fileSystem;
     private readonly Dictionary<string, LinkedList<CachedStream>> reserved = new();
     private readonly LinkedList<CachedStream> streamsLRU = new();
+
+    public FileStreamCache(IFileSystem fileSystem) =>
+        this.fileSystem = fileSystem;
 
     public void Dispose()
     {
@@ -172,9 +176,15 @@ internal sealed class FileStreamCache : IDisposable
         }
     }
 
-    public Stream Open(string path)
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
+    public async ValueTask<Stream> OpenAsync(
+        string path, CancellationToken ct)
+#else
+    public async Task<Stream> OpenAsync(
+        string path, CancellationToken ct)
+#endif
     {
-        var fullPath = Path.GetFullPath(path);
+        var fullPath = this.fileSystem.GetFullPath(path);
 
         lock (this.reserved)
         {
@@ -202,8 +212,11 @@ internal sealed class FileStreamCache : IDisposable
                 {
                     this.RemoveLastReserved();
                 }
-                return new CachedStream(this, fullPath);
             }
         }
+
+        var stream2 = await this.fileSystem.OpenAsync(path, true, ct);
+
+        return new CachedStream(this, path, stream2);
     }
 }

@@ -135,18 +135,6 @@ internal static class Utilities
     private const long UnixEpochTicks = DaysTo1970 * TicksPerDay;
     private const long UnixEpochSeconds = UnixEpochTicks / TimeSpan.TicksPerSecond;
 
-    private static readonly bool isWindows =
-#if NETSTANDARD1_6
-        !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("HOMEDRIVE"));
-#else
-        Environment.OSVersion.Platform.ToString().Contains("Win");
-#endif
-
-    private static readonly string homePath =
-        Path.GetFullPath(isWindows ?
-            $"{Environment.GetEnvironmentVariable("HOMEDRIVE") ?? "C:"}{Environment.GetEnvironmentVariable("HOMEPATH") ?? "\\"}" :
-            (Environment.GetEnvironmentVariable("HOME") ?? "/"));
-
     public static DateTimeOffset FromUnixTimeSeconds(long seconds, TimeSpan offset)
     {
         var ticks = seconds * TimeSpan.TicksPerSecond + UnixEpochTicks;
@@ -228,35 +216,6 @@ internal static class Utilities
         where TEnum : struct, Enum =>
         EnumHelper<TEnum>.HasFlag(enumValue, flags);
 #endif
-
-#if NET35
-    public static IEnumerable<string> EnumerateFiles(string basePath, string match) =>
-        Directory.Exists(basePath) ?
-            Directory.GetFiles(basePath, match, SearchOption.AllDirectories) :
-            Empty<string>();
-#else
-    public static IEnumerable<string> EnumerateFiles(string basePath, string match) =>
-        Directory.Exists(basePath) ?
-            Directory.EnumerateFiles(basePath, match, SearchOption.AllDirectories) :
-            Empty<string>();
-#endif
-
-#if NET35
-    public static string Combine(params string[] paths) =>
-        paths.Aggregate(Path.Combine);
-#else
-    public static string Combine(params string[] paths) =>
-        Path.Combine(paths);
-#endif
-
-    public static string GetDirectoryPath(string path) =>
-        Path.GetDirectoryName(path) switch
-        {
-            // Not accurate in Windows, but a compromise...
-            null => Path.DirectorySeparatorChar.ToString(),
-            "" => string.Empty,
-            var dp => dp,
-        };
 
     public static void MakeBigEndian(
         byte[] buffer, int index, int size)
@@ -704,11 +663,4 @@ internal static class Utilities
         Signature signature) =>
         signature.MailAddress is { } mailAddress ?
             $"{signature.Name} <{mailAddress}>" : signature.Name;
-
-    public static string ResolveRelativePath(string basePath, string path) =>
-        Path.GetFullPath(Path.IsPathRooted(path) ?
-            path :
-            path.StartsWith("~/") ?
-                Combine(homePath, path.Substring(2)) :
-                Combine(basePath, path));
 }
