@@ -7,13 +7,16 @@
 //
 ////////////////////////////////////////////////////////////////////////////
 
+using GitReader.IO;
+
 namespace GitReader.Primitive;
 
 public sealed class PrimitiveRepository : Repository
 {
     internal PrimitiveRepository(
-        string repositoryPath) :
-        base(repositoryPath)
+        string repositoryPath,
+        IFileSystem fileSystem) :
+        base(repositoryPath, fileSystem)
     {
     }
 }

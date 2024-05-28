@@ -7,6 +7,7 @@
 //
 ////////////////////////////////////////////////////////////////////////////
 
+using GitReader.IO;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -33,18 +34,17 @@ internal static class IndexReader
 
 #if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
     public static async ValueTask<Dictionary<Hash, ObjectEntry>> ReadIndexAsync(
-        string indexPath, BufferPool pool, CancellationToken ct)
+        string indexPath, IFileSystem fileSystem, BufferPool pool, CancellationToken ct)
 #else
     public static async Task<Dictionary<Hash, ObjectEntry>> ReadIndexAsync(
-        string indexPath, BufferPool pool, CancellationToken ct)
+        string indexPath, IFileSystem fileSystem, BufferPool pool, CancellationToken ct)
 #endif
     {
         void Throw(int step) =>
             throw new InvalidDataException(
                 $"Broken index file: File={indexPath}, Step={step}");
 
-        using var fs = new FileStream(
-            indexPath, FileMode.Open, FileAccess.Read, FileShare.Read, 65536, true);
+        using var fs = await fileSystem.OpenAsync(indexPath, false, ct);
 
         using var header = pool.Take(8);
         var read = await fs.ReadAsync(header, 0, header.Length, ct);

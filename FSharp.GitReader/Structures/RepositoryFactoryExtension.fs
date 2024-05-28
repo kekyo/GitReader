@@ -10,6 +10,7 @@
 namespace GitReader.Structures
 
 open GitReader
+open GitReader.IO
 open System.Threading
 
 [<AutoOpen>]
@@ -18,4 +19,7 @@ module public RepositoryFactoryExtension =
     type RepositoryFactory with
         member _.openStructured(path: string, ?ct: CancellationToken) =
             StructuredRepositoryFacade.OpenStructuredAsync(
-                path, unwrapCT ct) |> Async.AwaitTask
+                path, new StandardFileSystem(65536), unwrapCT ct) |> Async.AwaitTask
+        member _.openStructured(path: string, fileSystem: IFileSystem, ?ct: CancellationToken) =
+            StructuredRepositoryFacade.OpenStructuredAsync(
+                path, fileSystem, unwrapCT ct) |> Async.AwaitTask

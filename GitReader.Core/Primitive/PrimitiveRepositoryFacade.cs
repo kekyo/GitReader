@@ -8,6 +8,7 @@
 ////////////////////////////////////////////////////////////////////////////
 
 using GitReader.Internal;
+using GitReader.IO;
 using System;
 using System.IO;
 using System.Linq;
@@ -19,9 +20,11 @@ namespace GitReader.Primitive;
 internal static class PrimitiveRepositoryFacade
 {
     private static async Task<PrimitiveRepository> InternalOpenPrimitiveAsync(
-        string repositoryPath, CancellationToken ct)
+        string repositoryPath,
+        IFileSystem fileSystem,
+        CancellationToken ct)
     {
-        var repository = new PrimitiveRepository(repositoryPath);
+        var repository = new PrimitiveRepository(repositoryPath, fileSystem);
 
         try
         {
@@ -45,10 +48,13 @@ internal static class PrimitiveRepositoryFacade
     }
 
     public static async Task<PrimitiveRepository> OpenPrimitiveAsync(
-        string path, CancellationToken ct)
+        string path,
+        IFileSystem fileSystem,
+        CancellationToken ct)
     {
-        var repositoryPath = await RepositoryAccessor.DetectLocalRepositoryPathAsync(path, ct);
-        return await InternalOpenPrimitiveAsync(repositoryPath, ct);
+        var repositoryPath = await RepositoryAccessor.DetectLocalRepositoryPathAsync(
+            path, fileSystem, ct);
+        return await InternalOpenPrimitiveAsync(repositoryPath, fileSystem, ct);
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -94,7 +100,7 @@ internal static class PrimitiveRepositoryFacade
             throw new ArgumentException($"Could not find a tag: {tagName}");
     }
 
-    public static Task<PrimitiveRepository> OpenSubModuleAsync(
+    public static async Task<PrimitiveRepository> OpenSubModuleAsync(
         Repository repository,
         PrimitiveTreeEntry[] treePath, CancellationToken ct)
     {
@@ -107,15 +113,16 @@ internal static class PrimitiveRepositoryFacade
             throw new ArgumentException($"Could not use non-submodule entry: {treePath[treePath.Length - 1]}");
         }
 
-        var repositoryPath = Utilities.Combine(
+        var repositoryPath = repository.fileSystem.Combine(
             repository.GitPath, "modules",
-            Utilities.Combine(treePath.Select(tree => tree.Name).ToArray()));
+            repository.fileSystem.Combine(treePath.Select(tree => tree.Name).ToArray()));
 
-        if (!Directory.Exists(repositoryPath))
+        if (!await repository.fileSystem.IsFileExistsAsync(
+            repository.fileSystem.Combine(repositoryPath, "config"), ct))
         {
             throw new ArgumentException("Submodule repository does not exist.");
         }
 
-        return InternalOpenPrimitiveAsync(repositoryPath, ct);
+        return await InternalOpenPrimitiveAsync(repositoryPath, repository.fileSystem, ct);
     }
 }

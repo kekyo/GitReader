@@ -47,6 +47,7 @@ internal sealed class ObjectAccessor : IDisposable
     }
 
     private readonly BufferPool pool;
+    private readonly IFileSystem fileSystem;
     private readonly FileStreamCache fileStreamCache;
     private readonly string objectsBasePath;
     private readonly string packedBasePath;
@@ -60,14 +61,18 @@ internal sealed class ObjectAccessor : IDisposable
 #endif
 
     public ObjectAccessor(
-        BufferPool pool, FileStreamCache fileStreamCache, string gitPath)
+        BufferPool pool,
+        IFileSystem fileSystem,
+        FileStreamCache fileStreamCache,
+        string gitPath)
     {
         this.pool = pool;
+        this.fileSystem = fileSystem;
         this.fileStreamCache = fileStreamCache;
-        this.objectsBasePath = Utilities.Combine(
+        this.objectsBasePath = fileSystem.Combine(
             gitPath,
             "objects");
-        this.packedBasePath = Utilities.Combine(
+        this.packedBasePath = fileSystem.Combine(
             this.objectsBasePath,
             "pack");
         this.streamLRUCacheExhaustTimer =
@@ -119,7 +124,7 @@ internal sealed class ObjectAccessor : IDisposable
             throw new InvalidDataException(
                 $"Could not parse the object. Hash={hash}, Step={step}");
 
-        var fs = this.fileStreamCache.Open(objectPath);
+        var fs = await this.fileStreamCache.OpenAsync(objectPath, ct);
 
         try
         {
@@ -220,12 +225,13 @@ internal sealed class ObjectAccessor : IDisposable
         }
 
         var dict = await IndexReader.ReadIndexAsync(
-            Utilities.Combine(this.packedBasePath, indexFileRelativePath),
+            this.fileSystem.Combine(this.packedBasePath, indexFileRelativePath),
+            this.fileSystem,
             this.pool,
             ct);
         cachedEntry = new(
-            Utilities.Combine(
-                Utilities.GetDirectoryPath(indexFileRelativePath),
+            this.fileSystem.Combine(
+                this.fileSystem.GetDirectoryPath(indexFileRelativePath),
                 Path.GetFileNameWithoutExtension(indexFileRelativePath)),
             dict);
 
@@ -450,7 +456,7 @@ internal sealed class ObjectAccessor : IDisposable
             throw new InvalidDataException(
                 $"Could not parse the object. File={packedFilePath}, Offset={offset}, Step={step}");
 
-        var fs = this.fileStreamCache.Open(packedFilePath);
+        var fs = await this.fileStreamCache.OpenAsync(packedFilePath, ct);
 
         try
         {
@@ -507,11 +513,12 @@ internal sealed class ObjectAccessor : IDisposable
                                 objectEntry.Stream,
                                 new RangedStream(zlibStream, (long)objectSize),
                                 this.pool,
+                                this.fileSystem,
                                 ct);
 
                             var wrappedStream = this.AddToCache(
                                 packedFilePath, offset, objectEntry.Type,
-                                await MemoizedStream.CreateAsync(deltaDecodedStream, -1, this.pool, ct),
+                                await MemoizedStream.CreateAsync(deltaDecodedStream, -1, this.pool, this.fileSystem, ct),
                                 disableCaching);
 
                             return new(wrappedStream, objectEntry.Type);
@@ -555,11 +562,12 @@ internal sealed class ObjectAccessor : IDisposable
                                 oe.Stream,
                                 new RangedStream(zlibStream, (long)objectSize),
                                 this.pool,
+                                this.fileSystem,
                                 ct);
 
                             var wrappedStream = this.AddToCache(
                                 packedFilePath, offset, oe.Type,
-                                await MemoizedStream.CreateAsync(deltaDecodedStream, -1, this.pool, ct),
+                                await MemoizedStream.CreateAsync(deltaDecodedStream, -1, this.pool, this.fileSystem, ct),
                                 disableCaching);
 
                             return new(wrappedStream, oe.Type);
@@ -586,7 +594,7 @@ internal sealed class ObjectAccessor : IDisposable
 
                         var wrappedStream = this.AddToCache(
                             packedFilePath, offset, objectType,
-                            await MemoizedStream.CreateAsync(zlibStream, (long)objectSize, this.pool, ct),
+                            await MemoizedStream.CreateAsync(zlibStream, (long)objectSize, this.pool, this.fileSystem, ct),
                             disableCaching);
 
                         return new(wrappedStream, objectType);
@@ -612,10 +620,10 @@ internal sealed class ObjectAccessor : IDisposable
         Hash hash, bool disableCaching, CancellationToken ct)
 #endif
     {
+        var files = await this.fileSystem.GetFilesAsync(this.packedBasePath, "pack-*.idx", ct);
         var entries = await Utilities.WhenAll(
-            Utilities.EnumerateFiles(this.packedBasePath, "pack-*.idx").
-            Select(indexFilePath => this.GetOrCacheIndexEntryAsync(
-                indexFilePath.Substring(this.packedBasePath.Length + 1), ct)));
+            files.Select(indexFilePath =>
+                this.GetOrCacheIndexEntryAsync(indexFilePath.Substring(this.packedBasePath.Length + 1), ct)));
 
         if (entries.Select(indexEntry =>
             indexEntry.ObjectEntries.TryGetValue(hash, out var objectEntry) ?
@@ -625,7 +633,7 @@ internal sealed class ObjectAccessor : IDisposable
             return null;
         }
 
-        var packedFilePath = Utilities.Combine(
+        var packedFilePath = this.fileSystem.Combine(
             this.packedBasePath,
             entry.BaseFileName + ".pack");
 
@@ -638,7 +646,7 @@ internal sealed class ObjectAccessor : IDisposable
             Throw(1);
         }
 
-        if (!File.Exists(packedFilePath))
+        if (!await this.fileSystem.IsFileExistsAsync(packedFilePath, ct))
         {
             Throw(2);
         }
@@ -650,25 +658,25 @@ internal sealed class ObjectAccessor : IDisposable
     //////////////////////////////////////////////////////////////////////////
 
 #if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
-    public ValueTask<ObjectStreamResult?> OpenAsync(
+    public async ValueTask<ObjectStreamResult?> OpenAsync(
         Hash hash, bool disableCaching, CancellationToken ct)
 #else
-    public Task<ObjectStreamResult?> OpenAsync(
+    public async Task<ObjectStreamResult?> OpenAsync(
         Hash hash, bool disableCaching, CancellationToken ct)
 #endif
     {
-        var objectPath = Utilities.Combine(
+        var objectPath = this.fileSystem.Combine(
             this.objectsBasePath,
             BitConverter.ToString(hash.HashCode, 0, 1).ToLowerInvariant(),
             BitConverter.ToString(hash.HashCode, 1).Replace("-", string.Empty).ToLowerInvariant());
 
-        if (File.Exists(objectPath))
+        if (await this.fileSystem.IsFileExistsAsync(objectPath, ct))
         {
-            return this.OpenFromObjectFileAsync(objectPath, hash, ct);
+            return await this.OpenFromObjectFileAsync(objectPath, hash, ct);
         }
         else
         {
-            return this.OpenFromPackedAsync(hash, disableCaching, ct);
+            return await this.OpenFromPackedAsync(hash, disableCaching, ct);
         }
     }
 }

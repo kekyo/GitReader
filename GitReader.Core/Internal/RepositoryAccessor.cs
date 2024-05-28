@@ -93,72 +93,31 @@ internal readonly struct HashResults
 internal static class RepositoryAccessor
 {
 #if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
-    private static async ValueTask<Stream> OpenFileAsync(
-        string path, CancellationToken ct)
-#else
-    private static async Task<Stream> OpenFileAsync(
-        string path, CancellationToken ct)
-#endif
-    {
-        // Many Git clients are supposed to be OK to use at the same time.
-        // If we try to open a file with the FileShare.Read share flag (i.e., write-protected),
-        // an error will occur when another Git client is opening (with non-read-sharable) the file.
-        // Retry here as this situation is expected to take a short time to complete.
-        // However, if multiple files are opened sequentially,
-        // a deadlock may occur depending on the order in which they are opened.
-        // Because they are not processed as transactions.
-        // If a constraint is imposed by the number of open attempts,
-        // and if the file cannot be opened by any means,
-        // degrade to FileShare.ReadWrite and attempt to open it.
-        // (In this case it might read the wrong, that is the value in the process of writing...)
-        for (var count = 0; count < 10; count++)
-        {
-            try
-            {
-                return new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, 65536, true);
-            }
-            catch (FileNotFoundException)
-            {
-                throw;
-            }
-            catch (IOException)
-            {
-            }
-
-            await Utilities.Delay(TimeSpan.FromMilliseconds(500), ct);
-        }
-
-        // Gave up and will try to open with read-write...
-        return new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 65536, true);
-    }
-
-#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
     public static async ValueTask<string> DetectLocalRepositoryPathAsync(
-        string startPath, CancellationToken ct)
+        string startPath, IFileSystem fileSystem, CancellationToken ct)
 #else
     public static async Task<string> DetectLocalRepositoryPathAsync(
-        string startPath, CancellationToken ct)
+        string startPath, IFileSystem fileSystem, CancellationToken ct)
 #endif
     {
-        var currentPath = Path.GetFullPath(startPath);
+        var currentPath = fileSystem.GetFullPath(startPath);
 
         while (true)
         {
             ct.ThrowIfCancellationRequested();
 
             var candidatePath = Path.GetFileName(currentPath) != ".git" ?
-                Utilities.Combine(currentPath, ".git") : currentPath;
+                fileSystem.Combine(currentPath, ".git") : currentPath;
 
-            if (Directory.Exists(candidatePath) &&
-                File.Exists(Path.Combine(candidatePath, "config")))
+            if (await fileSystem.IsFileExistsAsync(fileSystem.Combine(candidatePath, "config"), ct))
             {
                 return candidatePath;
             }
 
             // Issue #11
-            if (File.Exists(candidatePath))
+            if (await fileSystem.IsFileExistsAsync(candidatePath, ct))
             {
-                using var fs = await OpenFileAsync(candidatePath, ct);
+                using var fs = await fileSystem.OpenAsync(candidatePath, false, ct);
                 var tr = new AsyncTextReader(fs);
 
                 while (true)
@@ -174,10 +133,9 @@ internal static class RepositoryAccessor
                     {
                         // Resolve to full path (And normalize path directory separators)
                         var gitDirPath = line.Substring(7).TrimStart();
-                        candidatePath = Utilities.ResolveRelativePath(currentPath, gitDirPath);
+                        candidatePath = fileSystem.ResolveRelativePath(currentPath, gitDirPath);
 
-                        if (Directory.Exists(candidatePath) &&
-                            File.Exists(Path.Combine(candidatePath, "config")))
+                        if (await fileSystem.IsFileExistsAsync(fileSystem.Combine(candidatePath, "config"), ct))
                         {
                             return candidatePath;
                         }
@@ -195,7 +153,7 @@ internal static class RepositoryAccessor
                 throw new ArgumentException("Repository does not exist.");
             }
 
-            currentPath = Utilities.GetDirectoryPath(currentPath);
+            currentPath = fileSystem.GetDirectoryPath(currentPath);
         }
     }
 
@@ -242,13 +200,13 @@ internal static class RepositoryAccessor
         Repository repository,
         CancellationToken ct)
     {
-        var path = Utilities.Combine(repository.GitPath, "config");
-        if (!File.Exists(path))
+        var path = repository.fileSystem.Combine(repository.GitPath, "config");
+        if (!await repository.fileSystem.IsFileExistsAsync(path, ct))
         {
             return new(new());
         }
 
-        using var fs = await OpenFileAsync(path, ct);
+        using var fs = await repository.fileSystem.OpenAsync(path, false, ct);
         var tr = new AsyncTextReader(fs);
 
         var remotes = new Dictionary<string, string>();
@@ -290,13 +248,13 @@ internal static class RepositoryAccessor
         var remoteNameByUrl = repository.remoteUrls.
             ToDictionary(entry => entry.Value, entry => entry.Key);
 
-        var path = Utilities.Combine(repository.GitPath, "FETCH_HEAD");
-        if (!File.Exists(path))
+        var path = repository.fileSystem.Combine(repository.GitPath, "FETCH_HEAD");
+        if (!await repository.fileSystem.IsFileExistsAsync(path, ct))
         {
             return new(new(new()), new(new()), new(new()));
         }
 
-        using var fs = await OpenFileAsync(path, ct);
+        using var fs = await repository.fileSystem.OpenAsync(path, false, ct);
         var tr = new AsyncTextReader(fs);
 
         var remoteBranches = new Dictionary<string, Hash>();
@@ -382,13 +340,13 @@ internal static class RepositoryAccessor
         Repository repository,
         CancellationToken ct)
     {
-        var path = Utilities.Combine(repository.GitPath, "packed-refs");
-        if (!File.Exists(path))
+        var path = repository.fileSystem.Combine(repository.GitPath, "packed-refs");
+        if (!await repository.fileSystem.IsFileExistsAsync(path, ct))
         {
             return new(new(new()), new(new()), new(new()));
         }
 
-        using var fs = await OpenFileAsync(path, ct);
+        using var fs = await repository.fileSystem.OpenAsync(path, false, ct);
         var tr = new AsyncTextReader(fs);
 
         var branches = new Dictionary<string, Hash>();
@@ -495,10 +453,10 @@ internal static class RepositoryAccessor
                 Replace("refs/tags/", string.Empty);
             names.Add(name);
 
-            var path = Utilities.Combine(
+            var path = repository.fileSystem.Combine(
                 repository.GitPath,
                 currentLocation.Replace('/', Path.DirectorySeparatorChar));
-            if (!File.Exists(path))
+            if (!await repository.fileSystem.IsFileExistsAsync(path, ct))
             {
                 if (currentLocation.StartsWith("refs/heads/"))
                 {
@@ -524,7 +482,7 @@ internal static class RepositoryAccessor
                 return null;
             }
 
-            using var fs = await OpenFileAsync(path, ct);
+            using var fs = await repository.fileSystem.OpenAsync(path, false, ct);
             var tr = new AsyncTextReader(fs);
 
             var line = await tr.ReadLineAsync(ct);
@@ -554,14 +512,14 @@ internal static class RepositoryAccessor
     public static async Task<PrimitiveReflogEntry[]> ReadReflogEntriesAsync(
         Repository repository, string refRelativePath, CancellationToken ct)
     {
-        var path = Utilities.Combine(
+        var path = repository.fileSystem.Combine(
             repository.GitPath, "logs", refRelativePath);
-        if (!File.Exists(path))
+        if (!await repository.fileSystem.IsFileExistsAsync(path, ct))
         {
             return new PrimitiveReflogEntry[]{};
         }
 
-        using var fs = await OpenFileAsync(path, ct);
+        using var fs = await repository.fileSystem.OpenAsync(path, false, ct);
         var tr = new AsyncTextReader(fs);
 
         var entries = new List<PrimitiveReflogEntry>();
@@ -587,10 +545,12 @@ internal static class RepositoryAccessor
         ReferenceTypes type,
         CancellationToken ct)
     {
-        var headsPath = Utilities.Combine(
+        var headsPath = repository.fileSystem.Combine(
             repository.GitPath, "refs", GetReferenceTypeName(type));
+        var files = await repository.fileSystem.GetFilesAsync(
+            headsPath, "*", ct);
         var references = (await Utilities.WhenAll(
-            Utilities.EnumerateFiles(headsPath, "*").
+            files.
 #if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
             Select((Func<string, ValueTask<PrimitiveReference?>>)(async path =>
 #else
@@ -656,10 +616,12 @@ internal static class RepositoryAccessor
         Repository repository,
         CancellationToken ct)
     {
-        var headsPath = Utilities.Combine(
+        var headsPath = repository.fileSystem.Combine(
             repository.GitPath, "refs", "tags");
+        var files = await repository.fileSystem.GetFilesAsync(
+            headsPath, "*", ct);
         var references = (await Utilities.WhenAll(
-            Utilities.EnumerateFiles(headsPath, "*").
+            files.
 #if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
             Select((Func<string, ValueTask<PrimitiveTagReference?>>)(async path =>
 #else

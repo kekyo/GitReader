@@ -9,6 +9,7 @@
 
 using GitReader.Collections;
 using GitReader.Internal;
+using GitReader.IO;
 using GitReader.Primitive;
 using System;
 using System.Diagnostics;
@@ -167,9 +168,11 @@ internal static class StructuredRepositoryFacade
     //////////////////////////////////////////////////////////////////////////
 
     private static async Task<StructuredRepository> InternalOpenStructuredAsync(
-        string repositoryPath, CancellationToken ct)
+        string repositoryPath,
+        IFileSystem fileSystem,
+        CancellationToken ct)
     {
-        var repository = new StructuredRepository(repositoryPath);
+        var repository = new StructuredRepository(repositoryPath, fileSystem);
 
         try
         {
@@ -206,10 +209,13 @@ internal static class StructuredRepositoryFacade
     }
 
     public static async Task<StructuredRepository> OpenStructuredAsync(
-        string path, CancellationToken ct)
+        string path,
+        IFileSystem fileSystem,
+        CancellationToken ct)
     {
-        var repositoryPath = await RepositoryAccessor.DetectLocalRepositoryPathAsync(path, ct);
-        return await InternalOpenStructuredAsync(repositoryPath, ct);
+        var repositoryPath = await RepositoryAccessor.DetectLocalRepositoryPathAsync(
+            path, fileSystem, ct);
+        return await InternalOpenStructuredAsync(repositoryPath, fileSystem, ct);
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -410,27 +416,28 @@ internal static class StructuredRepositoryFacade
         return treeRoot;
     }
 
-    public static Task<StructuredRepository> OpenSubModuleAsync(
+    public static async Task<StructuredRepository> OpenSubModuleAsync(
         TreeSubModuleEntry subModule,
         CancellationToken ct)
     {
         var (repository, _) = GetRelatedRepository(subModule);
 
-        var repositoryPath = Utilities.Combine(
+        var repositoryPath = repository.fileSystem.Combine(
             repository.GitPath,
             "modules",
-            Utilities.Combine(subModule.
+            repository.fileSystem.Combine(subModule.
                 Traverse<TreeEntry>(tree => tree.Parent as TreeEntry).
                 Select(tree => tree.Name).
                 Reverse().
                 ToArray()));
 
-        if (!Directory.Exists(repositoryPath))
+        if (!await repository.fileSystem.IsFileExistsAsync(
+            repository.fileSystem.Combine(repositoryPath, "config"), ct))
         {
             throw new ArgumentException("Submodule repository does not exist.");
         }
 
-        return InternalOpenStructuredAsync(repositoryPath, ct);
+        return await InternalOpenStructuredAsync(repositoryPath, repository.fileSystem, ct);
     }
 
     public static Task<Stream> OpenBlobAsync(

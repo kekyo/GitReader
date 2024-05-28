@@ -309,15 +309,23 @@ internal sealed class MemoizedStream : Stream
 
 #if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
     public static async ValueTask<MemoizedStream> CreateAsync(
-        Stream parent, long parentLength, BufferPool pool, CancellationToken ct)
+        Stream parent,
+        long parentLength,
+        BufferPool pool,
+        IFileSystem fileSystem,
+        CancellationToken ct)
 #else
     public static async Task<MemoizedStream> CreateAsync(
-        Stream parent, long parentLength, BufferPool pool, CancellationToken ct)
+        Stream parent,
+        long parentLength,
+        BufferPool pool,
+        IFileSystem fileSystem,
+        CancellationToken ct)
 #endif
     {
         if (parentLength >= memoizeToFileSize)
         {
-            var temporaryFile = TemporaryFile.CreateFile();
+            var temporaryFile = await TemporaryFile.CreateFileAsync(fileSystem, ct);
             return new(parent, parentLength, temporaryFile, temporaryFile.Stream, pool);
         }
         else if (parentLength < 0)

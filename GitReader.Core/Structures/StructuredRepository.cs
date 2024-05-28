@@ -8,6 +8,7 @@
 ////////////////////////////////////////////////////////////////////////////
 
 using GitReader.Collections;
+using GitReader.IO;
 using System;
 using System.ComponentModel;
 
@@ -27,8 +28,9 @@ public sealed class StructuredRepository : Repository
     internal ReadOnlyArray<Stash> stashes = null!;
 
     internal StructuredRepository(
-        string repositoryPath) :
-        base(repositoryPath)
+        string repositoryPath,
+        IFileSystem fileSystem) :
+        base(repositoryPath, fileSystem)
     {
     }
 

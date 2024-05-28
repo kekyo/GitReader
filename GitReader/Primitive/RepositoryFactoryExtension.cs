@@ -7,6 +7,7 @@
 //
 ////////////////////////////////////////////////////////////////////////////
 
+using GitReader.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -17,5 +18,12 @@ public static class RepositoryFactoryExtension
     public static Task<PrimitiveRepository> OpenPrimitiveAsync(
         this RepositoryFactory _,
         string path, CancellationToken ct = default) =>
-        PrimitiveRepositoryFacade.OpenPrimitiveAsync(path, ct);
+        PrimitiveRepositoryFacade.OpenPrimitiveAsync(
+            path, new StandardFileSystem(65536), ct);
+
+    public static Task<PrimitiveRepository> OpenPrimitiveAsync(
+        this RepositoryFactory _,
+        string path, IFileSystem fileSystem, CancellationToken ct = default) =>
+        PrimitiveRepositoryFacade.OpenPrimitiveAsync(
+            path, fileSystem, ct);
 }
