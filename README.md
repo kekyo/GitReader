@@ -635,6 +635,10 @@ Apache-v2
 
 ## History
 
+* 1.8.0:
+  * Added file system abstraction interface called `IFileSystem`.
+    * This interface allows repository access independent of the local file system.
+    * Currently undocumented, but there is a `StandardFileSystem` class that uses `System.IO` as its default implementation, so you may want to refer to this class.
 * 1.7.0:
   * Rebuilt on .NET 8.0 SDK.
 * 1.6.0:
