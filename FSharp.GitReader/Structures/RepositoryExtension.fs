@@ -91,7 +91,7 @@ module public RepositoryExtension =
          (match repository.head with
           | null -> None
           | _ -> Some repository.head),
-         repository.branches,
+         repository.branchesAll,
          repository.tags)
 
     let (|Branch|) (branch: Branch) =

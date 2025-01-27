@@ -68,7 +68,7 @@ It primarily fits the purpose of easily extracting commit information from a Git
 
 ### Target .NET platforms
 
-* .NET 8.0 to 5.0
+* .NET 9.0 to 5.0
 * .NET Core 3.1 to 2.0
 * .NET Standard 2.1 to 1.6
 * .NET Framework 4.8.1 to 3.5
@@ -78,7 +78,7 @@ It primarily fits the purpose of easily extracting commit information from a Git
 F# 5.0 or upper, it contains F# friendly signature definition.
 (Asynchronous operations with `Async` type, elimination of null values with `Option`, etc.)
 
-* .NET 8.0 to 5.0
+* .NET 9.0 to 5.0
 * .NET Core 3.1 to 2.0
 * .NET Standard 2.1, 2.0
 * .NET Framework 4.8.1 to 4.6.1
@@ -172,6 +172,9 @@ Console.WriteLine($"Committer: {commit.Committer}");
 Console.WriteLine($"Subject: {commit.Subject}");
 Console.WriteLine($"Body: {commit.Body}");
 ```
+
+Use `BranchesAll` instead of `Branches` when there may be branches with the same name but different references.
+Using `Branches` will give you only the first branch available from all branches of the same name.
 
 ### Get a tag
 

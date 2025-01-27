@@ -26,6 +26,10 @@ module public RepositoryExtension =
             PrimitiveRepositoryFacade.GetBranchHeadReferenceAsync(
                 repository, branchName, unwrapCT ct) |> Async.AwaitTask
 
+        member repository.getBranchAllHeadReference(branchName: string, ?ct: CancellationToken) =
+            PrimitiveRepositoryFacade.GetBranchAllHeadReferenceAsync(
+                repository, branchName, unwrapCT ct) |> Async.AwaitTask
+
         member repository.getTagReference(tagName: string, ?ct: CancellationToken) =
             PrimitiveRepositoryFacade.GetTagReferenceAsync(
                 repository, tagName, unwrapCT ct) |> Async.AwaitTask

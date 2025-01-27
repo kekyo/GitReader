@@ -73,7 +73,7 @@ internal static class StructuredRepositoryFacade
 
     //////////////////////////////////////////////////////////////////////////
 
-    private static async Task<ReadOnlyDictionary<string, Branch>> GetStructuredBranchesAsync(
+    private static async Task<ReadOnlyDictionary<string, Branch[]>> GetStructuredBranchesAsync(
         StructuredRepository repository,
         WeakReference rwr,
         CancellationToken ct)
@@ -89,7 +89,8 @@ internal static class StructuredRepositoryFacade
         return references.
             Select(r => new Branch(rwr, r.Name, r.Target, false)).
             Concat(remoteReferences.Select(r => new Branch(rwr, r.Name, r.Target, true))).
-            ToDictionary(b => b.Name);
+            GroupBy(b => b.Name).
+            ToDictionary(g => g.Key, g => g.ToArray());
     }
 
     private static async Task<ReadOnlyDictionary<string, Tag>> GetStructuredTagsAsync(
@@ -135,8 +136,8 @@ internal static class StructuredRepositoryFacade
 
         return tags.
             Where(tag => tag != null).
-            DistinctBy(tag => tag!.Name).
-            ToDictionary(tag => tag!.Name, tag => tag!);
+            DistinctBy(tag => tag.Name).
+            ToDictionary(tag => tag.Name);
     }
 
     private static async Task<Stash[]> GetStructuredStashesAsync(
@@ -188,14 +189,14 @@ internal static class StructuredRepositoryFacade
 
             // Read all other requirements.
             var rwr = new WeakReference(repository);
-            var (head, branches, tags, stashes) = await Utilities.Join(
+            var (head, branchesAll, tags, stashes) = await Utilities.Join(
                 GetCurrentHeadAsync(repository, rwr, ct),
                 GetStructuredBranchesAsync(repository, rwr, ct),
                 GetStructuredTagsAsync(repository, rwr, ct),
                 GetStructuredStashesAsync(repository, rwr, ct));
 
             repository.head = head;
-            repository.branches = branches;
+            repository.branchesAll = branchesAll;
             repository.tags = tags;
             repository.stashes = stashes;
 

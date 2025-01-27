@@ -88,6 +88,23 @@ internal static class PrimitiveRepositoryFacade
             throw new ArgumentException($"Could not find a branch: {branchName}");
     }
 
+    public static async Task<PrimitiveReference[]> GetBranchAllHeadReferenceAsync(
+        Repository repository,
+        string branchName,
+        CancellationToken ct)
+    {
+        var path = $"refs/heads/{branchName}";
+        var remotePath = $"refs/remotes/{branchName}";
+        var (results, remoteResults) = await Utilities.Join(
+            RepositoryAccessor.ReadHashAsync(repository, path, ct),
+            RepositoryAccessor.ReadHashAsync(repository, remotePath, ct));
+        return (results is { } r ?
+            [ new PrimitiveReference(branchName, path, r.Hash) ] : Utilities.Empty<PrimitiveReference>()).
+            Concat(remoteResults is { } rr ?
+                [ new PrimitiveReference(branchName, remotePath, rr.Hash) ] : Utilities.Empty<PrimitiveReference>()).
+            ToArray();
+    }
+
     public static async Task<PrimitiveTagReference> GetTagReferenceAsync(
         Repository repository,
         string tagName, CancellationToken ct)

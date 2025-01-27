@@ -27,6 +27,11 @@ public static class RepositoryExtension
         string branchName, CancellationToken ct = default) =>
         PrimitiveRepositoryFacade.GetBranchHeadReferenceAsync(repository, branchName, ct);
 
+    public static Task<PrimitiveReference[]> GetBranchAllHeadReferenceAsync(
+        this PrimitiveRepository repository,
+        string branchName, CancellationToken ct = default) =>
+        PrimitiveRepositoryFacade.GetBranchAllHeadReferenceAsync(repository, branchName, ct);
+
     public static Task<PrimitiveTagReference> GetTagReferenceAsync(
         this PrimitiveRepository repository,
         string tagName, CancellationToken ct = default) =>

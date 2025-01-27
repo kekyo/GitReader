@@ -11,6 +11,8 @@ using GitReader.Collections;
 using GitReader.IO;
 using System;
 using System.ComponentModel;
+using System.Linq;
+using System.Threading;
 
 namespace GitReader.Structures;
 
@@ -23,9 +25,11 @@ internal interface IRepositoryReference
 public sealed class StructuredRepository : Repository
 {
     internal Branch? head;
-    internal ReadOnlyDictionary<string, Branch> branches = null!;
+    internal ReadOnlyDictionary<string, Branch[]> branchesAll = null!;
     internal ReadOnlyDictionary<string, Tag> tags = null!;
     internal ReadOnlyArray<Stash> stashes = null!;
+
+    private ReadOnlyDictionary<string, Branch>? branches;
 
     internal StructuredRepository(
         string repositoryPath,
@@ -37,10 +41,26 @@ public sealed class StructuredRepository : Repository
     public Branch? Head =>
         this.head;
 
-    public ReadOnlyDictionary<string, Branch> Branches =>
-        this.branches;
+    public ReadOnlyDictionary<string, Branch> Branches
+    {
+        get
+        {
+            if (this.branches == null)
+            {
+                // Ignored race condition.
+                this.branches = this.branchesAll.ToDictionary(
+                    entry => entry.Key, entry => entry.Value[0]);
+            }
+            return this.branches;
+        }
+    }
+
     public ReadOnlyDictionary<string, Tag> Tags =>
-        this.tags;    
+        this.tags;
+
+    public ReadOnlyDictionary<string, Branch[]> BranchesAll =>
+        this.branchesAll;
+
     public ReadOnlyArray<Stash> Stashes =>
         this.stashes;
 }
