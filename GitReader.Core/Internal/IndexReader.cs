@@ -158,7 +158,7 @@ internal static class IndexReader
                 Throw(9);
             }
 
-            for (var index = 0; index < largeOffsetTableBuffer.Length; index++)
+            for (var index = 0; index < largeOffsetOffset.Count; index++)
             {
                 Utilities.MakeBigEndian(largeOffsetTableBuffer, index * 8, 8);
             }
