@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <AssemblyName>FSharp.GitReader.Tests</AssemblyName>
-    <TargetFrameworks>net48;net5.0;net6.0;net7.0;net8.0</TargetFrameworks>
+    <TargetFrameworks>net48;net5.0;net6.0;net7.0;net8.0;net9.0</TargetFrameworks>
   </PropertyGroup>
     
   <ItemGroup Condition="'$(TargetFramework)' == 'net48'">
