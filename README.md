@@ -638,6 +638,10 @@ Apache-v2
 
 ## History
 
+* 1.9.0:
+  * Supported multiple same named branches.
+  * Added .NET 9.0 tfm.
+  * Fixed IOR exception when triggered loading large offset table. (#14)
 * 1.8.0:
   * Added file system abstraction interface called `IFileSystem`.
     * This interface allows repository access independent of the local file system.
