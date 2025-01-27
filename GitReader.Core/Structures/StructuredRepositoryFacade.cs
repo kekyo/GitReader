@@ -239,7 +239,7 @@ internal static class StructuredRepositoryFacade
 
         var commit = await RepositoryAccessor.ReadCommitAsync(
             repository, commitReference.Hash, ct);
-        return new(rwr, commit.Value);
+        return new(rwr, commit!.Value);
     }
 
     public static async Task<Commit> GetCommitAsync(
@@ -251,7 +251,7 @@ internal static class StructuredRepositoryFacade
 
         var commit = await RepositoryAccessor.ReadCommitAsync(
             repository, hash, ct);
-        return new(rwr, commit.Value);
+        return new(rwr, commit!.Value);
     }
 
     public static async Task<Annotation> GetAnnotationAsync(
@@ -267,7 +267,7 @@ internal static class StructuredRepositoryFacade
                 var t = await RepositoryAccessor.ReadTagAsync(
                     repository, tagHash, ct);
 
-                annotation = new(t.Value.Tagger, t.Value.Message);
+                annotation = new(t!.Value.Tagger, t!.Value.Message);
                 Interlocked.CompareExchange(ref tag.annotation, annotation, null);
             }
             else

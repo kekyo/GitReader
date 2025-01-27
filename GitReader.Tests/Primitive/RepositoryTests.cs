@@ -51,7 +51,7 @@ public sealed class RepositoryTests
             RepositoryTestsSetUp.GetBasePath("test1"));
 
         var headref = await repository.GetCurrentHeadReferenceAsync();
-        var commit = await repository.GetCommitAsync(headref.Value);
+        var commit = await repository.GetCommitAsync(headref!.Value);
 
         await Verifier.Verify(commit);
     }
@@ -148,7 +148,7 @@ public sealed class RepositoryTests
         var commit = await repository.GetCommitAsync(
             "1205dc34ce48bda28fc543daaf9525a9bb6e6d10");
 
-        var tree = await repository.GetTreeAsync(commit.Value.TreeRoot);
+        var tree = await repository.GetTreeAsync(commit!.Value.TreeRoot);
 
         await Verifier.Verify(tree);
     }
@@ -162,7 +162,7 @@ public sealed class RepositoryTests
         var commit = await repository.GetCommitAsync(
             "1205dc34ce48bda28fc543daaf9525a9bb6e6d10");
 
-        var tree = await repository.GetTreeAsync(commit.Value.TreeRoot);
+        var tree = await repository.GetTreeAsync(commit!.Value.TreeRoot);
 
         var blobHash = tree.Children.First(child => child.Name == "build-nupkg.bat").Hash;
 
@@ -181,7 +181,7 @@ public sealed class RepositoryTests
         var commit = await repository.GetCommitAsync(
             "37021d38937107d5782f063f78f502f2da14c751");
 
-        var tree = await repository.GetTreeAsync(commit.Value.TreeRoot);
+        var tree = await repository.GetTreeAsync(commit!.Value.TreeRoot);
 
         var subModule = tree.Children.First(child => child.Name == "GitReader");
 
