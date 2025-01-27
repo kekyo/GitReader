@@ -1,7 +1,7 @@
 ﻿////////////////////////////////////////////////////////////////////////////
 //
 // GitReader - Lightweight Git local repository traversal library.
-// Copyright (c) Kouji Matsui (@kozy_kekyo, @kekyo@mastodon.cloud)
+// Copyright (c) Kouji Matsui (@kozy_kekyo, @kekyo@mi.kekyo.net)
 //
 // Licensed under Apache-v2: https://opensource.org/licenses/Apache-2.0
 //
@@ -73,7 +73,7 @@ internal static class StructuredRepositoryFacade
 
     //////////////////////////////////////////////////////////////////////////
 
-    private static async Task<ReadOnlyDictionary<string, Branch>> GetStructuredBranchesAsync(
+    private static async Task<ReadOnlyDictionary<string, Branch[]>> GetStructuredBranchesAsync(
         StructuredRepository repository,
         WeakReference rwr,
         CancellationToken ct)
@@ -89,7 +89,8 @@ internal static class StructuredRepositoryFacade
         return references.
             Select(r => new Branch(rwr, r.Name, r.Target, false)).
             Concat(remoteReferences.Select(r => new Branch(rwr, r.Name, r.Target, true))).
-            ToDictionary(b => b.Name);
+            GroupBy(b => b.Name).
+            ToDictionary(g => g.Key, g => g.ToArray());
     }
 
     private static async Task<ReadOnlyDictionary<string, Tag>> GetStructuredTagsAsync(
@@ -135,8 +136,8 @@ internal static class StructuredRepositoryFacade
 
         return tags.
             Where(tag => tag != null).
-            DistinctBy(tag => tag!.Name).
-            ToDictionary(tag => tag!.Name, tag => tag!);
+            DistinctBy(tag => tag.Name).
+            ToDictionary(tag => tag.Name);
     }
 
     private static async Task<Stash[]> GetStructuredStashesAsync(
@@ -188,14 +189,14 @@ internal static class StructuredRepositoryFacade
 
             // Read all other requirements.
             var rwr = new WeakReference(repository);
-            var (head, branches, tags, stashes) = await Utilities.Join(
+            var (head, branchesAll, tags, stashes) = await Utilities.Join(
                 GetCurrentHeadAsync(repository, rwr, ct),
                 GetStructuredBranchesAsync(repository, rwr, ct),
                 GetStructuredTagsAsync(repository, rwr, ct),
                 GetStructuredStashesAsync(repository, rwr, ct));
 
             repository.head = head;
-            repository.branches = branches;
+            repository.branchesAll = branchesAll;
             repository.tags = tags;
             repository.stashes = stashes;
 
@@ -239,7 +240,7 @@ internal static class StructuredRepositoryFacade
 
         var commit = await RepositoryAccessor.ReadCommitAsync(
             repository, commitReference.Hash, ct);
-        return new(rwr, commit.Value);
+        return new(rwr, commit!.Value);
     }
 
     public static async Task<Commit> GetCommitAsync(
@@ -251,7 +252,7 @@ internal static class StructuredRepositoryFacade
 
         var commit = await RepositoryAccessor.ReadCommitAsync(
             repository, hash, ct);
-        return new(rwr, commit.Value);
+        return new(rwr, commit!.Value);
     }
 
     public static async Task<Annotation> GetAnnotationAsync(
@@ -267,7 +268,7 @@ internal static class StructuredRepositoryFacade
                 var t = await RepositoryAccessor.ReadTagAsync(
                     repository, tagHash, ct);
 
-                annotation = new(t.Value.Tagger, t.Value.Message);
+                annotation = new(t!.Value.Tagger, t!.Value.Message);
                 Interlocked.CompareExchange(ref tag.annotation, annotation, null);
             }
             else

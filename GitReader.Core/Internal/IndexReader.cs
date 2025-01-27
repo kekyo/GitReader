@@ -1,7 +1,7 @@
 ﻿////////////////////////////////////////////////////////////////////////////
 //
 // GitReader - Lightweight Git local repository traversal library.
-// Copyright (c) Kouji Matsui (@kozy_kekyo, @kekyo@mastodon.cloud)
+// Copyright (c) Kouji Matsui (@kozy_kekyo, @kekyo@mi.kekyo.net)
 //
 // Licensed under Apache-v2: https://opensource.org/licenses/Apache-2.0
 //
@@ -158,7 +158,7 @@ internal static class IndexReader
                 Throw(9);
             }
 
-            for (var index = 0; index < largeOffsetTableBuffer.Length; index++)
+            for (var index = 0; index < largeOffsetOffset.Count; index++)
             {
                 Utilities.MakeBigEndian(largeOffsetTableBuffer, index * 8, 8);
             }

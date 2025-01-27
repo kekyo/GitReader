@@ -1,7 +1,7 @@
 ﻿////////////////////////////////////////////////////////////////////////////
 //
 // GitReader - Lightweight Git local repository traversal library.
-// Copyright (c) Kouji Matsui (@kozy_kekyo, @kekyo@mastodon.cloud)
+// Copyright (c) Kouji Matsui (@kozy_kekyo, @kekyo@mi.kekyo.net)
 //
 // Licensed under Apache-v2: https://opensource.org/licenses/Apache-2.0
 //
@@ -26,6 +26,11 @@ public static class RepositoryExtension
         this PrimitiveRepository repository,
         string branchName, CancellationToken ct = default) =>
         PrimitiveRepositoryFacade.GetBranchHeadReferenceAsync(repository, branchName, ct);
+
+    public static Task<PrimitiveReference[]> GetBranchAllHeadReferenceAsync(
+        this PrimitiveRepository repository,
+        string branchName, CancellationToken ct = default) =>
+        PrimitiveRepositoryFacade.GetBranchAllHeadReferenceAsync(repository, branchName, ct);
 
     public static Task<PrimitiveTagReference> GetTagReferenceAsync(
         this PrimitiveRepository repository,

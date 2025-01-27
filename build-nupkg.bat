@@ -1,7 +1,7 @@
 @echo off
 
 rem GitReader
-rem Copyright (c) Kouji Matsui (@kozy_kekyo, @kekyo@mastodon.cloud)
+rem Copyright (c) Kouji Matsui (@kozy_kekyo, @kekyo@mi.kekyo.net)
 rem
 rem Licensed under Apache-v2: https://opensource.org/licenses/Apache-2.0
 

@@ -9,6 +9,7 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <CheckEolTargetFramework>false</CheckEolTargetFramework>
     <SuppressNETCoreSdkPreviewMessage>true</SuppressNETCoreSdkPreviewMessage>
+    <SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <RepositoryType>git</RepositoryType>
@@ -18,15 +19,15 @@
     <RootNamespace>GitReader</RootNamespace>
     <ProduceReferenceAssembly>false</ProduceReferenceAssembly>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <NoWarn>$(NoWarn);CS1570;CS1591;CA1416;CS8981</NoWarn>
+    <NoWarn>$(NoWarn);CS1570;CS1591;CA1416;CS8981;NETSDK1215</NoWarn>
 
     <Product>GitReader</Product>
     <Trademark>GitReader</Trademark>
     <Copyright>Copyright (c) Kouji Matsui</Copyright>
     <Description>Lightweight Git local repository traversal library.</Description>
 
-    <Company>Kouji Matsui (@kozy_kekyo, @kekyo@mastodon.cloud)</Company>
-    <Authors>Kouji Matsui (@kozy_kekyo, @kekyo@mastodon.cloud)</Authors>
+    <Company>Kouji Matsui (@kozy_kekyo, @kekyo@mi.kekyo.net)</Company>
+    <Authors>Kouji Matsui (@kozy_kekyo, @kekyo@mi.kekyo.net)</Authors>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/kekyo/GitReader</PackageProjectUrl>
     <PackageIcon>GitReader.100.png</PackageIcon>
@@ -52,7 +53,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="RelaxVersioner" Version="3.2.60" PrivateAssets="All" />
+    <PackageReference Include="RelaxVersioner" Version="3.10.0" PrivateAssets="All" />
     <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="All" />
   </ItemGroup>
 

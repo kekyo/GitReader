@@ -69,7 +69,7 @@ if (repository.Head is { } head)
 
 ### 対応する.NETプラットフォーム
 
-* .NET 8.0 to 5.0
+* .NET 9.0 to 5.0
 * .NET Core 3.1 to 2.0
 * .NET Standard 2.1 to 1.6
 * .NET Framework 4.8.1 to 3.5
@@ -79,7 +79,7 @@ if (repository.Head is { } head)
 F# 5.0以上が対象で、F#フレンドリーなシグネチャ定義が含まれています。
 (`Async`型による非同期操作、`Option`によるnull値排除など)
 
-* .NET 8.0 to 5.0
+* .NET 9.0 to 5.0
 * .NET Core 3.1 to 2.0
 * .NET Standard 2.1, 2.0
 * .NET Framework 4.8.1 to 4.6.1
@@ -170,6 +170,9 @@ Console.WriteLine($"Committer: {commit.Committer}");
 Console.WriteLine($"Subject: {commit.Subject}");
 Console.WriteLine($"Body: {commit.Body}");
 ```
+
+同じ名前を持つ、異なる参照のブランチが存在する可能性がある場合は、`Branches` の代わりに `BranchesAll` を使います。
+`Branches` を使うと、同名の全てのブランチから得られる最初のブランチのみが得られます。
 
 ### 指定されたタグの情報を取得
 

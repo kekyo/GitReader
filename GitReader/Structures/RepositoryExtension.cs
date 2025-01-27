@@ -1,7 +1,7 @@
 ﻿////////////////////////////////////////////////////////////////////////////
 //
 // GitReader - Lightweight Git local repository traversal library.
-// Copyright (c) Kouji Matsui (@kozy_kekyo, @kekyo@mastodon.cloud)
+// Copyright (c) Kouji Matsui (@kozy_kekyo, @kekyo@mi.kekyo.net)
 //
 // Licensed under Apache-v2: https://opensource.org/licenses/Apache-2.0
 //
@@ -95,14 +95,29 @@ public static class RepositoryExtension
         out string gitPath,
         out ReadOnlyDictionary<string, string> remoteUrls,
         out Branch? head,
+        out ReadOnlyDictionary<string, Branch[]> branchesAll,
+        out ReadOnlyDictionary<string, Tag> tags)
+    {
+        gitPath = repository.GitPath;
+        remoteUrls = repository.RemoteUrls;
+        head = repository.head;
+        branchesAll = repository.branchesAll;
+        tags = repository.tags;
+    }
+
+    public static void Deconstruct(
+        this StructuredRepository repository,
+        out string gitPath,
+        out ReadOnlyDictionary<string, string> remoteUrls,
+        out Branch? head,
         out ReadOnlyDictionary<string, Branch> branches,
         out ReadOnlyDictionary<string, Tag> tags)
     {
         gitPath = repository.GitPath;
         remoteUrls = repository.RemoteUrls;
         head = repository.head;
-        branches = repository.branches;
-        tags = repository.tags;
+        branches = repository.Branches;
+        tags = repository.Tags;
     }
 
     public static void Deconstruct(
