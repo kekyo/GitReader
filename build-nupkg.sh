@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # GitReader
-# Copyright (c) Kouji Matsui (@kozy_kekyo, @kekyo@mastodon.cloud)
+# Copyright (c) Kouji Matsui (@kozy_kekyo, @kekyo@mi.kekyo.net)
 #
 # Licensed under Apache-v2: https://opensource.org/licenses/Apache-2.0
 

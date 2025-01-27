@@ -25,8 +25,8 @@
     <Copyright>Copyright (c) Kouji Matsui</Copyright>
     <Description>Lightweight Git local repository traversal library.</Description>
 
-    <Company>Kouji Matsui (@kozy_kekyo, @kekyo@mastodon.cloud)</Company>
-    <Authors>Kouji Matsui (@kozy_kekyo, @kekyo@mastodon.cloud)</Authors>
+    <Company>Kouji Matsui (@kozy_kekyo, @kekyo@mi.kekyo.net)</Company>
+    <Authors>Kouji Matsui (@kozy_kekyo, @kekyo@mi.kekyo.net)</Authors>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/kekyo/GitReader</PackageProjectUrl>
     <PackageIcon>GitReader.100.png</PackageIcon>
