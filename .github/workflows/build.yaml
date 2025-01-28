@@ -63,9 +63,9 @@ jobs:
     #-----------------------------------------------------------------------
     # Deploy packages (develop)
 
-    - name: Deploy NuGet package (develop/ref1)
-      if: startsWith( github.ref, 'refs/tags/' )
-      run: dotnet nuget push artifacts/GitReader.*.nupkg --source ref1
+    #- name: Deploy NuGet package (develop/ref1)
+    #  if: startsWith( github.ref, 'refs/tags/' )
+    #  run: dotnet nuget push artifacts/GitReader.*.nupkg --source ref1
 
     #-----------------------------------------------------------------------
     # Deploy packages (main)
