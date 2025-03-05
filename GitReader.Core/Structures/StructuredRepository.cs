@@ -32,9 +32,10 @@ public sealed class StructuredRepository : Repository
     private ReadOnlyDictionary<string, Branch>? branches;
 
     internal StructuredRepository(
-        string repositoryPath,
+        string gitPath,
+        string[] alternativePaths,
         IFileSystem fileSystem) :
-        base(repositoryPath, fileSystem)
+        base(gitPath, alternativePaths, fileSystem)
     {
     }
 

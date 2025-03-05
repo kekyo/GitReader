@@ -170,10 +170,11 @@ internal static class StructuredRepositoryFacade
 
     private static async Task<StructuredRepository> InternalOpenStructuredAsync(
         string repositoryPath,
+        string[] alternativePaths,
         IFileSystem fileSystem,
         CancellationToken ct)
     {
-        var repository = new StructuredRepository(repositoryPath, fileSystem);
+        var repository = new StructuredRepository(repositoryPath, alternativePaths, fileSystem);
 
         try
         {
@@ -214,9 +215,9 @@ internal static class StructuredRepositoryFacade
         IFileSystem fileSystem,
         CancellationToken ct)
     {
-        var repositoryPath = await RepositoryAccessor.DetectLocalRepositoryPathAsync(
+        var (gitPath, alternativePaths) = await RepositoryAccessor.DetectLocalRepositoryPathAsync(
             path, fileSystem, ct);
-        return await InternalOpenStructuredAsync(repositoryPath, fileSystem, ct);
+        return await InternalOpenStructuredAsync(gitPath, alternativePaths, fileSystem, ct);
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -423,22 +424,20 @@ internal static class StructuredRepositoryFacade
     {
         var (repository, _) = GetRelatedRepository(subModule);
 
-        var repositoryPath = repository.fileSystem.Combine(
-            repository.GitPath,
-            "modules",
-            repository.fileSystem.Combine(subModule.
-                Traverse<TreeEntry>(tree => tree.Parent as TreeEntry).
-                Select(tree => tree.Name).
-                Reverse().
-                ToArray()));
-
-        if (!await repository.fileSystem.IsFileExistsAsync(
-            repository.fileSystem.Combine(repositoryPath, "config"), ct))
+        if (await RepositoryAccessor.GetCandidateFilePathAsync(
+            repository, repository.fileSystem.Combine(
+                "modules",
+                repository.fileSystem.Combine(subModule.
+                    Traverse<TreeEntry>(tree => tree.Parent as TreeEntry).
+                    Select(tree => tree.Name).
+                    Reverse().
+                    ToArray()),
+                "config"), ct) is not { } cp)
         {
             throw new ArgumentException("Submodule repository does not exist.");
         }
 
-        return await InternalOpenStructuredAsync(repositoryPath, repository.fileSystem, ct);
+        return await InternalOpenStructuredAsync(cp.BasePath, [], repository.fileSystem, ct);
     }
 
     public static Task<Stream> OpenBlobAsync(

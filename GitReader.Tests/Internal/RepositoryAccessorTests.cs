@@ -40,7 +40,8 @@ public sealed class RepositoryAccessorTests
             new StandardFileSystem(65536),
             default);
 
-        Assert.AreEqual(Path.Combine(basePath, ".git"), actual);
+        Assert.AreEqual(Path.Combine(basePath, ".git"), actual.GitPath);
+        Assert.AreEqual(0, actual.AlternativePaths.Length);
     }
 
     [Test]
@@ -61,6 +62,29 @@ public sealed class RepositoryAccessorTests
             new StandardFileSystem(65536),
             default);
 
-        Assert.AreEqual(Path.Combine(basePath, ".git", "modules", "GitReader"), actual);
+        Assert.AreEqual(Path.Combine(basePath, ".git", "modules", "GitReader"), actual.GitPath);
+        Assert.AreEqual(0, actual.AlternativePaths.Length);
+    }
+
+    [Test]
+    public async Task DetectLocalRepositoryPathFromWorkTree()
+    {
+        var basePath = Path.GetFullPath(
+            RepositoryTestsSetUp.GetBasePath(
+                $"DetectLocalRepositoryPathFromWorkTree"));
+
+        ZipFile.ExtractToDirectory(
+            Path.Combine("artifacts", "test6.zip"),
+            basePath);
+
+        var innerPath = Path.Combine(basePath, "worktree");
+
+        var actual = await RepositoryAccessor.DetectLocalRepositoryPathAsync(
+            innerPath,
+            new StandardFileSystem(65536),
+            default);
+
+        Assert.AreEqual(Path.Combine(basePath, "root", ".git"), actual.GitPath);
+        Assert.AreEqual(new[] { Path.Combine(basePath, "root", ".git", "worktrees", "worktree") }, actual.AlternativePaths);
     }
 }
