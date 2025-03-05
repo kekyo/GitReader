@@ -130,17 +130,16 @@ internal static class PrimitiveRepositoryFacade
         {
             throw new ArgumentException($"Could not use non-submodule entry: {treePath[treePath.Length - 1]}");
         }
-
-        var repositoryPath = repository.fileSystem.Combine(
-            repository.GitPath, "modules",
-            repository.fileSystem.Combine(treePath.Select(tree => tree.Name).ToArray()));
-
-        if (!await repository.fileSystem.IsFileExistsAsync(
-            repository.fileSystem.Combine(repositoryPath, "config"), ct))
+        
+        if (await RepositoryAccessor.GetCandidateFilePathAsync(
+            repository, repository.fileSystem.Combine(
+                "modules",
+                repository.fileSystem.Combine(treePath.Select(tree => tree.Name).ToArray()),
+                "config"), ct) is not { } cp)
         {
             throw new ArgumentException("Submodule repository does not exist.");
         }
 
-        return await InternalOpenPrimitiveAsync(repositoryPath, [], repository.fileSystem, ct);
+        return await InternalOpenPrimitiveAsync(cp.BasePath, [], repository.fileSystem, ct);
     }
 }

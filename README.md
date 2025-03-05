@@ -638,6 +638,8 @@ Apache-v2
 
 ## History
 
+* 1.10.0:
+  * Added Git worktree detection. (#15)
 * 1.9.0:
   * Supported multiple same named branches.
   * Added .NET 9.0 tfm.

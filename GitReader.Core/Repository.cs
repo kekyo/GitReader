@@ -11,7 +11,11 @@ using GitReader.Collections;
 using GitReader.Internal;
 using GitReader.IO;
 using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace GitReader;
 
@@ -30,7 +34,7 @@ public abstract class Repository : IDisposable
         IFileSystem fileSystem)
     {
         this.GitPath = gitPath;
-        this.GitPaths = [..alternativeGitPaths, gitPath];
+        this.TryingPathList = [..alternativeGitPaths, gitPath];
         this.fileSystem = fileSystem;
         this.fileStreamCache = new(this.fileSystem);
         this.objectAccessor = new(this.pool, this.fileSystem, this.fileStreamCache, gitPath);
@@ -49,8 +53,9 @@ public abstract class Repository : IDisposable
     }
 
     public string GitPath { get; }
-    
-    internal string[] GitPaths { get; }
+
+    [EditorBrowsable(EditorBrowsableState.Advanced)]
+    public string[] TryingPathList { get; }
 
     public ReadOnlyDictionary<string, string> RemoteUrls =>
         this.remoteUrls;
