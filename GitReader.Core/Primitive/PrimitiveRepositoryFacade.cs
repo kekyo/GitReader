@@ -21,10 +21,11 @@ internal static class PrimitiveRepositoryFacade
 {
     private static async Task<PrimitiveRepository> InternalOpenPrimitiveAsync(
         string repositoryPath,
+        string[] alternativePaths,
         IFileSystem fileSystem,
         CancellationToken ct)
     {
-        var repository = new PrimitiveRepository(repositoryPath, fileSystem);
+        var repository = new PrimitiveRepository(repositoryPath, alternativePaths, fileSystem);
 
         try
         {
@@ -52,9 +53,9 @@ internal static class PrimitiveRepositoryFacade
         IFileSystem fileSystem,
         CancellationToken ct)
     {
-        var repositoryPath = await RepositoryAccessor.DetectLocalRepositoryPathAsync(
+        var (gitPath, alternativePaths) = await RepositoryAccessor.DetectLocalRepositoryPathAsync(
             path, fileSystem, ct);
-        return await InternalOpenPrimitiveAsync(repositoryPath, fileSystem, ct);
+        return await InternalOpenPrimitiveAsync(gitPath, alternativePaths, fileSystem, ct);
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -140,6 +141,6 @@ internal static class PrimitiveRepositoryFacade
             throw new ArgumentException("Submodule repository does not exist.");
         }
 
-        return await InternalOpenPrimitiveAsync(repositoryPath, repository.fileSystem, ct);
+        return await InternalOpenPrimitiveAsync(repositoryPath, [], repository.fileSystem, ct);
     }
 }

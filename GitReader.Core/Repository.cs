@@ -26,9 +26,11 @@ public abstract class Repository : IDisposable
 
     private protected Repository(
         string gitPath,
+        string[] alternativeGitPaths,
         IFileSystem fileSystem)
     {
         this.GitPath = gitPath;
+        this.GitPaths = [..alternativeGitPaths, gitPath];
         this.fileSystem = fileSystem;
         this.fileStreamCache = new(this.fileSystem);
         this.objectAccessor = new(this.pool, this.fileSystem, this.fileStreamCache, gitPath);
@@ -47,6 +49,8 @@ public abstract class Repository : IDisposable
     }
 
     public string GitPath { get; }
+    
+    internal string[] GitPaths { get; }
 
     public ReadOnlyDictionary<string, string> RemoteUrls =>
         this.remoteUrls;

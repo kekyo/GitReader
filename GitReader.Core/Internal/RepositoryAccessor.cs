@@ -92,11 +92,15 @@ internal readonly struct HashResults
 
 internal static class RepositoryAccessor
 {
+    public readonly record struct CandidateRepositoryPaths(
+        string GitPath,
+        string[] AlternativePaths);
+    
 #if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
-    public static async ValueTask<string> DetectLocalRepositoryPathAsync(
+    public static async ValueTask<CandidateRepositoryPaths> DetectLocalRepositoryPathAsync(
         string startPath, IFileSystem fileSystem, CancellationToken ct)
 #else
-    public static async Task<string> DetectLocalRepositoryPathAsync(
+    public static async Task<CandidateRepositoryPaths> DetectLocalRepositoryPathAsync(
         string startPath, IFileSystem fileSystem, CancellationToken ct)
 #endif
     {
@@ -111,7 +115,7 @@ internal static class RepositoryAccessor
 
             if (await fileSystem.IsFileExistsAsync(fileSystem.Combine(candidatePath, "config"), ct))
             {
-                return candidatePath;
+                return new(candidatePath, Utilities.Empty<string>());
             }
 
             // Issue #11
@@ -137,7 +141,19 @@ internal static class RepositoryAccessor
 
                         if (await fileSystem.IsFileExistsAsync(fileSystem.Combine(candidatePath, "config"), ct))
                         {
-                            return candidatePath;
+                            return new(candidatePath, Utilities.Empty<string>());
+                        }
+
+                        // Worktree
+                        var commonDirPath = fileSystem.Combine(candidatePath, "commondir");
+                        if (await fileSystem.IsFileExistsAsync(commonDirPath, ct))
+                        {
+                            using var fs2 = await fileSystem.OpenAsync(commonDirPath, false, ct);
+                            var tr2 = new AsyncTextReader(fs2);
+
+                            var relativePath = (await tr2.ReadToEndAsync(ct)).Trim();
+                            var gitPath = fileSystem.GetFullPath(fileSystem.Combine(candidatePath, relativePath));
+                            return new(gitPath, [candidatePath]);
                         }
 
                         break;

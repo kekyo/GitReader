@@ -170,10 +170,11 @@ internal static class StructuredRepositoryFacade
 
     private static async Task<StructuredRepository> InternalOpenStructuredAsync(
         string repositoryPath,
+        string[] alternativePaths,
         IFileSystem fileSystem,
         CancellationToken ct)
     {
-        var repository = new StructuredRepository(repositoryPath, fileSystem);
+        var repository = new StructuredRepository(repositoryPath, alternativePaths, fileSystem);
 
         try
         {
@@ -214,9 +215,9 @@ internal static class StructuredRepositoryFacade
         IFileSystem fileSystem,
         CancellationToken ct)
     {
-        var repositoryPath = await RepositoryAccessor.DetectLocalRepositoryPathAsync(
+        var (gitPath, alternativePaths) = await RepositoryAccessor.DetectLocalRepositoryPathAsync(
             path, fileSystem, ct);
-        return await InternalOpenStructuredAsync(repositoryPath, fileSystem, ct);
+        return await InternalOpenStructuredAsync(gitPath, alternativePaths, fileSystem, ct);
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -438,7 +439,7 @@ internal static class StructuredRepositoryFacade
             throw new ArgumentException("Submodule repository does not exist.");
         }
 
-        return await InternalOpenStructuredAsync(repositoryPath, repository.fileSystem, ct);
+        return await InternalOpenStructuredAsync(repositoryPath, [], repository.fileSystem, ct);
     }
 
     public static Task<Stream> OpenBlobAsync(
