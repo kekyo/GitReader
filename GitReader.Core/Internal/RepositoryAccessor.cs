@@ -92,11 +92,15 @@ internal readonly struct HashResults
 
 internal static class RepositoryAccessor
 {
+    public readonly record struct CandidateRepositoryPaths(
+        string GitPath,
+        string[] AlternativePaths);
+    
 #if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
-    public static async ValueTask<string> DetectLocalRepositoryPathAsync(
+    public static async ValueTask<CandidateRepositoryPaths> DetectLocalRepositoryPathAsync(
         string startPath, IFileSystem fileSystem, CancellationToken ct)
 #else
-    public static async Task<string> DetectLocalRepositoryPathAsync(
+    public static async Task<CandidateRepositoryPaths> DetectLocalRepositoryPathAsync(
         string startPath, IFileSystem fileSystem, CancellationToken ct)
 #endif
     {
@@ -111,7 +115,7 @@ internal static class RepositoryAccessor
 
             if (await fileSystem.IsFileExistsAsync(fileSystem.Combine(candidatePath, "config"), ct))
             {
-                return candidatePath;
+                return new(candidatePath, Utilities.Empty<string>());
             }
 
             // Issue #11
@@ -137,7 +141,19 @@ internal static class RepositoryAccessor
 
                         if (await fileSystem.IsFileExistsAsync(fileSystem.Combine(candidatePath, "config"), ct))
                         {
-                            return candidatePath;
+                            return new(candidatePath, Utilities.Empty<string>());
+                        }
+
+                        // Worktree
+                        var commonDirPath = fileSystem.Combine(candidatePath, "commondir");
+                        if (await fileSystem.IsFileExistsAsync(commonDirPath, ct))
+                        {
+                            using var fs2 = await fileSystem.OpenAsync(commonDirPath, false, ct);
+                            var tr2 = new AsyncTextReader(fs2);
+
+                            var relativePath = (await tr2.ReadToEndAsync(ct)).Trim();
+                            var gitPath = fileSystem.GetFullPath(fileSystem.Combine(candidatePath, relativePath));
+                            return new(gitPath, [candidatePath]);
                         }
 
                         break;
@@ -156,6 +172,65 @@ internal static class RepositoryAccessor
             currentPath = fileSystem.GetDirectoryPath(currentPath);
         }
     }
+
+    internal readonly struct CandidateFilePath
+    {
+        public readonly string GitPath;
+        public readonly string BasePath;
+        public readonly string Path;
+        
+        public CandidateFilePath(string gitPath, string basePath, string path)
+        {
+            this.GitPath = gitPath;
+            this.BasePath = basePath;
+            this.Path = path;
+        }
+    }
+
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
+    public static async ValueTask<CandidateFilePath?> GetCandidateFilePathAsync(
+#else
+    public static async Task<CandidateFilePath?> GetCandidateFilePathAsync(
+#endif
+        Repository repository,
+        string relativePathFromGitPath,
+        CancellationToken ct)
+    {
+        foreach (var gitPath in repository.TryingPathList)
+        {
+            var candidatePath = repository.fileSystem.Combine(gitPath, relativePathFromGitPath);
+            if (await repository.fileSystem.IsFileExistsAsync(candidatePath, ct))
+            {
+                return new(gitPath, repository.fileSystem.GetDirectoryPath(candidatePath), candidatePath);
+            }
+        }
+        return null;
+    }
+
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
+    public static async ValueTask<CandidateFilePath[]> GetCandidateFilePathsAsync(
+#else
+    public static async Task<CandidateFilePath[]> GetCandidateFilePathsAsync(
+#endif
+        Repository repository,
+        string relativePathFromGitPath,
+        string match,
+        CancellationToken ct) =>
+        (await Utilities.WhenAll(repository.TryingPathList.
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
+            Select((Func<string, ValueTask<CandidateFilePath[]>>)(async gitPath =>
+#else
+            Select((async gitPath =>
+#endif
+        {
+            var basePath = repository.fileSystem.Combine(gitPath, relativePathFromGitPath);
+            var candidatePaths = await repository.fileSystem.GetFilesAsync(basePath, match, ct);
+            return candidatePaths.
+                Select(candidatePath => new CandidateFilePath(gitPath, basePath, candidatePath)).
+                ToArray();
+        })))).
+        SelectMany(paths => paths).
+        ToArray();
 
     public static string GetReferenceTypeName(ReferenceTypes type) =>
         type switch
@@ -200,13 +275,12 @@ internal static class RepositoryAccessor
         Repository repository,
         CancellationToken ct)
     {
-        var path = repository.fileSystem.Combine(repository.GitPath, "config");
-        if (!await repository.fileSystem.IsFileExistsAsync(path, ct))
+        if (await GetCandidateFilePathAsync(repository, "config", ct) is not { } cp)
         {
             return new(new());
         }
 
-        using var fs = await repository.fileSystem.OpenAsync(path, false, ct);
+        using var fs = await repository.fileSystem.OpenAsync(cp.Path, false, ct);
         var tr = new AsyncTextReader(fs);
 
         var remotes = new Dictionary<string, string>();
@@ -248,13 +322,12 @@ internal static class RepositoryAccessor
         var remoteNameByUrl = repository.remoteUrls.
             ToDictionary(entry => entry.Value, entry => entry.Key);
 
-        var path = repository.fileSystem.Combine(repository.GitPath, "FETCH_HEAD");
-        if (!await repository.fileSystem.IsFileExistsAsync(path, ct))
+        if (await GetCandidateFilePathAsync(repository, "FETCH_HEAD", ct) is not { } cp)
         {
             return new(new(new()), new(new()), new(new()));
         }
 
-        using var fs = await repository.fileSystem.OpenAsync(path, false, ct);
+        using var fs = await repository.fileSystem.OpenAsync(cp.Path, false, ct);
         var tr = new AsyncTextReader(fs);
 
         var remoteBranches = new Dictionary<string, Hash>();
@@ -340,13 +413,12 @@ internal static class RepositoryAccessor
         Repository repository,
         CancellationToken ct)
     {
-        var path = repository.fileSystem.Combine(repository.GitPath, "packed-refs");
-        if (!await repository.fileSystem.IsFileExistsAsync(path, ct))
+        if (await GetCandidateFilePathAsync(repository, "packed-refs", ct) is not { } cp)
         {
             return new(new(new()), new(new()), new(new()));
         }
 
-        using var fs = await repository.fileSystem.OpenAsync(path, false, ct);
+        using var fs = await repository.fileSystem.OpenAsync(cp.Path, false, ct);
         var tr = new AsyncTextReader(fs);
 
         var branches = new Dictionary<string, Hash>();
@@ -453,10 +525,8 @@ internal static class RepositoryAccessor
                 Replace("refs/tags/", string.Empty);
             names.Add(name);
 
-            var path = repository.fileSystem.Combine(
-                repository.GitPath,
-                currentLocation.Replace('/', Path.DirectorySeparatorChar));
-            if (!await repository.fileSystem.IsFileExistsAsync(path, ct))
+            if (await GetCandidateFilePathAsync(
+                repository, currentLocation.Replace('/', Path.DirectorySeparatorChar), ct) is not { } cp)
             {
                 if (currentLocation.StartsWith("refs/heads/"))
                 {
@@ -482,7 +552,7 @@ internal static class RepositoryAccessor
                 return null;
             }
 
-            using var fs = await repository.fileSystem.OpenAsync(path, false, ct);
+            using var fs = await repository.fileSystem.OpenAsync(cp.Path, false, ct);
             var tr = new AsyncTextReader(fs);
 
             var line = await tr.ReadLineAsync(ct);
@@ -512,14 +582,13 @@ internal static class RepositoryAccessor
     public static async Task<PrimitiveReflogEntry[]> ReadReflogEntriesAsync(
         Repository repository, string refRelativePath, CancellationToken ct)
     {
-        var path = repository.fileSystem.Combine(
-            repository.GitPath, "logs", refRelativePath);
-        if (!await repository.fileSystem.IsFileExistsAsync(path, ct))
+        if (await GetCandidateFilePathAsync(
+            repository, repository.fileSystem.Combine("logs", refRelativePath), ct) is not { } cp)
         {
             return new PrimitiveReflogEntry[]{};
         }
 
-        using var fs = await repository.fileSystem.OpenAsync(path, false, ct);
+        using var fs = await repository.fileSystem.OpenAsync(cp.Path, false, ct);
         var tr = new AsyncTextReader(fs);
 
         var entries = new List<PrimitiveReflogEntry>();
@@ -545,21 +614,19 @@ internal static class RepositoryAccessor
         ReferenceTypes type,
         CancellationToken ct)
     {
-        var headsPath = repository.fileSystem.Combine(
-            repository.GitPath, "refs", GetReferenceTypeName(type));
-        var files = await repository.fileSystem.GetFilesAsync(
-            headsPath, "*", ct);
+        var candidatePaths = await GetCandidateFilePathsAsync(
+            repository, repository.fileSystem.Combine("refs", GetReferenceTypeName(type)), "*", ct);
         var references = (await Utilities.WhenAll(
-            files.
+            candidatePaths.
 #if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
-            Select((Func<string, ValueTask<PrimitiveReference?>>)(async path =>
+            Select((Func<CandidateFilePath, ValueTask<PrimitiveReference?>>)(async cp =>
 #else
-            Select(async path =>
+            Select((async cp =>
 #endif
             {
                 if (await ReadHashAsync(
                     repository,
-                    path.Substring(repository.GitPath.Length + 1),
+                    cp.Path.Substring(cp.GitPath.Length + 1),
                     ct) is not { } results)
                 {
                     return default(PrimitiveReference?);
@@ -567,15 +634,12 @@ internal static class RepositoryAccessor
                 else
                 {
                     return new(
-                        path.Substring(headsPath.Length + 1).Replace(Path.DirectorySeparatorChar, '/'),
-                        path.Substring(repository.GitPath.Length + 1).Replace(Path.DirectorySeparatorChar, '/'),
+                        cp.Path.Substring(cp.BasePath.Length + 1).Replace(Path.DirectorySeparatorChar, '/'),
+                        cp.Path.Substring(cp.GitPath.Length + 1).Replace(Path.DirectorySeparatorChar, '/'),
                         results.Hash);
                 }
             }
-#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
-            )
-#endif
-            ))).
+            )))).
             CollectValue(reference => reference).
             ToDictionary(reference => reference.Name);
 
@@ -616,21 +680,19 @@ internal static class RepositoryAccessor
         Repository repository,
         CancellationToken ct)
     {
-        var headsPath = repository.fileSystem.Combine(
-            repository.GitPath, "refs", "tags");
-        var files = await repository.fileSystem.GetFilesAsync(
-            headsPath, "*", ct);
+        var candidatePaths = await GetCandidateFilePathsAsync(
+            repository, repository.fileSystem.Combine("refs", "tags"), "*", ct);
         var references = (await Utilities.WhenAll(
-            files.
+            candidatePaths.
 #if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
-            Select((Func<string, ValueTask<PrimitiveTagReference?>>)(async path =>
+            Select((Func<CandidateFilePath, ValueTask<PrimitiveTagReference?>>)(async cp =>
 #else
-            Select(async path =>
+            Select((async cp =>
 #endif
             {
                 if (await ReadHashAsync(
                     repository,
-                    path.Substring(repository.GitPath.Length + 1),
+                    cp.Path.Substring(cp.GitPath.Length + 1),
                     ct) is not { } results)
                 {
                     return default(PrimitiveTagReference?);
@@ -638,16 +700,13 @@ internal static class RepositoryAccessor
                 else
                 {
                     return new(
-                        path.Substring(headsPath.Length + 1).Replace(Path.DirectorySeparatorChar, '/'),
-                        path.Substring(repository.GitPath.Length + 1).Replace(Path.DirectorySeparatorChar, '/'),
+                        cp.Path.Substring(cp.BasePath.Length + 1).Replace(Path.DirectorySeparatorChar, '/'),
+                        cp.Path.Substring(cp.GitPath.Length + 1).Replace(Path.DirectorySeparatorChar, '/'),
                         results.Hash,
                         null);
                 }
             }
-#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
-            )
-#endif
-            ))).
+            )))).
             CollectValue(reference => reference).
             ToDictionary(reference => reference.Name);
 
@@ -748,7 +807,6 @@ internal static class RepositoryAccessor
             streamResult.Stream.Dispose();
         }
     }
-
 
     public static async Task<PrimitiveCommit?> ReadCommitAsync(
         Repository repository,

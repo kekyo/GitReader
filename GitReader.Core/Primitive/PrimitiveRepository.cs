@@ -14,9 +14,10 @@ namespace GitReader.Primitive;
 public sealed class PrimitiveRepository : Repository
 {
     internal PrimitiveRepository(
-        string repositoryPath,
+        string gitPath,
+        string[] alternativePaths,
         IFileSystem fileSystem) :
-        base(repositoryPath, fileSystem)
+        base(gitPath, alternativePaths, fileSystem)
     {
     }
 }
