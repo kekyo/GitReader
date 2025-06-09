@@ -14,6 +14,7 @@ open GitReader.Internal
 open GitReader.Structures
 open System
 open System.Threading
+open System.Threading.Tasks
 
 [<AutoOpen>]
 module public RepositoryExtension =
@@ -34,8 +35,13 @@ module public RepositoryExtension =
             StructuredRepositoryFacade.GetHeadReflogsAsync(
                 repository, new WeakReference(repository), unwrapCT ct) |> Async.AwaitTask
         member repository.getWorkingDirectoryStatus(?ct: CancellationToken) =
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP2_1_OR_GREATER
             WorkingDirectoryAccessor.GetStructuredWorkingDirectoryStatusAsync(
                 repository, new WeakReference(repository), unwrapCT ct).AsTask() |> Async.AwaitTask
+#else
+            WorkingDirectoryAccessor.GetStructuredWorkingDirectoryStatusAsync(
+                repository, new WeakReference(repository), unwrapCT ct) |> Async.AwaitTask
+#endif
 
     type Branch with
         member branch.getHeadCommit(?ct: CancellationToken) =

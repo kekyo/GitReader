@@ -14,6 +14,7 @@ open GitReader.Internal
 open GitReader.Primitive
 open System
 open System.Threading
+open System.Threading.Tasks
 
 [<AutoOpen>]
 module public RepositoryExtension =
@@ -72,7 +73,11 @@ module public RepositoryExtension =
             RepositoryAccessor.OpenBlobAsync(repository, blob, unwrapCT ct) |> Async.AwaitTask
 
         member repository.getWorkingDirectoryStatus(?ct: CancellationToken) =
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP2_1_OR_GREATER
             WorkingDirectoryAccessor.GetPrimitiveWorkingDirectoryStatusAsync(repository, unwrapCT ct).AsTask() |> Async.AwaitTask
+#else
+            WorkingDirectoryAccessor.GetPrimitiveWorkingDirectoryStatusAsync(repository, unwrapCT ct) |> Async.AwaitTask
+#endif
 
     let (|PrimitiveRepository|) (repository: PrimitiveRepository) =
         (repository.GitPath, repository.RemoteUrls)
