@@ -387,6 +387,35 @@ while (current != null)
 }
 ```
 
+### ワーキングディレクトリの状態を取得
+
+```csharp
+// 現在のワーキングディレクトリの状態を取得
+WorkingDirectoryStatus status = await repository.GetWorkingDirectoryStatusAsync();
+
+// 変更があるかどうかを確認
+if (status.HasChanges)
+{
+    // 変更されたファイルを取得
+    foreach (var entry in status.Modified)
+    {
+        Console.WriteLine($"Modified: {entry.Path}");
+    }
+
+    // 未追跡のファイルを取得
+    foreach (var entry in status.Untracked)
+    {
+        Console.WriteLine($"Untracked: {entry.Path}");
+    }
+
+    // 削除されたファイルを取得
+    foreach (var entry in status.Deleted)
+    {
+        Console.WriteLine($"Deleted: {entry.Path}");
+    }
+}
+```
+
 ----
 
 ## サンプルコード (プリミティブインターフェイス)

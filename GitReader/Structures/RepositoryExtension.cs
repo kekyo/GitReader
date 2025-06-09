@@ -8,6 +8,7 @@
 ////////////////////////////////////////////////////////////////////////////
 
 using GitReader.Collections;
+using GitReader.Internal;
 using System;
 using System.IO;
 using System.Threading;
@@ -88,6 +89,11 @@ public static class RepositoryExtension
     public static Task<ReflogEntry[]> GetHeadReflogsAsync(
         this StructuredRepository repository, CancellationToken ct = default) =>
         StructuredRepositoryFacade.GetHeadReflogsAsync(
+            repository, new WeakReference(repository), ct);
+
+    public static async Task<WorkingDirectoryStatus> GetWorkingDirectoryStatusAsync(
+        this StructuredRepository repository, CancellationToken ct = default) =>
+        await WorkingDirectoryAccessor.GetStructuredWorkingDirectoryStatusAsync(
             repository, new WeakReference(repository), ct);
 
     public static void Deconstruct(
@@ -177,5 +183,29 @@ public static class RepositoryExtension
     {
         tagger = annotation.Tagger;
         message = annotation.Message;
+    }
+
+    public static void Deconstruct(
+        this WorkingDirectoryFile file,
+        out string path,
+        out FileStatus status,
+        out Hash? indexHash,
+        out Hash? workingTreeHash)
+    {
+        path = file.Path;
+        status = file.Status;
+        indexHash = file.IndexHash;
+        workingTreeHash = file.WorkingTreeHash;
+    }
+
+    public static void Deconstruct(
+        this WorkingDirectoryStatus status,
+        out ReadOnlyArray<WorkingDirectoryFile> stagedFiles,
+        out ReadOnlyArray<WorkingDirectoryFile> unstagedFiles,
+        out ReadOnlyArray<WorkingDirectoryFile> untrackedFiles)
+    {
+        stagedFiles = status.StagedFiles;
+        unstagedFiles = status.UnstagedFiles;
+        untrackedFiles = status.UntrackedFiles;
     }
 }

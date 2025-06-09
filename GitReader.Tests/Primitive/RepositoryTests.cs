@@ -7,7 +7,6 @@
 //
 ////////////////////////////////////////////////////////////////////////////
 
-using GitReader.Structures;
 using NUnit.Framework;
 using System.Collections.Generic;
 using System.IO;

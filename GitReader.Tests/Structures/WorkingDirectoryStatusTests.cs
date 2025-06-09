@@ -1,0 +1,295 @@
+////////////////////////////////////////////////////////////////////////////
+//
+// GitReader - Lightweight Git local repository traversal library.
+// Copyright (c) Kouji Matsui (@kozy_kekyo, @kekyo@mi.kekyo.net)
+//
+// Licensed under Apache-v2: https://opensource.org/licenses/Apache-2.0
+//
+////////////////////////////////////////////////////////////////////////////
+
+using NUnit.Framework;
+using System;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Diagnostics;
+
+namespace GitReader.Structures;
+
+public sealed class WorkingDirectoryStatusTests
+{
+    private static async Task RunGitCommandAsync(string workingDirectory, string arguments)
+    {
+        var startInfo = new ProcessStartInfo
+        {
+            FileName = "git",
+            Arguments = arguments,
+            WorkingDirectory = workingDirectory,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false,
+            CreateNoWindow = true
+        };
+
+        using var process = new Process { StartInfo = startInfo };
+        process.Start();
+        await process.WaitForExitAsync();
+
+        if (process.ExitCode != 0)
+        {
+            var error = await process.StandardError.ReadToEndAsync();
+            throw new InvalidOperationException($"Git command failed: git {arguments}\nError: {error}");
+        }
+    }
+
+    [Test]
+    public async Task GetWorkingDirectoryStatusEmptyRepository()
+    {
+        // Use a path outside the project directory to avoid parent directory search
+        var testPath = Path.GetFullPath(Path.Combine(Path.GetTempPath(), $"GitReader_WorkingDirTest_{System.Guid.NewGuid():N}"));
+        
+        if (Directory.Exists(testPath))
+        {
+            Directory.Delete(testPath, true);
+        }
+        
+        try
+        {
+            Directory.CreateDirectory(testPath);
+            
+            // Create an empty Git repository
+            await RunGitCommandAsync(testPath, "init");
+            await RunGitCommandAsync(testPath, "config user.email \"test@example.com\"");
+            await RunGitCommandAsync(testPath, "config user.name \"Test User\"");
+
+            using var repository = await Repository.Factory.OpenStructureAsync(testPath);
+
+            var status = await repository.GetWorkingDirectoryStatusAsync();
+
+            // Empty repository should have no staged, unstaged, or untracked files
+            Assert.AreEqual(0, status.StagedFiles.Count, "Empty repository should have no staged files");
+            Assert.AreEqual(0, status.UnstagedFiles.Count, "Empty repository should have no unstaged files");
+            Assert.AreEqual(0, status.UntrackedFiles.Count, "Empty repository should have no untracked files");
+        }
+        finally
+        {
+            // Cleanup
+            if (Directory.Exists(testPath))
+            {
+                Directory.Delete(testPath, true);
+            }
+        }
+    }
+
+    [Test]
+    public async Task GetWorkingDirectoryStatusWithModifications()
+    {
+        // Use a path outside the project directory to avoid parent directory search
+        var testPath = Path.GetFullPath(Path.Combine(Path.GetTempPath(), $"GitReader_WorkingDirTest_{System.Guid.NewGuid():N}"));
+        
+        if (Directory.Exists(testPath))
+        {
+            Directory.Delete(testPath, true);
+        }
+        
+        try
+        {
+            Directory.CreateDirectory(testPath);
+            
+            // Create a Git repository with initial commit
+            await RunGitCommandAsync(testPath, "init");
+            await RunGitCommandAsync(testPath, "config user.email \"test@example.com\"");
+            await RunGitCommandAsync(testPath, "config user.name \"Test User\"");
+            
+            // Create initial file and commit
+            await File.WriteAllTextAsync(Path.Combine(testPath, "README.md"), "# Test Repository\n\nInitial content.");
+            await RunGitCommandAsync(testPath, "add README.md");
+            await RunGitCommandAsync(testPath, "commit -m \"Initial commit\"");
+            
+            // Create new untracked file
+            await File.WriteAllTextAsync(Path.Combine(testPath, "new_file.txt"), "This is a new file for testing.");
+            
+            // Modify existing tracked file
+            await File.WriteAllTextAsync(Path.Combine(testPath, "README.md"), "# Test Repository\n\nInitial content.\n\nModified for testing.");
+
+            using var repository = await Repository.Factory.OpenStructureAsync(testPath);
+
+            var status = await repository.GetWorkingDirectoryStatusAsync();
+
+            // Should have untracked files (including new_file.txt)
+            Assert.IsTrue(status.UntrackedFiles.Count > 0, "Should have untracked files");
+            
+            var newFile = status.UntrackedFiles.FirstOrDefault(f => f.Path == "new_file.txt");
+            if (newFile != null)
+            {
+                Assert.AreEqual(FileStatus.Untracked, newFile.Status);
+                Assert.IsNull(newFile.IndexHash);
+                Assert.IsNotNull(newFile.WorkingTreeHash);
+            }
+            else
+            {
+                Assert.Fail("new_file.txt should be in untracked files");
+            }
+
+            // README.md should be modified and appear in unstaged files
+            var modifiedFile = status.UnstagedFiles.FirstOrDefault(f => f.Path == "README.md");
+            if (modifiedFile != null)
+            {
+                Assert.AreEqual(FileStatus.Modified, modifiedFile.Status);
+                Assert.IsNotNull(modifiedFile.IndexHash);
+                Assert.IsNotNull(modifiedFile.WorkingTreeHash);
+                Assert.AreNotEqual(modifiedFile.IndexHash, modifiedFile.WorkingTreeHash);
+            }
+            else
+            {
+                Assert.Fail("README.md should be in unstaged files");
+            }
+        }
+        finally
+        {
+            // Cleanup
+            if (Directory.Exists(testPath))
+            {
+                Directory.Delete(testPath, true);
+            }
+        }
+    }
+
+    [Test]
+    public async Task GetWorkingDirectoryStatusCleanRepository()
+    {
+        // Use a path outside the project directory to avoid parent directory search
+        var testPath = Path.GetFullPath(Path.Combine(Path.GetTempPath(), $"GitReader_WorkingDirTest_{System.Guid.NewGuid():N}"));
+        
+        if (Directory.Exists(testPath))
+        {
+            Directory.Delete(testPath, true);
+        }
+
+        try
+        {
+            Directory.CreateDirectory(testPath);
+            
+            // Create a clean Git repository with committed files
+            await RunGitCommandAsync(testPath, "init");
+            await RunGitCommandAsync(testPath, "config user.email \"test@example.com\"");
+            await RunGitCommandAsync(testPath, "config user.name \"Test User\"");
+            
+            // Create and commit files
+            await File.WriteAllTextAsync(Path.Combine(testPath, "README.md"), "# Test Repository");
+            await File.WriteAllTextAsync(Path.Combine(testPath, "file1.txt"), "Content of file 1");
+            await RunGitCommandAsync(testPath, "add .");
+            await RunGitCommandAsync(testPath, "commit -m \"Initial commit\"");
+
+            using var repository = await Repository.Factory.OpenStructureAsync(testPath);
+
+            var status = await repository.GetWorkingDirectoryStatusAsync();
+
+            // Clean repository should have no changes at all (following git behavior)
+            Assert.AreEqual(0, status.StagedFiles.Count, "Clean repository should have no staged files");
+            Assert.AreEqual(0, status.UnstagedFiles.Count, "Clean repository should have no unstaged files");
+            Assert.AreEqual(0, status.UntrackedFiles.Count, "Clean repository should have no untracked files");
+        }
+        finally
+        {
+            // Cleanup
+            if (Directory.Exists(testPath))
+            {
+                Directory.Delete(testPath, true);
+            }
+        }
+    }
+
+    [Test]
+    public async Task GetWorkingDirectoryStatusWithFileProperties()
+    {
+        // Use a path outside the project directory to avoid parent directory search
+        var testPath = Path.GetFullPath(Path.Combine(Path.GetTempPath(), $"GitReader_WorkingDirTest_{System.Guid.NewGuid():N}"));
+        
+        if (Directory.Exists(testPath))
+        {
+            Directory.Delete(testPath, true);
+        }
+        
+        try
+        {
+            Directory.CreateDirectory(testPath);
+            
+            // Create a Git repository with a file
+            await RunGitCommandAsync(testPath, "init");
+            await RunGitCommandAsync(testPath, "config user.email \"test@example.com\"");
+            await RunGitCommandAsync(testPath, "config user.name \"Test User\"");
+            
+            // Create some test files
+            await File.WriteAllTextAsync(Path.Combine(testPath, "test_file.txt"), "Test content");
+
+            using var repository = await Repository.Factory.OpenStructureAsync(testPath);
+
+            var status = await repository.GetWorkingDirectoryStatusAsync();
+
+            // Test file properties
+            Assert.IsTrue(status.UntrackedFiles.Count >= 1, "Should have at least one untracked file");
+            var testFile = status.UntrackedFiles.FirstOrDefault(f => f.Path == "test_file.txt");
+            if (testFile != null)
+            {
+                Assert.AreEqual("test_file.txt", testFile.Path);
+                Assert.AreEqual(FileStatus.Untracked, testFile.Status);
+                Assert.IsNull(testFile.IndexHash, "Untracked file should not have index hash");
+                Assert.IsNotNull(testFile.WorkingTreeHash, "Untracked file should have working tree hash");
+            }
+            else
+            {
+                Assert.Fail("test_file.txt should be in untracked files");
+            }
+        }
+        finally
+        {
+            // Cleanup
+            if (Directory.Exists(testPath))
+            {
+                Directory.Delete(testPath, true);
+            }
+        }
+    }
+
+    [Test] 
+    public async Task GetWorkingDirectoryStatusDeconstructorTest()
+    {
+        // Use a path outside the project directory to avoid parent directory search
+        var testPath = Path.GetFullPath(Path.Combine(Path.GetTempPath(), $"GitReader_WorkingDirTest_{System.Guid.NewGuid():N}"));
+        
+        if (Directory.Exists(testPath))
+        {
+            Directory.Delete(testPath, true);
+        }
+        
+        try
+        {
+            Directory.CreateDirectory(testPath);
+            
+            // Create an empty Git repository
+            await RunGitCommandAsync(testPath, "init");
+            await RunGitCommandAsync(testPath, "config user.email \"test@example.com\"");
+            await RunGitCommandAsync(testPath, "config user.name \"Test User\"");
+
+            using var repository = await Repository.Factory.OpenStructureAsync(testPath);
+            
+            var status = await repository.GetWorkingDirectoryStatusAsync();
+            
+            // Test status deconstruction
+            var (stagedFiles, unstagedFiles, untrackedFiles) = status;
+            
+            Assert.AreSame(status.StagedFiles, stagedFiles, "Deconstructed StagedFiles should be same reference");
+            Assert.AreSame(status.UnstagedFiles, unstagedFiles, "Deconstructed UnstagedFiles should be same reference");
+            Assert.AreSame(status.UntrackedFiles, untrackedFiles, "Deconstructed UntrackedFiles should be same reference");
+        }
+        finally
+        {
+            // Cleanup
+            if (Directory.Exists(testPath))
+            {
+                Directory.Delete(testPath, true);
+            }
+        }
+    }
+} 

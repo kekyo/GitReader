@@ -11,8 +11,10 @@ namespace GitReader.Primitive
 
 open GitReader
 open GitReader.Internal
+open GitReader.Primitive
 open System
 open System.Threading
+open System.Threading.Tasks
 
 [<AutoOpen>]
 module public RepositoryExtension =
@@ -41,7 +43,7 @@ module public RepositoryExtension =
             let! t = RepositoryAccessor.ReadTagAsync(repository, tag.ObjectOrCommitHash, unwrapCT ct) |> asAsync
             return match t with
                    | Some t -> t
-                   | None -> PrimitiveTag(tag.ObjectOrCommitHash, ObjectTypes.Commit, tag.Name, Nullable(), null)
+                   | None -> PrimitiveTag(tag.ObjectOrCommitHash, ObjectTypes.Commit, tag.Name, System.Nullable(), null)
         }
 
         member repository.getBranchHeadReferences(?ct: CancellationToken) =
@@ -70,6 +72,13 @@ module public RepositoryExtension =
         member repository.openBlob(blob: Hash, ?ct: CancellationToken) =
             RepositoryAccessor.OpenBlobAsync(repository, blob, unwrapCT ct) |> Async.AwaitTask
 
+        member repository.getWorkingDirectoryStatus(?ct: CancellationToken) =
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP2_1_OR_GREATER
+            WorkingDirectoryAccessor.GetPrimitiveWorkingDirectoryStatusAsync(repository, unwrapCT ct).AsTask() |> Async.AwaitTask
+#else
+            WorkingDirectoryAccessor.GetPrimitiveWorkingDirectoryStatusAsync(repository, unwrapCT ct) |> Async.AwaitTask
+#endif
+
     let (|PrimitiveRepository|) (repository: PrimitiveRepository) =
         (repository.GitPath, repository.RemoteUrls)
 
@@ -93,3 +102,9 @@ module public RepositoryExtension =
 
     let (|PrimitiveTreeEntry|) (entry: PrimitiveTreeEntry) =
         (entry.Hash, entry.Name, entry.Modes)
+
+    let (|PrimitiveWorkingDirectoryFile|) (file: PrimitiveWorkingDirectoryFile) =
+        (file.Path, file.Status, file.IndexHash |> wrapOptionV, file.WorkingTreeHash |> wrapOptionV)
+
+    let (|PrimitiveWorkingDirectoryStatus|) (status: PrimitiveWorkingDirectoryStatus) =
+        (status.StagedFiles, status.UnstagedFiles, status.UntrackedFiles)
