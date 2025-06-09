@@ -11,131 +11,155 @@ namespace GitReader.Primitive
 
 open GitReader
 open GitReader.Primitive
+open GitReader.Structures
 open NUnit.Framework
 open System.IO
 open System.Threading.Tasks
-open VerifyNUnit
+open System.Diagnostics
 
-[<TestFixture>]
-type PrimitiveRepositoryWorkingDirectoryTests() =
+type public PrimitiveRepositoryWorkingDirectoryTests() =
 
-    let private createValidGitIndex (indexPath: string) : Task =
+    let private runGitCommandAsync (workingDirectory: string) (arguments: string) : Task =
         task {
-            use fs = new FileStream(indexPath, FileMode.Create)
-            use writer = new BinaryWriter(fs)
-            // Write DIRC signature
-            writer.Write([| 0x44uy; 0x49uy; 0x52uy; 0x43uy |]) // "DIRC"
-            // Write version (2 in big-endian)
-            writer.Write([| 0x00uy; 0x00uy; 0x00uy; 0x02uy |])
-            // Write entry count (0 in big-endian)  
-            writer.Write([| 0x00uy; 0x00uy; 0x00uy; 0x00uy |])
+            let startInfo = ProcessStartInfo(
+                FileName = "git",
+                Arguments = arguments,
+                WorkingDirectory = workingDirectory,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            )
+
+            use process = new Process(StartInfo = startInfo)
+            process.Start() |> ignore
+            do! process.WaitForExitAsync()
+
+            if process.ExitCode <> 0 then
+                let! error = process.StandardError.ReadToEndAsync()
+                failwith $"Git command failed: git {arguments}\nError: {error}"
         }
 
     [<Test>]
-    member _.getWorkingDirectoryStatusEmptyRepository() : Task =
-        task {
-            // Use a path outside the project directory to avoid parent directory search
-            let testPath = Path.GetFullPath(Path.Combine("/tmp", $"GitReader_WorkingDirTest_{System.Guid.NewGuid():N}"))
-            
-            // Create a minimal Git repository structure
-            if Directory.Exists(testPath) then
-                Directory.Delete(testPath, true)
+    member this.GetWorkingDirectoryStatusEmptyRepository() = task {
+        // Use a path outside the project directory to avoid parent directory search
+        let testPath = Path.GetFullPath(Path.Combine(Path.GetTempPath(), $"GitReader_WorkingDirTest_{System.Guid.NewGuid():N}"))
+        
+        if Directory.Exists(testPath) then
+            Directory.Delete(testPath, true)
+        try
             Directory.CreateDirectory(testPath) |> ignore
-            let gitDir = Path.Combine(testPath, ".git")
-            Directory.CreateDirectory(gitDir) |> ignore
             
-            // Create minimal Git files
-            do! File.WriteAllTextAsync(Path.Combine(gitDir, "HEAD"), "ref: refs/heads/main\n") |> Async.AwaitTask
-            Directory.CreateDirectory(Path.Combine(gitDir, "refs", "heads")) |> ignore
-            Directory.CreateDirectory(Path.Combine(gitDir, "objects")) |> ignore
+            // Create an empty Git repository
+            do! runGitCommandAsync testPath "init"
+            do! runGitCommandAsync testPath "config user.email \"test@example.com\""
+            do! runGitCommandAsync testPath "config user.name \"Test User\""
             
-            // Create a valid empty Git index file to prevent reading from parent directories
-            do! createValidGitIndex (Path.Combine(gitDir, "index"))
-
             use! repository = Repository.Factory.openPrimitive(testPath)
             
             let! status = repository.getWorkingDirectoryStatus()
             
-            // Should have empty staged and unstaged files, but may have untracked files
-            Assert.AreEqual(0, status.StagedFiles.Count)
-            Assert.AreEqual(0, status.UnstagedFiles.Count)
-            
-            do! Verifier.Verify(status) |> Async.AwaitTask
-            
+            // Empty repository should have no staged, unstaged, or untracked files
+            Assert.AreEqual(0, status.StagedFiles.Count, "Empty repository should have no staged files")
+            Assert.AreEqual(0, status.UnstagedFiles.Count, "Empty repository should have no unstaged files")
+            Assert.AreEqual(0, status.UntrackedFiles.Count, "Empty repository should have no untracked files")
+        finally
             // Cleanup
             if Directory.Exists(testPath) then
                 Directory.Delete(testPath, true)
-        }
+    }
 
     [<Test>]
-    member _.getWorkingDirectoryStatusCleanRepository() : Task =
-        task {
-            // Use a path outside the project directory to avoid parent directory search
-            let testPath = Path.GetFullPath(Path.Combine("/tmp", $"GitReader_WorkingDirTest_{System.Guid.NewGuid():N}"))
-            
-            // Create a clean Git repository structure
-            if Directory.Exists(testPath) then
-                Directory.Delete(testPath, true)
+    member this.GetWorkingDirectoryStatusCleanRepository() = task {
+        // Use a path outside the project directory to avoid parent directory search
+        let testPath = Path.GetFullPath(Path.Combine(Path.GetTempPath(), $"GitReader_WorkingDirTest_{System.Guid.NewGuid():N}"))
+        
+        if Directory.Exists(testPath) then
+            Directory.Delete(testPath, true)
+        try
             Directory.CreateDirectory(testPath) |> ignore
-            let gitDir = Path.Combine(testPath, ".git")
-            Directory.CreateDirectory(gitDir) |> ignore
             
-            // Create minimal Git files
-            do! File.WriteAllTextAsync(Path.Combine(gitDir, "HEAD"), "ref: refs/heads/main\n") |> Async.AwaitTask
-            Directory.CreateDirectory(Path.Combine(gitDir, "refs", "heads")) |> ignore
-            Directory.CreateDirectory(Path.Combine(gitDir, "objects")) |> ignore
+            // Create a clean Git repository with committed files
+            do! runGitCommandAsync testPath "init"
+            do! runGitCommandAsync testPath "config user.email \"test@example.com\""
+            do! runGitCommandAsync testPath "config user.name \"Test User\""
             
-            // Create a valid empty Git index file to prevent reading from parent directories
-            do! createValidGitIndex (Path.Combine(gitDir, "index"))
-
+            // Create and commit files
+            do! File.WriteAllTextAsync(Path.Combine(testPath, "README.md"), "# Test Repository")
+            do! File.WriteAllTextAsync(Path.Combine(testPath, "file1.txt"), "Content of file 1")
+            do! runGitCommandAsync testPath "add ."
+            do! runGitCommandAsync testPath "commit -m \"Initial commit\""
+            
             use! repository = Repository.Factory.openPrimitive(testPath)
             
             let! status = repository.getWorkingDirectoryStatus()
             
-            // Verify that clean repository has no changes
-            Assert.AreEqual(0, status.StagedFiles.Count)
-            Assert.AreEqual(0, status.UnstagedFiles.Count)
-            
-            do! Verifier.Verify(status) |> Async.AwaitTask
-            
+            // Clean repository should have no changes at all (following git behavior)
+            Assert.AreEqual(0, status.StagedFiles.Count, "Clean repository should have no staged files")
+            Assert.AreEqual(0, status.UnstagedFiles.Count, "Clean repository should have no unstaged files")
+            Assert.AreEqual(0, status.UntrackedFiles.Count, "Clean repository should have no untracked files")
+        finally
             // Cleanup
             if Directory.Exists(testPath) then
                 Directory.Delete(testPath, true)
-        }
+    }
 
     [<Test>]
-    member _.getWorkingDirectoryStatusDeconstructorTest() : Task =
-        task {
-            // Use a path outside the project directory to avoid parent directory search
-            let testPath = Path.GetFullPath(Path.Combine("/tmp", $"GitReader_WorkingDirTest_{System.Guid.NewGuid():N}"))
-            
-            // Create a minimal Git repository structure
-            if Directory.Exists(testPath) then
-                Directory.Delete(testPath, true)
+    member this.GetWorkingDirectoryStatusWithModificationsTest() = task {
+        // Use a path outside the project directory to avoid parent directory search
+        let testPath = Path.GetFullPath(Path.Combine(Path.GetTempPath(), $"GitReader_WorkingDirTest_{System.Guid.NewGuid():N}"))
+        
+        if Directory.Exists(testPath) then
+            Directory.Delete(testPath, true)
+        try
             Directory.CreateDirectory(testPath) |> ignore
-            let gitDir = Path.Combine(testPath, ".git")
-            Directory.CreateDirectory(gitDir) |> ignore
             
-            // Create minimal Git files
-            do! File.WriteAllTextAsync(Path.Combine(gitDir, "HEAD"), "ref: refs/heads/main\n") |> Async.AwaitTask
-            Directory.CreateDirectory(Path.Combine(gitDir, "refs", "heads")) |> ignore
-            Directory.CreateDirectory(Path.Combine(gitDir, "objects")) |> ignore
+            // Create a Git repository with initial commit
+            do! runGitCommandAsync testPath "init"
+            do! runGitCommandAsync testPath "config user.email \"test@example.com\""
+            do! runGitCommandAsync testPath "config user.name \"Test User\""
             
-            // Create a valid empty Git index file to prevent reading from parent directories
-            do! createValidGitIndex (Path.Combine(gitDir, "index"))
-
+            // Create initial file and commit
+            do! File.WriteAllTextAsync(Path.Combine(testPath, "README.md"), "# Test Repository\n\nInitial content.")
+            do! runGitCommandAsync testPath "add README.md"
+            do! runGitCommandAsync testPath "commit -m \"Initial commit\""
+            
+            // Create new untracked file
+            do! File.WriteAllTextAsync(Path.Combine(testPath, "new_file.txt"), "This is a new file for testing.")
+            
+            // Modify existing tracked file
+            do! File.WriteAllTextAsync(Path.Combine(testPath, "README.md"), "# Test Repository\n\nInitial content.\n\nModified for testing.")
+            
             use! repository = Repository.Factory.openPrimitive(testPath)
             
             let! status = repository.getWorkingDirectoryStatus()
             
-            // Test status deconstruction
-            let (stagedFiles, unstagedFiles, untrackedFiles) = status
+            // Should have untracked files (including new_file.txt)
+            Assert.IsTrue(status.UntrackedFiles.Count > 0, "Should have untracked files")
             
-            Assert.AreSame(status.StagedFiles, stagedFiles)
-            Assert.AreSame(status.UnstagedFiles, unstagedFiles) 
-            Assert.AreSame(status.UntrackedFiles, untrackedFiles)
+            let newFile = status.UntrackedFiles |> Seq.tryFind (fun f -> f.Path = "new_file.txt")
+            Assert.IsTrue(newFile.IsSome, "new_file.txt should be in untracked files")
             
+            match newFile with
+            | Some file ->
+                Assert.AreEqual(FileStatus.Untracked, enum<FileStatus> file.Status)
+                Assert.IsNull(file.IndexHash)
+                Assert.IsNotNull(file.WorkingTreeHash)
+            | None -> ()
+
+            // README.md should be modified and appear in unstaged files
+            let modifiedFile = status.UnstagedFiles |> Seq.tryFind (fun f -> f.Path = "README.md")
+            Assert.IsTrue(modifiedFile.IsSome, "README.md should be in unstaged files")
+            
+            match modifiedFile with
+            | Some file ->
+                Assert.AreEqual(FileStatus.Modified, enum<FileStatus> file.Status)
+                Assert.IsNotNull(file.IndexHash)
+                Assert.IsNotNull(file.WorkingTreeHash)
+                Assert.AreNotEqual(file.IndexHash, file.WorkingTreeHash)
+            | None -> ()
+        finally
             // Cleanup
             if Directory.Exists(testPath) then
                 Directory.Delete(testPath, true)
-        } 
+    } 

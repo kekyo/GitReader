@@ -44,6 +44,20 @@ internal static class WorkingDirectoryAccessor
         var untrackedFiles = new List<PrimitiveWorkingDirectoryFile>();
         var processedPaths = new HashSet<string>();
 
+        // Get the current commit's tree for comparison
+        var headReference = await PrimitiveRepositoryFacade.GetCurrentHeadReferenceAsync(repository, ct);
+        var headTreeFiles = new Dictionary<string, Hash>();
+        
+        if (headReference != null)
+        {
+            var headCommit = await RepositoryAccessor.ReadCommitAsync(repository, headReference.Value.Target, ct);
+            if (headCommit != null)
+            {
+                // Build dictionary of files from HEAD commit tree
+                await BuildTreeFileDictionaryAsync(repository, headCommit.Value.TreeRoot, "", headTreeFiles, ct);
+            }
+        }
+
         // Process index entries
         foreach (var indexEntry in indexFileDict.Values)
         {
@@ -55,40 +69,90 @@ internal static class WorkingDirectoryAccessor
                 // File exists in working directory
                 var workingHash = await CalculateFileHashAsync(repository, workingFilePath, ct).ConfigureAwait(false);
                 
+                // Check if this file exists in HEAD commit
+                var isInHeadCommit = headTreeFiles.TryGetValue(indexEntry.Path, out var headFileHash);
+                
                 if (workingHash.Equals(indexEntry.ObjectHash))
                 {
-                    // File is staged and unmodified
-                    stagedFiles.Add(new PrimitiveWorkingDirectoryFile(
-                        indexEntry.Path,
-                        PrimitiveFileStatus.Unmodified,
-                        indexEntry.ObjectHash,
-                        workingHash));
+                    if (isInHeadCommit && indexEntry.ObjectHash.Equals(headFileHash))
+                    {
+                        // File is committed and unmodified - don't include in any list
+                        // This matches git status behavior for clean repositories
+                    }
+                    else
+                    {
+                        // File is staged (added to index but not yet committed or modified since commit)
+                        stagedFiles.Add(new PrimitiveWorkingDirectoryFile(
+                            indexEntry.Path,
+                            isInHeadCommit ? PrimitiveFileStatus.Modified : PrimitiveFileStatus.Added,
+                            isInHeadCommit ? (Hash?)headFileHash : null,
+                            workingHash));
+                    }
                 }
                 else
                 {
-                    // File is staged but modified in working directory
-                    stagedFiles.Add(new PrimitiveWorkingDirectoryFile(
-                        indexEntry.Path,
-                        PrimitiveFileStatus.Added,
-                        indexEntry.ObjectHash,
-                        null));
-                    
-                    unstagedFiles.Add(new PrimitiveWorkingDirectoryFile(
-                        indexEntry.Path,
-                        PrimitiveFileStatus.Modified,
-                        indexEntry.ObjectHash,
-                        workingHash));
+                    // File content differs between index and working directory
+                    if (isInHeadCommit)
+                    {
+                        if (!indexEntry.ObjectHash.Equals(headFileHash))
+                        {
+                            // File is staged (modified in index compared to HEAD)
+                            stagedFiles.Add(new PrimitiveWorkingDirectoryFile(
+                                indexEntry.Path,
+                                PrimitiveFileStatus.Modified,
+                                headFileHash,
+                                indexEntry.ObjectHash));
+                        }
+                        
+                        // File is also modified in working directory
+                        unstagedFiles.Add(new PrimitiveWorkingDirectoryFile(
+                            indexEntry.Path,
+                            PrimitiveFileStatus.Modified,
+                            indexEntry.ObjectHash,
+                            workingHash));
+                    }
+                    else
+                    {
+                        // New file: staged but modified in working directory
+                        stagedFiles.Add(new PrimitiveWorkingDirectoryFile(
+                            indexEntry.Path,
+                            PrimitiveFileStatus.Added,
+                            null,
+                            indexEntry.ObjectHash));
+                        
+                        unstagedFiles.Add(new PrimitiveWorkingDirectoryFile(
+                            indexEntry.Path,
+                            PrimitiveFileStatus.Modified,
+                            indexEntry.ObjectHash,
+                            workingHash));
+                    }
                 }
             }
             else
             {
-                // File is staged but deleted in working directory
-                stagedFiles.Add(new PrimitiveWorkingDirectoryFile(
-                    indexEntry.Path,
-                    PrimitiveFileStatus.Added,
-                    indexEntry.ObjectHash,
-                    null));
+                // File is in index but deleted in working directory
+                var isInHeadCommit = headTreeFiles.TryGetValue(indexEntry.Path, out var headFileHash);
                 
+                if (isInHeadCommit && !indexEntry.ObjectHash.Equals(headFileHash))
+                {
+                    // File was staged (modified in index) but then deleted in working directory
+                    stagedFiles.Add(new PrimitiveWorkingDirectoryFile(
+                        indexEntry.Path,
+                        PrimitiveFileStatus.Modified,
+                        headFileHash,
+                        indexEntry.ObjectHash));
+                }
+                else if (!isInHeadCommit)
+                {
+                    // File was staged (newly added) but then deleted in working directory
+                    stagedFiles.Add(new PrimitiveWorkingDirectoryFile(
+                        indexEntry.Path,
+                        PrimitiveFileStatus.Added,
+                        null,
+                        indexEntry.ObjectHash));
+                }
+                
+                // File is deleted in working directory
                 unstagedFiles.Add(new PrimitiveWorkingDirectoryFile(
                     indexEntry.Path,
                     PrimitiveFileStatus.Deleted,
@@ -202,6 +266,33 @@ internal static class WorkingDirectoryAccessor
         catch (Exception)
         {
             // Skip directories that cannot be accessed for any reason
+        }
+    }
+
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP2_1_OR_GREATER
+    private static async ValueTask BuildTreeFileDictionaryAsync(
+        Repository repository, Hash treeHash, string basePath, Dictionary<string, Hash> fileDict, CancellationToken ct)
+#else
+    private static async Task BuildTreeFileDictionaryAsync(
+        Repository repository, Hash treeHash, string basePath, Dictionary<string, Hash> fileDict, CancellationToken ct)
+#endif
+    {
+        var tree = await RepositoryAccessor.ReadTreeAsync(repository, treeHash, ct);
+        
+        foreach (var entry in tree.Children)
+        {
+            var fullPath = string.IsNullOrEmpty(basePath) ? entry.Name : basePath + "/" + entry.Name;
+            
+            if (entry.SpecialModes == PrimitiveSpecialModes.Tree || entry.SpecialModes == PrimitiveSpecialModes.Directory)
+            {
+                // Recursively process subdirectories
+                await BuildTreeFileDictionaryAsync(repository, entry.Hash, fullPath, fileDict, ct);
+            }
+            else
+            {
+                // Add file to dictionary
+                fileDict[fullPath] = entry.Hash;
+            }
         }
     }
 

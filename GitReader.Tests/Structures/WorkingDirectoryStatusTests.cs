@@ -7,64 +7,69 @@
 //
 ////////////////////////////////////////////////////////////////////////////
 
+using NUnit.Framework;
 using System;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using GitReader;
-using GitReader.Structures;
-using NUnit.Framework;
-using VerifyNUnit;
+using System.Diagnostics;
 
 namespace GitReader.Structures;
 
 public sealed class WorkingDirectoryStatusTests
 {
+    private static async Task RunGitCommandAsync(string workingDirectory, string arguments)
+    {
+        var startInfo = new ProcessStartInfo
+        {
+            FileName = "git",
+            Arguments = arguments,
+            WorkingDirectory = workingDirectory,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false,
+            CreateNoWindow = true
+        };
+
+        using var process = new Process { StartInfo = startInfo };
+        process.Start();
+        await process.WaitForExitAsync();
+
+        if (process.ExitCode != 0)
+        {
+            var error = await process.StandardError.ReadToEndAsync();
+            throw new InvalidOperationException($"Git command failed: git {arguments}\nError: {error}");
+        }
+    }
+
     [Test]
     public async Task GetWorkingDirectoryStatusEmptyRepository()
     {
         // Use a path outside the project directory to avoid parent directory search
         var testPath = Path.GetFullPath(Path.Combine(Path.GetTempPath(), $"GitReader_WorkingDirTest_{System.Guid.NewGuid():N}"));
         
-        // Create a minimal Git repository structure without index
         if (Directory.Exists(testPath))
         {
             Directory.Delete(testPath, true);
         }
+        
         try
         {
             Directory.CreateDirectory(testPath);
-            var gitDir = Path.Combine(testPath, ".git");
-            Directory.CreateDirectory(gitDir);
-        
-            // Create minimal Git files
-            await File.WriteAllTextAsync(Path.Combine(gitDir, "HEAD"), "ref: refs/heads/main\n");
-            await File.WriteAllTextAsync(Path.Combine(gitDir, "config"), "[core]\n\trepositoryformatversion = 0\n\tfilemode = true\n\tbare = false\n");
-            Directory.CreateDirectory(Path.Combine(gitDir, "refs", "heads"));
-            Directory.CreateDirectory(Path.Combine(gitDir, "objects"));
-        
-            // Create a valid empty Git index file to prevent reading from parent directories
-            var indexFile = Path.Combine(gitDir, "index");
-            using (var fs = new FileStream(indexFile, FileMode.Create))
-            using (var writer = new BinaryWriter(fs))
-            {
-                // Write DIRC signature
-                writer.Write(new byte[] { 0x44, 0x49, 0x52, 0x43 }); // "DIRC"
-                // Write version (2 in big-endian)
-                writer.Write(new byte[] { 0x00, 0x00, 0x00, 0x02 });
-                // Write entry count (0 in big-endian)
-                writer.Write(new byte[] { 0x00, 0x00, 0x00, 0x00 });
-            }
+            
+            // Create an empty Git repository
+            await RunGitCommandAsync(testPath, "init");
+            await RunGitCommandAsync(testPath, "config user.email \"test@example.com\"");
+            await RunGitCommandAsync(testPath, "config user.name \"Test User\"");
 
             using var repository = await Repository.Factory.OpenStructureAsync(testPath);
 
             var status = await repository.GetWorkingDirectoryStatusAsync();
 
-            // Should have empty staged and unstaged files, but may have untracked files
-            Assert.AreEqual(0, status.StagedFiles.Count);
-            Assert.AreEqual(0, status.UnstagedFiles.Count);
-        
-            await Verifier.Verify(status);
+            // Empty repository should have no staged, unstaged, or untracked files
+            Assert.AreEqual(0, status.StagedFiles.Count, "Empty repository should have no staged files");
+            Assert.AreEqual(0, status.UnstagedFiles.Count, "Empty repository should have no unstaged files");
+            Assert.AreEqual(0, status.UntrackedFiles.Count, "Empty repository should have no untracked files");
         }
         finally
         {
@@ -82,39 +87,63 @@ public sealed class WorkingDirectoryStatusTests
         // Use a path outside the project directory to avoid parent directory search
         var testPath = Path.GetFullPath(Path.Combine(Path.GetTempPath(), $"GitReader_WorkingDirTest_{System.Guid.NewGuid():N}"));
         
-        // Copy existing test1 repository to use as working directory
-        var sourcePath = RepositoryTestsSetUp.GetBasePath("test1");
         if (Directory.Exists(testPath))
         {
             Directory.Delete(testPath, true);
         }
+        
         try
         {
-            CopyDirectory(sourcePath, testPath);
+            Directory.CreateDirectory(testPath);
+            
+            // Create a Git repository with initial commit
+            await RunGitCommandAsync(testPath, "init");
+            await RunGitCommandAsync(testPath, "config user.email \"test@example.com\"");
+            await RunGitCommandAsync(testPath, "config user.name \"Test User\"");
+            
+            // Create initial file and commit
+            await File.WriteAllTextAsync(Path.Combine(testPath, "README.md"), "# Test Repository\n\nInitial content.");
+            await RunGitCommandAsync(testPath, "add README.md");
+            await RunGitCommandAsync(testPath, "commit -m \"Initial commit\"");
+            
+            // Create new untracked file
+            await File.WriteAllTextAsync(Path.Combine(testPath, "new_file.txt"), "This is a new file for testing.");
+            
+            // Modify existing tracked file
+            await File.WriteAllTextAsync(Path.Combine(testPath, "README.md"), "# Test Repository\n\nInitial content.\n\nModified for testing.");
 
             using var repository = await Repository.Factory.OpenStructureAsync(testPath);
 
-            // Create and modify test files
-            var newFilePath = Path.Combine(testPath, "new_file.txt");
-            await File.WriteAllTextAsync(newFilePath, "This is a new file for testing.");
-
-            var existingFilePath = Path.Combine(testPath, "README.md");
-            if (File.Exists(existingFilePath))
-            {
-                var content = await File.ReadAllTextAsync(existingFilePath);
-                await File.WriteAllTextAsync(existingFilePath, content + "\nModified for testing.");
-            }
-
             var status = await repository.GetWorkingDirectoryStatusAsync();
 
-            // Sort results for stable test results
-            var sortedStatus = new WorkingDirectoryStatus(
-                status.StagedFiles.OrderBy(f => f.Path).ToArray(),
-                status.UnstagedFiles.OrderBy(f => f.Path).ToArray(),
-                status.UntrackedFiles.OrderBy(f => f.Path).ToArray()
-            );
+            // Should have untracked files (including new_file.txt)
+            Assert.IsTrue(status.UntrackedFiles.Count > 0, "Should have untracked files");
+            
+            var newFile = status.UntrackedFiles.FirstOrDefault(f => f.Path == "new_file.txt");
+            if (newFile != null)
+            {
+                Assert.AreEqual(FileStatus.Untracked, newFile.Status);
+                Assert.IsNull(newFile.IndexHash);
+                Assert.IsNotNull(newFile.WorkingTreeHash);
+            }
+            else
+            {
+                Assert.Fail("new_file.txt should be in untracked files");
+            }
 
-            await Verifier.Verify(sortedStatus);
+            // README.md should be modified and appear in unstaged files
+            var modifiedFile = status.UnstagedFiles.FirstOrDefault(f => f.Path == "README.md");
+            if (modifiedFile != null)
+            {
+                Assert.AreEqual(FileStatus.Modified, modifiedFile.Status);
+                Assert.IsNotNull(modifiedFile.IndexHash);
+                Assert.IsNotNull(modifiedFile.WorkingTreeHash);
+                Assert.AreNotEqual(modifiedFile.IndexHash, modifiedFile.WorkingTreeHash);
+            }
+            else
+            {
+                Assert.Fail("README.md should be in unstaged files");
+            }
         }
         finally
         {
@@ -132,7 +161,6 @@ public sealed class WorkingDirectoryStatusTests
         // Use a path outside the project directory to avoid parent directory search
         var testPath = Path.GetFullPath(Path.Combine(Path.GetTempPath(), $"GitReader_WorkingDirTest_{System.Guid.NewGuid():N}"));
         
-        // Create a clean Git repository structure
         if (Directory.Exists(testPath))
         {
             Directory.Delete(testPath, true);
@@ -141,38 +169,26 @@ public sealed class WorkingDirectoryStatusTests
         try
         {
             Directory.CreateDirectory(testPath);
-            var gitDir = Path.Combine(testPath, ".git");
-            Directory.CreateDirectory(gitDir);
-
-            // Create minimal Git files
-            await File.WriteAllTextAsync(Path.Combine(gitDir, "HEAD"), "ref: refs/heads/main\n");
-            await File.WriteAllTextAsync(Path.Combine(gitDir, "config"),
-                "[core]\n\trepositoryformatversion = 0\n\tfilemode = true\n\tbare = false\n");
-            Directory.CreateDirectory(Path.Combine(gitDir, "refs", "heads"));
-            Directory.CreateDirectory(Path.Combine(gitDir, "objects"));
-
-            // Create a valid empty Git index file to prevent reading from parent directories
-            var indexFile = Path.Combine(gitDir, "index");
-            using (var fs = new FileStream(indexFile, FileMode.Create))
-            using (var writer = new BinaryWriter(fs))
-            {
-                // Write DIRC signature
-                writer.Write(new byte[] { 0x44, 0x49, 0x52, 0x43 }); // "DIRC"
-                // Write version (2 in big-endian)
-                writer.Write(new byte[] { 0x00, 0x00, 0x00, 0x02 });
-                // Write entry count (0 in big-endian)
-                writer.Write(new byte[] { 0x00, 0x00, 0x00, 0x00 });
-            }
+            
+            // Create a clean Git repository with committed files
+            await RunGitCommandAsync(testPath, "init");
+            await RunGitCommandAsync(testPath, "config user.email \"test@example.com\"");
+            await RunGitCommandAsync(testPath, "config user.name \"Test User\"");
+            
+            // Create and commit files
+            await File.WriteAllTextAsync(Path.Combine(testPath, "README.md"), "# Test Repository");
+            await File.WriteAllTextAsync(Path.Combine(testPath, "file1.txt"), "Content of file 1");
+            await RunGitCommandAsync(testPath, "add .");
+            await RunGitCommandAsync(testPath, "commit -m \"Initial commit\"");
 
             using var repository = await Repository.Factory.OpenStructureAsync(testPath);
 
             var status = await repository.GetWorkingDirectoryStatusAsync();
 
-            // Verify that clean repository has no changes
-            Assert.AreEqual(0, status.StagedFiles.Count);
-            Assert.AreEqual(0, status.UnstagedFiles.Count);
-
-            await Verifier.Verify(status);
+            // Clean repository should have no changes at all (following git behavior)
+            Assert.AreEqual(0, status.StagedFiles.Count, "Clean repository should have no staged files");
+            Assert.AreEqual(0, status.UnstagedFiles.Count, "Clean repository should have no unstaged files");
+            Assert.AreEqual(0, status.UntrackedFiles.Count, "Clean repository should have no untracked files");
         }
         finally
         {
@@ -190,35 +206,19 @@ public sealed class WorkingDirectoryStatusTests
         // Use a path outside the project directory to avoid parent directory search
         var testPath = Path.GetFullPath(Path.Combine(Path.GetTempPath(), $"GitReader_WorkingDirTest_{System.Guid.NewGuid():N}"));
         
-        // Create a minimal Git repository structure
         if (Directory.Exists(testPath))
         {
             Directory.Delete(testPath, true);
         }
+        
         try
         {
             Directory.CreateDirectory(testPath);
-            var gitDir = Path.Combine(testPath, ".git");
-            Directory.CreateDirectory(gitDir);
             
-            // Create minimal Git files
-            await File.WriteAllTextAsync(Path.Combine(gitDir, "HEAD"), "ref: refs/heads/main\n");
-            await File.WriteAllTextAsync(Path.Combine(gitDir, "config"), "[core]\n\trepositoryformatversion = 0\n\tfilemode = true\n\tbare = false\n");
-            Directory.CreateDirectory(Path.Combine(gitDir, "refs", "heads"));
-            Directory.CreateDirectory(Path.Combine(gitDir, "objects"));
-            
-            // Create a valid empty Git index file to prevent reading from parent directories
-            var indexFile = Path.Combine(gitDir, "index");
-            using (var fs = new FileStream(indexFile, FileMode.Create))
-            using (var writer = new BinaryWriter(fs))
-            {
-                // Write DIRC signature
-                writer.Write(new byte[] { 0x44, 0x49, 0x52, 0x43 }); // "DIRC"
-                // Write version (2 in big-endian)
-                writer.Write(new byte[] { 0x00, 0x00, 0x00, 0x02 });
-                // Write entry count (0 in big-endian)
-                writer.Write(new byte[] { 0x00, 0x00, 0x00, 0x00 });
-            }
+            // Create a Git repository with a file
+            await RunGitCommandAsync(testPath, "init");
+            await RunGitCommandAsync(testPath, "config user.email \"test@example.com\"");
+            await RunGitCommandAsync(testPath, "config user.name \"Test User\"");
             
             // Create some test files
             await File.WriteAllTextAsync(Path.Combine(testPath, "test_file.txt"), "Test content");
@@ -228,17 +228,19 @@ public sealed class WorkingDirectoryStatusTests
             var status = await repository.GetWorkingDirectoryStatusAsync();
 
             // Test file properties
-            Assert.IsTrue(status.UntrackedFiles.Count >= 1);
+            Assert.IsTrue(status.UntrackedFiles.Count >= 1, "Should have at least one untracked file");
             var testFile = status.UntrackedFiles.FirstOrDefault(f => f.Path == "test_file.txt");
             if (testFile != null)
             {
                 Assert.AreEqual("test_file.txt", testFile.Path);
                 Assert.AreEqual(FileStatus.Untracked, testFile.Status);
-                Assert.IsNull(testFile.IndexHash);
-                Assert.IsNotNull(testFile.WorkingTreeHash); // Untracked files have working tree hash
+                Assert.IsNull(testFile.IndexHash, "Untracked file should not have index hash");
+                Assert.IsNotNull(testFile.WorkingTreeHash, "Untracked file should have working tree hash");
             }
-            
-            await Verifier.Verify(status);
+            else
+            {
+                Assert.Fail("test_file.txt should be in untracked files");
+            }
         }
         finally
         {
@@ -256,46 +258,30 @@ public sealed class WorkingDirectoryStatusTests
         // Use a path outside the project directory to avoid parent directory search
         var testPath = Path.GetFullPath(Path.Combine(Path.GetTempPath(), $"GitReader_WorkingDirTest_{System.Guid.NewGuid():N}"));
         
-        // Create a minimal Git repository structure
         if (Directory.Exists(testPath))
         {
             Directory.Delete(testPath, true);
         }
+        
         try
         {
             Directory.CreateDirectory(testPath);
-            var gitDir = Path.Combine(testPath, ".git");
-            Directory.CreateDirectory(gitDir);
-        
-            // Create minimal Git files
-            await File.WriteAllTextAsync(Path.Combine(gitDir, "HEAD"), "ref: refs/heads/main\n");
-            await File.WriteAllTextAsync(Path.Combine(gitDir, "config"), "[core]\n\trepositoryformatversion = 0\n\tfilemode = true\n\tbare = false\n");
-            Directory.CreateDirectory(Path.Combine(gitDir, "refs", "heads"));
-            Directory.CreateDirectory(Path.Combine(gitDir, "objects"));
-        
-            // Create a valid empty Git index file to prevent reading from parent directories
-            var indexFile = Path.Combine(gitDir, "index");
-            using (var fs = new FileStream(indexFile, FileMode.Create))
-            using (var writer = new BinaryWriter(fs))
-            {
-                // Write DIRC signature
-                writer.Write(new byte[] { 0x44, 0x49, 0x52, 0x43 }); // "DIRC"
-                // Write version (2 in big-endian)
-                writer.Write(new byte[] { 0x00, 0x00, 0x00, 0x02 });
-                // Write entry count (0 in big-endian)
-                writer.Write(new byte[] { 0x00, 0x00, 0x00, 0x00 });
-            }
+            
+            // Create an empty Git repository
+            await RunGitCommandAsync(testPath, "init");
+            await RunGitCommandAsync(testPath, "config user.email \"test@example.com\"");
+            await RunGitCommandAsync(testPath, "config user.name \"Test User\"");
 
             using var repository = await Repository.Factory.OpenStructureAsync(testPath);
-        
+            
             var status = await repository.GetWorkingDirectoryStatusAsync();
-        
+            
             // Test status deconstruction
             var (stagedFiles, unstagedFiles, untrackedFiles) = status;
-        
-            Assert.AreSame(status.StagedFiles, stagedFiles);
-            Assert.AreSame(status.UnstagedFiles, unstagedFiles);
-            Assert.AreSame(status.UntrackedFiles, untrackedFiles);
+            
+            Assert.AreSame(status.StagedFiles, stagedFiles, "Deconstructed StagedFiles should be same reference");
+            Assert.AreSame(status.UnstagedFiles, unstagedFiles, "Deconstructed UnstagedFiles should be same reference");
+            Assert.AreSame(status.UntrackedFiles, untrackedFiles, "Deconstructed UntrackedFiles should be same reference");
         }
         finally
         {
@@ -304,23 +290,6 @@ public sealed class WorkingDirectoryStatusTests
             {
                 Directory.Delete(testPath, true);
             }
-        }
-    }
-
-    private static void CopyDirectory(string sourceDir, string destDir)
-    {
-        Directory.CreateDirectory(destDir);
-
-        foreach (var file in Directory.GetFiles(sourceDir))
-        {
-            var destFile = Path.Combine(destDir, Path.GetFileName(file));
-            File.Copy(file, destFile, true);
-        }
-
-        foreach (var dir in Directory.GetDirectories(sourceDir))
-        {
-            var destSubDir = Path.Combine(destDir, Path.GetFileName(dir));
-            CopyDirectory(dir, destSubDir);
         }
     }
 } 
