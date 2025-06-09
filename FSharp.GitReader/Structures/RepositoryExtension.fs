@@ -10,6 +10,8 @@
 namespace GitReader.Structures
 
 open GitReader
+open GitReader.Internal
+open GitReader.Structures
 open System
 open System.Threading
 
@@ -31,6 +33,9 @@ module public RepositoryExtension =
         member repository.getHeadReflogs(?ct: CancellationToken) =
             StructuredRepositoryFacade.GetHeadReflogsAsync(
                 repository, new WeakReference(repository), unwrapCT ct) |> Async.AwaitTask
+        member repository.getWorkingDirectoryStatus(?ct: CancellationToken) =
+            WorkingDirectoryAccessor.GetStructuredWorkingDirectoryStatusAsync(
+                repository, new WeakReference(repository), unwrapCT ct).AsTask() |> Async.AwaitTask
 
     type Branch with
         member branch.getHeadCommit(?ct: CancellationToken) =
@@ -113,3 +118,9 @@ module public RepositoryExtension =
          (match annotation.Message with
           | null -> None
           | _ -> Some annotation.Message))
+
+    let (|WorkingDirectoryFile|) (file: WorkingDirectoryFile) =
+        (file.Path, file.Status, file.IndexHash |> wrapOptionV, file.WorkingTreeHash |> wrapOptionV)
+
+    let (|WorkingDirectoryStatus|) (status: WorkingDirectoryStatus) =
+        (status.StagedFiles, status.UnstagedFiles, status.UntrackedFiles)

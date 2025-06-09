@@ -57,6 +57,16 @@ public interface IFileSystem
 
     Task<TemporaryFileDescriptor> CreateTemporaryAsync(
         CancellationToken ct);
+
+    string GetFileName(string path);
+
+    Task<bool> IsDirectoryExistsAsync(
+        string path, CancellationToken ct);
+
+    Task<string[]> GetDirectoryEntriesAsync(
+        string path, CancellationToken ct);
+
+    string GetRelativePath(string basePath, string path);
 }
 
 public sealed class StandardFileSystem : IFileSystem
@@ -187,5 +197,33 @@ public sealed class StandardFileSystem : IFileSystem
             true);
 
         return Utilities.FromResult(new TemporaryFileDescriptor(path, stream));
+    }
+
+    public string GetFileName(string path) =>
+        Path.GetFileName(path);
+
+    public Task<bool> IsDirectoryExistsAsync(string path, CancellationToken ct) =>
+        Utilities.FromResult(Directory.Exists(path));
+
+    public Task<string[]> GetDirectoryEntriesAsync(string path, CancellationToken ct) =>
+        Utilities.FromResult(Directory.Exists(path) ?
+            Directory.GetFileSystemEntries(path) :
+            Utilities.Empty<string>());
+
+    public string GetRelativePath(string basePath, string path)
+    {
+        if (!Path.IsPathRooted(path))
+        {
+            return path;
+        }
+
+        var baseUri = new Uri(Path.GetFullPath(basePath) + Path.DirectorySeparatorChar);
+        var targetUri = new Uri(Path.GetFullPath(path));
+        
+        var relativeUri = baseUri.MakeRelativeUri(targetUri);
+        var relativePath = Uri.UnescapeDataString(relativeUri.ToString());
+        
+        // Convert forward slashes to platform-specific directory separators
+        return relativePath.Replace('/', Path.DirectorySeparatorChar);
     }
 }

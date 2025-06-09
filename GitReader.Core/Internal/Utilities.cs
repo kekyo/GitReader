@@ -663,4 +663,34 @@ internal static class Utilities
         Signature signature) =>
         signature.MailAddress is { } mailAddress ?
             $"{signature.Name} <{mailAddress}>" : signature.Name;
+
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP2_1_OR_GREATER
+    public static async ValueTask<Hash> CalculateGitBlobHashAsync(
+        Stream stream, long size, BufferPool bufferPool, CancellationToken ct)
+#else
+    public static async Task<Hash> CalculateGitBlobHashAsync(
+        Stream stream, long size, BufferPool bufferPool, CancellationToken ct)
+#endif
+    {
+        // Git calculates hash as: "blob <size>\0<content>"
+        var header = System.Text.Encoding.UTF8.GetBytes($"blob {size}\0");
+
+#if NETFRAMEWORK
+        using var sha1 = new System.Security.Cryptography.SHA1CryptoServiceProvider();
+        using var combinedStream = new MemoryStream();
+        combinedStream.Write(header, 0, header.Length);
+        await CopyToAsync(stream, combinedStream, 65536, bufferPool, ct);
+        var hash = sha1.ComputeHash(combinedStream.ToArray());
+        return new Hash(hash);
+#else
+        using var sha1 = System.Security.Cryptography.SHA1.Create();
+        
+        // For frameworks that don't support TransformBlock, use a memory stream approach
+        using var combinedStream = new MemoryStream();
+        combinedStream.Write(header, 0, header.Length);
+        await CopyToAsync(stream, combinedStream, 65536, bufferPool, ct);
+        var hash = sha1.ComputeHash(combinedStream.ToArray());
+        return new Hash(hash);
+#endif
+    }
 }
