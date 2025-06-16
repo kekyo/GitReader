@@ -387,6 +387,52 @@ while (current != null)
 }
 ```
 
+### ワークツリー情報を取得
+
+```csharp
+// リポジトリが管理する全てのワークツリーを取得
+ReadOnlyArray<Worktree> worktrees = await repository.GetWorktreesAsync();
+
+foreach (Worktree worktree in worktrees)
+{
+    Console.WriteLine($"Name: {worktree.Name}");
+    Console.WriteLine($"Path: {worktree.Path}");
+    Console.WriteLine($"IsMain: {worktree.IsMain}");
+    Console.WriteLine($"Status: {worktree.Status}");
+    Console.WriteLine($"Branch: {worktree.Branch ?? "(detached)"}");
+    Console.WriteLine($"Head: {worktree.Head?.ToString() ?? "(none)"}");
+}
+```
+
+### ワーキングディレクトリの状態を取得
+
+```csharp
+// 現在のワーキングディレクトリの状態を取得
+WorkingDirectoryStatus status = await repository.GetWorkingDirectoryStatusAsync();
+
+// 変更があるかどうかを確認
+if (status.HasChanges)
+{
+    // 変更されたファイルを取得
+    foreach (var entry in status.Modified)
+    {
+        Console.WriteLine($"Modified: {entry.Path}");
+    }
+
+    // 未追跡のファイルを取得
+    foreach (var entry in status.Untracked)
+    {
+        Console.WriteLine($"Untracked: {entry.Path}");
+    }
+
+    // 削除されたファイルを取得
+    foreach (var entry in status.Deleted)
+    {
+        Console.WriteLine($"Deleted: {entry.Path}");
+    }
+}
+```
+
 ----
 
 ## サンプルコード (プリミティブインターフェイス)

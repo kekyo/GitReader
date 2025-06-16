@@ -19,6 +19,9 @@ using System.Threading.Tasks;
 
 namespace GitReader;
 
+/// <summary>
+/// Represents a base class for Git repository access.
+/// </summary>
 public abstract class Repository : IDisposable
 {
     internal BufferPool pool = new();
@@ -40,6 +43,9 @@ public abstract class Repository : IDisposable
         this.objectAccessor = new(this.pool, this.fileSystem, this.fileStreamCache, gitPath);
     }
 
+    /// <summary>
+    /// Disposes the repository and releases all resources.
+    /// </summary>
     public void Dispose()
     {
         if (Interlocked.Exchange(ref this.objectAccessor, null!) is { } objectAccessor)
@@ -52,24 +58,46 @@ public abstract class Repository : IDisposable
         }
     }
 
+    /// <summary>
+    /// Gets the path to the Git repository.
+    /// </summary>
     public string GitPath { get; }
 
+    /// <summary>
+    /// Gets the list of paths that were tried when opening the repository.
+    /// </summary>
     [EditorBrowsable(EditorBrowsableState.Advanced)]
     public string[] TryingPathList { get; }
 
+    /// <summary>
+    /// Gets the remote URLs configured for this repository.
+    /// </summary>
     public ReadOnlyDictionary<string, string> RemoteUrls =>
         this.remoteUrls;
 
 #if DEBUG
+    /// <summary>
+    /// Gets the number of cache hits (debug builds only).
+    /// </summary>
     public int HitCount =>
         this.objectAccessor.hitCount;
+    
+    /// <summary>
+    /// Gets the number of cache misses (debug builds only).
+    /// </summary>
     public int MissCount =>
         this.objectAccessor.missCount;
 #endif
 
+    /// <summary>
+    /// Gets the default repository factory instance.
+    /// </summary>
     public static readonly RepositoryFactory Factory = new();
 }
 
+/// <summary>
+/// Provides factory methods for creating repository instances.
+/// </summary>
 public sealed class RepositoryFactory
 {
     internal RepositoryFactory()

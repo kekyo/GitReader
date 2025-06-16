@@ -392,6 +392,52 @@ while (current != null)
 }
 ```
 
+### Get worktrees
+
+```csharp
+// Get all worktrees for the repository managed
+ReadOnlyArray<Worktree> worktrees = await repository.GetWorktreesAsync();
+
+foreach (Worktree worktree in worktrees)
+{
+    Console.WriteLine($"Name: {worktree.Name}");
+    Console.WriteLine($"Path: {worktree.Path}");
+    Console.WriteLine($"IsMain: {worktree.IsMain}");
+    Console.WriteLine($"Status: {worktree.Status}");
+    Console.WriteLine($"Branch: {worktree.Branch ?? "(detached)"}");
+    Console.WriteLine($"Head: {worktree.Head?.ToString() ?? "(none)"}");
+}
+```
+
+### Get working directory status
+
+```csharp
+// Get the current working directory status
+WorkingDirectoryStatus status = await repository.GetWorkingDirectoryStatusAsync();
+
+// Check if there are any changes
+if (status.HasChanges)
+{
+    // Get modified files
+    foreach (var entry in status.Modified)
+    {
+        Console.WriteLine($"Modified: {entry.Path}");
+    }
+
+    // Get untracked files
+    foreach (var entry in status.Untracked)
+    {
+        Console.WriteLine($"Untracked: {entry.Path}");
+    }
+
+    // Get deleted files
+    foreach (var entry in status.Deleted)
+    {
+        Console.WriteLine($"Deleted: {entry.Path}");
+    }
+}
+```
+
 ----
 
 ## Samples (Primitive interfaces)
@@ -638,6 +684,10 @@ Apache-v2
 
 ## History
 
+* 1.11.0:
+  * Added worktree accessor.
+  * Added index (working directory) information accessor.
+  * Added XML comments.
 * 1.10.0:
   * Added Git worktree detection. (#15)
 * 1.9.0:

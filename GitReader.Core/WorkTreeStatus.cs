@@ -1,4 +1,4 @@
-﻿////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
 //
 // GitReader - Lightweight Git local repository traversal library.
 // Copyright (c) Kouji Matsui (@kozy_kekyo, @kekyo@mi.kekyo.net)
@@ -10,27 +10,32 @@
 namespace GitReader;
 
 /// <summary>
-/// Specifies the types of Git objects.
+/// Specifies the status of a Git worktree.
 /// </summary>
-public enum ObjectTypes
+public enum WorktreeStatus
 {
     /// <summary>
-    /// Represents a Git commit object.
+    /// The worktree is in normal state.
     /// </summary>
-    Commit = 1,
+    Normal,
     
     /// <summary>
-    /// Represents a Git tree object.
+    /// The worktree is a bare repository.
     /// </summary>
-    Tree,
+    Bare,
     
     /// <summary>
-    /// Represents a Git blob object.
+    /// The worktree is in a detached HEAD state.
     /// </summary>
-    Blob,
+    Detached,
     
     /// <summary>
-    /// Represents a Git tag object.
+    /// The worktree is locked.
     /// </summary>
-    Tag,
+    Locked,
+    
+    /// <summary>
+    /// The worktree is prunable (can be removed).
+    /// </summary>
+    Prunable
 }

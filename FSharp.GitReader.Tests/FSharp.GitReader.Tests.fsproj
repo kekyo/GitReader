@@ -28,6 +28,10 @@
     <Compile Include="Utilities.fs" />
     <Compile Include="PrimitiveRepositoryTests.fs" />
     <Compile Include="StructuredRepositoryTests.fs" />
+    <Compile Include="Primitive_WorkingDirectoryStatusTests.fs" />
+    <Compile Include="Structured_WorkingDirectoryStatusTests.fs" />
+    <Compile Include="Primitive_WorktreeTests.fs" />
+    <Compile Include="Structured_WorktreeTests.fs" />
   </ItemGroup>
 
 </Project>

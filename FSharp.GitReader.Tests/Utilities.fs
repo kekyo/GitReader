@@ -9,13 +9,14 @@
 
 namespace GitReader
 
+open GitReader.Collections
 open System
+open System.Diagnostics
 open System.IO
 open System.IO.Compression
 open System.Threading.Tasks
 open VerifyNUnit
 open VerifyTests
-open GitReader.Collections
 
 [<Sealed>]
 type private ByteDataConverter() =
@@ -75,4 +76,27 @@ module public Utilities =
     let unwrapOptionAsy(asy: Async<'T option>) = async {
         let! v = asy
         return unwrapOption v
+    }
+    let runGitCommandAsync(workingDirectory: string, arguments: string) = async {
+        let startInfo = ProcessStartInfo()
+        startInfo.FileName <- "git"
+        startInfo.Arguments <- arguments
+        startInfo.WorkingDirectory <- workingDirectory
+        startInfo.RedirectStandardOutput <- true
+        startInfo.RedirectStandardError <- true
+        startInfo.UseShellExecute <- false
+        startInfo.CreateNoWindow <- true
+
+        use proc = new Process()
+        proc.StartInfo <- startInfo
+
+        let r = proc.Start()
+        if (r = false) then
+            raise (InvalidOperationException())
+
+        do! proc.WaitForExitAsync() |> Async.AwaitTask
+
+        if proc.ExitCode <> 0 then
+            let! error = proc.StandardError.ReadToEndAsync() |> Async.AwaitTask
+            raise (InvalidOperationException($"Git command failed: git {arguments}\nError: {error}"))
     }

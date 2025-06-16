@@ -9,6 +9,8 @@
 
 using GitReader.Internal;
 using GitReader.Collections;
+using GitReader.Primitive;
+using GitReader.Structures;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -91,6 +93,42 @@ public static class RepositoryExtension
         PrimitiveTreeEntry[] treePath,
         CancellationToken ct = default) =>
         PrimitiveRepositoryFacade.OpenSubModuleAsync(repository, treePath, ct);
+
+    public static Task<PrimitiveWorkingDirectoryStatus> GetWorkingDirectoryStatusAsync(
+        this PrimitiveRepository repository,
+        CancellationToken ct = default) =>
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP2_1_OR_GREATER
+        WorkingDirectoryAccessor.GetPrimitiveWorkingDirectoryStatusAsync(repository, ct).AsTask();
+#else
+        WorkingDirectoryAccessor.GetPrimitiveWorkingDirectoryStatusAsync(repository, ct);
+#endif
+
+    public static Task<ReadOnlyArray<PrimitiveWorktree>> GetWorktreesAsync(
+        this PrimitiveRepository repository,
+        CancellationToken ct = default) =>
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP2_1_OR_GREATER
+        WorktreeAccessor.GetPrimitiveWorktreesAsync(repository, ct).AsTask();
+#else
+        WorktreeAccessor.GetPrimitiveWorktreesAsync(repository, ct);
+#endif
+
+    public static Task<Hash?> GetHeadAsync(
+        this PrimitiveWorktree worktree,
+        CancellationToken ct = default) =>
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP2_1_OR_GREATER
+        WorktreeAccessor.GetWorktreeHeadAsync(worktree, ct).AsTask();
+#else
+        WorktreeAccessor.GetWorktreeHeadAsync(worktree, ct);
+#endif
+
+    public static Task<string?> GetBranchAsync(
+        this PrimitiveWorktree worktree,
+        CancellationToken ct = default) =>
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP2_1_OR_GREATER
+        WorktreeAccessor.GetWorktreeBranchAsync(worktree, ct).AsTask();
+#else
+        WorktreeAccessor.GetWorktreeBranchAsync(worktree, ct);
+#endif
 
     public static void Deconstruct(
         this PrimitiveRepository repository,
@@ -188,5 +226,40 @@ public static class RepositoryExtension
         hash = entry.Hash;
         name = entry.Name;
         modes = entry.Modes;
+    }
+
+    public static void Deconstruct(
+        this PrimitiveWorkingDirectoryFile file,
+        out string path,
+        out FileStatus status,
+        out Hash? indexHash,
+        out Hash? workingTreeHash)
+    {
+        path = file.Path;
+        status = file.Status;
+        indexHash = file.IndexHash;
+        workingTreeHash = file.WorkingTreeHash;
+    }
+
+    public static void Deconstruct(
+        this PrimitiveWorkingDirectoryStatus status,
+        out ReadOnlyArray<PrimitiveWorkingDirectoryFile> stagedFiles,
+        out ReadOnlyArray<PrimitiveWorkingDirectoryFile> unstagedFiles,
+        out ReadOnlyArray<PrimitiveWorkingDirectoryFile> untrackedFiles)
+    {
+        stagedFiles = status.StagedFiles;
+        unstagedFiles = status.UnstagedFiles;
+        untrackedFiles = status.UntrackedFiles;
+    }
+
+    public static void Deconstruct(
+        this PrimitiveWorktree worktree,
+        out string name,
+        out string path,
+        out WorktreeStatus status)
+    {
+        name = worktree.Name;
+        path = worktree.Path;
+        status = worktree.Status;
     }
 }

@@ -10,8 +10,11 @@
 namespace GitReader.Structures
 
 open GitReader
+open GitReader.Internal
+open GitReader.Structures
 open System
 open System.Threading
+open System.Threading.Tasks
 
 [<AutoOpen>]
 module public RepositoryExtension =
@@ -30,7 +33,23 @@ module public RepositoryExtension =
         }
         member repository.getHeadReflogs(?ct: CancellationToken) =
             StructuredRepositoryFacade.GetHeadReflogsAsync(
-                repository, new WeakReference(repository), unwrapCT ct) |> Async.AwaitTask
+                repository, WeakReference(repository), unwrapCT ct) |> Async.AwaitTask
+        member repository.getWorkingDirectoryStatus(?ct: CancellationToken) =
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP2_1_OR_GREATER
+            WorkingDirectoryAccessor.GetStructuredWorkingDirectoryStatusAsync(
+                repository, WeakReference(repository), unwrapCT ct).AsTask() |> Async.AwaitTask
+#else
+            WorkingDirectoryAccessor.GetStructuredWorkingDirectoryStatusAsync(
+                repository, WeakReference(repository), unwrapCT ct) |> Async.AwaitTask
+#endif
+        member repository.getWorktrees(?ct: CancellationToken) =
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP2_1_OR_GREATER
+            WorktreeAccessor.GetStructuredWorktreesAsync(
+                repository, WeakReference(repository), unwrapCT ct).AsTask() |> Async.AwaitTask
+#else
+            WorktreeAccessor.GetStructuredWorktreesAsync(
+                repository, WeakReference(repository), unwrapCT ct) |> Async.AwaitTask
+#endif
 
     type Branch with
         member branch.getHeadCommit(?ct: CancellationToken) =
@@ -113,3 +132,15 @@ module public RepositoryExtension =
          (match annotation.Message with
           | null -> None
           | _ -> Some annotation.Message))
+
+    let (|WorkingDirectoryFile|) (file: WorkingDirectoryFile) =
+        (file.Path, file.Status, file.IndexHash |> wrapOptionV, file.WorkingTreeHash |> wrapOptionV)
+
+    let (|WorkingDirectoryStatus|) (status: WorkingDirectoryStatus) =
+        (status.StagedFiles, status.UnstagedFiles, status.UntrackedFiles)
+
+    let (|Worktree|) (worktree: Worktree) =
+        (worktree.Name, worktree.Path, worktree.Head |> wrapOptionV, 
+         (match worktree.Branch with
+          | null -> None
+          | _ -> Some worktree.Branch), worktree.Status)
