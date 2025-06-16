@@ -392,6 +392,35 @@ while (current != null)
 }
 ```
 
+### Get working directory status
+
+```csharp
+// Get the current working directory status
+WorkingDirectoryStatus status = await repository.GetWorkingDirectoryStatusAsync();
+
+// Check if there are any changes
+if (status.HasChanges)
+{
+    // Get modified files
+    foreach (var entry in status.Modified)
+    {
+        Console.WriteLine($"Modified: {entry.Path}");
+    }
+
+    // Get untracked files
+    foreach (var entry in status.Untracked)
+    {
+        Console.WriteLine($"Untracked: {entry.Path}");
+    }
+
+    // Get deleted files
+    foreach (var entry in status.Deleted)
+    {
+        Console.WriteLine($"Deleted: {entry.Path}");
+    }
+}
+```
+
 ----
 
 ## Samples (Primitive interfaces)

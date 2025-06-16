@@ -22,12 +22,14 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Include="Primitive_WorkingDirectoryStatusTests.fs" />
     <None Include="..\GitReader.Tests\artifacts\*.zip" LinkBase="artifacts/">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <Compile Include="Utilities.fs" />
     <Compile Include="PrimitiveRepositoryTests.fs" />
     <Compile Include="StructuredRepositoryTests.fs" />
+    <Compile Include="Structured_WorkingDirectoryStatusTests.fs" />
   </ItemGroup>
 
 </Project>

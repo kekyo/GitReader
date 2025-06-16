@@ -9,6 +9,7 @@
 
 using GitReader.Internal;
 using GitReader.Collections;
+using GitReader.Primitive;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -91,6 +92,11 @@ public static class RepositoryExtension
         PrimitiveTreeEntry[] treePath,
         CancellationToken ct = default) =>
         PrimitiveRepositoryFacade.OpenSubModuleAsync(repository, treePath, ct);
+
+    public static async Task<PrimitiveWorkingDirectoryStatus> GetWorkingDirectoryStatusAsync(
+        this PrimitiveRepository repository,
+        CancellationToken ct = default) =>
+        await WorkingDirectoryAccessor.GetPrimitiveWorkingDirectoryStatusAsync(repository, ct);
 
     public static void Deconstruct(
         this PrimitiveRepository repository,
@@ -188,5 +194,29 @@ public static class RepositoryExtension
         hash = entry.Hash;
         name = entry.Name;
         modes = entry.Modes;
+    }
+
+    public static void Deconstruct(
+        this PrimitiveWorkingDirectoryFile file,
+        out string path,
+        out FileStatus status,
+        out Hash? indexHash,
+        out Hash? workingTreeHash)
+    {
+        path = file.Path;
+        status = file.Status;
+        indexHash = file.IndexHash;
+        workingTreeHash = file.WorkingTreeHash;
+    }
+
+    public static void Deconstruct(
+        this PrimitiveWorkingDirectoryStatus status,
+        out ReadOnlyArray<PrimitiveWorkingDirectoryFile> stagedFiles,
+        out ReadOnlyArray<PrimitiveWorkingDirectoryFile> unstagedFiles,
+        out ReadOnlyArray<PrimitiveWorkingDirectoryFile> untrackedFiles)
+    {
+        stagedFiles = status.StagedFiles;
+        unstagedFiles = status.UnstagedFiles;
+        untrackedFiles = status.UntrackedFiles;
     }
 }
