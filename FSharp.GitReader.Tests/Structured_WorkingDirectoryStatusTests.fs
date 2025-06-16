@@ -12,37 +12,9 @@ namespace GitReader.Structures
 open GitReader
 open GitReader.Structures
 open NUnit.Framework
-open System
 open System.IO
-open System.Linq
-open System.Threading.Tasks
-open System.Diagnostics
 
 type public Structured_WorkingDirectoryStatusTests() =
-
-    let runGitCommandAsync(workingDirectory: string, arguments: string) = async {
-        let startInfo = ProcessStartInfo()
-        startInfo.FileName <- "git"
-        startInfo.Arguments <- arguments
-        startInfo.WorkingDirectory <- workingDirectory
-        startInfo.RedirectStandardOutput <- true
-        startInfo.RedirectStandardError <- true
-        startInfo.UseShellExecute <- false
-        startInfo.CreateNoWindow <- true
-
-        use proc = new Process()
-        proc.StartInfo <- startInfo
-
-        let r = proc.Start()
-        if (r = false) then
-            raise (InvalidOperationException())
-
-        do! proc.WaitForExitAsync() |> Async.AwaitTask
-
-        if proc.ExitCode <> 0 then
-            let! error = proc.StandardError.ReadToEndAsync() |> Async.AwaitTask
-            raise (InvalidOperationException($"Git command failed: git {arguments}\nError: {error}"))
-    }
 
     [<Test>]
     member _.GetWorkingDirectoryStatusEmptyRepository() = task {

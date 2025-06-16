@@ -387,6 +387,23 @@ while (current != null)
 }
 ```
 
+### ワークツリー情報を取得
+
+```csharp
+// リポジトリが管理する全てのワークツリーを取得
+ReadOnlyArray<Worktree> worktrees = await repository.GetWorktreesAsync();
+
+foreach (Worktree worktree in worktrees)
+{
+    Console.WriteLine($"Name: {worktree.Name}");
+    Console.WriteLine($"Path: {worktree.Path}");
+    Console.WriteLine($"IsMain: {worktree.IsMain}");
+    Console.WriteLine($"Status: {worktree.Status}");
+    Console.WriteLine($"Branch: {worktree.Branch ?? "(detached)"}");
+    Console.WriteLine($"Head: {worktree.Head?.ToString() ?? "(none)"}");
+}
+```
+
 ### ワーキングディレクトリの状態を取得
 
 ```csharp

@@ -9,6 +9,7 @@
 
 using GitReader.Collections;
 using GitReader.Internal;
+using GitReader.Structures;
 using System;
 using System.IO;
 using System.Threading;
@@ -94,6 +95,11 @@ public static class RepositoryExtension
     public static async Task<WorkingDirectoryStatus> GetWorkingDirectoryStatusAsync(
         this StructuredRepository repository, CancellationToken ct = default) =>
         await WorkingDirectoryAccessor.GetStructuredWorkingDirectoryStatusAsync(
+            repository, new WeakReference(repository), ct);
+
+    public static async Task<ReadOnlyArray<Worktree>> GetWorktreesAsync(
+        this StructuredRepository repository, CancellationToken ct = default) =>
+        await WorktreeAccessor.GetStructuredWorktreesAsync(
             repository, new WeakReference(repository), ct);
 
     public static void Deconstruct(
@@ -207,5 +213,20 @@ public static class RepositoryExtension
         stagedFiles = status.StagedFiles;
         unstagedFiles = status.UnstagedFiles;
         untrackedFiles = status.UntrackedFiles;
+    }
+
+    public static void Deconstruct(
+        this Worktree worktree,
+        out string name,
+        out string path,
+        out Hash? head,
+        out string? branch,
+        out WorktreeStatus status)
+    {
+        name = worktree.Name;
+        path = worktree.Path;
+        head = worktree.Head;
+        branch = worktree.Branch;
+        status = worktree.Status;
     }
 }

@@ -12,6 +12,7 @@ namespace GitReader.Primitive
 open GitReader
 open GitReader.Internal
 open GitReader.Primitive
+open GitReader.Structures
 open System
 open System.Threading
 open System.Threading.Tasks
@@ -78,6 +79,27 @@ module public RepositoryExtension =
 #else
             WorkingDirectoryAccessor.GetPrimitiveWorkingDirectoryStatusAsync(repository, unwrapCT ct) |> Async.AwaitTask
 #endif
+        member repository.getWorktrees(?ct: CancellationToken) =
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP2_1_OR_GREATER
+            WorktreeAccessor.GetPrimitiveWorktreesAsync(repository, unwrapCT ct).AsTask() |> Async.AwaitTask
+#else
+            WorktreeAccessor.GetPrimitiveWorktreesAsync(repository, unwrapCT ct) |> Async.AwaitTask
+#endif
+
+    type PrimitiveWorktree with
+        member worktree.getHead(?ct: CancellationToken) =
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP2_1_OR_GREATER
+            WorktreeAccessor.GetWorktreeHeadAsync(worktree, unwrapCT ct).AsTask() |> Async.AwaitTask
+#else
+            WorktreeAccessor.GetWorktreeHeadAsync(worktree, unwrapCT ct) |> Async.AwaitTask
+#endif
+
+        member worktree.getBranch(?ct: CancellationToken) =
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP2_1_OR_GREATER
+            WorktreeAccessor.GetWorktreeBranchAsync(worktree, unwrapCT ct).AsTask() |> Async.AwaitTask
+#else
+            WorktreeAccessor.GetWorktreeBranchAsync(worktree, unwrapCT ct) |> Async.AwaitTask
+#endif
 
     let (|PrimitiveRepository|) (repository: PrimitiveRepository) =
         (repository.GitPath, repository.RemoteUrls)
@@ -108,3 +130,6 @@ module public RepositoryExtension =
 
     let (|PrimitiveWorkingDirectoryStatus|) (status: PrimitiveWorkingDirectoryStatus) =
         (status.StagedFiles, status.UnstagedFiles, status.UntrackedFiles)
+
+    let (|PrimitiveWorktree|) (worktree: PrimitiveWorktree) =
+        (worktree.Name, worktree.Path, worktree.Status)
