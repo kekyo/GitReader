@@ -12,6 +12,9 @@ using System.ComponentModel;
 
 namespace GitReader.Structures;
 
+/// <summary>
+/// Represents a file in the working directory with its status information.
+/// </summary>
 public sealed class WorkingDirectoryFile : IRepositoryReference
 {
     private readonly WeakReference rwr;
@@ -34,11 +37,31 @@ public sealed class WorkingDirectoryFile : IRepositoryReference
     WeakReference IRepositoryReference.Repository =>
         this.rwr;
 
+    /// <summary>
+    /// Gets the path of the file relative to the repository root.
+    /// </summary>
     public string Path { get; }
+    
+    /// <summary>
+    /// Gets the status of the file.
+    /// </summary>
     public FileStatus Status { get; }
+    
+    /// <summary>
+    /// Gets the hash of the file in the index, if available.
+    /// </summary>
     public Hash? IndexHash { get; }
+    
+    /// <summary>
+    /// Gets the hash of the file in the working tree, if available.
+    /// </summary>
     public Hash? WorkingTreeHash { get; }
 
+    /// <summary>
+    /// Determines whether the specified object is equal to the current WorkingDirectoryFile.
+    /// </summary>
+    /// <param name="obj">The object to compare with the current WorkingDirectoryFile.</param>
+    /// <returns>true if the specified object is equal to the current WorkingDirectoryFile; otherwise, false.</returns>
     public override bool Equals(object? obj) =>
         obj is WorkingDirectoryFile rhs &&
         this.Path.Equals(rhs.Path) &&
@@ -46,6 +69,10 @@ public sealed class WorkingDirectoryFile : IRepositoryReference
         this.IndexHash.Equals(rhs.IndexHash) &&
         this.WorkingTreeHash.Equals(rhs.WorkingTreeHash);
 
+    /// <summary>
+    /// Returns the hash code for this instance.
+    /// </summary>
+    /// <returns>A 32-bit signed integer that is the hash code for this instance.</returns>
     public override int GetHashCode()
     {
         unchecked
@@ -58,6 +85,10 @@ public sealed class WorkingDirectoryFile : IRepositoryReference
         }
     }
 
+    /// <summary>
+    /// Returns a string representation of the working directory file.
+    /// </summary>
+    /// <returns>A string representation of the working directory file.</returns>
     public override string ToString() =>
         $"{this.Status}: {this.Path}";
 } 

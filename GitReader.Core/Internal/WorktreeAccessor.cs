@@ -23,9 +23,21 @@ namespace GitReader.Internal;
 internal static class WorktreeAccessor
 {
 #if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP2_1_OR_GREATER
+    /// <summary>
+    /// Gets primitive worktree information for the specified repository.
+    /// </summary>
+    /// <param name="repository">The repository to get worktrees from.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>A ValueTask containing an array of primitive worktrees.</returns>
     public static async ValueTask<ReadOnlyArray<PrimitiveWorktree>> GetPrimitiveWorktreesAsync(
         Repository repository, CancellationToken ct)
 #else
+    /// <summary>
+    /// Gets primitive worktree information for the specified repository.
+    /// </summary>
+    /// <param name="repository">The repository to get worktrees from.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>A Task containing an array of primitive worktrees.</returns>
     public static async Task<ReadOnlyArray<PrimitiveWorktree>> GetPrimitiveWorktreesAsync(
         Repository repository, CancellationToken ct)
 #endif
@@ -67,9 +79,23 @@ internal static class WorktreeAccessor
     }
 
 #if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP2_1_OR_GREATER
+    /// <summary>
+    /// Gets structured worktree information for the specified repository.
+    /// </summary>
+    /// <param name="repository">The structured repository to get worktrees from.</param>
+    /// <param name="rwr">The weak reference to the repository.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>A ValueTask containing an array of structured worktrees.</returns>
     public static async ValueTask<ReadOnlyArray<Worktree>> GetStructuredWorktreesAsync(
         StructuredRepository repository, WeakReference rwr, CancellationToken ct)
 #else
+    /// <summary>
+    /// Gets structured worktree information for the specified repository.
+    /// </summary>
+    /// <param name="repository">The structured repository to get worktrees from.</param>
+    /// <param name="rwr">The weak reference to the repository.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>A Task containing an array of structured worktrees.</returns>
     public static async Task<ReadOnlyArray<Worktree>> GetStructuredWorktreesAsync(
         StructuredRepository repository, WeakReference rwr, CancellationToken ct)
 #endif

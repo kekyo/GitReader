@@ -22,9 +22,21 @@ namespace GitReader.Internal;
 internal static class WorkingDirectoryAccessor
 {
 #if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP2_1_OR_GREATER
+    /// <summary>
+    /// Gets primitive working directory status information for the specified repository.
+    /// </summary>
+    /// <param name="repository">The repository to get working directory status from.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>A ValueTask containing the primitive working directory status.</returns>
     public static async ValueTask<PrimitiveWorkingDirectoryStatus> GetPrimitiveWorkingDirectoryStatusAsync(
         Repository repository, CancellationToken ct)
 #else
+    /// <summary>
+    /// Gets primitive working directory status information for the specified repository.
+    /// </summary>
+    /// <param name="repository">The repository to get working directory status from.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>A Task containing the primitive working directory status.</returns>
     public static async Task<PrimitiveWorkingDirectoryStatus> GetPrimitiveWorkingDirectoryStatusAsync(
         Repository repository, CancellationToken ct)
 #endif
@@ -189,9 +201,23 @@ internal static class WorkingDirectoryAccessor
     }
 
 #if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP2_1_OR_GREATER
+    /// <summary>
+    /// Gets structured working directory status information for the specified repository.
+    /// </summary>
+    /// <param name="repository">The structured repository to get working directory status from.</param>
+    /// <param name="rwr">The weak reference to the repository.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>A ValueTask containing the structured working directory status.</returns>
     public static async ValueTask<WorkingDirectoryStatus> GetStructuredWorkingDirectoryStatusAsync(
         StructuredRepository repository, WeakReference rwr, CancellationToken ct)
 #else
+    /// <summary>
+    /// Gets structured working directory status information for the specified repository.
+    /// </summary>
+    /// <param name="repository">The structured repository to get working directory status from.</param>
+    /// <param name="rwr">The weak reference to the repository.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>A Task containing the structured working directory status.</returns>
     public static async Task<WorkingDirectoryStatus> GetStructuredWorkingDirectoryStatusAsync(
         StructuredRepository repository, WeakReference rwr, CancellationToken ct)
 #endif

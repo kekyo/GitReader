@@ -14,6 +14,9 @@ using System.Linq;
 
 namespace GitReader.Structures;
 
+/// <summary>
+/// Represents a Git commit object.
+/// </summary>
 public sealed class Commit :
     IEquatable<Commit>, IRepositoryReference
 {
@@ -25,8 +28,19 @@ public sealed class Commit :
     private ReadOnlyArray<Branch>? branches;
     private ReadOnlyArray<Tag>? tags;
 
+    /// <summary>
+    /// The hash identifier of this commit.
+    /// </summary>
     public readonly Hash Hash;
+    
+    /// <summary>
+    /// The author of this commit.
+    /// </summary>
     public readonly Signature Author;
+    
+    /// <summary>
+    /// The committer of this commit.
+    /// </summary>
     public readonly Signature Committer;
 
     internal Commit(
@@ -43,6 +57,9 @@ public sealed class Commit :
         this.message = commit.Message;
     }
 
+    /// <summary>
+    /// Gets the subject line of the commit message (first line).
+    /// </summary>
     public string Subject
     {
         get
@@ -52,6 +69,9 @@ public sealed class Commit :
         }
     }
 
+    /// <summary>
+    /// Gets the body of the commit message (everything after the first blank line).
+    /// </summary>
     public string Body
     {
         get
@@ -61,6 +81,9 @@ public sealed class Commit :
         }
     }
 
+    /// <summary>
+    /// Gets the branches that contain this commit.
+    /// </summary>
     public ReadOnlyArray<Branch> Branches
     {
         get
@@ -75,6 +98,9 @@ public sealed class Commit :
         }
     }
 
+    /// <summary>
+    /// Gets the tags that point to this commit.
+    /// </summary>
     public ReadOnlyArray<Tag> Tags
     {
         get
@@ -92,6 +118,11 @@ public sealed class Commit :
     WeakReference IRepositoryReference.Repository =>
         this.rwr;
 
+    /// <summary>
+    /// Determines whether the specified Commit is equal to the current Commit.
+    /// </summary>
+    /// <param name="rhs">The Commit to compare with the current Commit.</param>
+    /// <returns>true if the specified Commit is equal to the current Commit; otherwise, false.</returns>
     public bool Equals(Commit rhs) =>
         rhs is { } &&
         this.Hash.Equals(rhs.Hash) &&
@@ -104,9 +135,18 @@ public sealed class Commit :
     bool IEquatable<Commit>.Equals(Commit? rhs) =>
         this.Equals(rhs!);
 
+    /// <summary>
+    /// Determines whether the specified object is equal to the current Commit.
+    /// </summary>
+    /// <param name="obj">The object to compare with the current Commit.</param>
+    /// <returns>true if the specified object is equal to the current Commit; otherwise, false.</returns>
     public override bool Equals(object? obj) =>
         obj is Commit rhs && this.Equals(rhs);
 
+    /// <summary>
+    /// Returns the hash code for this instance.
+    /// </summary>
+    /// <returns>A 32-bit signed integer that is the hash code for this instance.</returns>
     public override int GetHashCode()
     {
         unchecked
@@ -128,6 +168,10 @@ public sealed class Commit :
         }
     }
 
+    /// <summary>
+    /// Returns a string representation of the commit.
+    /// </summary>
+    /// <returns>A string representation of the commit.</returns>
     public override string ToString() =>
         $"{this.Hash}: {this.Author}: {this.Subject.Replace('\n', ' ')}";
 }

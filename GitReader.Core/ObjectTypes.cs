@@ -9,10 +9,28 @@
 
 namespace GitReader;
 
+/// <summary>
+/// Specifies the types of Git objects.
+/// </summary>
 public enum ObjectTypes
 {
+    /// <summary>
+    /// Represents a Git commit object.
+    /// </summary>
     Commit = 1,
+    
+    /// <summary>
+    /// Represents a Git tree object.
+    /// </summary>
     Tree,
+    
+    /// <summary>
+    /// Represents a Git blob object.
+    /// </summary>
     Blob,
+    
+    /// <summary>
+    /// Represents a Git tag object.
+    /// </summary>
     Tag,
 }

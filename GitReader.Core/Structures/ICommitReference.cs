@@ -11,8 +11,14 @@ using System.ComponentModel;
 
 namespace GitReader.Structures;
 
+/// <summary>
+/// Represents a reference to a Git commit.
+/// </summary>
 public interface ICommitReference
 {
+    /// <summary>
+    /// Gets the hash of the commit.
+    /// </summary>
     [EditorBrowsable(EditorBrowsableState.Advanced)]
     public Hash Hash { get; }
 }
