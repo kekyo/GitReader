@@ -684,6 +684,10 @@ Apache-v2
 
 ## History
 
+* 1.11.0:
+  * Added worktree accessor.
+  * Added index (working directory) information accessor.
+  * Added XML comments.
 * 1.10.0:
   * Added Git worktree detection. (#15)
 * 1.9.0:
