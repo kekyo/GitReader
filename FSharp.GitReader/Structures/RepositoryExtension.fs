@@ -42,6 +42,14 @@ module public RepositoryExtension =
             WorkingDirectoryAccessor.GetStructuredWorkingDirectoryStatusAsync(
                 repository, WeakReference(repository), unwrapCT ct) |> Async.AwaitTask
 #endif
+        member repository.getWorktrees(?ct: CancellationToken) =
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP2_1_OR_GREATER
+            WorktreeAccessor.GetStructuredWorktreesAsync(
+                repository, WeakReference(repository), unwrapCT ct).AsTask() |> Async.AwaitTask
+#else
+            WorktreeAccessor.GetStructuredWorktreesAsync(
+                repository, WeakReference(repository), unwrapCT ct) |> Async.AwaitTask
+#endif
 
     type Branch with
         member branch.getHeadCommit(?ct: CancellationToken) =
@@ -130,3 +138,9 @@ module public RepositoryExtension =
 
     let (|WorkingDirectoryStatus|) (status: WorkingDirectoryStatus) =
         (status.StagedFiles, status.UnstagedFiles, status.UntrackedFiles)
+
+    let (|Worktree|) (worktree: Worktree) =
+        (worktree.Name, worktree.Path, worktree.Head |> wrapOptionV, 
+         (match worktree.Branch with
+          | null -> None
+          | _ -> Some worktree.Branch), worktree.Status)

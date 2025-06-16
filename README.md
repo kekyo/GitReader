@@ -392,6 +392,23 @@ while (current != null)
 }
 ```
 
+### Get worktrees
+
+```csharp
+// Get all worktrees for the repository managed
+ReadOnlyArray<Worktree> worktrees = await repository.GetWorktreesAsync();
+
+foreach (Worktree worktree in worktrees)
+{
+    Console.WriteLine($"Name: {worktree.Name}");
+    Console.WriteLine($"Path: {worktree.Path}");
+    Console.WriteLine($"IsMain: {worktree.IsMain}");
+    Console.WriteLine($"Status: {worktree.Status}");
+    Console.WriteLine($"Branch: {worktree.Branch ?? "(detached)"}");
+    Console.WriteLine($"Head: {worktree.Head?.ToString() ?? "(none)"}");
+}
+```
+
 ### Get working directory status
 
 ```csharp
