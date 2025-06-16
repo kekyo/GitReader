@@ -71,7 +71,7 @@ internal static class WorkingDirectoryAccessor
                 if (await repository.fileSystem.IsFileExistsAsync(workingFilePath, ct))
                 {
                     // File exists in working directory
-                    var workingHash = await CalculateFileHashAsync(repository, workingFilePath, ct).ConfigureAwait(false);
+                    var workingHash = await CalculateFileHashAsync(repository, workingFilePath, ct);
                     
                     // Check if this file exists in HEAD commit
                     var isInHeadCommit = headTreeFiles.TryGetValue(indexEntry.Path, out var headFileHash);
@@ -180,7 +180,7 @@ internal static class WorkingDirectoryAccessor
         // Find untracked files in working directory
         await ScanWorkingDirectoryAsync(
             repository, workingDirectoryPath, workingDirectoryPath, 
-            processedPaths, untrackedFiles, ct).ConfigureAwait(false);
+            processedPaths, untrackedFiles, ct);
 
         return new PrimitiveWorkingDirectoryStatus(
             new ReadOnlyArray<PrimitiveWorkingDirectoryFile>(stagedFiles.ToArray()),
@@ -254,7 +254,7 @@ internal static class WorkingDirectoryAccessor
                 {
                     // Recursively scan subdirectories
                     await ScanWorkingDirectoryAsync(
-                        repository, workingDirectoryPath, entry, processedPaths, untrackedFiles, ct).ConfigureAwait(false);
+                        repository, workingDirectoryPath, entry, processedPaths, untrackedFiles, ct);
                 }
                 else if (await repository.fileSystem.IsFileExistsAsync(entry, ct))
                 {
@@ -264,7 +264,7 @@ internal static class WorkingDirectoryAccessor
                     if (!processedPaths.Contains(relativePath))
                     {
                         // This is an untracked file
-                        var fileHash = await CalculateFileHashAsync(repository, entry, ct).ConfigureAwait(false);
+                        var fileHash = await CalculateFileHashAsync(repository, entry, ct);
                         
                         untrackedFiles.Add(new PrimitiveWorkingDirectoryFile(
                             relativePath,

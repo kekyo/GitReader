@@ -81,7 +81,8 @@ internal static class GitIndexReader
             read = await fs.ReadAsync(entryBuffer, 0, entryBuffer.Length, ct);
             if (read != entryBuffer.Length)
             {
-                Throw(5);
+                throw new InvalidDataException(
+                    $"Broken Git index file: File={indexPath}, Step=5, Entry={i}/{entryCount}, Expected={entryBuffer.Length}, Actual={read}, Position={fs.Position}, Length={fs.Length}");
             }
 
             // Parse fixed fields (all big-endian)
@@ -129,13 +130,22 @@ internal static class GitIndexReader
             string path;
             if (pathLength < 0x0FFF)
             {
-                // Normal path length
-                using var pathBuffer = repository.pool.Take((int)pathLength);
-                read = await fs.ReadAsync(pathBuffer, 0, (int)pathLength, ct);
-                if (read != pathLength)
+                // Normal path length (pathLength does not include null terminator)
+                using var pathBuffer = repository.pool.Take((int)pathLength + 1);
+                read = await fs.ReadAsync(pathBuffer, 0, (int)pathLength + 1, ct);
+                if (read != pathLength + 1)
                 {
-                    Throw(6);
+                    throw new InvalidDataException(
+                        $"Broken Git index file: File={indexPath}, Step=6, Entry={i}/{entryCount}, PathLength={pathLength}, Expected={pathLength + 1}, Actual={read}, Position={fs.Position}, Length={fs.Length}");
                 }
+                
+                // Verify null terminator
+                if (pathBuffer[pathLength] != 0)
+                {
+                    throw new InvalidDataException(
+                        $"Missing null terminator: File={indexPath}, Entry={i}/{entryCount}, Expected=0x00, Actual=0x{pathBuffer[pathLength]:X2}");
+                }
+                
                 path = Encoding.UTF8.GetString(pathBuffer, 0, (int)pathLength);
             }
             else
@@ -158,10 +168,21 @@ internal static class GitIndexReader
                 }
                 path = Encoding.UTF8.GetString(pathBytes.ToArray());
             }
-
+            
             // Skip padding to align to 8-byte boundary
-            var totalEntryLength = 62 + (pathLength < 0x0FFF ? pathLength : path.Length + 1);
+            var actualPathLength = pathLength < 0x0FFF ? pathLength : path.Length;
+            var totalEntryLength = 62 + actualPathLength + 1; // path + null terminator
             var padding = (8 - (totalEntryLength % 8)) % 8;
+            
+            // Check if we have enough bytes remaining in file
+            var remainingBytes = fs.Length - fs.Position;
+            if (padding > remainingBytes)
+            {
+                throw new InvalidDataException(
+                    $"Insufficient padding bytes: File={indexPath}, Entry={i}/{entryCount}, " +
+                    $"Required={padding}, Remaining={remainingBytes}, Position={fs.Position}");
+            }
+            
             if (padding > 0)
             {
                 using var paddingBuffer = repository.pool.Take((int)padding);
@@ -171,7 +192,7 @@ internal static class GitIndexReader
                     Throw(8);
                 }
             }
-
+            
             entries.Add(new GitIndexEntry(
                 creationTime,
                 creationTimeNano,
