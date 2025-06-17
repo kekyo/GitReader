@@ -653,6 +653,36 @@ Commit commit = ...;
 Hash targetHash = commit;
 ```
 
+### Signature構造体の操作
+
+```csharp
+// 名前、メールアドレス、日時を指定してSignatureを作成
+var sig = new Signature("John Doe", "john@example.com", DateTimeOffset.Now);
+
+// 名前と日時のみを指定してSignatureを作成（メールアドレスなし）
+var sigWithoutEmail = new Signature("Jane Doe", DateTimeOffset.Now);
+
+// Gitの生フォーマットからSignatureを解析
+var rawSignature = "John Doe <john@example.com> 1234567890 +0900";
+var parsedSig = Signature.Parse(rawSignature);
+
+// エラーハンドリング付きで解析を試行
+if (Signature.TryParse(rawSignature, out Signature sig2))
+{
+    Console.WriteLine($"Name: {sig2.Name}");
+    Console.WriteLine($"Email: {sig2.MailAddress}");
+    Console.WriteLine($"Date: {sig2.Date}");
+}
+
+// "John Doe <john@example.com>"
+Console.WriteLine($"Git author format: {sig.ToGitAuthorString()}");
+// "John Doe <john@example.com> 1234567890 +0900"
+Console.WriteLine($"Git raw format: {sig.RawFormat}");
+
+// Signatureを分解
+var (name, email, date) = sig;
+```
+
 ### リモートリポジトリURLの列挙
 
 ```csharp

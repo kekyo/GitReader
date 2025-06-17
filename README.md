@@ -658,6 +658,36 @@ Commit commit = ...;
 Hash targetHash = commit;
 ```
 
+### Signature operations
+
+```csharp
+// Create a signature with name, email and date
+var sig = new Signature("John Doe", "john@example.com", DateTimeOffset.Now);
+
+// Create a signature with name and date only (no email)
+var sigWithoutEmail = new Signature("Jane Doe", DateTimeOffset.Now);
+
+// Parse a signature from Git's raw format
+var rawSignature = "John Doe <john@example.com> 1234567890 +0900";
+var parsedSig = Signature.Parse(rawSignature);
+
+// Try parse with error handling
+if (Signature.TryParse(rawSignature, out Signature sig2))
+{
+    Console.WriteLine($"Name: {sig2.Name}");
+    Console.WriteLine($"Email: {sig2.MailAddress}");
+    Console.WriteLine($"Date: {sig2.Date}");
+}
+
+// "John Doe <john@example.com>"
+Console.WriteLine($"Git author format: {sig.ToGitAuthorString()}");
+// "John Doe <john@example.com> 1234567890 +0900"
+Console.WriteLine($"Git raw format: {sig.RawFormat}");
+
+// Deconstruct signature
+var (name, email, date) = sig;
+```
+
 ### Enumerate remote urls
 
 ```csharp
