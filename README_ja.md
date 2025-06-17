@@ -410,26 +410,22 @@ foreach (Worktree worktree in worktrees)
 // 現在のワーキングディレクトリの状態を取得
 WorkingDirectoryStatus status = await repository.GetWorkingDirectoryStatusAsync();
 
-// 変更があるかどうかを確認
-if (status.HasChanges)
+// ステージングされたファイルを取得
+foreach (var entry in status.StagedFiles)
 {
-    // 変更されたファイルを取得
-    foreach (var entry in status.Modified)
-    {
-        Console.WriteLine($"Modified: {entry.Path}");
-    }
+    Console.WriteLine($"Staged: {entry.Path}");
+}
 
-    // 未追跡のファイルを取得
-    foreach (var entry in status.Untracked)
-    {
-        Console.WriteLine($"Untracked: {entry.Path}");
-    }
+// ステージングされていないファイルを取得
+foreach (var entry in status.UnstagedFiles)
+{
+    Console.WriteLine($"Unstaged: {entry.Path}");
+}
 
-    // 削除されたファイルを取得
-    foreach (var entry in status.Deleted)
-    {
-        Console.WriteLine($"Deleted: {entry.Path}");
-    }
+// 追跡されていないファイルを取得
+foreach (var entry in status.UntrackedFiles)
+{
+    Console.WriteLine($"Untracked: {entry.Path}");
 }
 ```
 
