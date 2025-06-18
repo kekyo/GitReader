@@ -9,6 +9,7 @@
 
 namespace GitReader
 
+open GitReader
 open GitReader.Collections
 open System
 open System.Diagnostics
@@ -65,8 +66,25 @@ type public RepositoryTestsSetUp() =
 
 [<AutoOpen>]
 module public Utilities =
+
+    type Task with
+        member public task.asAsync() =
+            task |> Async.AwaitTask
+    type Task<'T> with
+        member public task.asAsync() =
+            task |> Async.AwaitTask
+
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP2_1_OR_GREATER
+    type ValueTask with
+        member public task.asAsync() =
+            task.AsTask() |> Async.AwaitTask
+    type ValueTask<'T> with
+        member public task.asAsync() =
+            task.AsTask() |> Async.AwaitTask
+#endif
+
     let verify(v: obj) = async {
-        let! _ = Verifier.Verify(v).ToTask() |> Async.AwaitTask
+        let! _ = Verifier.Verify(v).ToTask().asAsync()
         return ()
     }
     let unwrapOption(v: 'T option) =
@@ -94,9 +112,9 @@ module public Utilities =
         if (r = false) then
             raise (InvalidOperationException())
 
-        do! proc.WaitForExitAsync() |> Async.AwaitTask
+        do! proc.WaitForExitAsync().asAsync()
 
         if proc.ExitCode <> 0 then
-            let! error = proc.StandardError.ReadToEndAsync() |> Async.AwaitTask
+            let! error = proc.StandardError.ReadToEndAsync().asAsync()
             raise (InvalidOperationException($"Git command failed: git {arguments}\nError: {error}"))
     }

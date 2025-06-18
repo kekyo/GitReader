@@ -63,15 +63,15 @@ type public Primitive_WorkingDirectoryStatusTests() =
             do! runGitCommandAsync(testPath, "config user.name \"Test User\"")
             
             // Create initial file and commit
-            do! File.WriteAllTextAsync(Path.Combine(testPath, "README.md"), "# Test Repository\n\nInitial content.") |> Async.AwaitTask
+            do! File.WriteAllTextAsync(Path.Combine(testPath, "README.md"), "# Test Repository\n\nInitial content.").asAsync()
             do! runGitCommandAsync(testPath, "add README.md")
             do! runGitCommandAsync(testPath, "commit -m \"Initial commit\"")
             
             // Create new untracked file
-            do! File.WriteAllTextAsync(Path.Combine(testPath, "new_file.txt"), "This is a new file for testing.") |> Async.AwaitTask
+            do! File.WriteAllTextAsync(Path.Combine(testPath, "new_file.txt"), "This is a new file for testing.").asAsync()
             
             // Modify existing tracked file
-            do! File.WriteAllTextAsync(Path.Combine(testPath, "README.md"), "# Test Repository\n\nInitial content.\n\nModified for testing.") |> Async.AwaitTask
+            do! File.WriteAllTextAsync(Path.Combine(testPath, "README.md"), "# Test Repository\n\nInitial content.\n\nModified for testing.").asAsync()
 
             use! repository = Repository.Factory.openPrimitive(testPath)
 
@@ -122,8 +122,8 @@ type public Primitive_WorkingDirectoryStatusTests() =
             do! runGitCommandAsync(testPath, "config user.name \"Test User\"")
             
             // Create and commit files
-            do! File.WriteAllTextAsync(Path.Combine(testPath, "README.md"), "# Test Repository") |> Async.AwaitTask
-            do! File.WriteAllTextAsync(Path.Combine(testPath, "file1.txt"), "Content of file 1") |> Async.AwaitTask
+            do! File.WriteAllTextAsync(Path.Combine(testPath, "README.md"), "# Test Repository").asAsync()
+            do! File.WriteAllTextAsync(Path.Combine(testPath, "file1.txt"), "Content of file 1").asAsync()
             do! runGitCommandAsync(testPath, "add .")
             do! runGitCommandAsync(testPath, "commit -m \"Initial commit\"")
 
@@ -158,7 +158,7 @@ type public Primitive_WorkingDirectoryStatusTests() =
             do! runGitCommandAsync(testPath, "config user.name \"Test User\"")
             
             // Create some test files
-            do! File.WriteAllTextAsync(Path.Combine(testPath, "test_file.txt"), "Test content") |> Async.AwaitTask
+            do! File.WriteAllTextAsync(Path.Combine(testPath, "test_file.txt"), "Test content").asAsync()
 
             use! repository = Repository.Factory.openPrimitive(testPath)
 

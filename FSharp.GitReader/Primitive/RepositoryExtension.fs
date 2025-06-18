@@ -23,25 +23,25 @@ module public RepositoryExtension =
     type PrimitiveRepository with
         member repository.getCurrentHeadReference(?ct: CancellationToken) =
             PrimitiveRepositoryFacade.GetCurrentHeadReferenceAsync(
-                repository, unwrapCT ct) |> asAsync
+                repository, unwrapCT ct) |> asOptionAsync
 
         member repository.getBranchHeadReference(branchName: string, ?ct: CancellationToken) =
             PrimitiveRepositoryFacade.GetBranchHeadReferenceAsync(
-                repository, branchName, unwrapCT ct) |> Async.AwaitTask
+                repository, branchName, unwrapCT ct).asAsync()
 
         member repository.getBranchAllHeadReference(branchName: string, ?ct: CancellationToken) =
             PrimitiveRepositoryFacade.GetBranchAllHeadReferenceAsync(
-                repository, branchName, unwrapCT ct) |> Async.AwaitTask
+                repository, branchName, unwrapCT ct).asAsync()
 
         member repository.getTagReference(tagName: string, ?ct: CancellationToken) =
             PrimitiveRepositoryFacade.GetTagReferenceAsync(
-                repository, tagName, unwrapCT ct) |> Async.AwaitTask
+                repository, tagName, unwrapCT ct).asAsync()
 
         member repository.getCommit(commit: Hash, ?ct: CancellationToken) =
-            RepositoryAccessor.ReadCommitAsync(repository, commit, unwrapCT ct) |> asAsync
+            RepositoryAccessor.ReadCommitAsync(repository, commit, unwrapCT ct) |> asOptionAsync
 
         member repository.getTag(tag: PrimitiveTagReference, ?ct: CancellationToken) = async {
-            let! t = RepositoryAccessor.ReadTagAsync(repository, tag.ObjectOrCommitHash, unwrapCT ct) |> asAsync
+            let! t = RepositoryAccessor.ReadTagAsync(repository, tag.ObjectOrCommitHash, unwrapCT ct) |> asOptionAsync
             return match t with
                    | Some t -> t
                    | None -> PrimitiveTag(tag.ObjectOrCommitHash, ObjectTypes.Commit, tag.Name, System.Nullable(), null)
@@ -49,63 +49,43 @@ module public RepositoryExtension =
 
         member repository.getBranchHeadReferences(?ct: CancellationToken) =
             RepositoryAccessor.ReadReferencesAsync(
-                repository, ReferenceTypes.Branches, unwrapCT ct) |> Async.AwaitTask
+                repository, ReferenceTypes.Branches, unwrapCT ct).asAsync()
 
         member repository.getRemoteBranchHeadReferences(?ct: CancellationToken) =
             RepositoryAccessor.ReadReferencesAsync(
-                repository, ReferenceTypes.RemoteBranches, unwrapCT ct) |> Async.AwaitTask
+                repository, ReferenceTypes.RemoteBranches, unwrapCT ct).asAsync()
 
         member repository.getTagReferences(?ct: CancellationToken) =
             RepositoryAccessor.ReadTagReferencesAsync(
-                repository, unwrapCT ct) |> Async.AwaitTask
+                repository, unwrapCT ct).asAsync()
                 
         member repository.getStashes(?ct: CancellationToken) =
             RepositoryAccessor.ReadStashesAsync(
-                repository, unwrapCT ct) |> Async.AwaitTask
+                repository, unwrapCT ct).asAsync()
 
         member repository.getRelatedReflogs(reference: PrimitiveReference, ?ct: CancellationToken) =
             RepositoryAccessor.ReadReflogEntriesAsync(
-                repository, reference, unwrapCT ct) |> Async.AwaitTask
+                repository, reference, unwrapCT ct).asAsync()
 
         member repository.getTree(tree: Hash, ?ct: CancellationToken) =
-            RepositoryAccessor.ReadTreeAsync(repository, tree, unwrapCT ct) |> Async.AwaitTask
+            RepositoryAccessor.ReadTreeAsync(repository, tree, unwrapCT ct).asAsync()
                 
         member repository.openBlob(blob: Hash, ?ct: CancellationToken) =
-            RepositoryAccessor.OpenBlobAsync(repository, blob, unwrapCT ct) |> Async.AwaitTask
+            RepositoryAccessor.OpenBlobAsync(repository, blob, unwrapCT ct).asAsync()
 
         member repository.getWorkingDirectoryStatus(?ct: CancellationToken) =
-#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP2_1_OR_GREATER
-            WorkingDirectoryAccessor.GetPrimitiveWorkingDirectoryStatusAsync(repository, unwrapCT ct).AsTask() |> Async.AwaitTask
-#else
-            WorkingDirectoryAccessor.GetPrimitiveWorkingDirectoryStatusAsync(repository, unwrapCT ct) |> Async.AwaitTask
-#endif
+            WorkingDirectoryAccessor.GetPrimitiveWorkingDirectoryStatusAsync(repository, unwrapCT ct).asAsync()
         member repository.getWorkingDirectoryStatusWithFilter(pathFilter: string -> bool, ?ct: CancellationToken) =
-#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP2_1_OR_GREATER
-            WorkingDirectoryAccessor.GetPrimitiveWorkingDirectoryStatusWithFilterAsync(repository, Func<string, bool>(pathFilter), unwrapCT ct).AsTask() |> Async.AwaitTask
-#else
-            WorkingDirectoryAccessor.GetPrimitiveWorkingDirectoryStatusWithFilterAsync(repository, Func<string, bool>(pathFilter), unwrapCT ct) |> Async.AwaitTask
-#endif
+            WorkingDirectoryAccessor.GetPrimitiveWorkingDirectoryStatusWithFilterAsync(repository, Func<string, bool>(pathFilter), unwrapCT ct).asAsync()
         member repository.getWorktrees(?ct: CancellationToken) =
-#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP2_1_OR_GREATER
-            WorktreeAccessor.GetPrimitiveWorktreesAsync(repository, unwrapCT ct).AsTask() |> Async.AwaitTask
-#else
-            WorktreeAccessor.GetPrimitiveWorktreesAsync(repository, unwrapCT ct) |> Async.AwaitTask
-#endif
+            WorktreeAccessor.GetPrimitiveWorktreesAsync(repository, unwrapCT ct).asAsync()
 
     type PrimitiveWorktree with
         member worktree.getHead(?ct: CancellationToken) =
-#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP2_1_OR_GREATER
-            WorktreeAccessor.GetWorktreeHeadAsync(worktree, unwrapCT ct).AsTask() |> Async.AwaitTask
-#else
-            WorktreeAccessor.GetWorktreeHeadAsync(worktree, unwrapCT ct) |> Async.AwaitTask
-#endif
+            WorktreeAccessor.GetWorktreeHeadAsync(worktree, unwrapCT ct).asAsync()
 
         member worktree.getBranch(?ct: CancellationToken) =
-#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP2_1_OR_GREATER
-            WorktreeAccessor.GetWorktreeBranchAsync(worktree, unwrapCT ct).AsTask() |> Async.AwaitTask
-#else
-            WorktreeAccessor.GetWorktreeBranchAsync(worktree, unwrapCT ct) |> Async.AwaitTask
-#endif
+            WorktreeAccessor.GetWorktreeBranchAsync(worktree, unwrapCT ct).asAsync()
 
     let (|PrimitiveRepository|) (repository: PrimitiveRepository) =
         (repository.GitPath, repository.RemoteUrls)

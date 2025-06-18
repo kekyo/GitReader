@@ -8,6 +8,11 @@
 ////////////////////////////////////////////////////////////////////////////
 
 using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
+using GitReader.IO;
 
 namespace GitReader.Internal;
 
@@ -70,15 +75,30 @@ internal static class Glob
         if (isAbsolute)
         {
             pattern = pattern.Substring(1);
-            return MatchGlob(path, pattern) ||
-                   (directoryOnly && path.Length == 0); // Root directory case
+            bool result = MatchGlob(path, pattern);
+            
+            // For directory patterns, also check if path starts with the directory
+            if (directoryOnly && !result)
+            {
+                result = path.StartsWith(pattern + "/");
+            }
+            
+            return result || (directoryOnly && path.Length == 0); // Root directory case
         }
 
         // For relative patterns, check if pattern matches at any level
         if (pattern.Contains("/"))
         {
             // Pattern contains path separator - match from current level
-            return MatchGlob(path, pattern);
+            bool result = MatchGlob(path, pattern);
+            
+            // For directory patterns, also check if path starts with the directory
+            if (directoryOnly && !result)
+            {
+                result = path.StartsWith(pattern + "/");
+            }
+            
+            return result;
         }
         else
         {
@@ -393,4 +413,189 @@ internal static class Glob
     /// </example>
     public static Func<string, bool> CreateCommonIgnoreFilter() =>
         CreateIgnoreFilter(commonPatterns);
+
+    /// <summary>
+    /// Creates a path filter predicate from a .gitignore stream.
+    /// </summary>
+    /// <param name="gitignoreStream">Stream containing .gitignore content.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>A predicate function that returns true if the path should be included (not ignored).</returns>
+    /// <example>
+    /// using var stream = File.OpenRead(".gitignore");
+    /// var filter = await Glob.CreateGitignoreFilterAsync(stream, ct);
+    /// var shouldInclude = filter("somefile.txt");
+    /// </example>
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP2_1_OR_GREATER
+    public static async ValueTask<Func<string, bool>> CreateGitignoreFilterAsync(
+        Stream gitignoreStream, CancellationToken ct = default)
+#else
+    public static async Task<Func<string, bool>> CreateGitignoreFilterAsync(
+        Stream gitignoreStream, CancellationToken ct = default)
+#endif
+    {
+        var patterns = new List<string>();
+        var reader = new AsyncTextReader(gitignoreStream);
+
+        try
+        {
+            while (true)
+            {
+                var line = await reader.ReadLineAsync(ct);
+                if (line == null)
+                    break;
+
+                // Trim whitespace
+                line = line.Trim();
+
+                // Skip empty lines and comments
+                if (string.IsNullOrEmpty(line) || line.StartsWith("#"))
+                    continue;
+
+                patterns.Add(line);
+            }
+        }
+        catch
+        {
+            // If reading fails, return a filter that includes everything
+            return includeAll;
+        }
+
+        if (patterns.Count == 0)
+        {
+            return includeAll;
+        }
+
+        return path =>
+        {
+            // Process .gitignore patterns in order - later patterns can override earlier ones
+            bool? gitignoreDecision = null;
+
+            foreach (var pattern in patterns)
+            {
+                bool isNegationPattern = pattern.StartsWith("!");
+                string actualPattern = isNegationPattern ? pattern.Substring(1) : pattern;
+                
+                // Use IsMatch with the actual pattern (without !)
+                if (IsMatch(path, actualPattern))
+                {
+                    if (isNegationPattern)
+                    {
+                        // This is a negation pattern that matched - explicitly include
+                        gitignoreDecision = true;
+                    }
+                    else
+                    {
+                        // This is a normal pattern that matched - explicitly exclude
+                        gitignoreDecision = false;
+                    }
+                }
+            }
+
+            // If .gitignore made an explicit decision, use it
+            if (gitignoreDecision.HasValue)
+            {
+                return gitignoreDecision.Value;
+            }
+
+            // If no patterns matched, include the file
+            return true;
+        };
+    }
+
+    /// <summary>
+    /// Combines a .gitignore filter with an existing base filter.
+    /// </summary>
+    /// <param name="gitignoreStream">Stream containing .gitignore content.</param>
+    /// <param name="baseFilter">The base filter to combine with. If null, defaults to include all.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>A combined predicate function that applies both filters.</returns>
+    /// <example>
+    /// var baseFilter = Glob.CreateCommonIgnoreFilter();
+    /// using var stream = File.OpenRead(".gitignore");
+    /// var combinedFilter = await Glob.CombineWithGitignoreAsync(stream, baseFilter, ct);
+    /// </example>
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP2_1_OR_GREATER
+    public static async ValueTask<Func<string, bool>> CombineWithGitignoreAsync(
+        Stream gitignoreStream, 
+        Func<string, bool>? baseFilter = null, 
+        CancellationToken ct = default)
+#else
+    public static async Task<Func<string, bool>> CombineWithGitignoreAsync(
+        Stream gitignoreStream, 
+        Func<string, bool>? baseFilter = null, 
+        CancellationToken ct = default)
+#endif
+    {
+        baseFilter ??= includeAll;
+
+        // Create a combined filter that processes gitignore patterns with base filter
+        var patterns = new List<string>();
+        var reader = new AsyncTextReader(gitignoreStream);
+
+        try
+        {
+            while (true)
+            {
+                var line = await reader.ReadLineAsync(ct);
+                if (line == null)
+                    break;
+
+                // Trim whitespace
+                line = line.Trim();
+
+                // Skip empty lines and comments
+                if (string.IsNullOrEmpty(line) || line.StartsWith("#"))
+                    continue;
+
+                patterns.Add(line);
+            }
+        }
+        catch
+        {
+            // If reading fails, return the base filter
+            return baseFilter;
+        }
+
+        if (patterns.Count == 0)
+        {
+            return baseFilter;
+        }
+
+        return path =>
+        {
+            // Process .gitignore patterns in order - later patterns can override earlier ones
+            bool? gitignoreDecision = null;
+
+            foreach (var pattern in patterns)
+            {
+                bool isNegationPattern = pattern.StartsWith("!");
+                string actualPattern = isNegationPattern ? pattern.Substring(1) : pattern;
+                
+                // Use IsMatch with the actual pattern (without !)
+                if (IsMatch(path, actualPattern))
+                {
+                    if (isNegationPattern)
+                    {
+                        // This is a negation pattern that matched - explicitly include
+                        gitignoreDecision = true;
+                    }
+                    else
+                    {
+                        // This is a normal pattern that matched - explicitly exclude
+                        gitignoreDecision = false;
+                    }
+                }
+            }
+
+            // If .gitignore made an explicit decision, use it
+            if (gitignoreDecision.HasValue)
+            {
+                return gitignoreDecision.Value;
+            }
+
+            // Otherwise, delegate to base filter
+            return baseFilter(path);
+        };
+    }
 }
+

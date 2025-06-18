@@ -26,91 +26,76 @@ module public RepositoryExtension =
             | _ -> Some repository.Head
         member repository.getCommit(commit: Hash, ?ct: CancellationToken) = async {
             let! c = StructuredRepositoryFacade.GetCommitDirectlyAsync(
-                repository, commit, unwrapCT ct) |> Async.AwaitTask
+                repository, commit, unwrapCT ct).asAsync()
             return match c with
                    | null -> None
                    | _ -> Some c
         }
         member repository.getHeadReflogs(?ct: CancellationToken) =
             StructuredRepositoryFacade.GetHeadReflogsAsync(
-                repository, WeakReference(repository), unwrapCT ct) |> Async.AwaitTask
+                repository, WeakReference(repository), unwrapCT ct).asAsync()
         member repository.getWorkingDirectoryStatus(?ct: CancellationToken) =
-#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP2_1_OR_GREATER
             WorkingDirectoryAccessor.GetStructuredWorkingDirectoryStatusAsync(
-                repository, WeakReference(repository), unwrapCT ct).AsTask() |> Async.AwaitTask
-#else
-            WorkingDirectoryAccessor.GetStructuredWorkingDirectoryStatusAsync(
-                repository, WeakReference(repository), unwrapCT ct) |> Async.AwaitTask
-#endif
+                repository, WeakReference(repository), unwrapCT ct).asAsync()
         member repository.getWorkingDirectoryStatusWithFilter(pathFilter: string -> bool, ?ct: CancellationToken) =
-#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP2_1_OR_GREATER
             WorkingDirectoryAccessor.GetStructuredWorkingDirectoryStatusWithFilterAsync(
-                repository, WeakReference(repository), Func<string, bool>(pathFilter), unwrapCT ct).AsTask() |> Async.AwaitTask
-#else
-            WorkingDirectoryAccessor.GetStructuredWorkingDirectoryStatusWithFilterAsync(
-                repository, WeakReference(repository), Func<string, bool>(pathFilter), unwrapCT ct) |> Async.AwaitTask
-#endif
+                repository, WeakReference(repository), Func<string, bool>(pathFilter), unwrapCT ct).asAsync()
         member repository.getWorktrees(?ct: CancellationToken) =
-#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP2_1_OR_GREATER
             WorktreeAccessor.GetStructuredWorktreesAsync(
-                repository, WeakReference(repository), unwrapCT ct).AsTask() |> Async.AwaitTask
-#else
-            WorktreeAccessor.GetStructuredWorktreesAsync(
-                repository, WeakReference(repository), unwrapCT ct) |> Async.AwaitTask
-#endif
+                repository, WeakReference(repository), unwrapCT ct).asAsync()
 
     type Branch with
         member branch.getHeadCommit(?ct: CancellationToken) =
             StructuredRepositoryFacade.GetCommitAsync(
-                branch, unwrapCT ct) |> Async.AwaitTask
+                branch, unwrapCT ct).asAsync()
 
     type Commit with
         member commit.getPrimaryParentCommit(?ct: CancellationToken) = async {
             let! c = StructuredRepositoryFacade.GetPrimaryParentAsync(
-                commit, unwrapCT ct) |> Async.AwaitTask
+                commit, unwrapCT ct).asAsync()
             return match c with
                    | null -> None
                    | _ -> Some c
         }
         member commit.getParentCommits(?ct: CancellationToken) =
             StructuredRepositoryFacade.GetParentsAsync(
-                commit, unwrapCT ct) |> Async.AwaitTask
+                commit, unwrapCT ct).asAsync()
         member commit.getTreeRoot(?ct: CancellationToken) =
             StructuredRepositoryFacade.GetTreeAsync(
-                commit, unwrapCT ct) |> Async.AwaitTask
+                commit, unwrapCT ct).asAsync()
         member commit.getMessage() =
             commit.message
             
     type Tag with
         member tag.getCommit(?ct: CancellationToken) =
             match tag.Type with
-            | ObjectTypes.Commit -> StructuredRepositoryFacade.GetCommitAsync(tag, unwrapCT ct) |> Async.AwaitTask
+            | ObjectTypes.Commit -> StructuredRepositoryFacade.GetCommitAsync(tag, unwrapCT ct).asAsync()
             | _ -> raise (InvalidOperationException $"Could not get commit: Type={tag.Type}")
         member tag.getAnnotation(?ct: CancellationToken) =
-            StructuredRepositoryFacade.GetAnnotationAsync(tag, unwrapCT ct) |> Async.AwaitTask
+            StructuredRepositoryFacade.GetAnnotationAsync(tag, unwrapCT ct).asAsync()
        
     type Stash with
         member stash.getCommit(?ct: CancellationToken) =
             StructuredRepositoryFacade.GetCommitAsync(
-                stash, unwrapCT ct) |> Async.AwaitTask
+                stash, unwrapCT ct).asAsync()
             
     type ReflogEntry with
         member reflog.getCurrentCommit(?ct: CancellationToken) =
             StructuredRepositoryFacade.GetCommitAsync(
-                reflog, reflog.Commit, unwrapCT ct) |> Async.AwaitTask
+                reflog, reflog.Commit, unwrapCT ct).asAsync()
         member reflog.getOldCommit(?ct: CancellationToken) =
             StructuredRepositoryFacade.GetCommitAsync(
-                reflog, reflog.OldCommit, unwrapCT ct) |> Async.AwaitTask
+                reflog, reflog.OldCommit, unwrapCT ct).asAsync()
 
     type TreeBlobEntry with
         member entry.openBlob(?ct: CancellationToken) =
             StructuredRepositoryFacade.OpenBlobAsync(
-                entry, unwrapCT ct) |> Async.AwaitTask
+                entry, unwrapCT ct).asAsync()
 
     type TreeSubModuleEntry with
         member entry.openSubModule(?ct: CancellationToken) =
             StructuredRepositoryFacade.OpenSubModuleAsync(
-                entry, unwrapCT ct) |> Async.AwaitTask
+                entry, unwrapCT ct).asAsync()
 
     let (|StructuredRepository|) (repository: StructuredRepository) =
         (repository.GitPath,

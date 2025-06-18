@@ -33,10 +33,26 @@ module internal Utilities =
         | true -> Some v.Value
         | _ -> None
 
-    let inline asAsync(task: Task<Nullable<'T>>) = async {
+    let inline asOptionAsync(task: Task<Nullable<'T>>) = async {
         let! result = task |> Async.AwaitTask
         if result.HasValue then
             return Some result.Value
         else
             return None
     }
+
+    type Task with
+        member public task.asAsync() =
+            task |> Async.AwaitTask
+    type Task<'T> with
+        member public task.asAsync() =
+            task |> Async.AwaitTask
+
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP2_1_OR_GREATER
+    type ValueTask with
+        member public task.asAsync() =
+            task.AsTask() |> Async.AwaitTask
+    type ValueTask<'T> with
+        member public task.asAsync() =
+            task.AsTask() |> Async.AwaitTask
+#endif

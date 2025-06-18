@@ -10,13 +10,15 @@
 namespace GitReader
 
 open System
+open System.IO
+open System.Threading
 
 /// <summary>
 /// Provides glob pattern matching functionality for .gitignore files.
 /// </summary>
 /// 
-[<AutoOpen>]
-module public Glob =
+[<AbstractClass; Sealed>]
+type public Glob =
 
     /// <summary>
     /// Determines whether the specified path matches the given glob pattern.
@@ -24,7 +26,7 @@ module public Glob =
     /// <param name="path">The path to test.</param>
     /// <param name="pattern">The glob pattern to match against.</param>
     /// <returns>true if the path matches the pattern; otherwise, false.</returns>
-    let public isMatch path pattern =
+    static member isMatch(path: string, pattern: string) =
         Internal.Glob.IsMatch(path, pattern)
 
     /// <summary>
@@ -37,7 +39,7 @@ module public Glob =
     /// let filter = Glob.createIgnoreFilter [| "*.log"; "bin/"; "obj/"; "node_modules/" |]
     /// let! status = repository.getWorkingDirectoryStatusWithFilter(filter)
     /// </example>
-    let public createIgnoreFilter ([<ParamArray>] excludePatterns) =
+    static member createIgnoreFilter([<ParamArray>] excludePatterns: string[]) =
         let delegateFilter = Internal.Glob.CreateIgnoreFilter(excludePatterns)
         fun path -> delegateFilter.Invoke(path)
 
@@ -51,7 +53,7 @@ module public Glob =
     /// let filter = Glob.createIncludeFilter [| "*.cs"; "*.fs"; "*.ts" |]
     /// let! status = repository.getWorkingDirectoryStatusWithFilter(filter)
     /// </example>
-    let public createIncludeFilter ([<ParamArray>] includePatterns) =
+    static member createIncludeFilter([<ParamArray>] includePatterns: string[]) =
         let delegateFilter = Internal.Glob.CreateIncludeFilter(includePatterns)
         fun path -> delegateFilter.Invoke(path)
 
@@ -65,6 +67,58 @@ module public Glob =
     /// let filter = Glob.createCommonIgnoreFilter()
     /// let! status = repository.getWorkingDirectoryStatusWithFilter(filter)
     /// </example>
-    let public createCommonIgnoreFilter() =
+    static member createCommonIgnoreFilter() =
         let delegateFilter = Internal.Glob.CreateCommonIgnoreFilter()
         fun path -> delegateFilter.Invoke(path)
+
+    /// <summary>
+    /// Creates a path filter predicate from a .gitignore stream.
+    /// </summary>
+    /// <param name="gitignoreStream">Stream containing .gitignore content.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>An async that returns a predicate function that returns true if the path should be included (not ignored).</returns>
+    /// <example>
+    /// use stream = File.OpenRead(".gitignore")
+    /// let! filter = Glob.createGitignoreFilter(stream, ct)
+    /// let shouldInclude = filter "somefile.txt"
+    /// </example>
+    static member createGitignoreFilter(gitignoreStream: Stream, ?ct: CancellationToken) =
+        async {
+            let! delegateFilter = Internal.Glob.CreateGitignoreFilterAsync(gitignoreStream, unwrapCT ct).asAsync()
+            return fun path -> delegateFilter.Invoke(path)
+        }
+
+    /// <summary>
+    /// Combines a .gitignore filter with an existing base filter.
+    /// </summary>
+    /// <param name="gitignoreStream">Stream containing .gitignore content.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>An async that returns a combined predicate function that applies both filters.</returns>
+    /// <example>
+    /// let baseFilter = Glob.createCommonIgnoreFilter()
+    /// use stream = File.OpenRead(".gitignore")
+    /// let! combinedFilter = Glob.combineWithGitignore(stream, Some baseFilter, ct)
+    /// </example>
+    static member combineWithGitignore(gitignoreStream: Stream, ?ct: CancellationToken) =
+        async {
+            let! delegateFilter = Internal.Glob.CombineWithGitignoreAsync(gitignoreStream, null, unwrapCT ct).asAsync()
+            return fun path -> delegateFilter.Invoke(path)
+        }
+
+    /// <summary>
+    /// Combines a .gitignore filter with an existing base filter.
+    /// </summary>
+    /// <param name="gitignoreStream">Stream containing .gitignore content.</param>
+    /// <param name="baseFilter">The base filter to combine with. If None, defaults to include all.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>An async that returns a combined predicate function that applies both filters.</returns>
+    /// <example>
+    /// let baseFilter = Glob.createCommonIgnoreFilter()
+    /// use stream = File.OpenRead(".gitignore")
+    /// let! combinedFilter = Glob.combineWithGitignore(stream, Some baseFilter, ct)
+    /// </example>
+    static member combineWithGitignore(gitignoreStream: Stream, baseFilter: (string -> bool), ?ct: CancellationToken) =
+        async {
+            let! delegateFilter = Internal.Glob.CombineWithGitignoreAsync(gitignoreStream, Func<string, bool>(baseFilter), unwrapCT ct).asAsync()
+            return fun path -> delegateFilter.Invoke(path)
+        }
