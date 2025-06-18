@@ -103,6 +103,57 @@ type public GlobTests() =
         Assert.IsFalse(combinedFilter "README.md")   // Not CS/FS file (excluded by include)
 
     [<Test>]
+    member _.``combine method should work with static class API``() =
+        let filter1 = Glob.createIgnoreFilter([| "*.log"; "*.tmp" |])
+        let filter2 = Glob.createIncludeFilter([| "*.cs"; "*.fs"; "*.md" |])
+        
+        // Use the new combine method
+        let combinedFilter = Glob.combine([| filter1; filter2 |])
+        
+        // Test files that should pass both filters
+        Assert.IsTrue(combinedFilter "Program.cs")    // .cs file and not .log/.tmp
+        Assert.IsTrue(combinedFilter "Library.fs")    // .fs file and not .log/.tmp
+        Assert.IsTrue(combinedFilter "README.md")     // .md file and not .log/.tmp
+        
+        // Test files that should fail one of the filters
+        Assert.IsFalse(combinedFilter "app.log")      // .log file is ignored
+        Assert.IsFalse(combinedFilter "temp.tmp")     // .tmp file is ignored
+        Assert.IsFalse(combinedFilter "script.js")    // .js file not in include patterns
+
+    [<Test>]
+    member _.``combine method should work with empty array``() =
+        // Test combine method with empty array - should include all
+        let combinedFilter = Glob.combine([||])
+        
+        Assert.IsTrue(combinedFilter "any-file.txt")
+        Assert.IsTrue(combinedFilter "another-file.log")
+
+    [<Test>]
+    member _.``combine method should work with single filter``() =
+        let originalFilter = Glob.createIgnoreFilter([| "*.log" |])
+        let combinedFilter = Glob.combine([| originalFilter |])
+        
+        Assert.IsTrue(combinedFilter "test.txt")
+        Assert.IsFalse(combinedFilter "test.log")
+
+    [<Test>]
+    member _.``combine method should work with multiple filters``() =
+        let filter1 = Glob.createIgnoreFilter([| "*.log" |])
+        let filter2 = Glob.createIgnoreFilter([| "*.tmp" |])
+        let filter3 = Glob.createIncludeFilter([| "*.cs"; "*.fs" |])
+        
+        let combinedFilter = Glob.combine([| filter1; filter2; filter3 |])
+        
+        // Should pass all three filters
+        Assert.IsTrue(combinedFilter "Program.cs")    // .cs file, not .log, not .tmp
+        Assert.IsTrue(combinedFilter "Library.fs")    // .fs file, not .log, not .tmp
+        
+        // Should fail at least one filter
+        Assert.IsFalse(combinedFilter "app.log")      // .log file fails filter1
+        Assert.IsFalse(combinedFilter "temp.tmp")     // .tmp file fails filter2
+        Assert.IsFalse(combinedFilter "README.md")    // .md file fails filter3
+
+    [<Test>]
     member _.``F# list processing should work``() =
         let filter = Glob.createIgnoreFilter([| "*.log"; "*.tmp" |])
         

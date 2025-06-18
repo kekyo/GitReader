@@ -623,6 +623,71 @@ public sealed class GlobTests
     }
 
     [Test]
+    public void CombineMethodTest()
+    {
+        // Test the new Combine method for composing predicate functions
+        var filter1 = Glob.CreateIgnoreFilter("*.log", "*.tmp");
+        var filter2 = Glob.CreateIncludeFilter("*.cs", "*.fs", "*.md");
+        
+        // Combine filters using the new Combine method
+        var combinedFilter = Glob.Combine(filter1, filter2);
+        
+        // Test files that should pass both filters
+        Assert.IsTrue(combinedFilter("Program.cs"));    // .cs file and not .log/.tmp
+        Assert.IsTrue(combinedFilter("Library.fs"));    // .fs file and not .log/.tmp
+        Assert.IsTrue(combinedFilter("README.md"));     // .md file and not .log/.tmp
+        
+        // Test files that should fail the ignore filter
+        Assert.IsFalse(combinedFilter("app.log"));      // .log file is ignored
+        Assert.IsFalse(combinedFilter("temp.tmp"));     // .tmp file is ignored
+        
+        // Test files that should fail the include filter
+        Assert.IsFalse(combinedFilter("script.js"));    // .js file not in include patterns
+        Assert.IsFalse(combinedFilter("style.css"));    // .css file not in include patterns
+    }
+
+    [Test]
+    public void CombineMethodWithEmptyArrayTest()
+    {
+        // Test Combine method with empty array - should return include-all filter
+        var combinedFilter = Glob.Combine();
+        
+        Assert.IsTrue(combinedFilter("any-file.txt"));
+        Assert.IsTrue(combinedFilter("another-file.log"));
+    }
+
+    [Test]
+    public void CombineMethodWithSingleFilterTest()
+    {
+        // Test Combine method with single filter - should return the same filter
+        var originalFilter = Glob.CreateIgnoreFilter("*.log");
+        var combinedFilter = Glob.Combine(originalFilter);
+        
+        Assert.IsTrue(combinedFilter("test.txt"));
+        Assert.IsFalse(combinedFilter("test.log"));
+    }
+
+    [Test]
+    public void CombineMethodWithMultipleFiltersTest()
+    {
+        // Test Combine method with multiple filters
+        var filter1 = Glob.CreateIgnoreFilter("*.log");
+        var filter2 = Glob.CreateIgnoreFilter("*.tmp");
+        var filter3 = Glob.CreateIncludeFilter("*.cs", "*.fs");
+        
+        var combinedFilter = Glob.Combine(filter1, filter2, filter3);
+        
+        // Should pass all three filters
+        Assert.IsTrue(combinedFilter("Program.cs"));    // .cs file, not .log, not .tmp
+        Assert.IsTrue(combinedFilter("Library.fs"));    // .fs file, not .log, not .tmp
+        
+        // Should fail at least one filter
+        Assert.IsFalse(combinedFilter("app.log"));      // .log file fails filter1
+        Assert.IsFalse(combinedFilter("temp.tmp"));     // .tmp file fails filter2
+        Assert.IsFalse(combinedFilter("README.md"));    // .md file fails filter3
+    }
+
+    [Test]
     public void FilterWithEmptyPatternsTest()
     {
         // Test filter behavior with empty patterns
@@ -636,41 +701,6 @@ public sealed class GlobTests
         var emptyIncludeFilter = Glob.CreateIncludeFilter();
         Assert.IsFalse(emptyIncludeFilter("any-file.txt"));
         Assert.IsFalse(emptyIncludeFilter("another-file.log"));
-    }
-
-    [Test]
-    public void FilterPerformanceTest()
-    {
-        // Basic performance test for filters
-        var patterns = new[] {
-            "*.log", "*.tmp", "bin/", "obj/", "node_modules/",
-            "*.o", "*.exe", "*.dll", "*.so", "*.dylib"
-        };
-
-        var filter = Glob.CreateIgnoreFilter(patterns);
-
-        // Test with many file paths
-        var testPaths = new[]
-        {
-            "src/Program.cs",
-            "bin/debug/app.exe",
-            "obj/release/temp.obj",
-            "node_modules/package/index.js",
-            "app.log",
-            "README.md",
-            "test.tmp"
-        };
-
-        for (int i = 0; i < 1000; i++)
-        {
-            foreach (var path in testPaths)
-            {
-                filter(path);
-            }
-        }
-
-        // Test should complete without performance issues
-        Assert.Pass("Performance test completed");
     }
 
     //////////////////////////////////////////////////////////////

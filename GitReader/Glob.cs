@@ -29,6 +29,19 @@ public static class Glob
         Internal.Glob.IsMatch(path, pattern);
     
     /// <summary>
+    /// Combines multiple predicate functions using logical AND operation.
+    /// </summary>
+    /// <param name="predicates">The predicate functions to combine.</param>
+    /// <returns>A combined predicate that returns true only if all predicates return true.</returns>
+    /// <example>
+    /// var filter1 = Glob.CreateIgnoreFilter("*.log");
+    /// var filter2 = Glob.CreateIncludeFilter("*.cs", "*.fs");
+    /// var combined = Glob.Combine(filter1, filter2);
+    /// </example>
+    public static Func<string, bool> Combine(params Func<string, bool>[] predicates) =>
+        Internal.Glob.Combine(predicates);
+    
+    /// <summary>
     /// Creates a path filter predicate for use with GetWorkingDirectoryStatusAsync() 
     /// that excludes files matching any of the provided .gitignore-style patterns.
     /// </summary>

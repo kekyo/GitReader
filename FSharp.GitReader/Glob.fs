@@ -30,13 +30,28 @@ type public Glob =
         Internal.Glob.IsMatch(path, pattern)
 
     /// <summary>
+    /// Combines multiple predicate functions using logical AND operation.
+    /// </summary>
+    /// <param name="predicates">The predicate functions to combine.</param>
+    /// <returns>A combined predicate that returns true only if all predicates return true.</returns>
+    /// <example>
+    /// let filter1 = Glob.createIgnoreFilter([| "*.log" |])
+    /// let filter2 = Glob.createIncludeFilter([| "*.cs"; "*.fs" |])
+    /// let combined = Glob.combine([| filter1; filter2 |])
+    /// </example>
+    static member combine([<ParamArray>] predicates: (string -> bool)[]) =
+        let funcPredicates = predicates |> Array.map (fun f -> Func<string, bool>(f))
+        let combinedFunc = Internal.Glob.Combine(funcPredicates)
+        fun path -> combinedFunc.Invoke(path)
+
+    /// <summary>
     /// Creates a path filter predicate for use with GetWorkingDirectoryStatusAsync() 
     /// that excludes files matching any of the provided .gitignore-style patterns.
     /// </summary>
     /// <param name="excludePatterns">Array of .gitignore-style patterns to exclude files.</param>
     /// <returns>A predicate function that returns true if the path should be included (not ignored).</returns>
     /// <example>
-    /// let filter = Glob.createIgnoreFilter [| "*.log"; "bin/"; "obj/"; "node_modules/" |]
+    /// let filter = Glob.createIgnoreFilter([| "*.log"; "bin/"; "obj/"; "node_modules/" |])
     /// let! status = repository.getWorkingDirectoryStatusWithFilter(filter)
     /// </example>
     static member createIgnoreFilter([<ParamArray>] excludePatterns: string[]) =

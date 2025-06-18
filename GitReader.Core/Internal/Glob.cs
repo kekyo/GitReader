@@ -10,6 +10,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using GitReader.IO;
@@ -21,6 +22,27 @@ namespace GitReader.Internal;
 /// </summary>
 internal static class Glob
 {
+    private static readonly string[] commonPatterns =
+    [
+        // Build outputs
+        "bin/", "obj/", "build/", "out/", "target/", "dist/",
+        // Dependencies
+        "node_modules/", "packages/", "vendor/",
+        // Log files
+        "*.log", "logs/",
+        // Temporary files
+        "*.tmp", "*.temp", "*.swp", "*.bak", "*~",
+        // IDE files
+        ".vs/", ".vscode/", ".idea/", "*.suo", "*.user",
+        // OS files
+        ".DS_Store", "Thumbs.db", "Desktop.ini"
+    ];
+
+    internal static readonly Func<string, bool> includeAll = _ => true;
+    internal static readonly Func<string, bool> ignoreAll = _ => false;
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
     /// <summary>
     /// Determines whether the specified path matches the given glob pattern.
     /// </summary>
@@ -314,9 +336,39 @@ internal static class Glob
 
         return negated ? !matched : matched;
     }
+        
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    internal static readonly Func<string, bool> includeAll = _ => true;
-    internal static readonly Func<string, bool> ignoreAll = _ => false;
+    /// <summary>
+    /// Combines multiple predicate functions using logical AND operation.
+    /// </summary>
+    /// <param name="predicates">The predicate functions to combine.</param>
+    /// <returns>A combined predicate that returns true only if all predicates return true.</returns>
+    /// <example>
+    /// var filter1 = Glob.CreateIgnoreFilter("*.log");
+    /// var filter2 = Glob.CreateIncludeFilter("*.cs", "*.fs");
+    /// var combined = Glob.Combine(filter1, filter2);
+    /// </example>
+    public static Func<string, bool> Combine(params Func<string, bool>[] predicates)
+    {
+        if (predicates.Length == 0)
+            return includeAll;
+        
+        if (predicates.Length == 1)
+            return predicates[0];
+
+        return path =>
+        {
+            foreach (var predicate in predicates)
+            {
+                if (!predicate(path))
+                    return false;
+            }
+            return true;
+        };
+    }
+        
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     /// <summary>
     /// Creates a path filter predicate for use with GetWorkingDirectoryStatusAsync() 
@@ -363,7 +415,7 @@ internal static class Glob
     {
         if (includePatterns.Length == 0)
         {
-            // Exclude all files if no patterns provided
+            // Exclude all files if no including patterns provided
             return ignoreAll;
         }
 
@@ -379,27 +431,6 @@ internal static class Glob
             return false; // Exclude this file
         };
     }
-    
-    private static readonly string[] commonPatterns =
-    [
-        // Build outputs
-        "bin/", "obj/", "build/", "out/", "target/", "dist/",
-
-        // Dependencies
-        "node_modules/", "packages/", "vendor/",
-
-        // Log files
-        "*.log", "logs/",
-
-        // Temporary files
-        "*.tmp", "*.temp", "*.swp", "*.bak", "*~",
-
-        // IDE files
-        ".vs/", ".vscode/", ".idea/", "*.suo", "*.user",
-
-        // OS files
-        ".DS_Store", "Thumbs.db", "Desktop.ini"
-    ];
 
     /// <summary>
     /// Creates a path filter predicate for use with GetWorkingDirectoryStatusAsync() 
@@ -413,6 +444,59 @@ internal static class Glob
     /// </example>
     public static Func<string, bool> CreateCommonIgnoreFilter() =>
         CreateIgnoreFilter(commonPatterns);
+    
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    /// <summary>
+    /// Creates a .gitignore-based filter from parsed patterns.
+    /// This is the core logic shared by CreateGitignoreFilterAsync and CombineWithGitignoreAsync.
+    /// </summary>
+    /// <param name="patterns">List of .gitignore patterns.</param>
+    /// <param name="baseFilter">Optional base filter to fall back to when no .gitignore patterns match.</param>
+    /// <returns>A predicate function that applies .gitignore logic.</returns>
+    private static Func<string, bool> CreateGitignoreFilterFromPatterns(IEnumerable<string> patterns, Func<string, bool>? baseFilter)
+    {
+        if (!patterns.Any())
+        {
+            return baseFilter ?? includeAll;
+        }
+
+        return path =>
+        {
+            // Process .gitignore patterns in order - later patterns can override earlier ones
+            bool? gitignoreDecision = null;
+
+            foreach (var pattern in patterns)
+            {
+                bool isNegationPattern = pattern.StartsWith("!");
+                string actualPattern = isNegationPattern ? pattern.Substring(1) : pattern;
+                
+                // Use IsMatch with the actual pattern (without !)
+                if (IsMatch(path, actualPattern))
+                {
+                    if (isNegationPattern)
+                    {
+                        // This is a negation pattern that matched - explicitly include
+                        gitignoreDecision = true;
+                    }
+                    else
+                    {
+                        // This is a normal pattern that matched - explicitly exclude
+                        gitignoreDecision = false;
+                    }
+                }
+            }
+
+            // If .gitignore made an explicit decision, use it
+            if (gitignoreDecision.HasValue)
+            {
+                return gitignoreDecision.Value;
+            }
+
+            // If no patterns matched, fall back to base filter or include
+            return baseFilter?.Invoke(path) ?? true;
+        };
+    }
 
     /// <summary>
     /// Creates a path filter predicate from a .gitignore stream.
@@ -460,46 +544,7 @@ internal static class Glob
             return includeAll;
         }
 
-        if (patterns.Count == 0)
-        {
-            return includeAll;
-        }
-
-        return path =>
-        {
-            // Process .gitignore patterns in order - later patterns can override earlier ones
-            bool? gitignoreDecision = null;
-
-            foreach (var pattern in patterns)
-            {
-                bool isNegationPattern = pattern.StartsWith("!");
-                string actualPattern = isNegationPattern ? pattern.Substring(1) : pattern;
-                
-                // Use IsMatch with the actual pattern (without !)
-                if (IsMatch(path, actualPattern))
-                {
-                    if (isNegationPattern)
-                    {
-                        // This is a negation pattern that matched - explicitly include
-                        gitignoreDecision = true;
-                    }
-                    else
-                    {
-                        // This is a normal pattern that matched - explicitly exclude
-                        gitignoreDecision = false;
-                    }
-                }
-            }
-
-            // If .gitignore made an explicit decision, use it
-            if (gitignoreDecision.HasValue)
-            {
-                return gitignoreDecision.Value;
-            }
-
-            // If no patterns matched, include the file
-            return true;
-        };
+        return CreateGitignoreFilterFromPatterns(patterns, null);
     }
 
     /// <summary>
@@ -526,9 +571,6 @@ internal static class Glob
         CancellationToken ct = default)
 #endif
     {
-        baseFilter ??= includeAll;
-
-        // Create a combined filter that processes gitignore patterns with base filter
         var patterns = new List<string>();
         var reader = new AsyncTextReader(gitignoreStream);
 
@@ -553,49 +595,9 @@ internal static class Glob
         catch
         {
             // If reading fails, return the base filter
-            return baseFilter;
+            return baseFilter ?? includeAll;
         }
 
-        if (patterns.Count == 0)
-        {
-            return baseFilter;
-        }
-
-        return path =>
-        {
-            // Process .gitignore patterns in order - later patterns can override earlier ones
-            bool? gitignoreDecision = null;
-
-            foreach (var pattern in patterns)
-            {
-                bool isNegationPattern = pattern.StartsWith("!");
-                string actualPattern = isNegationPattern ? pattern.Substring(1) : pattern;
-                
-                // Use IsMatch with the actual pattern (without !)
-                if (IsMatch(path, actualPattern))
-                {
-                    if (isNegationPattern)
-                    {
-                        // This is a negation pattern that matched - explicitly include
-                        gitignoreDecision = true;
-                    }
-                    else
-                    {
-                        // This is a normal pattern that matched - explicitly exclude
-                        gitignoreDecision = false;
-                    }
-                }
-            }
-
-            // If .gitignore made an explicit decision, use it
-            if (gitignoreDecision.HasValue)
-            {
-                return gitignoreDecision.Value;
-            }
-
-            // Otherwise, delegate to base filter
-            return baseFilter(path);
-        };
+        return CreateGitignoreFilterFromPatterns(patterns, baseFilter);
     }
 }
-
