@@ -25,6 +25,7 @@ using NUnit.Framework;
 using System.Linq;
 using System.IO;
 using System.Threading.Tasks;
+using System.Text;
 
 namespace GitReader;
 
@@ -712,7 +713,7 @@ public sealed class GlobTests
         var gitignoreContent = "*.log\ntemp/\n*.tmp\n";
         using var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(gitignoreContent));
 
-        var filter = await Glob.CreateGitignoreFilterAsync(stream);
+        var filter = await Glob.CreateFilterFromGitignoreAsync(stream);
 
         // Should exclude files matching patterns
         Assert.IsFalse(filter("debug.log"));
@@ -732,7 +733,7 @@ public sealed class GlobTests
         var gitignoreContent = "*.log\n!important.log\ntemp/\n!temp/keep.txt\n";
         using var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(gitignoreContent));
 
-        var filter = await Glob.CreateGitignoreFilterAsync(stream);
+        var filter = await Glob.CreateFilterFromGitignoreAsync(stream);
 
         // Should exclude files matching exclude patterns
         Assert.IsFalse(filter("debug.log"));
@@ -752,7 +753,7 @@ public sealed class GlobTests
         var gitignoreContent = "# This is a comment\n\n*.log\n# Another comment\n\ntemp/\n";
         using var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(gitignoreContent));
 
-        var filter = await Glob.CreateGitignoreFilterAsync(stream);
+        var filter = await Glob.CreateFilterFromGitignoreAsync(stream);
 
         // Should exclude files matching patterns (comments should be ignored)
         Assert.IsFalse(filter("debug.log"));
@@ -767,64 +768,14 @@ public sealed class GlobTests
     {
         using var stream = new MemoryStream();
 
-        var filter = await Glob.CreateGitignoreFilterAsync(stream);
+        var filter = await Glob.CreateFilterFromGitignoreAsync(stream);
 
         // Empty .gitignore should include all files
         Assert.IsTrue(filter("any-file.txt"));
         Assert.IsTrue(filter("any/path/file.log"));
     }
 
-    [Test]
-    public async Task CombineWithGitignoreAsync_WithBaseFilter()
-    {
-        var gitignoreContent = "*.log\n";
-        using var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(gitignoreContent));
 
-        var baseFilter = Glob.CreateIgnoreFilter("*.tmp");
-        var combinedFilter = await Glob.CombineWithGitignoreAsync(stream, baseFilter);
-
-        // Should exclude files matching .gitignore patterns
-        Assert.IsFalse(combinedFilter("debug.log"));
-
-        // Should exclude files matching base filter patterns
-        Assert.IsFalse(combinedFilter("cache.tmp"));
-
-        // Should include files not matching either pattern
-        Assert.IsTrue(combinedFilter("Program.cs"));
-    }
-
-    [Test]
-    public async Task CombineWithGitignoreAsync_GitignoreOverridesBase()
-    {
-        // .gitignore negates what base filter excludes
-        var gitignoreContent = "!important.tmp\n";
-        using var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(gitignoreContent));
-
-        var baseFilter = Glob.CreateIgnoreFilter("*.tmp");
-        var combinedFilter = await Glob.CombineWithGitignoreAsync(stream, baseFilter);
-
-        // .gitignore should allow important.tmp even though base filter excludes *.tmp
-        Assert.IsTrue(combinedFilter("important.tmp"));
-
-        // Other .tmp files should still be excluded by base filter
-        Assert.IsFalse(combinedFilter("cache.tmp"));
-    }
-
-    [Test]
-    public async Task CombineWithGitignoreAsync_WithoutBaseFilter()
-    {
-        var gitignoreContent = "*.log\ntemp/\n";
-        using var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(gitignoreContent));
-
-        var combinedFilter = await Glob.CombineWithGitignoreAsync(stream);
-
-        // Should exclude files matching .gitignore patterns
-        Assert.IsFalse(combinedFilter("debug.log"));
-        Assert.IsFalse(combinedFilter("temp/file.txt"));
-
-        // Should include files not matching patterns
-        Assert.IsTrue(combinedFilter("Program.cs"));
-    }
 
     [Test]
     public async Task CreateGitignoreFilterAsync_RealWorldExample()
@@ -871,7 +822,7 @@ Desktop.ini
 ";
 
         using var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(gitignoreContent));
-        var filter = await Glob.CreateGitignoreFilterAsync(stream);
+        var filter = await Glob.CreateFilterFromGitignoreAsync(stream);
 
         // Should exclude dependencies
         Assert.IsFalse(filter("node_modules/package.json"));
@@ -901,5 +852,59 @@ Desktop.ini
         // Should include negated patterns
         Assert.IsTrue(filter("important.log"));
         Assert.IsTrue(filter("docs/build/index.html"));
+    }
+
+    [Test]
+    public async Task CreateFilterFromGitignoreAsync_WithBaseFilter()
+    {
+        // Test combining gitignore filter with base filter using Combine method
+        var gitignoreContent = "*.log\n!important.log\n";
+        using var stream = new MemoryStream(Encoding.UTF8.GetBytes(gitignoreContent));
+        
+        var baseFilter = Glob.CreateIgnoreFilter("*.tmp");
+        var gitignoreFilter = await Glob.CreateFilterFromGitignoreAsync(stream);
+        var combinedFilter = Glob.Combine(baseFilter, gitignoreFilter);
+        
+        // Should exclude .log files (gitignore) and .tmp files (base)
+        Assert.IsFalse(combinedFilter("error.log"));
+        Assert.IsFalse(combinedFilter("temp.tmp"));
+        
+        // Should include important.log due to negation pattern
+        Assert.IsTrue(combinedFilter("important.log"));
+        
+        // Should include other files
+        Assert.IsTrue(combinedFilter("Program.cs"));
+    }
+
+    [Test]
+    public async Task CreateFilterFromGitignoreAsync_GitignoreOverridesBase()
+    {
+        // Test that gitignore can work with base filter
+        // Use a normal ignore pattern in gitignore, not negation
+        var gitignoreContent = "*.log\n";  // Exclude log files
+        using var stream = new MemoryStream(Encoding.UTF8.GetBytes(gitignoreContent));
+        
+        var baseFilter = Glob.CreateIgnoreFilter("*.cs");  // Exclude .cs files
+        var gitignoreFilter = await Glob.CreateFilterFromGitignoreAsync(stream);
+        var combinedFilter = Glob.Combine(baseFilter, gitignoreFilter);
+        
+        // Combined filter should exclude both .cs and .log files
+        Assert.IsFalse(combinedFilter("Program.cs"));     // Excluded by base
+        Assert.IsFalse(combinedFilter("debug.log"));      // Excluded by gitignore
+        Assert.IsTrue(combinedFilter("README.md"));       // Not excluded by either
+    }
+
+    [Test]
+    public async Task CreateFilterFromGitignoreAsync_WithoutBaseFilter()
+    {
+        var gitignoreContent = "*.log\nbuild/\n!important.log\n";
+        using var stream = new MemoryStream(Encoding.UTF8.GetBytes(gitignoreContent));
+        
+        var gitignoreFilter = await Glob.CreateFilterFromGitignoreAsync(stream);
+        
+        Assert.IsFalse(gitignoreFilter("debug.log"));
+        Assert.IsFalse(gitignoreFilter("build/output.exe"));
+        Assert.IsTrue(gitignoreFilter("important.log"));  // Negation pattern
+        Assert.IsTrue(gitignoreFilter("Program.cs"));
     }
 } 

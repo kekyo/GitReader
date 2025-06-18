@@ -449,7 +449,7 @@ internal static class Glob
 
     /// <summary>
     /// Creates a .gitignore-based filter from parsed patterns.
-    /// This is the core logic shared by CreateGitignoreFilterAsync and CombineWithGitignoreAsync.
+    /// This is the core logic shared by CreateFilterFromGitignoreAsync.
     /// </summary>
     /// <param name="patterns">List of .gitignore patterns.</param>
     /// <param name="baseFilter">Optional base filter to fall back to when no .gitignore patterns match.</param>
@@ -506,98 +506,37 @@ internal static class Glob
     /// <returns>A predicate function that returns true if the path should be included (not ignored).</returns>
     /// <example>
     /// using var stream = File.OpenRead(".gitignore");
-    /// var filter = await Glob.CreateGitignoreFilterAsync(stream, ct);
-    /// var shouldInclude = filter("somefile.txt");
+    /// var filter = await Glob.CreateFilterFromGitignoreAsync(stream, ct);
     /// </example>
 #if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP2_1_OR_GREATER
-    public static async ValueTask<Func<string, bool>> CreateGitignoreFilterAsync(
+    public static async ValueTask<Func<string, bool>> CreateFilterFromGitignoreAsync(
         Stream gitignoreStream, CancellationToken ct = default)
 #else
-    public static async Task<Func<string, bool>> CreateGitignoreFilterAsync(
+    public static async Task<Func<string, bool>> CreateFilterFromGitignoreAsync(
         Stream gitignoreStream, CancellationToken ct = default)
 #endif
     {
         var patterns = new List<string>();
         var reader = new AsyncTextReader(gitignoreStream);
 
-        try
+        while (true)
         {
-            while (true)
-            {
-                var line = await reader.ReadLineAsync(ct);
-                if (line == null)
-                    break;
+            var line = await reader.ReadLineAsync(ct);
+            if (line == null)
+                break;
 
-                // Trim whitespace
-                line = line.Trim();
+            // Trim whitespace
+            line = line.Trim();
 
-                // Skip empty lines and comments
-                if (string.IsNullOrEmpty(line) || line.StartsWith("#"))
-                    continue;
+            // Skip empty lines and comments
+            if (string.IsNullOrEmpty(line) || line.StartsWith("#"))
+                continue;
 
-                patterns.Add(line);
-            }
-        }
-        catch
-        {
-            // If reading fails, return a filter that includes everything
-            return includeAll;
+            patterns.Add(line);
         }
 
         return CreateGitignoreFilterFromPatterns(patterns, null);
     }
 
-    /// <summary>
-    /// Combines a .gitignore filter with an existing base filter.
-    /// </summary>
-    /// <param name="gitignoreStream">Stream containing .gitignore content.</param>
-    /// <param name="baseFilter">The base filter to combine with. If null, defaults to include all.</param>
-    /// <param name="ct">The cancellation token.</param>
-    /// <returns>A combined predicate function that applies both filters.</returns>
-    /// <example>
-    /// var baseFilter = Glob.CreateCommonIgnoreFilter();
-    /// using var stream = File.OpenRead(".gitignore");
-    /// var combinedFilter = await Glob.CombineWithGitignoreAsync(stream, baseFilter, ct);
-    /// </example>
-#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP2_1_OR_GREATER
-    public static async ValueTask<Func<string, bool>> CombineWithGitignoreAsync(
-        Stream gitignoreStream, 
-        Func<string, bool>? baseFilter = null, 
-        CancellationToken ct = default)
-#else
-    public static async Task<Func<string, bool>> CombineWithGitignoreAsync(
-        Stream gitignoreStream, 
-        Func<string, bool>? baseFilter = null, 
-        CancellationToken ct = default)
-#endif
-    {
-        var patterns = new List<string>();
-        var reader = new AsyncTextReader(gitignoreStream);
 
-        try
-        {
-            while (true)
-            {
-                var line = await reader.ReadLineAsync(ct);
-                if (line == null)
-                    break;
-
-                // Trim whitespace
-                line = line.Trim();
-
-                // Skip empty lines and comments
-                if (string.IsNullOrEmpty(line) || line.StartsWith("#"))
-                    continue;
-
-                patterns.Add(line);
-            }
-        }
-        catch
-        {
-            // If reading fails, return the base filter
-            return baseFilter ?? includeAll;
-        }
-
-        return CreateGitignoreFilterFromPatterns(patterns, baseFilter);
-    }
 }

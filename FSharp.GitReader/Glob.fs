@@ -91,49 +91,30 @@ type public Glob =
     /// </summary>
     /// <param name="gitignoreStream">Stream containing .gitignore content.</param>
     /// <param name="ct">The cancellation token.</param>
-    /// <returns>An async that returns a predicate function that returns true if the path should be included (not ignored).</returns>
+    /// <returns>A predicate function that returns true if the path should be included (not ignored).</returns>
     /// <example>
-    /// use stream = File.OpenRead(".gitignore")
-    /// let! filter = Glob.createGitignoreFilter(stream, ct)
-    /// let shouldInclude = filter "somefile.txt"
+    /// let stream = File.OpenRead(".gitignore")
+    /// let filter = Glob.createFilterFromGitignore(stream, ct) |> Async.AwaitTask |> Async.RunSynchronously
     /// </example>
-    static member createGitignoreFilter(gitignoreStream: Stream, ?ct: CancellationToken) =
+    static member createFilterFromGitignore(gitignoreStream: Stream, ct: CancellationToken) =
         async {
-            let! delegateFilter = Internal.Glob.CreateGitignoreFilterAsync(gitignoreStream, unwrapCT ct).asAsync()
+            let! delegateFilter = Internal.Glob.CreateFilterFromGitignoreAsync(gitignoreStream, ct).asAsync()
+            return fun path -> delegateFilter.Invoke(path)
+        }
+    
+    /// <summary>
+    /// Creates a path filter predicate from a .gitignore stream.
+    /// </summary>
+    /// <param name="gitignoreStream">Stream containing .gitignore content.</param>
+    /// <returns>A predicate function that returns true if the path should be included (not ignored).</returns>
+    /// <example>
+    /// let stream = File.OpenRead(".gitignore")
+    /// let filter = Glob.createFilterFromGitignore(stream) |> Async.AwaitTask |> Async.RunSynchronously
+    /// </example>
+    static member createFilterFromGitignore(gitignoreStream: Stream) =
+        async {
+            let! delegateFilter = Internal.Glob.CreateFilterFromGitignoreAsync(gitignoreStream, CancellationToken.None).asAsync()
             return fun path -> delegateFilter.Invoke(path)
         }
 
-    /// <summary>
-    /// Combines a .gitignore filter with an existing base filter.
-    /// </summary>
-    /// <param name="gitignoreStream">Stream containing .gitignore content.</param>
-    /// <param name="ct">The cancellation token.</param>
-    /// <returns>An async that returns a combined predicate function that applies both filters.</returns>
-    /// <example>
-    /// let baseFilter = Glob.createCommonIgnoreFilter()
-    /// use stream = File.OpenRead(".gitignore")
-    /// let! combinedFilter = Glob.combineWithGitignore(stream, Some baseFilter, ct)
-    /// </example>
-    static member combineWithGitignore(gitignoreStream: Stream, ?ct: CancellationToken) =
-        async {
-            let! delegateFilter = Internal.Glob.CombineWithGitignoreAsync(gitignoreStream, null, unwrapCT ct).asAsync()
-            return fun path -> delegateFilter.Invoke(path)
-        }
 
-    /// <summary>
-    /// Combines a .gitignore filter with an existing base filter.
-    /// </summary>
-    /// <param name="gitignoreStream">Stream containing .gitignore content.</param>
-    /// <param name="baseFilter">The base filter to combine with. If None, defaults to include all.</param>
-    /// <param name="ct">The cancellation token.</param>
-    /// <returns>An async that returns a combined predicate function that applies both filters.</returns>
-    /// <example>
-    /// let baseFilter = Glob.createCommonIgnoreFilter()
-    /// use stream = File.OpenRead(".gitignore")
-    /// let! combinedFilter = Glob.combineWithGitignore(stream, Some baseFilter, ct)
-    /// </example>
-    static member combineWithGitignore(gitignoreStream: Stream, baseFilter: (string -> bool), ?ct: CancellationToken) =
-        async {
-            let! delegateFilter = Internal.Glob.CombineWithGitignoreAsync(gitignoreStream, Func<string, bool>(baseFilter), unwrapCT ct).asAsync()
-            return fun path -> delegateFilter.Invoke(path)
-        }

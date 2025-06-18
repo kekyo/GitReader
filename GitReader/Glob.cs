@@ -88,42 +88,17 @@ public static class Glob
     /// <returns>A predicate function that returns true if the path should be included (not ignored).</returns>
     /// <example>
     /// using var stream = File.OpenRead(".gitignore");
-    /// var filter = await Glob.CreateGitignoreFilterAsync(stream, ct);
-    /// var shouldInclude = filter("somefile.txt");
+    /// var filter = await Glob.CreateFilterFromGitignoreAsync(stream, ct);
     /// </example>
 #if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP2_1_OR_GREATER
-    public static ValueTask<Func<string, bool>> CreateGitignoreFilterAsync(
+    public static ValueTask<Func<string, bool>> CreateFilterFromGitignoreAsync(
         Stream gitignoreStream, CancellationToken ct = default) =>
-        Internal.Glob.CreateGitignoreFilterAsync(gitignoreStream, ct);
+        Internal.Glob.CreateFilterFromGitignoreAsync(gitignoreStream, ct);
 #else
-    public static Task<Func<string, bool>> CreateGitignoreFilterAsync(
+    public static Task<Func<string, bool>> CreateFilterFromGitignoreAsync(
         Stream gitignoreStream, CancellationToken ct = default) =>
-        Internal.Glob.CreateGitignoreFilterAsync(gitignoreStream, ct);
+        Internal.Glob.CreateFilterFromGitignoreAsync(gitignoreStream, ct);
 #endif
 
-    /// <summary>
-    /// Combines a .gitignore filter with an existing base filter.
-    /// </summary>
-    /// <param name="gitignoreStream">Stream containing .gitignore content.</param>
-    /// <param name="baseFilter">The base filter to combine with. If null, defaults to include all.</param>
-    /// <param name="ct">The cancellation token.</param>
-    /// <returns>A combined predicate function that applies both filters.</returns>
-    /// <example>
-    /// var baseFilter = Glob.CreateCommonIgnoreFilter();
-    /// using var stream = File.OpenRead(".gitignore");
-    /// var combinedFilter = await Glob.CombineWithGitignoreAsync(stream, baseFilter, ct);
-    /// </example>
-#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP2_1_OR_GREATER
-    public static ValueTask<Func<string, bool>> CombineWithGitignoreAsync(
-        Stream gitignoreStream, 
-        Func<string, bool>? baseFilter = null, 
-        CancellationToken ct = default) =>
-        Internal.Glob.CombineWithGitignoreAsync(gitignoreStream, baseFilter, ct);
-#else
-    public static Task<Func<string, bool>> CombineWithGitignoreAsync(
-        Stream gitignoreStream, 
-        Func<string, bool>? baseFilter = null, 
-        CancellationToken ct = default) =>
-        Internal.Glob.CombineWithGitignoreAsync(gitignoreStream, baseFilter, ct);
-#endif
+
 }
