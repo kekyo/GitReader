@@ -71,7 +71,7 @@ public static class Program
         tw.WriteLine($"\n=== Measurement with CreateCommonIgnoreFilter() applied ===");
         var totalTimeWithFilter = TimeSpan.Zero;
         WorkingDirectoryStatus? statusWithFilter = null;
-        var commonIgnoreFilter = Glob.CreateCommonIgnoreFilter();
+        var commonIgnoreFilter = Glob.GetCommonIgnoreFilter();
 
         tw.WriteLine($"Executing GetWorkingDirectoryStatusWithFilterAsync() (CreateCommonIgnoreFilter) {iterations} times...");
 

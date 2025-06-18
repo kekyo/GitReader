@@ -73,17 +73,17 @@ type public Glob =
         fun path -> delegateFilter.Invoke(path)
 
     /// <summary>
-    /// Creates a path filter predicate for use with GetWorkingDirectoryStatusAsync() 
+    /// Get a path filter predicate for use with GetWorkingDirectoryStatusAsync() 
     /// that applies standard .gitignore patterns commonly used in development projects.
     /// This includes patterns for build outputs, dependencies, logs, and temporary files.
     /// </summary>
     /// <returns>A predicate function that returns true if the path should be included (not ignored).</returns>
     /// <example>
-    /// let filter = Glob.createCommonIgnoreFilter()
+    /// let filter = Glob.getCommonIgnoreFilter()
     /// let! status = repository.getWorkingDirectoryStatusWithFilter(filter)
     /// </example>
-    static member createCommonIgnoreFilter() =
-        let delegateFilter = Internal.Glob.CreateCommonIgnoreFilter()
+    static member getCommonIgnoreFilter() =
+        let delegateFilter = Internal.Glob.GetCommonIgnoreFilter()
         fun path -> delegateFilter.Invoke(path)
 
     /// <summary>
@@ -116,5 +116,3 @@ type public Glob =
             let! delegateFilter = Internal.Glob.CreateFilterFromGitignoreAsync(gitignoreStream, CancellationToken.None).asAsync()
             return fun path -> delegateFilter.Invoke(path)
         }
-
-

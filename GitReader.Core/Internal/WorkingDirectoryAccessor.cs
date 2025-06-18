@@ -30,11 +30,11 @@ internal static class WorkingDirectoryAccessor
 #if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP2_1_OR_GREATER
     public static ValueTask<PrimitiveWorkingDirectoryStatus> GetPrimitiveWorkingDirectoryStatusAsync(
         Repository repository, CancellationToken ct) =>
-        GetPrimitiveWorkingDirectoryStatusWithFilterAsync(repository, Glob.includeAll, ct);
+        GetPrimitiveWorkingDirectoryStatusWithFilterAsync(repository, Glob.includeAllFilter, ct);
 #else
     public static Task<PrimitiveWorkingDirectoryStatus> GetPrimitiveWorkingDirectoryStatusAsync(
         Repository repository, CancellationToken ct) =>
-        GetPrimitiveWorkingDirectoryStatusWithFilterAsync(repository, Glob.includeAll, ct);
+        GetPrimitiveWorkingDirectoryStatusWithFilterAsync(repository, Glob.includeAllFilter, ct);
 #endif
 
     private readonly struct Status
@@ -247,11 +247,11 @@ internal static class WorkingDirectoryAccessor
 #if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP2_1_OR_GREATER
     public static ValueTask<WorkingDirectoryStatus> GetStructuredWorkingDirectoryStatusAsync(
         StructuredRepository repository, WeakReference rwr, CancellationToken ct) =>
-        GetStructuredWorkingDirectoryStatusWithFilterAsync(repository, rwr, Glob.includeAll, ct);
+        GetStructuredWorkingDirectoryStatusWithFilterAsync(repository, rwr, Glob.includeAllFilter, ct);
 #else
     public static Task<WorkingDirectoryStatus> GetStructuredWorkingDirectoryStatusAsync(
         StructuredRepository repository, WeakReference rwr, CancellationToken ct) =>
-        GetStructuredWorkingDirectoryStatusWithFilterAsync(repository, rwr, Glob.includeAll, ct);
+        GetStructuredWorkingDirectoryStatusWithFilterAsync(repository, rwr, Glob.includeAllFilter, ct);
 #endif
 
     /// <summary>

@@ -580,7 +580,7 @@ public sealed class GlobTests
     public void CreateCommonIgnoreFilterTest()
     {
         // Test CreateCommonIgnoreFilter method that provides common ignore patterns
-        var filter = Glob.CreateCommonIgnoreFilter();
+        var filter = Glob.GetCommonIgnoreFilter();
         
         // Common files that should be included
         Assert.IsTrue(filter("src/Program.cs"));

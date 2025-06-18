@@ -68,17 +68,17 @@ public static class Glob
         Internal.Glob.CreateIncludeFilter(includePatterns);
 
     /// <summary>
-    /// Creates a path filter predicate for use with GetWorkingDirectoryStatusAsync() 
+    /// Get a path filter predicate for use with GetWorkingDirectoryStatusAsync() 
     /// that applies standard .gitignore patterns commonly used in development projects.
     /// This includes patterns for build outputs, dependencies, logs, and temporary files.
     /// </summary>
     /// <returns>A predicate function that returns true if the path should be included (not ignored).</returns>
     /// <example>
-    /// var filter = Glob.CreateCommonIgnoreFilter();
+    /// var filter = Glob.GetCommonIgnoreFilter();
     /// var status = await repository.GetWorkingDirectoryStatusAsync(filter);
     /// </example>
-    public static Func<string, bool> CreateCommonIgnoreFilter() =>
-        Internal.Glob.CreateCommonIgnoreFilter();
+    public static Func<string, bool> GetCommonIgnoreFilter() =>
+        Internal.Glob.GetCommonIgnoreFilter();
 
     /// <summary>
     /// Creates a path filter predicate from a .gitignore stream.
@@ -99,6 +99,4 @@ public static class Glob
         Stream gitignoreStream, CancellationToken ct = default) =>
         Internal.Glob.CreateFilterFromGitignoreAsync(gitignoreStream, ct);
 #endif
-
-
 }

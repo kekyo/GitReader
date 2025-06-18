@@ -76,8 +76,8 @@ type public GlobTests() =
         Assert.IsFalse(filter "README.md")
 
     [<Test>]
-    member _.``createCommonIgnoreFilter should return F# function type``() =
-        let filter = Glob.createCommonIgnoreFilter()
+    member _.``getCommonIgnoreFilter should return F# function type``() =
+        let filter = Glob.getCommonIgnoreFilter()
         
         // Common included files
         Assert.IsTrue(filter "src/Program.cs")
@@ -194,7 +194,7 @@ type public GlobTests() =
 
     [<Test>]
     member _.``F# pipe operator should work with filters``() =
-        let filter = Glob.createCommonIgnoreFilter()
+        let filter = Glob.getCommonIgnoreFilter()
         
         let result = 
             "src/Program.cs"
@@ -211,7 +211,7 @@ type public GlobTests() =
     // .gitignore related tests
     [<Test>]
     member _.``createGitignoreFilter should work with basic patterns``() =
-        async {
+        task {
             let gitignoreContent = "*.log\ntemp/\n*.tmp\n"
             use stream = new MemoryStream(Encoding.UTF8.GetBytes(gitignoreContent))
 
@@ -227,11 +227,11 @@ type public GlobTests() =
             Assert.IsTrue(filter "Program.cs")
             Assert.IsTrue(filter "README.md")
             Assert.IsTrue(filter "logs/app.txt") // doesn't match *.log exactly
-        } |> Async.RunSynchronously
+        }
 
     [<Test>]
     member _.``createGitignoreFilter should work with negation patterns``() =
-        async {
+        task {
             let gitignoreContent = "*.log\n!important.log\ntemp/\n!temp/keep.txt\n"
             use stream = new MemoryStream(Encoding.UTF8.GetBytes(gitignoreContent))
 
@@ -247,13 +247,13 @@ type public GlobTests() =
 
             // Should include files not matching any patterns
             Assert.IsTrue(filter "Program.cs")
-        } |> Async.RunSynchronously
+        }
 
 
 
     [<Test>]
     member _.``F# async computation should work with gitignore filters``() =
-        async {
+        task {
             let gitignoreContent = "*.log\n!important.log\n"
             use stream = new MemoryStream(Encoding.UTF8.GetBytes(gitignoreContent))
 
@@ -278,19 +278,18 @@ type public GlobTests() =
             ]
 
             Assert.AreEqual(expectedFiles, includedFiles)
-        } |> Async.RunSynchronously
+        }
 
     [<Test>]
     member _.``createFilterFromGitignore should work with combine method``() =
-        // Test combining gitignore filter with base filter using combine method
-        async {
+        task {
             let gitignoreContent = "*.log\n!important.log\n"
             use stream = new MemoryStream(Encoding.UTF8.GetBytes(gitignoreContent))
             
             let baseFilter = Glob.createIgnoreFilter([| "*.tmp" |])
             let! gitignoreFilter = Glob.createFilterFromGitignore(stream)
             let combinedFilter = Glob.combine([| baseFilter; gitignoreFilter |])
-        
+            
             // Should exclude .log files (gitignore) and .tmp files (base)
             Assert.IsFalse(combinedFilter "error.log")
             Assert.IsFalse(combinedFilter "temp.tmp")
@@ -300,11 +299,11 @@ type public GlobTests() =
             
             // Should include other files
             Assert.IsTrue(combinedFilter "Program.cs")
-        } |> Async.RunSynchronously
+        }
 
     [<Test>]
     member _.``createFilterFromGitignore should work without base filter``() =
-        async {
+        task {
             let gitignoreContent = "*.log\nbuild/\n!important.log\n"
             use stream = new MemoryStream(Encoding.UTF8.GetBytes(gitignoreContent))
             
@@ -314,4 +313,4 @@ type public GlobTests() =
             Assert.IsFalse(gitignoreFilter "build/output.exe")
             Assert.IsTrue(gitignoreFilter "important.log")  // Negation pattern
             Assert.IsTrue(gitignoreFilter "Program.cs")
-        } |> Async.RunSynchronously 
+        }
