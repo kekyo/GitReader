@@ -8,14 +8,13 @@
 ////////////////////////////////////////////////////////////////////////////
 
 using System;
-using System.Text;
 
-namespace GitReader;
+namespace GitReader.Internal;
 
 /// <summary>
 /// Provides glob pattern matching functionality for .gitignore files.
 /// </summary>
-public static class Glob
+internal static class Glob
 {
     /// <summary>
     /// Determines whether the specified path matches the given glob pattern.
@@ -25,11 +24,11 @@ public static class Glob
     /// <returns>true if the path matches the pattern; otherwise, false.</returns>
     public static bool IsMatch(string path, string pattern)
     {
-        if (path == null || string.IsNullOrEmpty(pattern))
+        if (string.IsNullOrEmpty(pattern))
             return false;
 
         // Handle negation pattern
-        bool isNegated = false;
+        var isNegated = false;
         if (pattern.StartsWith("!"))
         {
             isNegated = true;
@@ -52,7 +51,7 @@ public static class Glob
             pattern = pattern.Replace("//", "/");
         }
 
-        bool result = MatchesPattern(path, pattern);
+        var result = MatchesPattern(path, pattern);
         
         return isNegated ? !result : result;
     }
@@ -295,4 +294,103 @@ public static class Glob
 
         return negated ? !matched : matched;
     }
-} 
+
+    internal static readonly Func<string, bool> includeAll = _ => true;
+    internal static readonly Func<string, bool> ignoreAll = _ => false;
+
+    /// <summary>
+    /// Creates a path filter predicate for use with GetWorkingDirectoryStatusAsync() 
+    /// that excludes files matching any of the provided .gitignore-style patterns.
+    /// </summary>
+    /// <param name="excludePatterns">Array of .gitignore-style patterns to exclude files.</param>
+    /// <returns>A predicate function that returns true if the path should be included (not ignored).</returns>
+    /// <example>
+    /// var filter = Glob.CreateIgnoreFilter(new[] { "*.log", "bin/", "obj/", "node_modules/" });
+    /// var status = await repository.GetWorkingDirectoryStatusAsync(filter);
+    /// </example>
+    public static Func<string, bool> CreateIgnoreFilter(params string[] excludePatterns)
+    {
+        if (excludePatterns.Length == 0)
+        {
+            // Include all files if no excluding patterns provided
+            return includeAll;
+        }
+
+        return path =>
+        {
+            foreach (var pattern in excludePatterns)
+            {
+                if (IsMatch(path, pattern))
+                {
+                    return false; // Exclude this file
+                }
+            }
+            return true; // Include this file
+        };
+    }
+
+    /// <summary>
+    /// Creates a path filter predicate for use with GetWorkingDirectoryStatusAsync() 
+    /// that includes only files matching any of the provided .gitignore-style patterns.
+    /// </summary>
+    /// <param name="includePatterns">Array of .gitignore-style patterns to include files.</param>
+    /// <returns>A predicate function that returns true if the path should be included.</returns>
+    /// <example>
+    /// var filter = Glob.CreateIncludeFilter(new[] { "*.cs", "*.fs", "*.ts" });
+    /// var status = await repository.GetWorkingDirectoryStatusAsync(filter);
+    /// </example>
+    public static Func<string, bool> CreateIncludeFilter(params string[] includePatterns)
+    {
+        if (includePatterns.Length == 0)
+        {
+            // Exclude all files if no patterns provided
+            return ignoreAll;
+        }
+
+        return path =>
+        {
+            foreach (var pattern in includePatterns)
+            {
+                if (IsMatch(path, pattern))
+                {
+                    return true; // Include this file
+                }
+            }
+            return false; // Exclude this file
+        };
+    }
+    
+    private static readonly string[] commonPatterns =
+    [
+        // Build outputs
+        "bin/", "obj/", "build/", "out/", "target/", "dist/",
+
+        // Dependencies
+        "node_modules/", "packages/", "vendor/",
+
+        // Log files
+        "*.log", "logs/",
+
+        // Temporary files
+        "*.tmp", "*.temp", "*.swp", "*.bak", "*~",
+
+        // IDE files
+        ".vs/", ".vscode/", ".idea/", "*.suo", "*.user",
+
+        // OS files
+        ".DS_Store", "Thumbs.db", "Desktop.ini"
+    ];
+
+    /// <summary>
+    /// Creates a path filter predicate for use with GetWorkingDirectoryStatusAsync() 
+    /// that applies standard .gitignore patterns commonly used in development projects.
+    /// This includes patterns for build outputs, dependencies, logs, and temporary files.
+    /// </summary>
+    /// <returns>A predicate function that returns true if the path should be included (not ignored).</returns>
+    /// <example>
+    /// var filter = Glob.CreateCommonIgnoreFilter();
+    /// var status = await repository.GetWorkingDirectoryStatusAsync(filter);
+    /// </example>
+    public static Func<string, bool> CreateCommonIgnoreFilter() =>
+        CreateIgnoreFilter(commonPatterns);
+}

@@ -7,6 +7,7 @@
 //
 ////////////////////////////////////////////////////////////////////////////
 
+using System;
 using GitReader.Internal;
 using GitReader.Collections;
 using GitReader.Primitive;
@@ -94,6 +95,12 @@ public static class RepositoryExtension
         CancellationToken ct = default) =>
         PrimitiveRepositoryFacade.OpenSubModuleAsync(repository, treePath, ct);
 
+    /// <summary>
+    /// Gets working directory status with optional file path filtering.
+    /// </summary>
+    /// <param name="repository">The repository to get working directory status from.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>A Task containing the primitive working directory status.</returns>
     public static Task<PrimitiveWorkingDirectoryStatus> GetWorkingDirectoryStatusAsync(
         this PrimitiveRepository repository,
         CancellationToken ct = default) =>
@@ -101,6 +108,23 @@ public static class RepositoryExtension
         WorkingDirectoryAccessor.GetPrimitiveWorkingDirectoryStatusAsync(repository, ct).AsTask();
 #else
         WorkingDirectoryAccessor.GetPrimitiveWorkingDirectoryStatusAsync(repository, ct);
+#endif
+
+    /// <summary>
+    /// Gets working directory status with optional file path filtering.
+    /// </summary>
+    /// <param name="repository">The repository to get working directory status from.</param>
+    /// <param name="pathFilter">Predicate to filter files by path.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>A Task containing the primitive working directory status.</returns>
+    public static Task<PrimitiveWorkingDirectoryStatus> GetWorkingDirectoryStatusWithFilterAsync(
+        this PrimitiveRepository repository,
+        Func<string, bool> pathFilter,
+        CancellationToken ct = default) =>
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP2_1_OR_GREATER
+        WorkingDirectoryAccessor.GetPrimitiveWorkingDirectoryStatusWithFilterAsync(repository, pathFilter, ct).AsTask();
+#else
+        WorkingDirectoryAccessor.GetPrimitiveWorkingDirectoryStatusWithFilterAsync(repository, pathFilter, ct);
 #endif
 
     public static Task<ReadOnlyArray<PrimitiveWorktree>> GetWorktreesAsync(

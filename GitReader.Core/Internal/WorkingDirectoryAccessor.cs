@@ -21,40 +21,72 @@ namespace GitReader.Internal;
 
 internal static class WorkingDirectoryAccessor
 {
-#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP2_1_OR_GREATER
     /// <summary>
     /// Gets primitive working directory status information for the specified repository.
     /// </summary>
     /// <param name="repository">The repository to get working directory status from.</param>
     /// <param name="ct">The cancellation token.</param>
     /// <returns>A ValueTask containing the primitive working directory status.</returns>
-    public static async ValueTask<PrimitiveWorkingDirectoryStatus> GetPrimitiveWorkingDirectoryStatusAsync(
-        Repository repository, CancellationToken ct)
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP2_1_OR_GREATER
+    public static ValueTask<PrimitiveWorkingDirectoryStatus> GetPrimitiveWorkingDirectoryStatusAsync(
+        Repository repository, CancellationToken ct) =>
+        GetPrimitiveWorkingDirectoryStatusWithFilterAsync(repository, Glob.includeAll, ct);
 #else
+    public static Task<PrimitiveWorkingDirectoryStatus> GetPrimitiveWorkingDirectoryStatusAsync(
+        Repository repository, CancellationToken ct) =>
+        GetPrimitiveWorkingDirectoryStatusWithFilterAsync(repository, Glob.includeAll, ct);
+#endif
+
+    private readonly struct Status
+    {
+        private readonly PrimitiveWorkingDirectoryFile? StagedFile;
+        private readonly PrimitiveWorkingDirectoryFile? UnstagedFile;
+        private readonly string ProcessedPath;
+
+        public Status(
+            PrimitiveWorkingDirectoryFile? stagedFile,
+            PrimitiveWorkingDirectoryFile? unstagedFile,
+            string processedPath)
+        {
+            this.StagedFile = stagedFile;
+            this.UnstagedFile = unstagedFile;
+            this.ProcessedPath = processedPath;
+        }
+
+        public void Deconstruct(
+            out PrimitiveWorkingDirectoryFile? stagedFile,
+            out PrimitiveWorkingDirectoryFile? unstagedFile,
+            out string processedPath)
+        {
+            stagedFile = this.StagedFile;
+            unstagedFile = this.UnstagedFile;
+            processedPath = this.ProcessedPath;
+        }
+    }
+
     /// <summary>
-    /// Gets primitive working directory status information for the specified repository.
+    /// Gets primitive working directory status information for the specified repository with file filtering.
     /// </summary>
     /// <param name="repository">The repository to get working directory status from.</param>
+    /// <param name="pathFilter">Predicate to filter files by path.</param>
     /// <param name="ct">The cancellation token.</param>
-    /// <returns>A Task containing the primitive working directory status.</returns>
-    public static async Task<PrimitiveWorkingDirectoryStatus> GetPrimitiveWorkingDirectoryStatusAsync(
-        Repository repository, CancellationToken ct)
+    /// <returns>A ValueTask containing the primitive working directory status.</returns>
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP2_1_OR_GREATER
+    public static async ValueTask<PrimitiveWorkingDirectoryStatus> GetPrimitiveWorkingDirectoryStatusWithFilterAsync(
+        Repository repository, Func<string, bool> pathFilter, CancellationToken ct)
+#else
+    public static async Task<PrimitiveWorkingDirectoryStatus> GetPrimitiveWorkingDirectoryStatusWithFilterAsync(
+        Repository repository, Func<string, bool> pathFilter, CancellationToken ct)
 #endif
     {
         // Get staged files from index
         var indexEntries = await GitIndexReader.ReadIndexEntriesAsync(repository, ct);
         var indexFileDict = indexEntries
-            .Where(entry => entry.IsValidFlag && !entry.IsStageFlag)
+            .Where(entry => entry is { IsValidFlag: true, IsStageFlag: false })
             .ToDictionary(entry => entry.Path, entry => entry);
 
         // Get working directory path
         var workingDirectoryPath = repository.fileSystem.GetDirectoryPath(repository.GitPath);
-
-        // Collect file lists
-        var stagedFiles = new List<PrimitiveWorkingDirectoryFile>();
-        var unstagedFiles = new List<PrimitiveWorkingDirectoryFile>();
-        var untrackedFiles = new List<PrimitiveWorkingDirectoryFile>();
-        var processedPaths = new HashSet<string>();
 
         // Get the current commit's tree for comparison
         var headReference = await PrimitiveRepositoryFacade.GetCurrentHeadReferenceAsync(repository, ct);
@@ -74,12 +106,18 @@ internal static class WorkingDirectoryAccessor
         var results = await Utilities.WhenAll(
             indexFileDict.Values.Select(async indexEntry =>
             {
-                var workingFilePath = repository.fileSystem.Combine(workingDirectoryPath, indexEntry.Path);
-                
-                var processedPath = indexEntry.Path;
                 var stagedFile = (PrimitiveWorkingDirectoryFile?)null;
                 var unstagedFile = (PrimitiveWorkingDirectoryFile?)null;
+                var processedPath = indexEntry.Path;
 
+                // Apply path filter to index entries
+                if (!pathFilter(indexEntry.Path))
+                {
+                    return new Status(stagedFile, unstagedFile, processedPath);
+                }
+
+                var workingFilePath = repository.fileSystem.Combine(workingDirectoryPath, indexEntry.Path);
+                
                 if (await repository.fileSystem.IsFileExistsAsync(workingFilePath, ct))
                 {
                     // File exists in working directory
@@ -107,20 +145,10 @@ internal static class WorkingDirectoryAccessor
                     }
                     else
                     {
-                        // File content differs between index and working directory
-                        if (isInHeadCommit)
+                        // File has been modified since last index update
+                        if (isInHeadCommit && indexEntry.ObjectHash.Equals(headFileHash))
                         {
-                            if (!indexEntry.ObjectHash.Equals(headFileHash))
-                            {
-                                // File is staged (modified in index compared to HEAD)
-                                stagedFile = new PrimitiveWorkingDirectoryFile(
-                                    indexEntry.Path,
-                                    FileStatus.Modified,
-                                    headFileHash,
-                                    indexEntry.ObjectHash);
-                            }
-                            
-                            // File is also modified in working directory
+                            // File was not staged but has been modified
                             unstagedFile = new PrimitiveWorkingDirectoryFile(
                                 indexEntry.Path,
                                 FileStatus.Modified,
@@ -129,11 +157,11 @@ internal static class WorkingDirectoryAccessor
                         }
                         else
                         {
-                            // New file: staged but modified in working directory
+                            // File is staged and also has unstaged changes
                             stagedFile = new PrimitiveWorkingDirectoryFile(
                                 indexEntry.Path,
-                                FileStatus.Added,
-                                null,
+                                isInHeadCommit ? FileStatus.Modified : FileStatus.Added,
+                                isInHeadCommit ? (Hash?)headFileHash : null,
                                 indexEntry.ObjectHash);
                             
                             unstagedFile = new PrimitiveWorkingDirectoryFile(
@@ -146,53 +174,62 @@ internal static class WorkingDirectoryAccessor
                 }
                 else
                 {
-                    // File is in index but deleted in working directory
+                    // File is in index but missing from working directory
                     var isInHeadCommit = headTreeFiles.TryGetValue(indexEntry.Path, out var headFileHash);
                     
-                    if (isInHeadCommit && !indexEntry.ObjectHash.Equals(headFileHash))
+                    if (isInHeadCommit && indexEntry.ObjectHash.Equals(headFileHash))
                     {
-                        // File was staged (modified in index) but then deleted in working directory
+                        // File was committed and is now deleted from working directory
+                        unstagedFile = new PrimitiveWorkingDirectoryFile(
+                            indexEntry.Path,
+                            FileStatus.Deleted,
+                            indexEntry.ObjectHash,
+                            null);
+                    }
+                    else
+                    {
+                        // File is staged for addition/modification but missing from working directory
                         stagedFile = new PrimitiveWorkingDirectoryFile(
                             indexEntry.Path,
-                            FileStatus.Modified,
-                            headFileHash,
+                            isInHeadCommit ? FileStatus.Modified : FileStatus.Added,
+                            isInHeadCommit ? (Hash?)headFileHash : null,
                             indexEntry.ObjectHash);
-                    }
-                    else if (!isInHeadCommit)
-                    {
-                        // File was staged (newly added) but then deleted in working directory
-                        stagedFile = new PrimitiveWorkingDirectoryFile(
+                        
+                        unstagedFile = new PrimitiveWorkingDirectoryFile(
                             indexEntry.Path,
-                            FileStatus.Added,
-                            null,
-                            indexEntry.ObjectHash);
+                            FileStatus.Deleted,
+                            indexEntry.ObjectHash,
+                            null);
                     }
-                    
-                    // File is deleted in working directory
-                    unstagedFile = new PrimitiveWorkingDirectoryFile(
-                        indexEntry.Path,
-                        FileStatus.Deleted,
-                        indexEntry.ObjectHash,
-                        null);
                 }
 
-                return new { ProcessedPath = processedPath, StagedFile = stagedFile, UnstagedFile = unstagedFile };
+                return new Status(stagedFile, unstagedFile, processedPath);
             }));
 
-        // Collect results safely
-        foreach (var result in results)
+        // Collect file lists
+        var stagedFiles = new List<PrimitiveWorkingDirectoryFile>();
+        var unstagedFiles = new List<PrimitiveWorkingDirectoryFile>();
+        var untrackedFiles = new List<PrimitiveWorkingDirectoryFile>();
+        var processedPaths = new HashSet<string>();
+
+        // Collect results
+        foreach (var (stagedFile, unstagedFile, processedPath) in results)
         {
-            processedPaths.Add(result.ProcessedPath);
-            if (result.StagedFile.HasValue)
-                stagedFiles.Add(result.StagedFile.Value);
-            if (result.UnstagedFile.HasValue)
-                unstagedFiles.Add(result.UnstagedFile.Value);
+            if (stagedFile != null)
+            {
+                stagedFiles.Add(stagedFile.Value);
+            }
+            if (unstagedFile != null)
+            {
+                unstagedFiles.Add(unstagedFile.Value);
+            }
+            processedPaths.Add(processedPath);
         }
 
         // Find untracked files in working directory
         await ScanWorkingDirectoryAsync(
             repository, workingDirectoryPath, workingDirectoryPath, 
-            processedPaths, untrackedFiles, ct);
+            processedPaths, untrackedFiles, pathFilter, ct);
 
         return new PrimitiveWorkingDirectoryStatus(
             new ReadOnlyArray<PrimitiveWorkingDirectoryFile>(stagedFiles.ToArray()),
@@ -200,7 +237,6 @@ internal static class WorkingDirectoryAccessor
             new ReadOnlyArray<PrimitiveWorkingDirectoryFile>(untrackedFiles.ToArray()));
     }
 
-#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP2_1_OR_GREATER
     /// <summary>
     /// Gets structured working directory status information for the specified repository.
     /// </summary>
@@ -208,30 +244,48 @@ internal static class WorkingDirectoryAccessor
     /// <param name="rwr">The weak reference to the repository.</param>
     /// <param name="ct">The cancellation token.</param>
     /// <returns>A ValueTask containing the structured working directory status.</returns>
-    public static async ValueTask<WorkingDirectoryStatus> GetStructuredWorkingDirectoryStatusAsync(
-        StructuredRepository repository, WeakReference rwr, CancellationToken ct)
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP2_1_OR_GREATER
+    public static ValueTask<WorkingDirectoryStatus> GetStructuredWorkingDirectoryStatusAsync(
+        StructuredRepository repository, WeakReference rwr, CancellationToken ct) =>
+        GetStructuredWorkingDirectoryStatusWithFilterAsync(repository, rwr, Glob.includeAll, ct);
 #else
+    public static Task<WorkingDirectoryStatus> GetStructuredWorkingDirectoryStatusAsync(
+        StructuredRepository repository, WeakReference rwr, CancellationToken ct) =>
+        GetStructuredWorkingDirectoryStatusWithFilterAsync(repository, rwr, Glob.includeAll, ct);
+#endif
+
     /// <summary>
-    /// Gets structured working directory status information for the specified repository.
+    /// Gets structured working directory status information for the specified repository with file filtering.
     /// </summary>
     /// <param name="repository">The structured repository to get working directory status from.</param>
     /// <param name="rwr">The weak reference to the repository.</param>
+    /// <param name="pathFilter">An optional predicate to filter files by path. If null, all files are included.</param>
     /// <param name="ct">The cancellation token.</param>
-    /// <returns>A Task containing the structured working directory status.</returns>
-    public static async Task<WorkingDirectoryStatus> GetStructuredWorkingDirectoryStatusAsync(
-        StructuredRepository repository, WeakReference rwr, CancellationToken ct)
+    /// <returns>A ValueTask containing the structured working directory status.</returns>
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP2_1_OR_GREATER
+    public static async ValueTask<WorkingDirectoryStatus> GetStructuredWorkingDirectoryStatusWithFilterAsync(
+        StructuredRepository repository, WeakReference rwr, Func<string, bool> pathFilter, CancellationToken ct)
+#else
+    public static async Task<WorkingDirectoryStatus> GetStructuredWorkingDirectoryStatusWithFilterAsync(
+        StructuredRepository repository, WeakReference rwr, Func<string, bool> pathFilter, CancellationToken ct)
 #endif
     {
-        var primitiveStatus = await GetPrimitiveWorkingDirectoryStatusAsync(repository, ct);
+        var primitiveStatus = await GetPrimitiveWorkingDirectoryStatusWithFilterAsync(repository, pathFilter, ct);
 
-        var stagedFiles = primitiveStatus.StagedFiles.Select(pf => new WorkingDirectoryFile(
-            rwr, pf.Path, (FileStatus)pf.Status, pf.IndexHash, pf.WorkingTreeHash)).ToArray();
+        var stagedFiles = primitiveStatus.StagedFiles.
+            Select(pf => new WorkingDirectoryFile(
+                rwr, pf.Path, pf.Status, pf.IndexHash, pf.WorkingTreeHash)).
+            ToArray();
         
-        var unstagedFiles = primitiveStatus.UnstagedFiles.Select(pf => new WorkingDirectoryFile(
-            rwr, pf.Path, (FileStatus)pf.Status, pf.IndexHash, pf.WorkingTreeHash)).ToArray();
+        var unstagedFiles = primitiveStatus.UnstagedFiles.
+            Select(pf => new WorkingDirectoryFile(
+                rwr, pf.Path, pf.Status, pf.IndexHash, pf.WorkingTreeHash)).
+            ToArray();
         
-        var untrackedFiles = primitiveStatus.UntrackedFiles.Select(pf => new WorkingDirectoryFile(
-            rwr, pf.Path, (FileStatus)pf.Status, pf.IndexHash, pf.WorkingTreeHash)).ToArray();
+        var untrackedFiles = primitiveStatus.UntrackedFiles.
+            Select(pf => new WorkingDirectoryFile(
+                rwr, pf.Path, pf.Status, pf.IndexHash, pf.WorkingTreeHash)).
+            ToArray();
 
         return new WorkingDirectoryStatus(
             new ReadOnlyArray<WorkingDirectoryFile>(stagedFiles),
@@ -246,6 +300,7 @@ internal static class WorkingDirectoryAccessor
         string currentPath,
         HashSet<string> processedPaths,
         List<PrimitiveWorkingDirectoryFile> untrackedFiles,
+        Func<string, bool> pathFilter,
         CancellationToken ct)
 #else
     private static async Task ScanWorkingDirectoryAsync(
@@ -254,6 +309,7 @@ internal static class WorkingDirectoryAccessor
         string currentPath,
         HashSet<string> processedPaths,
         List<PrimitiveWorkingDirectoryFile> untrackedFiles,
+        Func<string, bool> pathFilter,
         CancellationToken ct)
 #endif
     {
@@ -280,7 +336,7 @@ internal static class WorkingDirectoryAccessor
                 {
                     // Recursively scan subdirectories
                     await ScanWorkingDirectoryAsync(
-                        repository, workingDirectoryPath, entry, processedPaths, untrackedFiles, ct);
+                        repository, workingDirectoryPath, entry, processedPaths, untrackedFiles, pathFilter, ct);
                 }
                 else if (await repository.fileSystem.IsFileExistsAsync(entry, ct))
                 {
@@ -289,14 +345,18 @@ internal static class WorkingDirectoryAccessor
                     
                     if (!processedPaths.Contains(relativePath))
                     {
-                        // This is an untracked file
-                        var fileHash = await CalculateFileHashAsync(repository, entry, ct);
-                        
-                        untrackedFiles.Add(new PrimitiveWorkingDirectoryFile(
-                            relativePath,
-                            FileStatus.Untracked,
-                            null,
-                            fileHash));
+                        // Apply path filter for untracked files
+                        if (pathFilter(relativePath))
+                        {
+                            // This is an untracked file that passes the filter
+                            var fileHash = await CalculateFileHashAsync(repository, entry, ct);
+                            
+                            untrackedFiles.Add(new PrimitiveWorkingDirectoryFile(
+                                relativePath,
+                                FileStatus.Untracked,
+                                null,
+                                fileHash));
+                        }
                     }
                 }
             }
@@ -325,7 +385,7 @@ internal static class WorkingDirectoryAccessor
         {
             var fullPath = string.IsNullOrEmpty(basePath) ? entry.Name : basePath + "/" + entry.Name;
             
-            if (entry.SpecialModes == PrimitiveSpecialModes.Tree || entry.SpecialModes == PrimitiveSpecialModes.Directory)
+            if (entry.SpecialModes is PrimitiveSpecialModes.Tree or PrimitiveSpecialModes.Directory)
             {
                 // Recursively process subdirectories
                 await BuildTreeFileDictionaryAsync(repository, entry.Hash, fullPath, fileDict, ct);

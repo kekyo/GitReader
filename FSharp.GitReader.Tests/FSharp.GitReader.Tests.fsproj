@@ -26,6 +26,7 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <Compile Include="Utilities.fs" />
+    <Compile Include="GlobTests.fs" />
     <Compile Include="PrimitiveRepositoryTests.fs" />
     <Compile Include="StructuredRepositoryTests.fs" />
     <Compile Include="Primitive_WorkingDirectoryStatusTests.fs" />

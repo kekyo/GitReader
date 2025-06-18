@@ -92,10 +92,40 @@ public static class RepositoryExtension
         StructuredRepositoryFacade.GetHeadReflogsAsync(
             repository, new WeakReference(repository), ct);
 
-    public static async Task<WorkingDirectoryStatus> GetWorkingDirectoryStatusAsync(
+    /// <summary>
+    /// Gets working directory status with optional file path filtering.
+    /// </summary>
+    /// <param name="repository">The repository to get working directory status from.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>A Task containing the structured working directory status.</returns>
+    public static Task<WorkingDirectoryStatus> GetWorkingDirectoryStatusAsync(
         this StructuredRepository repository, CancellationToken ct = default) =>
-        await WorkingDirectoryAccessor.GetStructuredWorkingDirectoryStatusAsync(
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP2_1_OR_GREATER
+        WorkingDirectoryAccessor.GetStructuredWorkingDirectoryStatusAsync(
+            repository, new WeakReference(repository), ct).AsTask();
+#else
+        WorkingDirectoryAccessor.GetStructuredWorkingDirectoryStatusAsync(
             repository, new WeakReference(repository), ct);
+#endif
+
+    /// <summary>
+    /// Gets working directory status with optional file path filtering.
+    /// </summary>
+    /// <param name="repository">The repository to get working directory status from.</param>
+    /// <param name="pathFilter">An optional predicate to filter files by path. If null, all files are included.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>A Task containing the structured working directory status.</returns>
+    public static Task<WorkingDirectoryStatus> GetWorkingDirectoryStatusWithFilterAsync(
+        this StructuredRepository repository,
+        Func<string, bool> pathFilter,
+        CancellationToken ct = default) =>
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP2_1_OR_GREATER
+        WorkingDirectoryAccessor.GetStructuredWorkingDirectoryStatusWithFilterAsync(
+            repository, new WeakReference(repository), pathFilter, ct).AsTask();
+#else
+        WorkingDirectoryAccessor.GetStructuredWorkingDirectoryStatusWithFilterAsync(
+            repository, new WeakReference(repository), pathFilter, ct);
+#endif
 
     public static async Task<ReadOnlyArray<Worktree>> GetWorktreesAsync(
         this StructuredRepository repository, CancellationToken ct = default) =>

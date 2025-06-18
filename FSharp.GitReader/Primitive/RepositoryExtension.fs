@@ -79,6 +79,12 @@ module public RepositoryExtension =
 #else
             WorkingDirectoryAccessor.GetPrimitiveWorkingDirectoryStatusAsync(repository, unwrapCT ct) |> Async.AwaitTask
 #endif
+        member repository.getWorkingDirectoryStatusWithFilter(pathFilter: string -> bool, ?ct: CancellationToken) =
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP2_1_OR_GREATER
+            WorkingDirectoryAccessor.GetPrimitiveWorkingDirectoryStatusWithFilterAsync(repository, Func<string, bool>(pathFilter), unwrapCT ct).AsTask() |> Async.AwaitTask
+#else
+            WorkingDirectoryAccessor.GetPrimitiveWorkingDirectoryStatusWithFilterAsync(repository, Func<string, bool>(pathFilter), unwrapCT ct) |> Async.AwaitTask
+#endif
         member repository.getWorktrees(?ct: CancellationToken) =
 #if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP2_1_OR_GREATER
             WorktreeAccessor.GetPrimitiveWorktreesAsync(repository, unwrapCT ct).AsTask() |> Async.AwaitTask
