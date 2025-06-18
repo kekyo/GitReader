@@ -112,19 +112,19 @@ public static class RepositoryExtension
     /// Gets working directory status with optional file path filtering.
     /// </summary>
     /// <param name="repository">The repository to get working directory status from.</param>
-    /// <param name="pathFilter">An optional predicate to filter files by path. If null, all files are included.</param>
+    /// <param name="overridePathFilter">An optional predicate to filter files by path. If null, all files are included.</param>
     /// <param name="ct">The cancellation token.</param>
     /// <returns>A Task containing the structured working directory status.</returns>
     public static Task<WorkingDirectoryStatus> GetWorkingDirectoryStatusWithFilterAsync(
         this StructuredRepository repository,
-        Func<string, bool> pathFilter,
+        FilterDecisionDelegate overridePathFilter,
         CancellationToken ct = default) =>
 #if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP2_1_OR_GREATER
         WorkingDirectoryAccessor.GetStructuredWorkingDirectoryStatusWithFilterAsync(
-            repository, new WeakReference(repository), pathFilter, ct).AsTask();
+            repository, new WeakReference(repository), overridePathFilter, ct).AsTask();
 #else
         WorkingDirectoryAccessor.GetStructuredWorkingDirectoryStatusWithFilterAsync(
-            repository, new WeakReference(repository), pathFilter, ct);
+            repository, new WeakReference(repository), overridePathFilter, ct);
 #endif
 
     public static async Task<ReadOnlyArray<Worktree>> GetWorktreesAsync(

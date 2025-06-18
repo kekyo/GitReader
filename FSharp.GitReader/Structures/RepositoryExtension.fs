@@ -37,9 +37,9 @@ module public RepositoryExtension =
         member repository.getWorkingDirectoryStatus(?ct: CancellationToken) =
             WorkingDirectoryAccessor.GetStructuredWorkingDirectoryStatusAsync(
                 repository, WeakReference(repository), unwrapCT ct).asAsync()
-        member repository.getWorkingDirectoryStatusWithFilter(pathFilter: string -> bool, ?ct: CancellationToken) =
+        member repository.getWorkingDirectoryStatusWithFilter(overridePathFilter: FilterDecisionDelegate, ?ct: CancellationToken) =
             WorkingDirectoryAccessor.GetStructuredWorkingDirectoryStatusWithFilterAsync(
-                repository, WeakReference(repository), Func<string, bool>(pathFilter), unwrapCT ct).asAsync()
+                repository, WeakReference(repository), overridePathFilter, unwrapCT ct).asAsync()
         member repository.getWorktrees(?ct: CancellationToken) =
             WorktreeAccessor.GetStructuredWorktreesAsync(
                 repository, WeakReference(repository), unwrapCT ct).asAsync()

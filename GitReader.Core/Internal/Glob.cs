@@ -10,6 +10,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using GitReader.IO;
@@ -27,22 +28,14 @@ internal static class Glob
     private enum PatternFilterMode
     {
         /// <summary>
-        /// Ignore mode: Files matching patterns are excluded, non-matching files are included.
-        /// This is the standard .gitignore behavior where patterns specify what to ignore.
-        /// - Empty patterns: Include all files
-        /// - No pattern matches: Include the file (default)
-        /// - Normal pattern matches: Exclude the file
-        /// - Negation pattern (!) matches: Include the file (override previous exclusion)
+        /// Exclude mode: Files matching patterns are excluded, non-matching files are neutral.
+        /// This is the standard .gitignore behavior where patterns specify what to exclude.
         /// </summary>
-        Ignore,
+        Exclude,
 
         /// <summary>
-        /// Include mode: Only files matching patterns are included, non-matching files are excluded.
+        /// Include mode: Only files matching patterns are included, non-matching files are neutral.
         /// This is useful for allowlist-style filtering where patterns specify what to include.
-        /// - Empty patterns: Exclude all files
-        /// - No pattern matches: Exclude the file (default)
-        /// - Normal pattern matches: Include the file
-        /// - Negation pattern (!) matches: Exclude the file (override previous inclusion)
         /// </summary>
         Include
     }
@@ -60,14 +53,16 @@ internal static class Glob
         // IDE files
         ".vs/", ".vscode/", ".idea/", "*.suo", "*.user",
         // OS files
-        ".DS_Store", "Thumbs.db", "Desktop.ini"
+        ".DS_Store", "Thumbs.db", "Desktop.ini",
+        // Version control files
+        "*.orig", "*.rej"
     ];
-
-    internal static readonly Func<string, bool> includeAllFilter = _ => true;
-    internal static readonly Func<string, bool> ignoreAllFilter = _ => false;
     
-    private static readonly Func<string, bool> commonIgnoreFilter =
-        CreateCommonPatternFilter(commonPatterns, PatternFilterMode.Ignore);
+    internal static readonly FilterDecisionDelegate includeAllFilter = (_, _) => FilterDecision.Include;
+    internal static readonly FilterDecisionDelegate excludeAllFilter = (_, _) => FilterDecision.Exclude;
+    internal static readonly FilterDecisionDelegate neutralFilter = (_, _) => FilterDecision.Neutral;
+    internal static readonly FilterDecisionDelegate commonIgnoreFilter =
+        CreateCommonPatternFilter(commonPatterns, PatternFilterMode.Exclude);
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -94,6 +89,17 @@ internal static class Glob
         if (pattern.StartsWith("#") || pattern.Length == 0)
             return false;
 
+        var result = IsMatchInternal(path, pattern);
+        
+        return isNegated ? !result : result;
+    }
+
+    /// <summary>
+    /// Internal method that performs pattern matching without handling negation or comments.
+    /// Used by CreateCommonPatternFilter to avoid double negation processing.
+    /// </summary>
+    private static bool IsMatchInternal(string path, string pattern)
+    {
         // Normalize path separators to forward slashes (only for path, not pattern)
         path = path.Replace('\\', '/');
         
@@ -106,9 +112,7 @@ internal static class Glob
             pattern = pattern.Replace("//", "/");
         }
 
-        var result = MatchesPattern(path, pattern);
-        
-        return isNegated ? !result : result;
+        return MatchesPattern(path, pattern);
     }
 
     private static bool MatchesPattern(string path, string pattern)
@@ -368,35 +372,45 @@ internal static class Glob
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     /// <summary>
-    /// Combines multiple predicate functions using logical AND operation.
+    /// Combines multiple predicates into a single predicate that evaluates them in order.
+    /// The first definitive result is returned.
     /// </summary>
-    /// <param name="predicates">The predicate functions to combine.</param>
-    /// <returns>A combined predicate that returns true only if all predicates return true.</returns>
+    /// <param name="predicates">The predicate functions to combine, in evaluation order.</param>
+    /// <returns>A combined predicate that evaluates predicates in order and uses the first definitive result.</returns>
     /// <example>
-    /// var filter1 = Glob.CreateIgnoreFilter("*.log");
-    /// var filter2 = Glob.CreateIncludeFilter("*.cs", "*.fs");
-    /// var combined = Glob.Combine(filter1, filter2);
+    /// var parentFilter = Glob.CreateExcludeFilter("*.log");
+    /// var childFilter = Glob.CreateIncludeFilter("important.log");
+    /// var combined = Glob.Combine(childFilter, parentFilter);  // childFilter can override parentFilter
     /// </example>
-    public static Func<string, bool> Combine(params Func<string, bool>[] predicates)
+    public static FilterDecisionDelegate Combine(FilterDecisionDelegate[] predicates)
     {
-        if (predicates.Length == 0)
-            return includeAllFilter;
-        
-        if (predicates.Length == 1)
-            return predicates[0];
-
-        return path =>
+        switch (predicates.Length)
         {
-            foreach (var predicate in predicates)
-            {
-                if (!predicate(path))
-                    return false;
-            }
-            return true;
-        };
+            // If no predicates, return neutral (no decision)
+            case 0:
+                return neutralFilter;
+            // If only one predicate, return it
+            case 1:
+                return predicates[0];
+            default:
+                var reversedPredicates = predicates.Reverse().ToArray();
+
+                // Return a combined predicate that evaluates predicates in reverse order
+                return (path, initialDecision) =>
+                {
+                    var currentDecision = initialDecision;
+            
+                    // Evaluate predicates in reversed order
+                    foreach (var predicate in reversedPredicates)
+                    {
+                        // Evaluate
+                        currentDecision = predicate(path, currentDecision);
+                    }
+
+                    return currentDecision;
+                };
+        }
     }
-        
-    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     /// <summary>
     /// Creates a common pattern-based filter function with the specified filtering mode.
@@ -404,101 +418,74 @@ internal static class Glob
     /// <param name="patterns">The patterns to process.</param>
     /// <param name="mode">The filtering mode that determines how patterns are interpreted and applied.</param>
     /// <returns>A predicate function that applies the pattern logic according to the specified mode.</returns>
-    /// <remarks>
-    /// This method provides the core pattern matching logic used by both ignore-style and include-style filters.
-    /// The mode parameter determines whether patterns act as an exclusion list (Ignore mode) or inclusion list (Include mode).
-    /// </remarks>
-    private static Func<string, bool> CreateCommonPatternFilter(
+    private static FilterDecisionDelegate CreateCommonPatternFilter(
         string[] patterns, PatternFilterMode mode)
     {
-        // Determine behavior based on mode
-        Func<string, bool> emptyPatternsFilter;
-        bool defaultValue;
-        bool normalPatternValue;
-        bool negationPatternValue;
-        switch (mode)
-        {
-            case PatternFilterMode.Ignore:
-                // Ignore mode: default=include, match=exclude, negation=include
-                emptyPatternsFilter = includeAllFilter;
-                defaultValue = true;
-                normalPatternValue = false;
-                negationPatternValue = true;
-                break;
-            case PatternFilterMode.Include:
-                // Include mode: default=exclude, match=include, negation=exclude
-                emptyPatternsFilter = ignoreAllFilter;
-                defaultValue = false;
-                normalPatternValue = true;
-                negationPatternValue = false;
-                break;
-            default:
-                throw new InvalidOperationException();
-        }
-
         // Check if patterns collection is empty
         if (patterns.Length == 0)
         {
-            return emptyPatternsFilter;
+            return neutralFilter;
         }
 
-        return path =>
-        {
-            bool? decision = null;
+        // Determine behavior based on mode
+        var matchPatternValue = mode == PatternFilterMode.Exclude ?
+            FilterDecision.Exclude : FilterDecision.Include;
 
+        return (path, initialDecision) =>
+        {
+            var currentDecision = initialDecision;
+            
+            // NOTE: Maybe better to use reverse order.
+            // In that case, we can create a state to "ignore the next decision" when a negation pattern is detected.
+            // This way, we can return the decision immediately when a normal pattern is detected.
+
+            // Evaluate patterns in reverse order
             foreach (var pattern in patterns)
             {
+                // Check if pattern is a negation pattern
                 var isNegationPattern = pattern.StartsWith("!");
                 var actualPattern = isNegationPattern ? pattern.Substring(1) : pattern;
-                
-                if (IsMatch(path, actualPattern))
+
+                // When path matches pattern
+                if (IsMatchInternal(path, actualPattern))
                 {
-                    decision = isNegationPattern ? negationPatternValue : normalPatternValue;
+                    // When pattern is a negation pattern, return neutral
+                    currentDecision = isNegationPattern ? FilterDecision.Neutral : matchPatternValue;
                 }
             }
 
-            return decision ?? defaultValue;
+            // Return the result of the pattern immediately
+            return currentDecision;
         };
     }
+        
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     /// <summary>
     /// Creates a path filter predicate for use with GetWorkingDirectoryStatusAsync() 
     /// that excludes files matching any of the provided .gitignore-style patterns.
     /// </summary>
     /// <param name="excludePatterns">Array of .gitignore-style patterns to exclude files.</param>
-    /// <returns>A predicate function that returns true if the path should be included (not ignored).</returns>
+    /// <returns>A predicate function that returns Exclude if the path should be excluded, or Neutral if undecided.</returns>
     /// <example>
-    /// var filter = Glob.CreateIgnoreFilter(new[] { "*.log", "bin/", "obj/", "node_modules/" });
+    /// var filter = Glob.CreateExcludeFilter(new[] { "*.log", "bin/", "obj/", "node_modules/" });
     /// var status = await repository.GetWorkingDirectoryStatusAsync(filter);
     /// </example>
-    public static Func<string, bool> CreateIgnoreFilter(string[] excludePatterns) =>
-        CreateCommonPatternFilter(excludePatterns, PatternFilterMode.Ignore);
+    public static FilterDecisionDelegate CreateExcludeFilter(string[] excludePatterns) =>
+        CreateCommonPatternFilter(excludePatterns, PatternFilterMode.Exclude);
 
     /// <summary>
     /// Creates a path filter predicate for use with GetWorkingDirectoryStatusAsync() 
     /// that includes only files matching any of the provided .gitignore-style patterns.
     /// </summary>
     /// <param name="includePatterns">Array of .gitignore-style patterns to include files.</param>
-    /// <returns>A predicate function that returns true if the path should be included.</returns>
+    /// <returns>A predicate function that returns Include if the path should be included, or Neutral if undecided.</returns>
     /// <example>
     /// var filter = Glob.CreateIncludeFilter(new[] { "*.cs", "*.fs", "*.ts" });
     /// var status = await repository.GetWorkingDirectoryStatusAsync(filter);
     /// </example>
-    public static Func<string, bool> CreateIncludeFilter(string[] includePatterns) =>
+    public static FilterDecisionDelegate CreateIncludeFilter(string[] includePatterns) =>
        CreateCommonPatternFilter(includePatterns, PatternFilterMode.Include);
-
-    /// <summary>
-    /// Get a path filter predicate for use with GetWorkingDirectoryStatusAsync() 
-    /// that applies standard .gitignore patterns commonly used in development projects.
-    /// This includes patterns for build outputs, dependencies, logs, and temporary files.
-    /// </summary>
-    /// <returns>A predicate function that returns true if the path should be included (not ignored).</returns>
-    /// <example>
-    /// var filter = Glob.GetCommonIgnoreFilter();
-    /// var status = await repository.GetWorkingDirectoryStatusAsync(filter);
-    /// </example>
-    public static Func<string, bool> GetCommonIgnoreFilter() =>
-        commonIgnoreFilter;
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -507,16 +494,16 @@ internal static class Glob
     /// </summary>
     /// <param name="gitignoreStream">Stream containing .gitignore content.</param>
     /// <param name="ct">The cancellation token.</param>
-    /// <returns>A predicate function that returns true if the path should be included (not ignored).</returns>
+    /// <returns>A predicate function that returns Include if the path should be included, Exclude if excluded, or Neutral if undecided.</returns>
     /// <example>
     /// using var stream = File.OpenRead(".gitignore");
-    /// var filter = await Glob.CreateFilterFromGitignoreAsync(stream, ct);
+    /// var filter = await Glob.CreateExcludeFilterFromGitignoreAsync(stream, ct);
     /// </example>
 #if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP2_1_OR_GREATER
-    public static async ValueTask<Func<string, bool>> CreateFilterFromGitignoreAsync(
+    public static async ValueTask<FilterDecisionDelegate> CreateExcludeFilterFromGitignoreAsync(
         Stream gitignoreStream, CancellationToken ct = default)
 #else
-    public static async Task<Func<string, bool>> CreateFilterFromGitignoreAsync(
+    public static async Task<FilterDecisionDelegate> CreateExcludeFilterFromGitignoreAsync(
         Stream gitignoreStream, CancellationToken ct = default)
 #endif
     {
@@ -539,6 +526,6 @@ internal static class Glob
             patterns.Add(line);
         }
 
-        return CreateCommonPatternFilter(patterns.ToArray(), PatternFilterMode.Ignore);
+        return CreateCommonPatternFilter(patterns.ToArray(), PatternFilterMode.Exclude);
     }
 }

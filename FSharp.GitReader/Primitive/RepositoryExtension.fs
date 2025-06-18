@@ -12,7 +12,6 @@ namespace GitReader.Primitive
 open GitReader
 open GitReader.Internal
 open GitReader.Primitive
-open GitReader.Structures
 open System
 open System.Threading
 open System.Threading.Tasks
@@ -74,9 +73,11 @@ module public RepositoryExtension =
             RepositoryAccessor.OpenBlobAsync(repository, blob, unwrapCT ct).asAsync()
 
         member repository.getWorkingDirectoryStatus(?ct: CancellationToken) =
-            WorkingDirectoryAccessor.GetPrimitiveWorkingDirectoryStatusAsync(repository, unwrapCT ct).asAsync()
-        member repository.getWorkingDirectoryStatusWithFilter(pathFilter: string -> bool, ?ct: CancellationToken) =
-            WorkingDirectoryAccessor.GetPrimitiveWorkingDirectoryStatusWithFilterAsync(repository, Func<string, bool>(pathFilter), unwrapCT ct).asAsync()
+            WorkingDirectoryAccessor.GetPrimitiveWorkingDirectoryStatusAsync(
+                repository, unwrapCT ct).asAsync()
+        member repository.getWorkingDirectoryStatusWithFilter(overridePathFilter: FilterDecisionDelegate, ?ct: CancellationToken) =
+            WorkingDirectoryAccessor.GetPrimitiveWorkingDirectoryStatusWithFilterAsync(
+                repository, overridePathFilter, unwrapCT ct).asAsync()
         member repository.getWorktrees(?ct: CancellationToken) =
             WorktreeAccessor.GetPrimitiveWorktreesAsync(repository, unwrapCT ct).asAsync()
 
