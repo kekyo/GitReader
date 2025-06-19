@@ -457,15 +457,14 @@ internal static class StructuredRepositoryFacade
     /// </summary>
     /// <param name="repository">The structured repository to get working directory status from.</param>
     /// <param name="overrideGlobFilter">The path filter to apply.</param>
-    /// <param name="rwr"></param>
     /// <param name="ct">The cancellation token.</param>
     /// <returns>A ValueTask containing the structured working directory status.</returns>
 #if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP2_1_OR_GREATER
     public static async ValueTask<WorkingDirectoryStatus> GetWorkingDirectoryStatusAsync(
-        StructuredRepository repository, WeakReference rwr, GlobFilter overrideGlobFilter, CancellationToken ct = default)
+        StructuredRepository repository, GlobFilter overrideGlobFilter, CancellationToken ct = default)
 #else
     public static async Task<WorkingDirectoryStatus> GetWorkingDirectoryStatusAsync(
-        StructuredRepository repository, WeakReference rwr, GlobFilter overrideGlobFilter, CancellationToken ct = default)
+        StructuredRepository repository, GlobFilter overrideGlobFilter, CancellationToken ct = default)
 #endif
     {
         var primitiveStatus = await PrimitiveRepositoryFacade.GetWorkingDirectoryStatusAsync(
@@ -475,17 +474,17 @@ internal static class StructuredRepositoryFacade
 
         var stagedFiles = primitiveStatus.StagedFiles.
             Select(pf => new WorkingDirectoryFile(
-                rwr, pf.Path, pf.Status, pf.IndexHash, pf.WorkingTreeHash)).
+                pf.Path, pf.Status, pf.IndexHash, pf.WorkingTreeHash)).
             ToArray();
         
         var unstagedFiles = primitiveStatus.UnstagedFiles.
             Select(pf => new WorkingDirectoryFile(
-                rwr, pf.Path, pf.Status, pf.IndexHash, pf.WorkingTreeHash)).
+                pf.Path, pf.Status, pf.IndexHash, pf.WorkingTreeHash)).
             ToArray();
         
         var untrackedFiles = primitiveUntrackedFiles.
             Select(pf => new WorkingDirectoryFile(
-                rwr, pf.Path, pf.Status, pf.IndexHash, pf.WorkingTreeHash)).
+                pf.Path, pf.Status, pf.IndexHash, pf.WorkingTreeHash)).
             ToArray();
 
         return new WorkingDirectoryStatus(

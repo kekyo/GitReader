@@ -7,14 +7,9 @@
 //
 ////////////////////////////////////////////////////////////////////////////
 
-using GitReader.Collections;
-using GitReader.IO;
 using GitReader.Primitive;
-using GitReader.Structures;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -22,8 +17,19 @@ namespace GitReader.Internal;
 
 internal static class WorkingDirectoryAccessor
 {
+    /// <summary>
+    /// Scans the working directory for untracked files.
+    /// </summary>
+    /// <param name="repository">The repository to scan.</param>
+    /// <param name="workingDirectoryPath">The path to the working directory.</param>
+    /// <param name="currentPath">The current path to scan.</param>
+    /// <param name="processedPaths">The paths that have already been processed.</param>
+    /// <param name="untrackedFiles">The list of untracked files (output)</param>
+    /// <param name="overrideGlobFilter">The override glob filter.</param>
+    /// <param name="parentPathFilter">The parent path filter.</param>
+    /// <param name="ct">The cancellation token.</param>
 #if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP2_1_OR_GREATER
-    public static async ValueTask ScanWorkingDirectoryAsync(
+    public static async ValueTask ScanWorkingDirectoryRecursiveAsync(
         Repository repository,
         string workingDirectoryPath,
         string currentPath,
@@ -33,7 +39,7 @@ internal static class WorkingDirectoryAccessor
         GlobFilter parentPathFilter,
         CancellationToken ct)
 #else
-    public static async Task ScanWorkingDirectoryAsync(
+    public static async Task ScanWorkingDirectoryRecursiveAsync(
         Repository repository,
         string workingDirectoryPath,
         string currentPath,
@@ -117,7 +123,7 @@ internal static class WorkingDirectoryAccessor
                 if (await repository.fileSystem.IsDirectoryExistsAsync(entry, ct))
                 {
                     // Recursively scan subdirectories with the current candidate filter
-                    await ScanWorkingDirectoryAsync(
+                    await ScanWorkingDirectoryRecursiveAsync(
                         repository, workingDirectoryPath, entry,
                         processedPaths, untrackedFiles,
                         overrideGlobFilter, candidatePathFilter,
@@ -151,16 +157,28 @@ internal static class WorkingDirectoryAccessor
         }
     }
 
+    /// <summary>
+    /// Builds a dictionary of file paths and their hashes from a tree.
+    /// </summary>
+    /// <param name="repository">The repository to scan.</param>
+    /// <param name="treeHash">The hash of the tree to scan.</param>
+    /// <param name="basePath">The base path to use for relative paths.</param>
+    /// <param name="fileDict">The dictionary to store the file paths and their hashes.</param>
+    /// <param name="ct">The cancellation token.</param>
 #if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP2_1_OR_GREATER
     public static async ValueTask BuildTreeFileDictionaryAsync(
-        Repository repository, Hash treeHash, string basePath, Dictionary<string, Hash> fileDict, CancellationToken ct)
+        Repository repository, Hash treeHash,
+        string basePath, Dictionary<string, Hash> fileDict, CancellationToken ct)
 #else
     public static async Task BuildTreeFileDictionaryAsync(
-        Repository repository, Hash treeHash, string basePath, Dictionary<string, Hash> fileDict, CancellationToken ct)
+        Repository repository, Hash treeHash,
+        string basePath, Dictionary<string, Hash> fileDict, CancellationToken ct)
 #endif
     {
+        // Read the tree
         var tree = await RepositoryAccessor.ReadTreeAsync(repository, treeHash, ct);
-        
+
+        // Iterate over the tree entries
         foreach (var entry in tree.Children)
         {
             var fullPath = string.IsNullOrEmpty(basePath) ? entry.Name : basePath + "/" + entry.Name;
@@ -178,6 +196,12 @@ internal static class WorkingDirectoryAccessor
         }
     }
 
+    /// <summary>
+    /// Calculates the hash of a file.
+    /// </summary>
+    /// <param name="repository">The repository to scan.</param>
+    /// <param name="filePath">The path to the file to calculate the hash of.</param>
+    /// <param name="ct">The cancellation token.</param>
 #if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP2_1_OR_GREATER
     public static async ValueTask<Hash> CalculateFileHashAsync(
         Repository repository, string filePath, CancellationToken ct)

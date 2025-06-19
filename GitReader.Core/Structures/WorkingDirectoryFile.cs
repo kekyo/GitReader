@@ -7,55 +7,44 @@
 //
 ////////////////////////////////////////////////////////////////////////////
 
-using System;
-using System.ComponentModel;
-
 namespace GitReader.Structures;
 
 /// <summary>
 /// Represents a file in the working directory with its status information.
 /// </summary>
-public sealed class WorkingDirectoryFile : IRepositoryReference
+public readonly struct WorkingDirectoryFile
 {
-    private readonly WeakReference rwr;
+    /// <summary>
+    /// Gets the path of the file relative to the repository root.
+    /// </summary>
+    public readonly string Path;
+    
+    /// <summary>
+    /// Gets the status of the file.
+    /// </summary>
+    public readonly FileStatus Status;
+    
+    /// <summary>
+    /// Gets the hash of the file in the index, if available.
+    /// </summary>
+    public readonly Hash? IndexHash;
+
+    /// <summary>
+    /// Gets the hash of the file in the working tree, if available.
+    /// </summary>
+    public readonly Hash? WorkingTreeHash;
 
     internal WorkingDirectoryFile(
-        WeakReference rwr,
         string path,
         FileStatus status,
         Hash? indexHash,
         Hash? workingTreeHash)
     {
-        this.rwr = rwr;
         this.Path = path;
         this.Status = status;
         this.IndexHash = indexHash;
         this.WorkingTreeHash = workingTreeHash;
     }
-
-    [EditorBrowsable(EditorBrowsableState.Never)]
-    WeakReference IRepositoryReference.Repository =>
-        this.rwr;
-
-    /// <summary>
-    /// Gets the path of the file relative to the repository root.
-    /// </summary>
-    public string Path { get; }
-    
-    /// <summary>
-    /// Gets the status of the file.
-    /// </summary>
-    public FileStatus Status { get; }
-    
-    /// <summary>
-    /// Gets the hash of the file in the index, if available.
-    /// </summary>
-    public Hash? IndexHash { get; }
-    
-    /// <summary>
-    /// Gets the hash of the file in the working tree, if available.
-    /// </summary>
-    public Hash? WorkingTreeHash { get; }
 
     /// <summary>
     /// Determines whether the specified object is equal to the current WorkingDirectoryFile.
@@ -91,4 +80,4 @@ public sealed class WorkingDirectoryFile : IRepositoryReference
     /// <returns>A string representation of the working directory file.</returns>
     public override string ToString() =>
         $"{this.Status}: {this.Path}";
-} 
+}

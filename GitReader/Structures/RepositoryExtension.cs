@@ -191,10 +191,10 @@ public static class RepositoryExtension
         CancellationToken ct = default) =>
 #if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP2_1_OR_GREATER
         StructuredRepositoryFacade.GetWorkingDirectoryStatusAsync(
-            repository, new WeakReference(repository), Internal.Glob.nothingFilter, ct).AsTask();
+            repository, Internal.Glob.nothingFilter, ct).AsTask();
 #else
         StructuredRepositoryFacade.GetWorkingDirectoryStatusAsync(
-            repository, new WeakReference(repository), Internal.Glob.nothingFilter, ct);
+            repository, Internal.Glob.nothingFilter, ct);
 #endif
 
     /// <summary>
@@ -210,10 +210,10 @@ public static class RepositoryExtension
         CancellationToken ct = default) =>
 #if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP2_1_OR_GREATER
         StructuredRepositoryFacade.GetWorkingDirectoryStatusAsync(
-            repository, new WeakReference(repository), overrideGlobFilter, ct).AsTask();
+            repository, overrideGlobFilter, ct).AsTask();
 #else
         StructuredRepositoryFacade.GetWorkingDirectoryStatusAsync(
-            repository, new WeakReference(repository), overrideGlobFilter, ct);
+            repository, overrideGlobFilter, ct);
 #endif
 
     /// <summary>
@@ -225,11 +225,9 @@ public static class RepositoryExtension
     public static Task<ReadOnlyArray<Worktree>> GetWorktreesAsync(
         this StructuredRepository repository, CancellationToken ct = default) =>
 #if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP2_1_OR_GREATER
-        WorktreeAccessor.GetStructuredWorktreesAsync(
-            repository, new WeakReference(repository), ct).AsTask();
+        WorktreeAccessor.GetStructuredWorktreesAsync(repository, ct).AsTask();
 #else
-        WorktreeAccessor.GetStructuredWorktreesAsync(
-            repository, new WeakReference(repository), ct);
+        WorktreeAccessor.GetStructuredWorktreesAsync(repository, ct);
 #endif
 
     /// <summary>

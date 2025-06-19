@@ -62,7 +62,7 @@ module public RepositoryExtension =
         /// <returns>An async computation that returns the working directory status.</returns>
         member repository.getWorkingDirectoryStatus(?ct: CancellationToken) =
             StructuredRepositoryFacade.GetWorkingDirectoryStatusAsync(
-                repository, WeakReference(repository), Glob.nothingFilter, unwrapCT ct).asAsync()
+                repository, Glob.nothingFilter, unwrapCT ct).asAsync()
 
         /// <summary>
         /// Gets the working directory status with an override path filter.
@@ -73,7 +73,7 @@ module public RepositoryExtension =
         member repository.getWorkingDirectoryStatus(
             overrideGlobFilter: GlobFilter, ?ct: CancellationToken) =
             StructuredRepositoryFacade.GetWorkingDirectoryStatusAsync(
-                repository, WeakReference(repository), overrideGlobFilter, unwrapCT ct).asAsync()
+                repository, overrideGlobFilter, unwrapCT ct).asAsync()
 
         /// <summary>
         /// Gets all worktrees associated with the repository.
@@ -82,7 +82,7 @@ module public RepositoryExtension =
         /// <returns>An async computation that returns all worktrees.</returns>
         member repository.getWorktrees(?ct: CancellationToken) =
             WorktreeAccessor.GetStructuredWorktreesAsync(
-                repository, WeakReference(repository), unwrapCT ct).asAsync()
+                repository, unwrapCT ct).asAsync()
 
     type Branch with
         /// <summary>
