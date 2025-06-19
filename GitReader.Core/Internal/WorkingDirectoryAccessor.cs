@@ -10,6 +10,7 @@
 using GitReader.Primitive;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -24,9 +25,9 @@ internal static class WorkingDirectoryAccessor
     /// <param name="workingDirectoryPath">The path to the working directory.</param>
     /// <param name="currentPath">The current path to scan.</param>
     /// <param name="processedPaths">The paths that have already been processed.</param>
-    /// <param name="untrackedFiles">The list of untracked files (output)</param>
     /// <param name="overrideGlobFilter">The override glob filter.</param>
     /// <param name="parentPathFilter">The parent path filter.</param>
+    /// <param name="untrackedFiles">The list of untracked files (output)</param>
     /// <param name="ct">The cancellation token.</param>
 #if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP2_1_OR_GREATER
     public static async ValueTask ScanWorkingDirectoryRecursiveAsync(
@@ -34,9 +35,9 @@ internal static class WorkingDirectoryAccessor
         string workingDirectoryPath,
         string currentPath,
         HashSet<string> processedPaths,
-        List<PrimitiveWorkingDirectoryFile> untrackedFiles,
         GlobFilter overrideGlobFilter,
         GlobFilter parentPathFilter,
+        List<PrimitiveWorkingDirectoryFile> untrackedFiles,
         CancellationToken ct)
 #else
     public static async Task ScanWorkingDirectoryRecursiveAsync(
@@ -44,9 +45,9 @@ internal static class WorkingDirectoryAccessor
         string workingDirectoryPath,
         string currentPath,
         HashSet<string> processedPaths,
-        List<PrimitiveWorkingDirectoryFile> untrackedFiles,
         GlobFilter overrideGlobFilter,
         GlobFilter parentPathFilter,
+        List<PrimitiveWorkingDirectoryFile> untrackedFiles,
         CancellationToken ct)
 #endif
     {
@@ -78,45 +79,45 @@ internal static class WorkingDirectoryAccessor
                     var gitignoreFilter = await Glob.CreateExcludeFilterFromGitignoreAsync(gitignoreStream, ct);
 
                     // Combine filters with correct order: parent filter, .gitignore filter, override filter
-                    candidatePathFilter = Glob.Combine([ parentPathFilter, gitignoreFilter ]);
-                    exactlyPathFilter = Glob.Combine([ parentPathFilter, gitignoreFilter, overrideGlobFilter ]);
+                    candidatePathFilter = Glob.Combine([parentPathFilter, gitignoreFilter]);
+                    exactlyPathFilter = Glob.Combine([parentPathFilter, gitignoreFilter, overrideGlobFilter]);
                 }
                 else
                 {
                     // When .gitignore does not exist, continue with parent filter
                     candidatePathFilter = parentPathFilter;
-                    exactlyPathFilter = Glob.Combine([ parentPathFilter, overrideGlobFilter ]);
+                    exactlyPathFilter = Glob.Combine([parentPathFilter, overrideGlobFilter]);
                 }
             }
             catch
             {
                 // If .gitignore cannot be read, continue with parent filter
                 candidatePathFilter = parentPathFilter;
-                exactlyPathFilter = Glob.Combine([ parentPathFilter, overrideGlobFilter ]);
+                exactlyPathFilter = Glob.Combine([parentPathFilter, overrideGlobFilter]);
             }
 
             // Scan directory entries
             var entries = await repository.fileSystem.GetDirectoryEntriesAsync(currentPath, ct);
-            foreach (var entry in entries)
+            await Utilities.WhenAll(entries.Select(async entry =>
             {
                 // Skip .git directory/files (hardcoded exclusion matching Git's behavior)
                 var fileName = repository.fileSystem.GetFileName(entry);
                 if (fileName.Equals(".git", StringComparison.OrdinalIgnoreCase))
                 {
-                    continue;
+                    return;
                 }
 
                 // Get relative path and filter it
                 var relativePath = repository.fileSystem.ToPosixPath(
                     repository.fileSystem.GetRelativePath(workingDirectoryPath, entry));
                 var filterDecision = exactlyPathFilter(
-                    GlobFilterStates.NotExclude,   // Start from neutral.
+                    GlobFilterStates.NotExclude, // Start from neutral.
                     relativePath);
 
                 // When entry is excluded, ignore it.
                 if (filterDecision == GlobFilterStates.Exclude)
                 {
-                    continue;
+                    return;
                 }
 
                 // When entry is a directory
@@ -125,8 +126,9 @@ internal static class WorkingDirectoryAccessor
                     // Recursively scan subdirectories with the current candidate filter
                     await ScanWorkingDirectoryRecursiveAsync(
                         repository, workingDirectoryPath, entry,
-                        processedPaths, untrackedFiles,
+                        processedPaths,
                         overrideGlobFilter, candidatePathFilter,
+                        untrackedFiles,
                         ct);
                 }
                 // When entry is a file
@@ -138,14 +140,20 @@ internal static class WorkingDirectoryAccessor
                         // This is an untracked file that passes the filter
                         var fileHash = await CalculateFileHashAsync(repository, entry, ct);
 
-                        untrackedFiles.Add(new PrimitiveWorkingDirectoryFile(
+                        var untrackedFile = new PrimitiveWorkingDirectoryFile(
                             relativePath,
                             FileStatus.Untracked,
                             null,
-                            fileHash));
+                            fileHash);
+
+                        // Avoid race condition
+                        lock (untrackedFiles)
+                        {
+                            untrackedFiles.Add(untrackedFile);
+                        }
                     }
                 }
-            }
+            }));
         }
         catch (UnauthorizedAccessException)
         {

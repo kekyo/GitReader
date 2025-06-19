@@ -332,9 +332,9 @@ internal static class PrimitiveRepositoryFacade
 
         return new PrimitiveWorkingDirectoryStatus(
             workingDirectoryPath,
-            new(stagedFiles.ToArray()),
-            new(unstagedFiles.ToArray()),
-            new(processedPaths.ToArray()));
+            new(stagedFiles.OrderBy(f => f.Path).ToArray()),      // Make stable.
+            new(unstagedFiles.OrderBy(f => f.Path).ToArray()),
+            new(processedPaths.OrderBy(p => p).ToArray()));
     }
 
 #if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP2_1_OR_GREATER
@@ -359,11 +359,12 @@ internal static class PrimitiveRepositoryFacade
             workingDirectoryStatus.workingDirectoryPath,
             workingDirectoryStatus.workingDirectoryPath, 
             new(workingDirectoryStatus.processedPaths),
-            untrackedFiles,
             overrideGlobFilter,    // Override path filter
             Glob.nothingFilter,    // Initial path filter (always nothing)
+            untrackedFiles,        // Results
             ct);
 
-        return new(untrackedFiles.ToArray());
+        // Make stable.
+        return new(untrackedFiles.OrderBy(f => f.Path).ToArray());
     }
 }
