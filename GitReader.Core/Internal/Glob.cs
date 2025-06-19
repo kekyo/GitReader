@@ -94,11 +94,17 @@ internal static class Glob
     /// </summary>
     private static bool IsMatchInternal(string path, string pattern)
     {
-        // Normalize path separators to forward slashes (only for path, not pattern)
-        path = path.Replace('\\', '/');
+        // Unix/Linux: Keep backslashes as literal filename characters (no normalization needed)
         
-        // Remove trailing slashes from path
-        path = path.TrimEnd('/');
+        // Remove trailing slashes from path (only actual path separators)
+        // But preserve single "/" (root directory)
+        if (path.Length > 1)
+        {
+            path = path.TrimEnd('/');
+        }
+        
+        // Handle trailing spaces: "Trailing spaces are ignored unless they are quoted with backslash"
+        pattern = HandleTrailingSpaces(pattern);
 
         // Normalize consecutive slashes in pattern to single slash
         while (pattern.Contains("//"))
@@ -210,6 +216,22 @@ internal static class Glob
                     return MatchDoubleAsterisk(text, textIndex, pattern, patternIndex + 2);
                 }
 
+                // Handle consecutive asterisks (more than 2): "Other consecutive asterisks are considered regular asterisks"
+                // Count consecutive asterisks and treat them as a single *
+                int asteriskCount = 1;
+                int nextIndex = patternIndex + 1;
+                while (nextIndex < pattern.Length && pattern[nextIndex] == '*')
+                {
+                    asteriskCount++;
+                    nextIndex++;
+                }
+
+                // If we have more than 2 consecutive asterisks, treat them as single *
+                if (asteriskCount > 2)
+                {
+                    return MatchSingleAsterisk(text, textIndex, pattern, nextIndex);
+                }
+
                 // Handle single * (matches anything except /)
                 return MatchSingleAsterisk(text, textIndex, pattern, patternIndex + 1);
             }
@@ -235,7 +257,7 @@ internal static class Glob
             }
             else if (patternChar == '\\')
             {
-                // Escape character
+                // Escape character (gitignore spec applies to all platforms)
                 if (patternIndex + 1 >= pattern.Length)
                     return false;
                 
@@ -319,6 +341,7 @@ internal static class Glob
         char textChar = text[textIndex];
         patternIndex++; // Skip opening [
 
+        // Handle negation
         bool negated = false;
         if (patternIndex < pattern.Length && pattern[patternIndex] == '!')
         {
@@ -327,6 +350,24 @@ internal static class Glob
         }
 
         bool matched = false;
+        
+        // Special handling for literal ] at the start of character class
+        // According to POSIX, "]" immediately after "[" or "[!" is treated as literal character
+        if (patternIndex < pattern.Length && pattern[patternIndex] == ']')
+        {
+            if (textChar == ']')
+                matched = true;
+            patternIndex++;
+        }
+        
+        // Check for empty bracket expression after processing potential initial ]
+        bool hasContent = patternIndex < pattern.Length && pattern[patternIndex] != ']';
+        if (!hasContent && !matched)
+        {
+            return false; // Invalid pattern - empty bracket expression
+        }
+
+        // Process the rest of the character class
         while (patternIndex < pattern.Length && pattern[patternIndex] != ']')
         {
             char patternChar = pattern[patternIndex];
@@ -354,13 +395,52 @@ internal static class Glob
             }
         }
 
-        if (patternIndex >= pattern.Length) // Missing closing ]
-            return false;
+        // Check for missing closing ]
+        if (patternIndex >= pattern.Length)
+            return false; // Invalid pattern - unclosed bracket
 
         patternIndex++; // Skip closing ]
         nextPatternIndex = patternIndex;
 
         return negated ? !matched : matched;
+    }
+    
+    /// <summary>
+    /// Handles trailing space processing according to gitignore specification:
+    /// "Trailing spaces are ignored unless they are quoted with backslash"
+    /// </summary>
+    private static string HandleTrailingSpaces(string pattern)
+    {
+        if (string.IsNullOrEmpty(pattern))
+            return pattern;
+            
+        // Work from the end of the pattern backward
+        int trimIndex = pattern.Length;
+        
+        // Remove trailing spaces that are not escaped
+        for (int i = pattern.Length - 1; i >= 0; i--)
+        {
+            if (pattern[i] != ' ')
+                break;
+                
+            // Count preceding backslashes
+            int backslashCount = 0;
+            for (int j = i - 1; j >= 0 && pattern[j] == '\\'; j--)
+            {
+                backslashCount++;
+            }
+            
+            // If odd number of backslashes, this space is escaped
+            if (backslashCount % 2 == 1)
+            {
+                break;
+            }
+            
+            // This space is not escaped, so it can be removed
+            trimIndex = i;
+        }
+        
+        return pattern.Substring(0, trimIndex);
     }
         
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
