@@ -181,38 +181,39 @@ public static class RepositoryExtension
             repository, new WeakReference(repository), ct);
 
     /// <summary>
-    /// Gets working directory status with optional file path filtering.
+    /// Gets working directory status.
     /// </summary>
     /// <param name="repository">The repository to get working directory status from.</param>
     /// <param name="ct">The cancellation token.</param>
     /// <returns>A Task containing the structured working directory status.</returns>
     public static Task<WorkingDirectoryStatus> GetWorkingDirectoryStatusAsync(
-        this StructuredRepository repository, CancellationToken ct = default) =>
+        this StructuredRepository repository,
+        CancellationToken ct = default) =>
 #if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP2_1_OR_GREATER
-        WorkingDirectoryAccessor.GetStructuredWorkingDirectoryStatusAsync(
-            repository, new WeakReference(repository), ct).AsTask();
+        StructuredRepositoryFacade.GetWorkingDirectoryStatusAsync(
+            repository, new WeakReference(repository), Internal.Glob.nothingFilter, ct).AsTask();
 #else
-        WorkingDirectoryAccessor.GetStructuredWorkingDirectoryStatusAsync(
-            repository, new WeakReference(repository), ct);
+        StructuredRepositoryFacade.GetWorkingDirectoryStatusAsync(
+            repository, new WeakReference(repository), Internal.Glob.nothingFilter, ct);
 #endif
 
     /// <summary>
-    /// Gets working directory status with optional file path filtering.
+    /// Gets working directory status with an override glob filter.
     /// </summary>
     /// <param name="repository">The repository to get working directory status from.</param>
-    /// <param name="overridePathFilter">An optional predicate to filter files by path. If null, all files are included.</param>
+    /// <param name="overrideGlobFilter">A predicate override glob filter function.</param>
     /// <param name="ct">The cancellation token.</param>
     /// <returns>A Task containing the structured working directory status.</returns>
-    public static Task<WorkingDirectoryStatus> GetWorkingDirectoryStatusWithFilterAsync(
+    public static Task<WorkingDirectoryStatus> GetWorkingDirectoryStatusAsync(
         this StructuredRepository repository,
-        GlobFilter overridePathFilter,
+        GlobFilter overrideGlobFilter,
         CancellationToken ct = default) =>
 #if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP2_1_OR_GREATER
-        WorkingDirectoryAccessor.GetStructuredWorkingDirectoryStatusWithFilterAsync(
-            repository, new WeakReference(repository), overridePathFilter, ct).AsTask();
+        StructuredRepositoryFacade.GetWorkingDirectoryStatusAsync(
+            repository, new WeakReference(repository), overrideGlobFilter, ct).AsTask();
 #else
-        WorkingDirectoryAccessor.GetStructuredWorkingDirectoryStatusWithFilterAsync(
-            repository, new WeakReference(repository), overridePathFilter, ct);
+        StructuredRepositoryFacade.GetWorkingDirectoryStatusAsync(
+            repository, new WeakReference(repository), overrideGlobFilter, ct);
 #endif
 
     /// <summary>
@@ -221,10 +222,15 @@ public static class RepositoryExtension
     /// <param name="repository">The structured repository.</param>
     /// <param name="ct">The cancellation token.</param>
     /// <returns>A task that returns a read-only array of worktrees.</returns>
-    public static async Task<ReadOnlyArray<Worktree>> GetWorktreesAsync(
+    public static Task<ReadOnlyArray<Worktree>> GetWorktreesAsync(
         this StructuredRepository repository, CancellationToken ct = default) =>
-        await WorktreeAccessor.GetStructuredWorktreesAsync(
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP2_1_OR_GREATER
+        WorktreeAccessor.GetStructuredWorktreesAsync(
+            repository, new WeakReference(repository), ct).AsTask();
+#else
+        WorktreeAccessor.GetStructuredWorktreesAsync(
             repository, new WeakReference(repository), ct);
+#endif
 
     /// <summary>
     /// Deconstructs a StructuredRepository into its component parts (including all branches).

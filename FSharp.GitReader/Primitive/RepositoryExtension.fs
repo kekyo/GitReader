@@ -154,18 +154,21 @@ module public RepositoryExtension =
         /// <param name="ct">Optional cancellation token.</param>
         /// <returns>An async computation that returns the working directory status.</returns>
         member repository.getWorkingDirectoryStatus(?ct: CancellationToken) =
-            WorkingDirectoryAccessor.GetPrimitiveWorkingDirectoryStatusAsync(
+            PrimitiveRepositoryFacade.GetWorkingDirectoryStatusAsync(
                 repository, unwrapCT ct).asAsync()
-                
-        /// <summary>
-        /// Gets the working directory status with a custom path filter.
-        /// </summary>
-        /// <param name="overridePathFilter">The custom path filter to apply.</param>
-        /// <param name="ct">Optional cancellation token.</param>
-        /// <returns>An async computation that returns the filtered working directory status.</returns>
-        member repository.getWorkingDirectoryStatusWithFilter(overridePathFilter: GlobFilter, ?ct: CancellationToken) =
-            WorkingDirectoryAccessor.GetPrimitiveWorkingDirectoryStatusWithFilterAsync(
-                repository, overridePathFilter, unwrapCT ct).asAsync()
+
+        member repository.getUntrackedFiles(
+            workingDirectoryStatus: PrimitiveWorkingDirectoryStatus,
+            ?ct: CancellationToken) =
+            PrimitiveRepositoryFacade.GetUntrackedFilesAsync(
+                repository, workingDirectoryStatus, Glob.nothingFilter, unwrapCT ct).asAsync()
+
+        member repository.getUntrackedFiles(
+            workingDirectoryStatus: PrimitiveWorkingDirectoryStatus,
+            overrideGlobFilter: GlobFilter,
+            ?ct: CancellationToken) =
+            PrimitiveRepositoryFacade.GetUntrackedFilesAsync(
+                repository, workingDirectoryStatus, overrideGlobFilter, unwrapCT ct).asAsync()
                 
         /// <summary>
         /// Gets all worktrees associated with the repository.
@@ -268,9 +271,9 @@ module public RepositoryExtension =
     /// Active pattern for deconstructing a PrimitiveWorkingDirectoryStatus into its component parts.
     /// </summary>
     /// <param name="status">The working directory status to deconstruct.</param>
-    /// <returns>A tuple containing staged files, unstaged files, and untracked files.</returns>
+    /// <returns>A tuple containing staged files and unstaged files</returns>
     let (|PrimitiveWorkingDirectoryStatus|) (status: PrimitiveWorkingDirectoryStatus) =
-        (status.StagedFiles, status.UnstagedFiles, status.UntrackedFiles)
+        (status.StagedFiles, status.UnstagedFiles)
 
     /// <summary>
     /// Active pattern for deconstructing a PrimitiveWorktree into its component parts.

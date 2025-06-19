@@ -78,7 +78,7 @@ public static class Program
         for (int i = 0; i < iterations; i++)
         {
             sw.Restart();
-            var status = await repository.GetWorkingDirectoryStatusWithFilterAsync(commonIgnoreFilter);
+            var status = await repository.GetWorkingDirectoryStatusAsync(commonIgnoreFilter);
             sw.Stop();
 
             tw.WriteLine($"Run {i + 1}: {sw.Elapsed}");

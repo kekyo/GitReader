@@ -252,6 +252,10 @@ internal static class Utilities
     public static T[] Empty<T>() =>
         Array.Empty<T>();
 #endif
+    
+    public static bool CollectionEqual<T>(this IEnumerable<T> a, IEnumerable<T> b) =>
+        object.ReferenceEquals(a, b) ||
+        a.SequenceEqual(b);
 
     [DebuggerStepThrough]
     public static IEnumerable<U> Collect<T, U>(

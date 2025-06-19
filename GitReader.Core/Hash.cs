@@ -85,7 +85,7 @@ public unsafe struct Hash : IEquatable<Hash>
     /// <summary>
     /// Gets the hash value as a byte array.
     /// </summary>
-    public byte[] HashCode
+    public readonly byte[] HashCode
     {
         get
         {
@@ -106,12 +106,12 @@ public unsafe struct Hash : IEquatable<Hash>
     /// </summary>
     /// <param name="rhs">The Hash to compare with the current Hash.</param>
     /// <returns>true if the specified Hash is equal to the current Hash; otherwise, false.</returns>
-    public bool Equals(Hash rhs) =>
+    public readonly bool Equals(Hash rhs) =>
         this.hashCode0 == rhs.hashCode0 &&
         this.hashCode8 == rhs.hashCode8 &&
         this.hashCode16 == rhs.hashCode16;
 
-    bool IEquatable<Hash>.Equals(Hash rhs) =>
+    readonly bool IEquatable<Hash>.Equals(Hash rhs) =>
         this.Equals(rhs);
 
     /// <summary>
@@ -119,14 +119,14 @@ public unsafe struct Hash : IEquatable<Hash>
     /// </summary>
     /// <param name="obj">The object to compare with the current Hash.</param>
     /// <returns>true if the specified object is equal to the current Hash; otherwise, false.</returns>
-    public override bool Equals(object? obj) =>
+    public readonly override bool Equals(object? obj) =>
         obj is Hash rhs && this.Equals(rhs);
 
     /// <summary>
     /// Returns the hash code for this instance.
     /// </summary>
     /// <returns>A 32-bit signed integer that is the hash code for this instance.</returns>
-    public override int GetHashCode()
+    public readonly override int GetHashCode()
     {
         fixed (void* p = &this.hashCode0)
         {
@@ -144,7 +144,7 @@ public unsafe struct Hash : IEquatable<Hash>
     /// Returns a string representation of the hash in lowercase hexadecimal format.
     /// </summary>
     /// <returns>A lowercase hexadecimal string representation of the hash.</returns>
-    public override string ToString() =>
+    public readonly override string ToString() =>
         BitConverter.ToString(this.HashCode).
         Replace("-", string.Empty).
         ToLowerInvariant();

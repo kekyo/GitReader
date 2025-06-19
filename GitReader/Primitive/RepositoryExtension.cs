@@ -7,11 +7,9 @@
 //
 ////////////////////////////////////////////////////////////////////////////
 
-using System;
 using GitReader.Internal;
 using GitReader.Collections;
-using GitReader.Primitive;
-using GitReader.Structures;
+using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -201,26 +199,34 @@ public static class RepositoryExtension
         this PrimitiveRepository repository,
         CancellationToken ct = default) =>
 #if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP2_1_OR_GREATER
-        WorkingDirectoryAccessor.GetPrimitiveWorkingDirectoryStatusAsync(repository, ct).AsTask();
+        PrimitiveRepositoryFacade.GetWorkingDirectoryStatusAsync(repository, ct).AsTask();
 #else
-        WorkingDirectoryAccessor.GetPrimitiveWorkingDirectoryStatusAsync(repository, ct);
+        PrimitiveRepositoryFacade.GetWorkingDirectoryStatusAsync(repository, ct);
 #endif
 
-    /// <summary>
-    /// Gets working directory status with optional file path filtering.
-    /// </summary>
-    /// <param name="repository">The repository to get working directory status from.</param>
-    /// <param name="overridePathFilter">Predicate to override filter.</param>
-    /// <param name="ct">The cancellation token.</param>
-    /// <returns>A Task containing the primitive working directory status.</returns>
-    public static Task<PrimitiveWorkingDirectoryStatus> GetWorkingDirectoryStatusWithFilterAsync(
+    public static Task<ReadOnlyArray<PrimitiveWorkingDirectoryFile>> GetUntrackedFilesAsync(
         this PrimitiveRepository repository,
-        GlobFilter overridePathFilter,
+        PrimitiveWorkingDirectoryStatus workingDirectoryStatus,
         CancellationToken ct = default) =>
 #if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP2_1_OR_GREATER
-        WorkingDirectoryAccessor.GetPrimitiveWorkingDirectoryStatusWithFilterAsync(repository, overridePathFilter, ct).AsTask();
+        PrimitiveRepositoryFacade.GetUntrackedFilesAsync(
+            repository, workingDirectoryStatus, Internal.Glob.nothingFilter, ct).AsTask();
 #else
-        WorkingDirectoryAccessor.GetPrimitiveWorkingDirectoryStatusWithFilterAsync(repository, overridePathFilter, ct);
+        PrimitiveRepositoryFacade.GetUntrackedFilesAsync(
+            repository, workingDirectoryStatus, Internal.Glob.nothingFilter, ct);
+#endif
+
+    public static Task<ReadOnlyArray<PrimitiveWorkingDirectoryFile>> GetUntrackedFilesAsync(
+        this PrimitiveRepository repository,
+        PrimitiveWorkingDirectoryStatus workingDirectoryStatus,
+        GlobFilter overrideGlobFilter,
+        CancellationToken ct = default) =>
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP2_1_OR_GREATER
+        PrimitiveRepositoryFacade.GetUntrackedFilesAsync(
+            repository, workingDirectoryStatus, overrideGlobFilter, ct).AsTask();
+#else
+        PrimitiveRepositoryFacade.GetUntrackedFilesAsync(
+            repository, workingDirectoryStatus, overrideGlobFilter, ct);
 #endif
 
     /// <summary>
@@ -454,16 +460,13 @@ public static class RepositoryExtension
     /// <param name="status">The working directory status to deconstruct.</param>
     /// <param name="stagedFiles">The files staged for commit.</param>
     /// <param name="unstagedFiles">The files with unstaged changes.</param>
-    /// <param name="untrackedFiles">The files not tracked by Git.</param>
     public static void Deconstruct(
         this PrimitiveWorkingDirectoryStatus status,
         out ReadOnlyArray<PrimitiveWorkingDirectoryFile> stagedFiles,
-        out ReadOnlyArray<PrimitiveWorkingDirectoryFile> unstagedFiles,
-        out ReadOnlyArray<PrimitiveWorkingDirectoryFile> untrackedFiles)
+        out ReadOnlyArray<PrimitiveWorkingDirectoryFile> unstagedFiles)
     {
         stagedFiles = status.StagedFiles;
         unstagedFiles = status.UnstagedFiles;
-        untrackedFiles = status.UntrackedFiles;
     }
 
     /// <summary>

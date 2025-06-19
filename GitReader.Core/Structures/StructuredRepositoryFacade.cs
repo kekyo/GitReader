@@ -449,4 +449,48 @@ internal static class StructuredRepositoryFacade
         return RepositoryAccessor.OpenBlobAsync(
             repository, entry.Hash, ct);
     }
+
+    //////////////////////////////////////////////////////////////////////////
+
+    /// <summary>
+    /// Gets structured working directory status information for the specified repository with a custom filter.
+    /// </summary>
+    /// <param name="repository">The structured repository to get working directory status from.</param>
+    /// <param name="overrideGlobFilter">The path filter to apply.</param>
+    /// <param name="rwr"></param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>A ValueTask containing the structured working directory status.</returns>
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP2_1_OR_GREATER
+    public static async ValueTask<WorkingDirectoryStatus> GetWorkingDirectoryStatusAsync(
+        StructuredRepository repository, WeakReference rwr, GlobFilter overrideGlobFilter, CancellationToken ct = default)
+#else
+    public static async Task<WorkingDirectoryStatus> GetWorkingDirectoryStatusAsync(
+        StructuredRepository repository, WeakReference rwr, GlobFilter overrideGlobFilter, CancellationToken ct = default)
+#endif
+    {
+        var primitiveStatus = await PrimitiveRepositoryFacade.GetWorkingDirectoryStatusAsync(
+            repository, ct);
+        var primitiveUntrackedFiles = await PrimitiveRepositoryFacade.GetUntrackedFilesAsync(
+            repository, primitiveStatus, overrideGlobFilter, ct);
+
+        var stagedFiles = primitiveStatus.StagedFiles.
+            Select(pf => new WorkingDirectoryFile(
+                rwr, pf.Path, pf.Status, pf.IndexHash, pf.WorkingTreeHash)).
+            ToArray();
+        
+        var unstagedFiles = primitiveStatus.UnstagedFiles.
+            Select(pf => new WorkingDirectoryFile(
+                rwr, pf.Path, pf.Status, pf.IndexHash, pf.WorkingTreeHash)).
+            ToArray();
+        
+        var untrackedFiles = primitiveUntrackedFiles.
+            Select(pf => new WorkingDirectoryFile(
+                rwr, pf.Path, pf.Status, pf.IndexHash, pf.WorkingTreeHash)).
+            ToArray();
+
+        return new WorkingDirectoryStatus(
+            new ReadOnlyArray<WorkingDirectoryFile>(stagedFiles),
+            new ReadOnlyArray<WorkingDirectoryFile>(unstagedFiles),
+            new ReadOnlyArray<WorkingDirectoryFile>(untrackedFiles));
+    }
 }

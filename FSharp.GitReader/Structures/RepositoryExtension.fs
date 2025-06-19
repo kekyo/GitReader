@@ -31,7 +31,7 @@ module public RepositoryExtension =
             match repository.Head with
             | null -> None
             | _ -> Some repository.Head
-            
+
         /// <summary>
         /// Gets the commit object for the specified hash.
         /// </summary>
@@ -45,7 +45,7 @@ module public RepositoryExtension =
                    | null -> None
                    | _ -> Some c
         }
-        
+
         /// <summary>
         /// Gets the reflog entries for the HEAD.
         /// </summary>
@@ -54,26 +54,27 @@ module public RepositoryExtension =
         member repository.getHeadReflogs(?ct: CancellationToken) =
             StructuredRepositoryFacade.GetHeadReflogsAsync(
                 repository, WeakReference(repository), unwrapCT ct).asAsync()
-                
+
         /// <summary>
         /// Gets the working directory status.
         /// </summary>
         /// <param name="ct">Optional cancellation token.</param>
         /// <returns>An async computation that returns the working directory status.</returns>
         member repository.getWorkingDirectoryStatus(?ct: CancellationToken) =
-            WorkingDirectoryAccessor.GetStructuredWorkingDirectoryStatusAsync(
-                repository, WeakReference(repository), unwrapCT ct).asAsync()
-                
+            StructuredRepositoryFacade.GetWorkingDirectoryStatusAsync(
+                repository, WeakReference(repository), Glob.nothingFilter, unwrapCT ct).asAsync()
+
         /// <summary>
-        /// Gets the working directory status with a custom path filter.
+        /// Gets the working directory status with an override path filter.
         /// </summary>
-        /// <param name="overridePathFilter">The custom path filter to apply.</param>
+        /// <param name="overrideGlobFilter">A predicate override glob filter function.</param>
         /// <param name="ct">Optional cancellation token.</param>
         /// <returns>An async computation that returns the filtered working directory status.</returns>
-        member repository.getWorkingDirectoryStatusWithFilter(overridePathFilter: GlobFilter, ?ct: CancellationToken) =
-            WorkingDirectoryAccessor.GetStructuredWorkingDirectoryStatusWithFilterAsync(
-                repository, WeakReference(repository), overridePathFilter, unwrapCT ct).asAsync()
-                
+        member repository.getWorkingDirectoryStatus(
+            overrideGlobFilter: GlobFilter, ?ct: CancellationToken) =
+            StructuredRepositoryFacade.GetWorkingDirectoryStatusAsync(
+                repository, WeakReference(repository), overrideGlobFilter, unwrapCT ct).asAsync()
+
         /// <summary>
         /// Gets all worktrees associated with the repository.
         /// </summary>
@@ -106,7 +107,7 @@ module public RepositoryExtension =
                    | null -> None
                    | _ -> Some c
         }
-        
+
         /// <summary>
         /// Gets all parent commits.
         /// </summary>

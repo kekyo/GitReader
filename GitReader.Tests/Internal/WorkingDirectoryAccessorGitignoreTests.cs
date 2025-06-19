@@ -77,19 +77,20 @@ public sealed class WorkingDirectoryAccessorGitignoreTests
         var status = await repository.GetWorkingDirectoryStatusAsync();
 
         // Verify that .log files and temp/ directory are filtered out
-        var untrackedFiles = status.UntrackedFiles.Select(f => f.Path).ToArray();
+        var untrackedFiles = await repository.GetUntrackedFilesAsync(status);
+        var untrackedFilePaths = untrackedFiles.Select(f => f.Path).ToArray();
         
         // Debug output
-        Console.WriteLine($"Found {untrackedFiles.Length} untracked files:");
-        foreach (var file in untrackedFiles)
+        Console.WriteLine($"Found {untrackedFilePaths.Length} untracked files:");
+        foreach (var file in untrackedFilePaths)
         {
             Console.WriteLine($"  - {file}");
         }
         
-        Assert.Contains("Program.cs", untrackedFiles);
-        Assert.IsFalse(untrackedFiles.Contains("debug.log"));
-        Assert.IsFalse(untrackedFiles.Contains("temp/temp.txt"));
-        Assert.IsTrue(untrackedFiles.Contains(".gitignore")); // .gitignore itself should be included (Git's official behavior)
+        Assert.Contains("Program.cs", untrackedFilePaths);
+        Assert.IsFalse(untrackedFilePaths.Contains("debug.log"));
+        Assert.IsFalse(untrackedFilePaths.Contains("temp/temp.txt"));
+        Assert.IsTrue(untrackedFilePaths.Contains(".gitignore")); // .gitignore itself should be included (Git's official behavior)
     }
 
     /// <summary>
@@ -129,19 +130,20 @@ public sealed class WorkingDirectoryAccessorGitignoreTests
         // Get working directory status
         var status = await repository.GetWorkingDirectoryStatusAsync();
 
-        var untrackedFiles = status.UntrackedFiles.Select(f => f.Path).ToArray();
+        var untrackedFiles = await repository.GetUntrackedFilesAsync(status);
+        var untrackedFilePaths = untrackedFiles.Select(f => f.Path).ToArray();
         
         // Root .log files should be ignored
-        Assert.IsFalse(untrackedFiles.Contains("debug.log"));
+        Assert.IsFalse(untrackedFilePaths.Contains("debug.log"));
         
         // important.log should be included due to negation in src/.gitignore
-        Assert.Contains("src/important.log", untrackedFiles);
+        Assert.Contains("src/important.log", untrackedFilePaths);
         
         // .tmp files should be ignored by src/.gitignore
-        Assert.IsFalse(untrackedFiles.Contains("src/temp.tmp"));
+        Assert.IsFalse(untrackedFilePaths.Contains("src/temp.tmp"));
         
         // .cs files should be included
-        Assert.Contains("src/Program.cs", untrackedFiles);
+        Assert.Contains("src/Program.cs", untrackedFilePaths);
     }
 
     /// <summary>
@@ -174,15 +176,16 @@ public sealed class WorkingDirectoryAccessorGitignoreTests
                 GlobFilterStates.NotExclude : GlobFilterStates.Exclude;
 
         // Get working directory status with pathFilter
-        var status = await repository.GetWorkingDirectoryStatusWithFilterAsync(pathFilter);
+        var status = await repository.GetWorkingDirectoryStatusAsync();
+        var untrackedFiles = await repository.GetUntrackedFilesAsync(status, pathFilter);
 
-        var untrackedFiles = status.UntrackedFiles.Select(f => f.Path).ToArray();
+        var untrackedFilePaths = untrackedFiles.Select(f => f.Path).ToArray();
         
         // pathFilter should override .gitignore - .cs file should be included
-        Assert.Contains("Program.cs", untrackedFiles);
+        Assert.Contains("Program.cs", untrackedFilePaths);
         
         // .js file should be excluded by pathFilter (not matching *.cs pattern)
-        Assert.IsFalse(untrackedFiles.Contains("script.js"));
+        Assert.IsFalse(untrackedFilePaths.Contains("script.js"));
     }
 
     /// <summary>
@@ -235,19 +238,20 @@ public sealed class WorkingDirectoryAccessorGitignoreTests
         // Get working directory status
         var status = await repository.GetWorkingDirectoryStatusAsync();
 
-        var untrackedFiles = status.UntrackedFiles.Select(f => f.Path).ToArray();
+        var untrackedFiles = await repository.GetUntrackedFilesAsync(status);
+        var untrackedFilePaths = untrackedFiles.Select(f => f.Path).ToArray();
 
         // Files that should be included
-        Assert.Contains("README.md", untrackedFiles);
-        Assert.Contains("src/important.tmp", untrackedFiles); // Negated in src/.gitignore
-        Assert.Contains("src/main/config.xml", untrackedFiles);
-        Assert.Contains("src/main/java/Main.class", untrackedFiles); // Negated in java/.gitignore
-        Assert.Contains("src/main/java/App.java", untrackedFiles);
+        Assert.Contains("README.md", untrackedFilePaths);
+        Assert.Contains("src/important.tmp", untrackedFilePaths); // Negated in src/.gitignore
+        Assert.Contains("src/main/config.xml", untrackedFilePaths);
+        Assert.Contains("src/main/java/Main.class", untrackedFilePaths); // Negated in java/.gitignore
+        Assert.Contains("src/main/java/App.java", untrackedFilePaths);
 
         // Files that should be excluded
-        Assert.IsFalse(untrackedFiles.Contains("debug.log")); // Ignored by root
-        Assert.IsFalse(untrackedFiles.Contains("src/temp.tmp")); // Ignored by src
-        Assert.IsFalse(untrackedFiles.Contains("src/main/java/Test.class")); // Ignored by java
+        Assert.IsFalse(untrackedFilePaths.Contains("debug.log")); // Ignored by root
+        Assert.IsFalse(untrackedFilePaths.Contains("src/temp.tmp")); // Ignored by src
+        Assert.IsFalse(untrackedFilePaths.Contains("src/main/java/Test.class")); // Ignored by java
     }
 
     /// <summary>
@@ -287,19 +291,20 @@ public sealed class WorkingDirectoryAccessorGitignoreTests
                 GlobFilterStates.NotExclude : GlobFilterStates.Exclude;
 
         // Get working directory status with pathFilter
-        var status = await repository.GetWorkingDirectoryStatusWithFilterAsync(pathFilter);
+        var status = await repository.GetWorkingDirectoryStatusAsync();
 
-        var untrackedFiles = status.UntrackedFiles.Select(f => f.Path).ToArray();
+        var untrackedFiles = await repository.GetUntrackedFilesAsync(status, pathFilter);
+        var untrackedFilePaths = untrackedFiles.Select(f => f.Path).ToArray();
         
         // Should include source files that pass pathFilter
-        Assert.Contains("Program.cs", untrackedFiles);
-        Assert.Contains("script.js", untrackedFiles);
+        Assert.Contains("Program.cs", untrackedFilePaths);
+        Assert.Contains("script.js", untrackedFilePaths);
         
         // Should exclude .log (by .gitignore) even if pathFilter would allow it
-        Assert.IsFalse(untrackedFiles.Contains("debug.log"));
+        Assert.IsFalse(untrackedFilePaths.Contains("debug.log"));
         
         // Should exclude .md (by pathFilter)
-        Assert.IsFalse(untrackedFiles.Contains("README.md"));
+        Assert.IsFalse(untrackedFilePaths.Contains("README.md"));
     }
 
     /// <summary>
@@ -346,7 +351,8 @@ public sealed class WorkingDirectoryAccessorGitignoreTests
 
         var stagedFiles = status.StagedFiles.Select(f => f.Path).ToArray();
         var unstagedFiles = status.UnstagedFiles.Select(f => f.Path).ToArray();
-        var untrackedFiles = status.UntrackedFiles.Select(f => f.Path).ToArray();
+        var untrackedFiles = await repository.GetUntrackedFilesAsync(status);
+        var untrackedFilePaths = untrackedFiles.Select(f => f.Path).ToArray();
         
         // Files staged before .gitignore should remain staged regardless of .gitignore
         Assert.Contains("staged.log", stagedFiles);
@@ -355,8 +361,8 @@ public sealed class WorkingDirectoryAccessorGitignoreTests
         Assert.Contains("committed.txt", unstagedFiles);
         
         // Untracked files should respect .gitignore
-        Assert.Contains("untracked.cs", untrackedFiles);
-        Assert.IsFalse(untrackedFiles.Contains("untracked.log"));
+        Assert.Contains("untracked.cs", untrackedFilePaths);
+        Assert.IsFalse(untrackedFilePaths.Contains("untracked.log"));
     }
 
     /// <summary>
@@ -403,7 +409,8 @@ public sealed class WorkingDirectoryAccessorGitignoreTests
 
         var stagedFiles = status.StagedFiles.Select(f => f.Path).ToArray();
         var unstagedFiles = status.UnstagedFiles.Select(f => f.Path).ToArray();
-        var untrackedFiles = status.UntrackedFiles.Select(f => f.Path).ToArray();
+        var untrackedFiles = await repository.GetUntrackedFilesAsync(status);
+        var untrackedFilePaths = untrackedFiles.Select(f => f.Path).ToArray();
         
         // Force-added files should be staged regardless of .gitignore
         Assert.Contains("staged.log", stagedFiles);
@@ -412,8 +419,8 @@ public sealed class WorkingDirectoryAccessorGitignoreTests
         Assert.Contains("committed.txt", unstagedFiles);
         
         // Untracked files should respect .gitignore
-        Assert.Contains("untracked.cs", untrackedFiles);
-        Assert.IsFalse(untrackedFiles.Contains("untracked.log"));
+        Assert.Contains("untracked.cs", untrackedFilePaths);
+        Assert.IsFalse(untrackedFilePaths.Contains("untracked.log"));
     }
 
     [Test]
@@ -453,23 +460,24 @@ public sealed class WorkingDirectoryAccessorGitignoreTests
             using var repository = await Repository.Factory.OpenPrimitiveAsync(testPath);
             var status = await repository.GetWorkingDirectoryStatusAsync();
             
-            var untrackedFiles = status.UntrackedFiles.Select(f => f.Path).ToArray();
+            var untrackedFiles = await repository.GetUntrackedFilesAsync(status);
+            var untrackedFilePaths = untrackedFiles.Select(f => f.Path).ToArray();
             
             // Debug output
-            Console.WriteLine($"Found {untrackedFiles.Length} untracked files:");
-            foreach (var file in untrackedFiles)
+            Console.WriteLine($"Found {untrackedFilePaths.Length} untracked files:");
+            foreach (var file in untrackedFilePaths)
             {
                 Console.WriteLine($"  - {file}");
             }
             
             // Verify .git directory and its contents are excluded
-            Assert.IsFalse(untrackedFiles.Any(f => f.StartsWith(".git/")), ".git directory contents should be excluded");
-            Assert.IsFalse(untrackedFiles.Contains(".git"), ".git directory itself should be excluded");
+            Assert.IsFalse(untrackedFilePaths.Any(f => f.StartsWith(".git/")), ".git directory contents should be excluded");
+            Assert.IsFalse(untrackedFilePaths.Contains(".git"), ".git directory itself should be excluded");
             
             // Verify .git-like files are included (not confused with .git)
-            Assert.IsTrue(untrackedFiles.Contains(".git_like_file"), ".git_like_file should be included");
-            Assert.IsTrue(untrackedFiles.Contains(".git_like_dir/file.txt"), ".git_like_dir contents should be included");
-            Assert.IsTrue(untrackedFiles.Contains("normal_file.txt"), "normal files should be included");
+            Assert.IsTrue(untrackedFilePaths.Contains(".git_like_file"), ".git_like_file should be included");
+            Assert.IsTrue(untrackedFilePaths.Contains(".git_like_dir/file.txt"), ".git_like_dir contents should be included");
+            Assert.IsTrue(untrackedFilePaths.Contains("normal_file.txt"), "normal files should be included");
         }
         finally
         {
@@ -540,36 +548,37 @@ public sealed class WorkingDirectoryAccessorGitignoreTests
             using var repository = await Repository.Factory.OpenPrimitiveAsync(testPath);
             var status = await repository.GetWorkingDirectoryStatusAsync();
             
-            var untrackedFiles = status.UntrackedFiles.Select(f => f.Path).ToArray();
+            var untrackedFiles = await repository.GetUntrackedFilesAsync(status);
+            var untrackedFilePaths = untrackedFiles.Select(f => f.Path).ToArray();
             
             // Debug output
-            Console.WriteLine($"Found {untrackedFiles.Length} untracked files:");
-            foreach (var file in untrackedFiles.OrderBy(f => f))
+            Console.WriteLine($"Found {untrackedFilePaths.Length} untracked files:");
+            foreach (var file in untrackedFilePaths.OrderBy(f => f))
             {
                 Console.WriteLine($"  - {file}");
             }
             
             // Verify normal files are included
-            Assert.IsTrue(untrackedFiles.Contains("project/src/main.cpp"), "Normal files should be included");
-            Assert.IsTrue(untrackedFiles.Contains("vendor/lib/helper.js"), "Normal files should be included");
+            Assert.IsTrue(untrackedFilePaths.Contains("project/src/main.cpp"), "Normal files should be included");
+            Assert.IsTrue(untrackedFilePaths.Contains("vendor/lib/helper.js"), "Normal files should be included");
             
             // Verify .git directories and their contents are excluded
-            Assert.IsFalse(untrackedFiles.Any(f => f.StartsWith("project/src/.git/")), "Subdirectory .git contents should be excluded");
-            Assert.IsFalse(untrackedFiles.Any(f => f.StartsWith("vendor/lib/.git/")), "Subdirectory .git contents should be excluded");
-            Assert.IsFalse(untrackedFiles.Contains("project/src/.git"), "Subdirectory .git directory should be excluded");
-            Assert.IsFalse(untrackedFiles.Contains("vendor/lib/.git"), "Subdirectory .git directory should be excluded");
+            Assert.IsFalse(untrackedFilePaths.Any(f => f.StartsWith("project/src/.git/")), "Subdirectory .git contents should be excluded");
+            Assert.IsFalse(untrackedFilePaths.Any(f => f.StartsWith("vendor/lib/.git/")), "Subdirectory .git contents should be excluded");
+            Assert.IsFalse(untrackedFilePaths.Contains("project/src/.git"), "Subdirectory .git directory should be excluded");
+            Assert.IsFalse(untrackedFilePaths.Contains("vendor/lib/.git"), "Subdirectory .git directory should be excluded");
             
             // Verify .git files in subdirectories are excluded
-            Assert.IsFalse(untrackedFiles.Contains("project/.git"), ".git file in subdirectory should be excluded");
-            Assert.IsFalse(untrackedFiles.Contains("vendor/.git"), ".git file in subdirectory should be excluded");
+            Assert.IsFalse(untrackedFilePaths.Contains("project/.git"), ".git file in subdirectory should be excluded");
+            Assert.IsFalse(untrackedFilePaths.Contains("vendor/.git"), ".git file in subdirectory should be excluded");
             
             // Verify .git-like files are NOT excluded (should be included)
-            Assert.IsTrue(untrackedFiles.Contains("project/src/.git_backup"), ".git_backup should be included");
-            Assert.IsTrue(untrackedFiles.Contains("vendor/lib/.gitkeep"), ".gitkeep should be included");
-            Assert.IsTrue(untrackedFiles.Contains("tools/.git_hooks/pre-commit"), ".git_hooks directory contents should be included");
+            Assert.IsTrue(untrackedFilePaths.Contains("project/src/.git_backup"), ".git_backup should be included");
+            Assert.IsTrue(untrackedFilePaths.Contains("vendor/lib/.gitkeep"), ".gitkeep should be included");
+            Assert.IsTrue(untrackedFilePaths.Contains("tools/.git_hooks/pre-commit"), ".git_hooks directory contents should be included");
             
             // Verify no .git paths are included at all
-            var gitPaths = untrackedFiles.Where(f => 
+            var gitPaths = untrackedFilePaths.Where(f => 
                 f.Contains("/.git/") || 
                 f.EndsWith("/.git") || 
                 f.StartsWith(".git/") ||

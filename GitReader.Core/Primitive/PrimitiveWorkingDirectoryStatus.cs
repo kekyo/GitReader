@@ -7,8 +7,10 @@
 //
 ////////////////////////////////////////////////////////////////////////////
 
-using GitReader.Collections;
 using System;
+using System.Linq;
+using GitReader.Collections;
+using GitReader.Internal;
 
 namespace GitReader.Primitive;
 
@@ -17,35 +19,36 @@ namespace GitReader.Primitive;
 /// </summary>
 public readonly struct PrimitiveWorkingDirectoryStatus : IEquatable<PrimitiveWorkingDirectoryStatus>
 {
+    internal readonly string workingDirectoryPath;
+    internal readonly ReadOnlyArray<string> processedPaths;
+    
     /// <summary>
     /// Files that have been staged for commit.
     /// </summary>
     public readonly ReadOnlyArray<PrimitiveWorkingDirectoryFile> StagedFiles;
-    
+
     /// <summary>
     /// Files that have unstaged changes in the working directory.
     /// </summary>
     public readonly ReadOnlyArray<PrimitiveWorkingDirectoryFile> UnstagedFiles;
-    
-    /// <summary>
-    /// Files that are not tracked by Git.
-    /// </summary>
-    public readonly ReadOnlyArray<PrimitiveWorkingDirectoryFile> UntrackedFiles;
 
     /// <summary>
     /// Initializes a new instance of the PrimitiveWorkingDirectoryStatus structure.
     /// </summary>
+    /// <param name="workingDirectoryPath">Working directory path.</param>
     /// <param name="stagedFiles">Files that have been staged for commit.</param>
     /// <param name="unstagedFiles">Files that have unstaged changes in the working directory.</param>
-    /// <param name="untrackedFiles">Files that are not tracked by Git.</param>
-    public PrimitiveWorkingDirectoryStatus(
+    /// <param name="processedPaths"></param>
+    internal PrimitiveWorkingDirectoryStatus(
+        string workingDirectoryPath,
         ReadOnlyArray<PrimitiveWorkingDirectoryFile> stagedFiles,
         ReadOnlyArray<PrimitiveWorkingDirectoryFile> unstagedFiles,
-        ReadOnlyArray<PrimitiveWorkingDirectoryFile> untrackedFiles)
+        ReadOnlyArray<string> processedPaths)
     {
+        this.workingDirectoryPath = workingDirectoryPath;
         this.StagedFiles = stagedFiles;
         this.UnstagedFiles = unstagedFiles;
-        this.UntrackedFiles = untrackedFiles;
+        this.processedPaths = processedPaths;
     }
 
     /// <summary>
@@ -54,9 +57,10 @@ public readonly struct PrimitiveWorkingDirectoryStatus : IEquatable<PrimitiveWor
     /// <param name="rhs">The PrimitiveWorkingDirectoryStatus to compare with the current instance.</param>
     /// <returns>true if the specified PrimitiveWorkingDirectoryStatus is equal to the current instance; otherwise, false.</returns>
     public bool Equals(PrimitiveWorkingDirectoryStatus rhs) =>
-        this.StagedFiles.Equals(rhs.StagedFiles) &&
-        this.UnstagedFiles.Equals(rhs.UnstagedFiles) &&
-        this.UntrackedFiles.Equals(rhs.UntrackedFiles);
+        this.workingDirectoryPath.Equals(rhs.workingDirectoryPath) &&
+        this.StagedFiles.CollectionEqual(rhs.StagedFiles) &&
+        this.UnstagedFiles.CollectionEqual(rhs.UnstagedFiles) &&
+        this.processedPaths.CollectionEqual(rhs.processedPaths);
 
     bool IEquatable<PrimitiveWorkingDirectoryStatus>.Equals(PrimitiveWorkingDirectoryStatus rhs) =>
         this.Equals(rhs);
@@ -77,9 +81,10 @@ public readonly struct PrimitiveWorkingDirectoryStatus : IEquatable<PrimitiveWor
     {
         unchecked
         {
-            var hashCode = this.StagedFiles.GetHashCode();
-            hashCode = (hashCode * 397) ^ this.UnstagedFiles.GetHashCode();
-            hashCode = (hashCode * 397) ^ this.UntrackedFiles.GetHashCode();
+            var hashCode = this.workingDirectoryPath.GetHashCode();
+            hashCode = (hashCode * 397) ^ this.StagedFiles.Aggregate(0, (s, v) => (s * 397) ^ v.GetHashCode());
+            hashCode = (hashCode * 397) ^ this.UnstagedFiles.Aggregate(0, (s, v) => (s * 397) ^ v.GetHashCode());
+            hashCode = (hashCode * 397) ^ this.processedPaths.Aggregate(0, (s, v) => (s * 397) ^ v.GetHashCode());
             return hashCode;
         }
     }
@@ -89,5 +94,5 @@ public readonly struct PrimitiveWorkingDirectoryStatus : IEquatable<PrimitiveWor
     /// </summary>
     /// <returns>A string that represents the current instance.</returns>
     public override string ToString() =>
-        $"Staged: {this.StagedFiles.Count}, Unstaged: {this.UnstagedFiles.Count}, Untracked: {this.UntrackedFiles.Count}";
+        $"Staged: {this.StagedFiles.Count}, Unstaged: {this.UnstagedFiles.Count}";
 } 
