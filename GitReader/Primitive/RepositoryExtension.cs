@@ -119,7 +119,7 @@ public static class RepositoryExtension
     /// <returns>A Task containing the primitive working directory status.</returns>
     public static Task<PrimitiveWorkingDirectoryStatus> GetWorkingDirectoryStatusWithFilterAsync(
         this PrimitiveRepository repository,
-        FilterDecisionDelegate overridePathFilter,
+        GlobFilter overridePathFilter,
         CancellationToken ct = default) =>
 #if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP2_1_OR_GREATER
         WorkingDirectoryAccessor.GetPrimitiveWorkingDirectoryStatusWithFilterAsync(repository, overridePathFilter, ct).AsTask();

@@ -7,6 +7,20 @@
 //
 ////////////////////////////////////////////////////////////////////////////
 
+//
+// Glob pattern matching tests based on official specifications:
+// 
+// 1. Git .gitignore specification:
+//    https://git-scm.com/docs/gitignore
+//
+// 2. fnmatch(3) specification (referenced by gitignore):
+//    https://man7.org/linux/man-pages/man3/fnmatch.3.html
+//    https://pubs.opengroup.org/onlinepubs/9699919799/functions/fnmatch.html
+//
+// 3. IEEE Std 1003.1-2017 (POSIX.1-2017) fnmatch specification:
+//    https://pubs.opengroup.org/onlinepubs/9699919799/utilities/V3_chap02.html#tag_18_13
+//
+
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -22,24 +36,6 @@ namespace GitReader.Internal;
 /// </summary>
 internal static class Glob
 {
-    /// <summary>
-    /// Specifies the behavior mode for pattern-based filtering.
-    /// </summary>
-    private enum PatternFilterMode
-    {
-        /// <summary>
-        /// Exclude mode: Files matching patterns are excluded, non-matching files are neutral.
-        /// This is the standard .gitignore behavior where patterns specify what to exclude.
-        /// </summary>
-        Exclude,
-
-        /// <summary>
-        /// Include mode: Only files matching patterns are included, non-matching files are neutral.
-        /// This is useful for allowlist-style filtering where patterns specify what to include.
-        /// </summary>
-        Include
-    }
-
     private static readonly string[] commonPatterns =
     [
         // Build outputs
@@ -58,11 +54,9 @@ internal static class Glob
         "*.orig", "*.rej"
     ];
     
-    internal static readonly FilterDecisionDelegate includeAllFilter = (_, _) => FilterDecision.Include;
-    internal static readonly FilterDecisionDelegate excludeAllFilter = (_, _) => FilterDecision.Exclude;
-    internal static readonly FilterDecisionDelegate neutralFilter = (_, _) => FilterDecision.Neutral;
-    internal static readonly FilterDecisionDelegate commonIgnoreFilter =
-        CreateCommonPatternFilter(commonPatterns, PatternFilterMode.Exclude);
+    internal static readonly GlobFilter excludeAllFilter = (_, _) => GlobFilterStates.Exclude;
+    internal static readonly GlobFilter nothingFilter = (initialState, _) => initialState;
+    internal static readonly GlobFilter commonIgnoreFilter = CreateExcludePatternFilter(commonPatterns);
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -372,97 +366,76 @@ internal static class Glob
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     /// <summary>
-    /// Combines multiple predicates into a single predicate that evaluates them in order.
-    /// The first definitive result is returned.
+    /// Combines multiple glob filter predicates into a single glob filter predicate that evaluates them in order.
     /// </summary>
     /// <param name="predicates">The predicate functions to combine, in evaluation order.</param>
     /// <returns>A combined predicate that evaluates predicates in order and uses the first definitive result.</returns>
     /// <example>
     /// var parentFilter = Glob.CreateExcludeFilter("*.log");
-    /// var childFilter = Glob.CreateIncludeFilter("important.log");
-    /// var combined = Glob.Combine(childFilter, parentFilter);  // childFilter can override parentFilter
+    /// var childFilter = Glob.CreateExcludeFilter("!important.log");
+    /// var combined = Glob.Combine(parentFilter, childFilter);   // childFilter can override others
     /// </example>
-    public static FilterDecisionDelegate Combine(FilterDecisionDelegate[] predicates)
+    public static GlobFilter Combine(GlobFilter[] predicates)
     {
         switch (predicates.Length)
         {
-            // If no predicates, return neutral (no decision)
+            // If no predicates, return nothing filter
             case 0:
-                return neutralFilter;
+                return nothingFilter;
             // If only one predicate, return it
             case 1:
                 return predicates[0];
             default:
-                var reversedPredicates = predicates.Reverse().ToArray();
-
-                // Return a combined predicate that evaluates predicates in reverse order
-                return (path, initialDecision) =>
-                {
-                    var currentDecision = initialDecision;
-            
-                    // Evaluate predicates in reversed order
-                    foreach (var predicate in reversedPredicates)
-                    {
-                        // Evaluate
-                        currentDecision = predicate(path, currentDecision);
-                    }
-
-                    return currentDecision;
-                };
+                // Return a combined predicate that evaluates predicates in order
+                return (initialState, path) => predicates.Aggregate(
+                    initialState,
+                    (currentState, predicate) => predicate(currentState, path));
         }
     }
 
     /// <summary>
-    /// Creates a common pattern-based filter function with the specified filtering mode.
+    /// Create exclude pattern-based glob filter function
     /// </summary>
-    /// <param name="patterns">The patterns to process.</param>
-    /// <param name="mode">The filtering mode that determines how patterns are interpreted and applied.</param>
-    /// <returns>A predicate function that applies the pattern logic according to the specified mode.</returns>
-    private static FilterDecisionDelegate CreateCommonPatternFilter(
-        string[] patterns, PatternFilterMode mode)
+    /// <param name="excludePatterns">The patterns to process.</param>
+    /// <returns>A glob filter function that applies the exclude pattern logic</returns>
+    private static GlobFilter CreateExcludePatternFilter(
+        string[] excludePatterns)
     {
-        // Check if patterns collection is empty
-        if (patterns.Length == 0)
+        // Glob filter for a exclude pattern
+        static GlobFilterStates RunFilterOnce(GlobFilterStates state, string excludePattern, string path)
         {
-            return neutralFilter;
+            // Check if pattern is a negation pattern
+            // "Negation" does not mean "include", it means "not exclude"
+            var isNegationPattern = excludePattern.StartsWith("!");
+            var actualPattern = isNegationPattern ? excludePattern.Substring(1) : excludePattern;
+
+            // When path matches pattern
+            return IsMatchInternal(path, actualPattern) ?
+                // When pattern is a negation pattern, return neutral (NotExclude)
+                (isNegationPattern ? GlobFilterStates.NotExclude : GlobFilterStates.Exclude) :
+                state;
         }
 
-        // Determine behavior based on mode
-        var matchPatternValue = mode == PatternFilterMode.Exclude ?
-            FilterDecision.Exclude : FilterDecision.Include;
-
-        return (path, initialDecision) =>
+        switch (excludePatterns.Length)
         {
-            var currentDecision = initialDecision;
-            
-            // NOTE: Maybe better to use reverse order.
-            // In that case, we can create a state to "ignore the next decision" when a negation pattern is detected.
-            // This way, we can return the decision immediately when a normal pattern is detected.
-
-            // Evaluate patterns in reverse order
-            foreach (var pattern in patterns)
-            {
-                // Check if pattern is a negation pattern
-                var isNegationPattern = pattern.StartsWith("!");
-                var actualPattern = isNegationPattern ? pattern.Substring(1) : pattern;
-
-                // When path matches pattern
-                if (IsMatchInternal(path, actualPattern))
-                {
-                    // When pattern is a negation pattern, return neutral
-                    currentDecision = isNegationPattern ? FilterDecision.Neutral : matchPatternValue;
-                }
-            }
-
-            // Return the result of the pattern immediately
-            return currentDecision;
-        };
+            // If no patterns, return nothing filter
+            case 0:
+                return nothingFilter;
+            // Application fot only once
+            case 1:
+                return (initialState, path) => RunFilterOnce(initialState, excludePatterns[0], path);
+            // Application for all patterns
+            default:
+                return (initialState, path) => excludePatterns.Aggregate(
+                    initialState,
+                    (currentState, excludePattern) => RunFilterOnce(currentState, excludePattern, path));
+        }
     }
-        
+
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     /// <summary>
-    /// Creates a path filter predicate for use with GetWorkingDirectoryStatusAsync() 
+    /// Creates a glob path filter predicate for use with GetWorkingDirectoryStatusAsync() 
     /// that excludes files matching any of the provided .gitignore-style patterns.
     /// </summary>
     /// <param name="excludePatterns">Array of .gitignore-style patterns to exclude files.</param>
@@ -471,61 +444,123 @@ internal static class Glob
     /// var filter = Glob.CreateExcludeFilter(new[] { "*.log", "bin/", "obj/", "node_modules/" });
     /// var status = await repository.GetWorkingDirectoryStatusAsync(filter);
     /// </example>
-    public static FilterDecisionDelegate CreateExcludeFilter(string[] excludePatterns) =>
-        CreateCommonPatternFilter(excludePatterns, PatternFilterMode.Exclude);
-
-    /// <summary>
-    /// Creates a path filter predicate for use with GetWorkingDirectoryStatusAsync() 
-    /// that includes only files matching any of the provided .gitignore-style patterns.
-    /// </summary>
-    /// <param name="includePatterns">Array of .gitignore-style patterns to include files.</param>
-    /// <returns>A predicate function that returns Include if the path should be included, or Neutral if undecided.</returns>
-    /// <example>
-    /// var filter = Glob.CreateIncludeFilter(new[] { "*.cs", "*.fs", "*.ts" });
-    /// var status = await repository.GetWorkingDirectoryStatusAsync(filter);
-    /// </example>
-    public static FilterDecisionDelegate CreateIncludeFilter(string[] includePatterns) =>
-       CreateCommonPatternFilter(includePatterns, PatternFilterMode.Include);
+    public static GlobFilter CreateExcludeFilter(string[] excludePatterns) =>
+        CreateExcludePatternFilter(excludePatterns);
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     /// <summary>
-    /// Creates a path filter predicate from a .gitignore stream.
+    /// Creates a glob path filter predicate from a .gitignore stream.
     /// </summary>
     /// <param name="gitignoreStream">Stream containing .gitignore content.</param>
     /// <param name="ct">The cancellation token.</param>
-    /// <returns>A predicate function that returns Include if the path should be included, Exclude if excluded, or Neutral if undecided.</returns>
+    /// <returns>A predicate function that returns Exclude if excluded, or NotExclude if unevaluated.</returns>
     /// <example>
     /// using var stream = File.OpenRead(".gitignore");
     /// var filter = await Glob.CreateExcludeFilterFromGitignoreAsync(stream, ct);
     /// </example>
 #if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP2_1_OR_GREATER
-    public static async ValueTask<FilterDecisionDelegate> CreateExcludeFilterFromGitignoreAsync(
+    public static async ValueTask<GlobFilter> CreateExcludeFilterFromGitignoreAsync(
         Stream gitignoreStream, CancellationToken ct = default)
 #else
-    public static async Task<FilterDecisionDelegate> CreateExcludeFilterFromGitignoreAsync(
+    public static async Task<GlobFilter> CreateExcludeFilterFromGitignoreAsync(
         Stream gitignoreStream, CancellationToken ct = default)
 #endif
     {
-        var patterns = new List<string>();
+        var excludePatterns = new List<string>();
         var reader = new AsyncTextReader(gitignoreStream);
 
         while (true)
         {
             var line = await reader.ReadLineAsync(ct);
             if (line == null)
+            {
                 break;
+            }
 
             // Trim whitespace
-            line = line.Trim();
+            var trimmed = line.Trim();
 
             // Skip empty lines and comments
-            if (string.IsNullOrEmpty(line) || line.StartsWith("#"))
+            if (Utilities.IsNullOrWhiteSpace(trimmed) || trimmed.StartsWith("#"))
+            {
                 continue;
+            }
 
-            patterns.Add(line);
+            excludePatterns.Add(trimmed);
         }
 
-        return CreateCommonPatternFilter(patterns.ToArray(), PatternFilterMode.Exclude);
+        return CreateExcludePatternFilter(excludePatterns.ToArray());
+    }
+
+    /// <summary>
+    /// Creates a glob path filter predicate from a .gitignore stream.
+    /// </summary>
+    /// <param name="gitignoreReader">Text reader containing .gitignore content.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>A predicate function that returns Exclude if excluded, or NotExclude if unevaluated.</returns>
+    /// <example>
+    /// using var reader = File.OpenText(".gitignore");
+    /// var filter = await Glob.CreateExcludeFilterFromGitignoreAsync(reader, ct);
+    /// </example>
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP2_1_OR_GREATER
+    public static async ValueTask<GlobFilter> CreateExcludeFilterFromGitignoreAsync(
+        TextReader gitignoreReader, CancellationToken ct = default)
+#else
+    public static async Task<GlobFilter> CreateExcludeFilterFromGitignoreAsync(
+        TextReader gitignoreReader, CancellationToken ct = default)
+#endif
+    {
+        var excludePatterns = new List<string>();
+
+        while (true)
+        {
+            var line = await gitignoreReader.ReadLineAsync().WaitAsync(ct);
+            if (line == null)
+            {
+                break;
+            }
+
+            // Trim whitespace
+            var trimmed = line.Trim();
+
+            // Skip empty lines and comments
+            if (Utilities.IsNullOrWhiteSpace(trimmed) || trimmed.StartsWith("#"))
+            {
+                continue;
+            }
+
+            excludePatterns.Add(trimmed);
+        }
+
+        return CreateExcludePatternFilter(excludePatterns.ToArray());
+    }
+
+    /// <summary>
+    /// Creates a glob path filter predicate from a .gitignore stream.
+    /// </summary>
+    /// <param name="gitignoreLines">Text lines containing .gitignore content.</param>
+    /// <returns>A predicate function that returns Exclude if excluded, or NotExclude if unevaluated.</returns>
+    /// <remarks>Difference from CreateExcludeFilter() is that empty lines and comments are evaluated.</remarks>
+    public static GlobFilter CreateExcludeFilterFromGitignore(
+        IEnumerable<string> gitignoreLines)
+    {
+        var excludePatterns = new List<string>();
+        
+        foreach (var line in gitignoreLines)
+        {
+            // Trim whitespace
+            var trimmed = line.Trim();
+
+            // Skip empty lines and comments
+            if (Utilities.IsNullOrWhiteSpace(trimmed) || trimmed.StartsWith("#"))
+            {
+                continue;
+            }
+
+            excludePatterns.Add(trimmed);
+        }
+
+        return CreateExcludePatternFilter(excludePatterns.ToArray());
     }
 }

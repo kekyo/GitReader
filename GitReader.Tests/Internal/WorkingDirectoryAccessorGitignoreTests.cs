@@ -168,9 +168,10 @@ public sealed class WorkingDirectoryAccessorGitignoreTests
 
         using var repository = await Repository.Factory.OpenPrimitiveAsync(testPath);
 
-        // Create pathFilter that specifically includes *.cs files
-        FilterDecisionDelegate pathFilter = (path, initialDecision) =>
-            path.EndsWith(".cs") ? FilterDecision.Include : FilterDecision.Exclude;
+        // Create pathFilter that specifically neutral *.cs files
+        GlobFilter pathFilter = (_, path) =>
+            path.EndsWith(".cs") ?
+                GlobFilterStates.NotExclude : GlobFilterStates.Exclude;
 
         // Get working directory status with pathFilter
         var status = await repository.GetWorkingDirectoryStatusWithFilterAsync(pathFilter);
@@ -281,8 +282,9 @@ public sealed class WorkingDirectoryAccessorGitignoreTests
         using var repository = await Repository.Factory.OpenPrimitiveAsync(testPath);
 
         // Create pathFilter that only includes source files (.cs, .js)
-        FilterDecisionDelegate pathFilter = (path, initialDecision) =>
-            (path.EndsWith(".cs") || path.EndsWith(".js")) ? FilterDecision.Include : FilterDecision.Exclude;
+        GlobFilter pathFilter = (_, path) =>
+            (path.EndsWith(".cs") || path.EndsWith(".js")) ?
+                GlobFilterStates.NotExclude : GlobFilterStates.Exclude;
 
         // Get working directory status with pathFilter
         var status = await repository.GetWorkingDirectoryStatusWithFilterAsync(pathFilter);
@@ -301,10 +303,67 @@ public sealed class WorkingDirectoryAccessorGitignoreTests
     }
 
     /// <summary>
-    /// Tests that .gitignore works correctly with staged and modified files.
+    /// Tests that files staged before .gitignore creation remain tracked.
     /// </summary>
     [Test]
-    public async Task TestGitignoreWithStagedFiles()
+    public async Task TestGitignoreWithFilesStageBeforeGitignore()
+    {
+        // Setup git repository
+        await TestUtilities.RunGitCommandAsync(testPath, "init");
+        await TestUtilities.RunGitCommandAsync(testPath, "config user.email \"test@example.com\"");
+        await TestUtilities.RunGitCommandAsync(testPath, "config user.name \"Test User\"");
+        
+        // Create and commit initial files
+        var committedFile = Path.Combine(testPath, "committed.txt");
+        await File.WriteAllTextAsync(committedFile, "initial content");
+        await TestUtilities.RunGitCommandAsync(testPath, "add committed.txt");
+        await TestUtilities.RunGitCommandAsync(testPath, "commit -m \"Initial commit\"");
+        
+        // Create and stage file BEFORE .gitignore exists
+        var stagedLogFile = Path.Combine(testPath, "staged.log");
+        await File.WriteAllTextAsync(stagedLogFile, "staged log content");
+        await TestUtilities.RunGitCommandAsync(testPath, "add staged.log");
+        
+        // Create .gitignore AFTER staging the file
+        var rootGitignore = Path.Combine(testPath, ".gitignore");
+        await File.WriteAllTextAsync(rootGitignore, "*.log\n");
+        
+        // Modify committed file
+        await File.WriteAllTextAsync(committedFile, "modified content");
+        
+        // Create untracked file that matches .gitignore pattern
+        var untrackedLogFile = Path.Combine(testPath, "untracked.log");
+        await File.WriteAllTextAsync(untrackedLogFile, "untracked log content");
+        
+        // Create untracked file that doesn't match .gitignore pattern
+        var untrackedCsFile = Path.Combine(testPath, "untracked.cs");
+        await File.WriteAllTextAsync(untrackedCsFile, "cs content");
+
+        using var repository = await Repository.Factory.OpenPrimitiveAsync(testPath);
+
+        // Get working directory status
+        var status = await repository.GetWorkingDirectoryStatusAsync();
+
+        var stagedFiles = status.StagedFiles.Select(f => f.Path).ToArray();
+        var unstagedFiles = status.UnstagedFiles.Select(f => f.Path).ToArray();
+        var untrackedFiles = status.UntrackedFiles.Select(f => f.Path).ToArray();
+        
+        // Files staged before .gitignore should remain staged regardless of .gitignore
+        Assert.Contains("staged.log", stagedFiles);
+        
+        // Modified files should be included regardless of .gitignore  
+        Assert.Contains("committed.txt", unstagedFiles);
+        
+        // Untracked files should respect .gitignore
+        Assert.Contains("untracked.cs", untrackedFiles);
+        Assert.IsFalse(untrackedFiles.Contains("untracked.log"));
+    }
+
+    /// <summary>
+    /// Tests that files can be force-added despite .gitignore rules.
+    /// </summary>
+    [Test]
+    public async Task TestGitignoreWithForceAddedFiles()
     {
         // Setup git repository
         await TestUtilities.RunGitCommandAsync(testPath, "init");
@@ -324,10 +383,10 @@ public sealed class WorkingDirectoryAccessorGitignoreTests
         // Modify committed file
         await File.WriteAllTextAsync(committedFile, "modified content");
         
-        // Create staged file that matches .gitignore pattern
+        // Create staged file that matches .gitignore pattern and force-add it
         var stagedLogFile = Path.Combine(testPath, "staged.log");
         await File.WriteAllTextAsync(stagedLogFile, "staged log content");
-        await TestUtilities.RunGitCommandAsync(testPath, "add staged.log");
+        await TestUtilities.RunGitCommandAsync(testPath, "add -f staged.log");
         
         // Create untracked file that matches .gitignore pattern
         var untrackedLogFile = Path.Combine(testPath, "untracked.log");
@@ -346,7 +405,7 @@ public sealed class WorkingDirectoryAccessorGitignoreTests
         var unstagedFiles = status.UnstagedFiles.Select(f => f.Path).ToArray();
         var untrackedFiles = status.UntrackedFiles.Select(f => f.Path).ToArray();
         
-        // Staged files should be included regardless of .gitignore
+        // Force-added files should be staged regardless of .gitignore
         Assert.Contains("staged.log", stagedFiles);
         
         // Modified files should be included regardless of .gitignore  

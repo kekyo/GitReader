@@ -31,11 +31,11 @@ internal static class WorkingDirectoryAccessor
 #if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP2_1_OR_GREATER
     public static ValueTask<PrimitiveWorkingDirectoryStatus> GetPrimitiveWorkingDirectoryStatusAsync(
         Repository repository, CancellationToken ct) =>
-        GetPrimitiveWorkingDirectoryStatusWithFilterAsync(repository, Glob.neutralFilter, ct);
+        GetPrimitiveWorkingDirectoryStatusWithFilterAsync(repository, Glob.nothingFilter, ct);
 #else
     public static Task<PrimitiveWorkingDirectoryStatus> GetPrimitiveWorkingDirectoryStatusAsync(
         Repository repository, CancellationToken ct) =>
-        GetPrimitiveWorkingDirectoryStatusWithFilterAsync(repository, Glob.neutralFilter, ct);
+        GetPrimitiveWorkingDirectoryStatusWithFilterAsync(repository, Glob.nothingFilter, ct);
 #endif
 
     private readonly struct Status
@@ -74,10 +74,10 @@ internal static class WorkingDirectoryAccessor
     /// <returns>A ValueTask containing the primitive working directory status.</returns>
 #if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP2_1_OR_GREATER
     public static async ValueTask<PrimitiveWorkingDirectoryStatus> GetPrimitiveWorkingDirectoryStatusWithFilterAsync(
-        Repository repository, FilterDecisionDelegate overridePathFilter, CancellationToken ct)
+        Repository repository, GlobFilter overridePathFilter, CancellationToken ct)
 #else
     public static async Task<PrimitiveWorkingDirectoryStatus> GetPrimitiveWorkingDirectoryStatusWithFilterAsync(
-        Repository repository, FilterDecisionDelegate overridePathFilter, CancellationToken ct)
+        Repository repository, GlobFilter overridePathFilter, CancellationToken ct)
 #endif
     {
         // Get staged files from index
@@ -224,8 +224,8 @@ internal static class WorkingDirectoryAccessor
         await ScanWorkingDirectoryAsync(
             repository, workingDirectoryPath, workingDirectoryPath, 
             processedPaths, untrackedFiles,
-            overridePathFilter,       // Override path filter
-            Glob.includeAllFilter,    // Default path filter (included)
+            overridePathFilter,    // Override path filter
+            Glob.nothingFilter,    // Initial path filter (always neutral)
             ct);
 
         return new PrimitiveWorkingDirectoryStatus(
@@ -244,10 +244,10 @@ internal static class WorkingDirectoryAccessor
     /// <returns>A ValueTask containing the structured working directory status.</returns>
 #if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP2_1_OR_GREATER
     public static async ValueTask<WorkingDirectoryStatus> GetStructuredWorkingDirectoryStatusWithFilterAsync(
-        StructuredRepository repository, WeakReference rwr, FilterDecisionDelegate overridePathFilter, CancellationToken ct = default)
+        StructuredRepository repository, WeakReference rwr, GlobFilter overridePathFilter, CancellationToken ct = default)
 #else
     public static async Task<WorkingDirectoryStatus> GetStructuredWorkingDirectoryStatusWithFilterAsync(
-        StructuredRepository repository, WeakReference rwr, FilterDecisionDelegate overridePathFilter, CancellationToken ct = default)
+        StructuredRepository repository, WeakReference rwr, GlobFilter overridePathFilter, CancellationToken ct = default)
 #endif
     {
         var primitiveStatus = await GetPrimitiveWorkingDirectoryStatusWithFilterAsync(repository, overridePathFilter, ct);
@@ -283,11 +283,11 @@ internal static class WorkingDirectoryAccessor
 #if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP2_1_OR_GREATER
     public static ValueTask<WorkingDirectoryStatus> GetStructuredWorkingDirectoryStatusAsync(
         StructuredRepository repository, WeakReference rwr, CancellationToken ct = default) =>
-        GetStructuredWorkingDirectoryStatusWithFilterAsync(repository, rwr, Glob.includeAllFilter, ct);
+        GetStructuredWorkingDirectoryStatusWithFilterAsync(repository, rwr, Glob.nothingFilter, ct);
 #else
     public static Task<WorkingDirectoryStatus> GetStructuredWorkingDirectoryStatusAsync(
         StructuredRepository repository, WeakReference rwr, CancellationToken ct = default) =>
-        GetStructuredWorkingDirectoryStatusWithFilterAsync(repository, rwr, Glob.includeAllFilter, ct);
+        GetStructuredWorkingDirectoryStatusWithFilterAsync(repository, rwr, Glob.nothingFilter, ct);
 #endif
 
 #if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP2_1_OR_GREATER
@@ -297,8 +297,8 @@ internal static class WorkingDirectoryAccessor
         string currentPath,
         HashSet<string> processedPaths,
         List<PrimitiveWorkingDirectoryFile> untrackedFiles,
-        FilterDecisionDelegate overridePathFilter,
-        FilterDecisionDelegate parentPathFilter,
+        GlobFilter overridePathFilter,
+        GlobFilter parentPathFilter,
         CancellationToken ct)
 #else
     private static async Task ScanWorkingDirectoryAsync(
@@ -307,8 +307,8 @@ internal static class WorkingDirectoryAccessor
         string currentPath,
         HashSet<string> processedPaths,
         List<PrimitiveWorkingDirectoryFile> untrackedFiles,
-        FilterDecisionDelegate overridePathFilter,
-        FilterDecisionDelegate parentPathFilter,
+        GlobFilter overridePathFilter,
+        GlobFilter parentPathFilter,
         CancellationToken ct)
 #endif
     {
@@ -327,8 +327,8 @@ internal static class WorkingDirectoryAccessor
             }
 
             // Read .gitignore in current directory and combine with pathFilter.
-            FilterDecisionDelegate candidatePathFilter;
-            FilterDecisionDelegate exactlyPathFilter;
+            GlobFilter candidatePathFilter;
+            GlobFilter exactlyPathFilter;
             var gitignorePath = repository.fileSystem.Combine(currentPath, ".gitignore");
             try
             {
@@ -339,22 +339,22 @@ internal static class WorkingDirectoryAccessor
                     using var gitignoreStream = await repository.fileSystem.OpenAsync(gitignorePath, false, ct);
                     var gitignoreFilter = await Glob.CreateExcludeFilterFromGitignoreAsync(gitignoreStream, ct);
 
-                    // Combine filters with exactly order: .gitignore filter, parent filter
-                    candidatePathFilter = Glob.Combine([ gitignoreFilter, parentPathFilter ]);
-                    exactlyPathFilter = Glob.Combine([ overridePathFilter, gitignoreFilter, parentPathFilter ]);
+                    // Combine filters with correct order: parent filter, .gitignore filter, override filter
+                    candidatePathFilter = Glob.Combine([ parentPathFilter, gitignoreFilter ]);
+                    exactlyPathFilter = Glob.Combine([ parentPathFilter, gitignoreFilter, overridePathFilter ]);
                 }
                 else
                 {
                     // When .gitignore does not exist, continue with parent filter
                     candidatePathFilter = parentPathFilter;
-                    exactlyPathFilter = Glob.Combine([ overridePathFilter, parentPathFilter ]);
+                    exactlyPathFilter = Glob.Combine([ parentPathFilter, overridePathFilter ]);
                 }
             }
             catch
             {
                 // If .gitignore cannot be read, continue with parent filter
                 candidatePathFilter = parentPathFilter;
-                exactlyPathFilter = Glob.Combine([ overridePathFilter, parentPathFilter ]);
+                exactlyPathFilter = Glob.Combine([ parentPathFilter, overridePathFilter ]);
             }
 
             // Scan directory entries
@@ -371,14 +371,11 @@ internal static class WorkingDirectoryAccessor
                 // Get relative path and filter it
                 var relativePath = repository.fileSystem.GetRelativePath(workingDirectoryPath, entry);
                 var filterDecision = exactlyPathFilter(
-                    relativePath,
-                    FilterDecision.Include);
+                    GlobFilterStates.NotExclude,   // Start from neutral.
+                    relativePath);
 
                 // When entry is excluded, ignore it.
-                // This means that Neutral is interpreted as Include.
-                // The possibility of becoming Neutral is when the filter calculation is completed with a negation condition,
-                // and in the standard git behavior, it is not included in the exclusion.
-                if (filterDecision == FilterDecision.Exclude)
+                if (filterDecision == GlobFilterStates.Exclude)
                 {
                     continue;
                 }

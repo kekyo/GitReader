@@ -498,21 +498,21 @@ public sealed class GlobTests
     {
         // Test CreateExcludeFilter method that creates a function to exclude matching patterns
         var f = Glob.CreateExcludeFilter("*.log", "*.tmp", "bin/", "obj/");
-        Func<string, FilterDecision> filter = path => f(path, FilterDecision.Neutral);
-        
+        Func<string, GlobFilterStates> filter = path => f(GlobFilterStates.NotExclude, path);
+
         // Files that don't match patterns should return Neutral (undecided)
-        Assert.AreEqual(FilterDecision.Neutral, filter("src/Program.cs"));
-        Assert.AreEqual(FilterDecision.Neutral, filter("README.md"));
-        Assert.AreEqual(FilterDecision.Neutral, filter("package.json"));
-        Assert.AreEqual(FilterDecision.Neutral, filter("docs/guide.md"));
-        
+        Assert.AreEqual(GlobFilterStates.NotExclude, filter("src/Program.cs"));
+        Assert.AreEqual(GlobFilterStates.NotExclude, filter("README.md"));
+        Assert.AreEqual(GlobFilterStates.NotExclude, filter("package.json"));
+        Assert.AreEqual(GlobFilterStates.NotExclude, filter("docs/guide.md"));
+
         // Files that should be excluded (ignored)
-        Assert.AreEqual(FilterDecision.Exclude, filter("error.log"));
-        Assert.AreEqual(FilterDecision.Exclude, filter("debug.log"));
-        Assert.AreEqual(FilterDecision.Exclude, filter("temp.tmp"));
-        Assert.AreEqual(FilterDecision.Exclude, filter("cache.tmp"));
-        Assert.AreEqual(FilterDecision.Exclude, filter("bin/Debug/app.exe"));
-        Assert.AreEqual(FilterDecision.Exclude, filter("obj/Release/temp.dll"));
+        Assert.AreEqual(GlobFilterStates.Exclude, filter("error.log"));
+        Assert.AreEqual(GlobFilterStates.Exclude, filter("debug.log"));
+        Assert.AreEqual(GlobFilterStates.Exclude, filter("temp.tmp"));
+        Assert.AreEqual(GlobFilterStates.Exclude, filter("cache.tmp"));
+        Assert.AreEqual(GlobFilterStates.Exclude, filter("bin/Debug/app.exe"));
+        Assert.AreEqual(GlobFilterStates.Exclude, filter("obj/Release/temp.dll"));
     }
 
     [Test]
@@ -520,150 +520,62 @@ public sealed class GlobTests
     {
         // Test CreateExcludeFilter with complex patterns including ** and character classes
         var f = Glob.CreateExcludeFilter("**/node_modules/**", "**/*.log", "**/*.tmp", "[Bb]in/", "[Oo]bj/");
-        Func<string, FilterDecision> filter = path => f(path, FilterDecision.Neutral);
+        Func<string, GlobFilterStates> filter = path => f(GlobFilterStates.NotExclude, path);
 
         // Files that don't match patterns should return Neutral
-        Assert.AreEqual(FilterDecision.Neutral, filter("src/main.ts"));
-        Assert.AreEqual(FilterDecision.Neutral, filter("tests/unit.test.js"));
-        Assert.AreEqual(FilterDecision.Neutral, filter("package.json"));
-        
+        Assert.AreEqual(GlobFilterStates.NotExclude, filter("src/main.ts"));
+        Assert.AreEqual(GlobFilterStates.NotExclude, filter("tests/unit.test.js"));
+        Assert.AreEqual(GlobFilterStates.NotExclude, filter("package.json"));
+
         // Files that should be excluded
-        Assert.AreEqual(FilterDecision.Exclude, filter("node_modules/package/index.js"));
-        Assert.AreEqual(FilterDecision.Exclude, filter("src/node_modules/lib/util.js"));
-        Assert.AreEqual(FilterDecision.Exclude, filter("app.log"));
-        Assert.AreEqual(FilterDecision.Exclude, filter("cache.tmp"));
-        Assert.AreEqual(FilterDecision.Exclude, filter("bin/output"));
-        Assert.AreEqual(FilterDecision.Exclude, filter("Bin/output"));
-        Assert.AreEqual(FilterDecision.Exclude, filter("obj/temp"));
-        Assert.AreEqual(FilterDecision.Exclude, filter("Obj/temp"));
-    }
-
-    [Test]
-    public void CreateIncludeFilterTest()
-    {
-        // Test CreateIncludeFilter method that creates a function to include only matching patterns
-        var f = Glob.CreateIncludeFilter("*.cs", "*.fs", "*.vb");
-        Func<string, FilterDecision> filter = path => f(path, FilterDecision.Neutral);
-
-        // Files that should be included
-        Assert.AreEqual(FilterDecision.Include, filter("Program.cs"));
-        Assert.AreEqual(FilterDecision.Include, filter("Library.fs"));
-        Assert.AreEqual(FilterDecision.Include, filter("Module.vb"));
-        Assert.AreEqual(FilterDecision.Include, filter("src/main.cs"));
-        
-        // Files that don't match patterns should return Neutral
-        Assert.AreEqual(FilterDecision.Neutral, filter("README.md"));
-        Assert.AreEqual(FilterDecision.Neutral, filter("package.json"));
-        Assert.AreEqual(FilterDecision.Neutral, filter("app.exe"));
-        Assert.AreEqual(FilterDecision.Neutral, filter("style.css"));
-        Assert.AreEqual(FilterDecision.Neutral, filter("script.js"));
-    }
-
-    [Test]
-    public void CreateIncludeFilterWithDirectoryPatternsTest()
-    {
-        // Test CreateIncludeFilter with directory patterns and **
-        var f = Glob.CreateIncludeFilter("src/**", "test/**", "docs/*.md");
-        Func<string, FilterDecision> filter = path => f(path, FilterDecision.Neutral);
-
-        // Files that should be included
-        Assert.AreEqual(FilterDecision.Include, filter("src/Program.cs"));
-        Assert.AreEqual(FilterDecision.Include, filter("src/lib/Utils.cs"));
-        Assert.AreEqual(FilterDecision.Include, filter("test/UnitTests.cs"));
-        Assert.AreEqual(FilterDecision.Include, filter("test/integration/ApiTests.cs"));
-        Assert.AreEqual(FilterDecision.Include, filter("docs/README.md"));
-        Assert.AreEqual(FilterDecision.Include, filter("docs/guide.md"));
-        
-        // Files that don't match patterns should return Neutral
-        Assert.AreEqual(FilterDecision.Neutral, filter("bin/app.exe"));
-        Assert.AreEqual(FilterDecision.Neutral, filter("obj/temp.dll"));
-        Assert.AreEqual(FilterDecision.Neutral, filter("README.md")); // Not in docs/
-        Assert.AreEqual(FilterDecision.Neutral, filter("docs/images/logo.png")); // Not *.md
+        Assert.AreEqual(GlobFilterStates.Exclude, filter("node_modules/package/index.js"));
+        Assert.AreEqual(GlobFilterStates.Exclude, filter("src/node_modules/lib/util.js"));
+        Assert.AreEqual(GlobFilterStates.Exclude, filter("app.log"));
+        Assert.AreEqual(GlobFilterStates.Exclude, filter("cache.tmp"));
+        Assert.AreEqual(GlobFilterStates.Exclude, filter("bin/output"));
+        Assert.AreEqual(GlobFilterStates.Exclude, filter("Bin/output"));
+        Assert.AreEqual(GlobFilterStates.Exclude, filter("obj/temp"));
+        Assert.AreEqual(GlobFilterStates.Exclude, filter("Obj/temp"));
     }
 
     [Test]
     public void CreateCommonIgnoreFilterTest()
     {
         // Test CreateCommonIgnoreFilter method that provides common ignore patterns
-        var filter = Glob.GetCommonIgnoreFilter();
+        var f = Glob.GetCommonIgnoreFilter();
+        Func<string, GlobFilterStates> finalFilter = path => f(GlobFilterStates.NotExclude, path);
 
-        // To get final decisions, combine with includeAllFilter as default
-        var f = Glob.Combine(filter, Glob.GetIncludeAllFilter());
-        Func<string, FilterDecision> finalFilter = path => f(path, FilterDecision.Neutral);
-        
-        // Common files that should be included (not matching ignore patterns)
-        Assert.AreEqual(FilterDecision.Include, finalFilter("src/Program.cs"));
-        Assert.AreEqual(FilterDecision.Include, finalFilter("README.md"));
-        Assert.AreEqual(FilterDecision.Include, finalFilter("package.json"));
-        Assert.AreEqual(FilterDecision.Include, finalFilter("Dockerfile"));
-        Assert.AreEqual(FilterDecision.Include, finalFilter("LICENSE"));
-        
+        // Common files that should be neutral (not matching ignore patterns)
+        Assert.AreEqual(GlobFilterStates.NotExclude, finalFilter("src/Program.cs"));
+        Assert.AreEqual(GlobFilterStates.NotExclude, finalFilter("README.md"));
+        Assert.AreEqual(GlobFilterStates.NotExclude, finalFilter("package.json"));
+        Assert.AreEqual(GlobFilterStates.NotExclude, finalFilter("Dockerfile"));
+        Assert.AreEqual(GlobFilterStates.NotExclude, finalFilter("LICENSE"));
+
         // Common files that should be excluded
-        Assert.AreEqual(FilterDecision.Exclude, finalFilter("bin/Debug/app.exe"));
-        Assert.AreEqual(FilterDecision.Exclude, finalFilter("obj/Release/temp.dll"));
-        Assert.AreEqual(FilterDecision.Exclude, finalFilter("node_modules/package/index.js"));
-        Assert.AreEqual(FilterDecision.Exclude, finalFilter("target/classes/Main.class"));
-        Assert.AreEqual(FilterDecision.Exclude, finalFilter(".vs/config/app.config"));
-        Assert.AreEqual(FilterDecision.Exclude, finalFilter("*.log")); // Assuming common filter includes *.log
-        Assert.AreEqual(FilterDecision.Exclude, finalFilter("*.tmp")); // Assuming common filter includes *.tmp
-    }
-
-    [Test]
-    public void FilterCombinationTest()
-    {
-        // Test combining multiple filters
-        var ignoreFilter = Glob.CreateExcludeFilter("*.log", "*.tmp");
-        var includeFilter = Glob.CreateIncludeFilter("*.cs", "*.fs");
-
-        // Create a combined filter with explicit default behavior
-        var f = Glob.Combine(includeFilter, ignoreFilter, Glob.GetIncludeAllFilter());
-        Func<string, FilterDecision> combinedFilter = path => f(path, FilterDecision.Neutral);
-        
-        // TODO: これは使われていないが、何をテストしようとしていたのか？
-        // Combined filter: include only .cs/.fs files that are not .log/.tmp
-        string[] testFiles = {
-            "Program.cs",      // Should pass: is .cs and not .log/.tmp
-            "Library.fs",      // Should pass: is .fs and not .log/.tmp
-            "app.log",         // Should fail: is .log (excluded by ignoreFilter)
-            "temp.tmp",        // Should fail: is .tmp (excluded by ignoreFilter)
-            "README.md",       // Should fail: not .cs/.fs (Neutral from includeFilter, stays Include from default)
-            "script.js"        // Should fail: not .cs/.fs (Neutral from includeFilter, stays Include from default)
-        };
-        
-        // Test files that should be excluded by ignore filter
-        Assert.AreEqual(FilterDecision.Exclude, combinedFilter("app.log"));
-        Assert.AreEqual(FilterDecision.Exclude, combinedFilter("temp.tmp"));
-        
-        // Test files that should be included (either match include pattern or default to include)
-        Assert.AreEqual(FilterDecision.Include, combinedFilter("Program.cs"));
-        Assert.AreEqual(FilterDecision.Include, combinedFilter("Library.fs"));
-        Assert.AreEqual(FilterDecision.Include, combinedFilter("README.md"));
-        Assert.AreEqual(FilterDecision.Include, combinedFilter("script.js"));
+        Assert.AreEqual(GlobFilterStates.Exclude, finalFilter("bin/Debug/app.exe"));
+        Assert.AreEqual(GlobFilterStates.Exclude, finalFilter("obj/Release/temp.dll"));
+        Assert.AreEqual(GlobFilterStates.Exclude, finalFilter("node_modules/package/index.js"));
+        Assert.AreEqual(GlobFilterStates.Exclude, finalFilter("target/classes/Main.class"));
+        Assert.AreEqual(GlobFilterStates.Exclude, finalFilter(".vs/config/app.config"));
+        Assert.AreEqual(GlobFilterStates.Exclude, finalFilter("*.log")); // Assuming common filter includes *.log
+        Assert.AreEqual(GlobFilterStates.Exclude, finalFilter("*.tmp")); // Assuming common filter includes *.tmp
     }
 
     [Test]
     public void CombineMethodTest()
     {
         // Test the new Combine method for composing predicate functions
-        var filter1 = Glob.CreateExcludeFilter("*.log", "*.tmp");
-        var filter2 = Glob.CreateIncludeFilter("*.cs", "*.fs", "*.md");
+        var f = Glob.CreateExcludeFilter("*.log", "*.tmp");
+        Func<string, GlobFilterStates> combinedFilter = path => f(GlobFilterStates.NotExclude, path);
 
-        // Combine filters using the new Combine method
-        var f = Glob.Combine(filter1, filter2);
-        Func<string, FilterDecision> combinedFilter = path => f(path, FilterDecision.Neutral);
-        
-        // Test files that should be included by filter2
-        Assert.AreEqual(FilterDecision.Include, combinedFilter("Program.cs"));    // .cs file
-        Assert.AreEqual(FilterDecision.Include, combinedFilter("Library.fs"));    // .fs file
-        Assert.AreEqual(FilterDecision.Include, combinedFilter("README.md"));     // .md file
-        
         // Test files that should be excluded by filter1 (override filter2)
-        Assert.AreEqual(FilterDecision.Exclude, combinedFilter("app.log"));      // .log file is ignored
-        Assert.AreEqual(FilterDecision.Exclude, combinedFilter("temp.tmp"));     // .tmp file is ignored
-        
+        Assert.AreEqual(GlobFilterStates.Exclude, combinedFilter("app.log"));      // .log file is ignored
+        Assert.AreEqual(GlobFilterStates.Exclude, combinedFilter("temp.tmp"));     // .tmp file is ignored
+
         // Test files that don't match any specific patterns (should return Neutral)
-        Assert.AreEqual(FilterDecision.Neutral, combinedFilter("script.js"));    // .js file not in include patterns
-        Assert.AreEqual(FilterDecision.Neutral, combinedFilter("style.css"));    // .css file not in include patterns
+        Assert.AreEqual(GlobFilterStates.NotExclude, combinedFilter("script.js"));    // .js file not in include patterns
+        Assert.AreEqual(GlobFilterStates.NotExclude, combinedFilter("style.css"));    // .css file not in include patterns
     }
 
     [Test]
@@ -671,10 +583,10 @@ public sealed class GlobTests
     {
         // Test Combine method with empty array - should return neutral for everything
         var f = Glob.Combine();
-        Func<string, FilterDecision> combinedFilter = path => f(path, FilterDecision.Neutral);
+        Func<string, GlobFilterStates> combinedFilter = path => f(GlobFilterStates.NotExclude, path);
 
-        Assert.AreEqual(FilterDecision.Neutral, combinedFilter("any-file.txt"));
-        Assert.AreEqual(FilterDecision.Neutral, combinedFilter("another-file.log"));
+        Assert.AreEqual(GlobFilterStates.NotExclude, combinedFilter("any-file.txt"));
+        Assert.AreEqual(GlobFilterStates.NotExclude, combinedFilter("another-file.log"));
     }
 
     [Test]
@@ -683,10 +595,10 @@ public sealed class GlobTests
         // Test Combine method with single filter - should return the same filter
         var originalFilter = Glob.CreateExcludeFilter("*.log");
         var f = Glob.Combine(originalFilter);
-        Func<string, FilterDecision> combinedFilter = path => f(path, FilterDecision.Neutral);
+        Func<string, GlobFilterStates> combinedFilter = path => f(GlobFilterStates.NotExclude, path);
 
-        Assert.AreEqual(FilterDecision.Neutral, combinedFilter("test.txt"));
-        Assert.AreEqual(FilterDecision.Exclude, combinedFilter("test.log"));
+        Assert.AreEqual(GlobFilterStates.NotExclude, combinedFilter("test.txt"));
+        Assert.AreEqual(GlobFilterStates.Exclude, combinedFilter("test.log"));
     }
 
     [Test]
@@ -695,21 +607,20 @@ public sealed class GlobTests
         // Test Combine method with multiple filters
         var filter1 = Glob.CreateExcludeFilter("*.log");
         var filter2 = Glob.CreateExcludeFilter("*.tmp");
-        var filter3 = Glob.CreateIncludeFilter("*.cs", "*.fs");
+        var filter3 = Glob.CreateExcludeFilter("*.bak");
 
         var f = Glob.Combine(filter1, filter2, filter3);
-        Func<string, FilterDecision> combinedFilter = path => f(path, FilterDecision.Neutral);
-        
-        // Should include files that match filter3
-        Assert.AreEqual(FilterDecision.Include, combinedFilter("Program.cs"));    // .cs file
-        Assert.AreEqual(FilterDecision.Include, combinedFilter("Library.fs"));    // .fs file
-        
+        Func<string, GlobFilterStates> combinedFilter = path => f(GlobFilterStates.NotExclude, path);
+
         // Should exclude files that match filter1 or filter2
-        Assert.AreEqual(FilterDecision.Exclude, combinedFilter("app.log"));      // .log file fails filter1
-        Assert.AreEqual(FilterDecision.Exclude, combinedFilter("temp.tmp"));     // .tmp file fails filter2
-        
+        Assert.AreEqual(GlobFilterStates.Exclude, combinedFilter("app.log"));      // .log file fails filter1
+        Assert.AreEqual(GlobFilterStates.Exclude, combinedFilter("temp.tmp"));     // .tmp file fails filter2
+        Assert.AreEqual(GlobFilterStates.Exclude, combinedFilter("README.bak"));   // .bak file fails filter2
+
         // Should return Neutral for files that don't match any patterns
-        Assert.AreEqual(FilterDecision.Neutral, combinedFilter("README.md"));    // .md file doesn't match filter3
+        Assert.AreEqual(GlobFilterStates.NotExclude, combinedFilter("README.md"));     // .md file doesn't match filter3
+        Assert.AreEqual(GlobFilterStates.NotExclude, combinedFilter("Program.cs"));    // .cs file
+        Assert.AreEqual(GlobFilterStates.NotExclude, combinedFilter("Library.fs"));    // .fs file
     }
 
     [Test]
@@ -717,17 +628,10 @@ public sealed class GlobTests
     {
         // Test ignore filter with empty patterns (should return neutral for everything)
         var f1 = Glob.CreateExcludeFilter();
-        Func<string, FilterDecision> emptyIgnoreFilter = path => f1(path, FilterDecision.Neutral);
+        Func<string, GlobFilterStates> emptyIgnoreFilter = path => f1(GlobFilterStates.NotExclude, path);
 
-        Assert.AreEqual(FilterDecision.Neutral, emptyIgnoreFilter("any-file.txt"));
-        Assert.AreEqual(FilterDecision.Neutral, emptyIgnoreFilter("another-file.log"));
-        
-        // Test include filter with empty patterns (should return neutral for everything)
-        var f2 = Glob.CreateIncludeFilter();
-        Func<string, FilterDecision> emptyIncludeFilter = path => f2(path, FilterDecision.Neutral);
-
-        Assert.AreEqual(FilterDecision.Neutral, emptyIncludeFilter("any-file.txt"));
-        Assert.AreEqual(FilterDecision.Neutral, emptyIncludeFilter("another-file.log"));
+        Assert.AreEqual(GlobFilterStates.NotExclude, emptyIgnoreFilter("any-file.txt"));
+        Assert.AreEqual(GlobFilterStates.NotExclude, emptyIgnoreFilter("another-file.log"));
     }
 
     //////////////////////////////////////////////////////////////
@@ -740,18 +644,18 @@ public sealed class GlobTests
         using var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(gitignoreContent));
 
         var f = await Glob.CreateExcludeFilterFromGitignoreAsync(stream);
-        Func<string, FilterDecision> filter = path => f(path, FilterDecision.Neutral);
+        Func<string, GlobFilterStates> filter = path => f(GlobFilterStates.NotExclude, path);
 
         // Should exclude files matching patterns
-        Assert.AreEqual(FilterDecision.Exclude, filter("debug.log"));
-        Assert.AreEqual(FilterDecision.Exclude, filter("app.log"));
-        Assert.AreEqual(FilterDecision.Exclude, filter("temp/file.txt"));
-        Assert.AreEqual(FilterDecision.Exclude, filter("cache.tmp"));
+        Assert.AreEqual(GlobFilterStates.Exclude, filter("debug.log"));
+        Assert.AreEqual(GlobFilterStates.Exclude, filter("app.log"));
+        Assert.AreEqual(GlobFilterStates.Exclude, filter("temp/file.txt"));
+        Assert.AreEqual(GlobFilterStates.Exclude, filter("cache.tmp"));
 
         // Should be neutral for files not matching any patterns
-        Assert.AreEqual(FilterDecision.Neutral, filter("Program.cs"));
-        Assert.AreEqual(FilterDecision.Neutral, filter("README.md"));
-        Assert.AreEqual(FilterDecision.Neutral, filter("logs/app.txt")); // doesn't match *.log exactly
+        Assert.AreEqual(GlobFilterStates.NotExclude, filter("Program.cs"));
+        Assert.AreEqual(GlobFilterStates.NotExclude, filter("README.md"));
+        Assert.AreEqual(GlobFilterStates.NotExclude, filter("logs/app.txt")); // doesn't match *.log exactly
     }
 
     [Test]
@@ -761,18 +665,18 @@ public sealed class GlobTests
         using var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(gitignoreContent));
 
         var f = await Glob.CreateExcludeFilterFromGitignoreAsync(stream);
-        Func<string, FilterDecision> filter = path => f(path, FilterDecision.Neutral);
+        Func<string, GlobFilterStates> filter = path => f(GlobFilterStates.NotExclude, path);
 
         // Should exclude files matching exclude patterns
-        Assert.AreEqual(FilterDecision.Exclude, filter("debug.log"));
-        Assert.AreEqual(FilterDecision.Exclude, filter("temp/file.txt"));
+        Assert.AreEqual(GlobFilterStates.Exclude, filter("debug.log"));
+        Assert.AreEqual(GlobFilterStates.Exclude, filter("temp/file.txt"));
 
         // Should neutral files matching negation patterns
-        Assert.AreEqual(FilterDecision.Neutral, filter("important.log"));
-        Assert.AreEqual(FilterDecision.Neutral, filter("temp/keep.txt"));
+        Assert.AreEqual(GlobFilterStates.NotExclude, filter("important.log"));
+        Assert.AreEqual(GlobFilterStates.NotExclude, filter("temp/keep.txt"));
 
         // Should neutral files not matching any patterns
-        Assert.AreEqual(FilterDecision.Neutral, filter("Program.cs"));
+        Assert.AreEqual(GlobFilterStates.NotExclude, filter("Program.cs"));
     }
 
     [Test]
@@ -782,14 +686,14 @@ public sealed class GlobTests
         using var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(gitignoreContent));
 
         var f = await Glob.CreateExcludeFilterFromGitignoreAsync(stream);
-        Func<string, FilterDecision> filter = path => f(path, FilterDecision.Neutral);
+        Func<string, GlobFilterStates> filter = path => f(GlobFilterStates.NotExclude, path);
 
         // Should exclude files matching patterns (comments should be ignored)
-        Assert.AreEqual(FilterDecision.Exclude, filter("debug.log"));
-        Assert.AreEqual(FilterDecision.Exclude, filter("temp/file.txt"));
+        Assert.AreEqual(GlobFilterStates.Exclude, filter("debug.log"));
+        Assert.AreEqual(GlobFilterStates.Exclude, filter("temp/file.txt"));
 
         // Should neutral files not matching patterns
-        Assert.AreEqual(FilterDecision.Neutral, filter("Program.cs"));
+        Assert.AreEqual(GlobFilterStates.NotExclude, filter("Program.cs"));
     }
 
     [Test]
@@ -798,11 +702,11 @@ public sealed class GlobTests
         using var stream = new MemoryStream();
 
         var f = await Glob.CreateExcludeFilterFromGitignoreAsync(stream);
-        Func<string, FilterDecision> filter = path => f(path, FilterDecision.Neutral);
+        Func<string, GlobFilterStates> filter = path => f(GlobFilterStates.NotExclude, path);
 
         // Empty .gitignore should neutral all files
-        Assert.AreEqual(FilterDecision.Neutral, filter("any-file.txt"));
-        Assert.AreEqual(FilterDecision.Neutral, filter("any/path/file.log"));
+        Assert.AreEqual(GlobFilterStates.NotExclude, filter("any-file.txt"));
+        Assert.AreEqual(GlobFilterStates.NotExclude, filter("any/path/file.log"));
     }
 
     [Test]
@@ -851,36 +755,36 @@ Desktop.ini
 
         using var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(gitignoreContent));
         var f = await Glob.CreateExcludeFilterFromGitignoreAsync(stream);
-        Func<string, FilterDecision> filter = path => f(path, FilterDecision.Neutral);
+        Func<string, GlobFilterStates> filter = path => f(GlobFilterStates.NotExclude, path);
 
         // Should exclude dependencies
-        Assert.AreEqual(FilterDecision.Exclude, filter("node_modules/package.json"));
-        Assert.AreEqual(FilterDecision.Exclude, filter("packages/SomePackage/lib.dll"));
+        Assert.AreEqual(GlobFilterStates.Exclude, filter("node_modules/package.json"));
+        Assert.AreEqual(GlobFilterStates.Exclude, filter("packages/SomePackage/lib.dll"));
 
         // Should exclude build outputs
-        Assert.AreEqual(FilterDecision.Exclude, filter("bin/Debug/app.exe"));
-        Assert.AreEqual(FilterDecision.Exclude, filter("obj/Release/temp.obj"));
+        Assert.AreEqual(GlobFilterStates.Exclude, filter("bin/Debug/app.exe"));
+        Assert.AreEqual(GlobFilterStates.Exclude, filter("obj/Release/temp.obj"));
 
         // Should exclude logs
-        Assert.AreEqual(FilterDecision.Exclude, filter("app.log"));
-        Assert.AreEqual(FilterDecision.Exclude, filter("logs/debug.log"));
+        Assert.AreEqual(GlobFilterStates.Exclude, filter("app.log"));
+        Assert.AreEqual(GlobFilterStates.Exclude, filter("logs/debug.log"));
 
         // Should exclude temporary files
-        Assert.AreEqual(FilterDecision.Exclude, filter("temp.tmp"));
-        Assert.AreEqual(FilterDecision.Exclude, filter("backup.bak"));
+        Assert.AreEqual(GlobFilterStates.Exclude, filter("temp.tmp"));
+        Assert.AreEqual(GlobFilterStates.Exclude, filter("backup.bak"));
 
         // Should exclude IDE files
-        Assert.AreEqual(FilterDecision.Exclude, filter(".vs/solution.suo"));
-        Assert.AreEqual(FilterDecision.Exclude, filter(".vscode/settings.json"));
+        Assert.AreEqual(GlobFilterStates.Exclude, filter(".vs/solution.suo"));
+        Assert.AreEqual(GlobFilterStates.Exclude, filter(".vscode/settings.json"));
 
         // Should include source files
-        Assert.AreEqual(FilterDecision.Neutral, filter("Program.cs"));
-        Assert.AreEqual(FilterDecision.Neutral, filter("README.md"));
-        Assert.AreEqual(FilterDecision.Neutral, filter("src/main.c"));
+        Assert.AreEqual(GlobFilterStates.NotExclude, filter("Program.cs"));
+        Assert.AreEqual(GlobFilterStates.NotExclude, filter("README.md"));
+        Assert.AreEqual(GlobFilterStates.NotExclude, filter("src/main.c"));
 
         // Should include negated patterns
-        Assert.AreEqual(FilterDecision.Neutral, filter("important.log"));
-        Assert.AreEqual(FilterDecision.Neutral, filter("docs/build/index.html"));
+        Assert.AreEqual(GlobFilterStates.NotExclude, filter("important.log"));
+        Assert.AreEqual(GlobFilterStates.NotExclude, filter("docs/build/index.html"));
     }
 
     [Test]
@@ -889,21 +793,21 @@ Desktop.ini
         // Test combining gitignore filter with base filter using Combine method
         var gitignoreContent = "*.log\n!important.log\n";
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(gitignoreContent));
-        
+
         var baseFilter = Glob.CreateExcludeFilter("*.tmp");
         var gitignoreFilter = await Glob.CreateExcludeFilterFromGitignoreAsync(stream);
         var f = Glob.Combine(baseFilter, gitignoreFilter);
-        Func<string, FilterDecision> combinedFilter = path => f(path, FilterDecision.Neutral);
-        
+        Func<string, GlobFilterStates> combinedFilter = path => f(GlobFilterStates.NotExclude, path);
+
         // Should exclude .log files (gitignore) and .tmp files (base)
-        Assert.AreEqual(FilterDecision.Exclude, combinedFilter("error.log"));
-        Assert.AreEqual(FilterDecision.Exclude, combinedFilter("temp.tmp"));
-        
+        Assert.AreEqual(GlobFilterStates.Exclude, combinedFilter("error.log"));
+        Assert.AreEqual(GlobFilterStates.Exclude, combinedFilter("temp.tmp"));
+
         // Should neutral important.log due to negation pattern
-        Assert.AreEqual(FilterDecision.Neutral, combinedFilter("important.log"));
-        
+        Assert.AreEqual(GlobFilterStates.NotExclude, combinedFilter("important.log"));
+
         // Should neutral other files
-        Assert.AreEqual(FilterDecision.Neutral, combinedFilter("Program.cs"));
+        Assert.AreEqual(GlobFilterStates.NotExclude, combinedFilter("Program.cs"));
     }
 
     [Test]
@@ -913,16 +817,16 @@ Desktop.ini
         // Use a normal ignore pattern in gitignore, not negation
         var gitignoreContent = "*.log\n";  // Exclude log files
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(gitignoreContent));
-        
+
         var baseFilter = Glob.CreateExcludeFilter("*.cs");  // Exclude .cs files
         var gitignoreFilter = await Glob.CreateExcludeFilterFromGitignoreAsync(stream);
         var f = Glob.Combine(baseFilter, gitignoreFilter);
-        Func<string, FilterDecision> combinedFilter = path => f(path, FilterDecision.Neutral);
-        
+        Func<string, GlobFilterStates> combinedFilter = path => f(GlobFilterStates.NotExclude, path);
+
         // Combined filter should exclude both .cs and .log files
-        Assert.AreEqual(FilterDecision.Exclude, combinedFilter("Program.cs"));     // Excluded by base
-        Assert.AreEqual(FilterDecision.Exclude, combinedFilter("debug.log"));      // Excluded by gitignore
-        Assert.AreEqual(FilterDecision.Neutral, combinedFilter("README.md"));      // Does not declared
+        Assert.AreEqual(GlobFilterStates.Exclude, combinedFilter("Program.cs"));     // Excluded by base
+        Assert.AreEqual(GlobFilterStates.Exclude, combinedFilter("debug.log"));      // Excluded by gitignore
+        Assert.AreEqual(GlobFilterStates.NotExclude, combinedFilter("README.md"));      // Does not declared
     }
 
     [Test]
@@ -930,13 +834,13 @@ Desktop.ini
     {
         var gitignoreContent = "*.log\nbuild/\n!important.log\n";
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(gitignoreContent));
-        
-        var f = await Glob.CreateExcludeFilterFromGitignoreAsync(stream);
-        Func<string, FilterDecision> gitignoreFilter = path => f(path, FilterDecision.Neutral);
 
-        Assert.AreEqual(FilterDecision.Exclude, gitignoreFilter("debug.log"));
-        Assert.AreEqual(FilterDecision.Exclude, gitignoreFilter("build/output.exe"));
-        Assert.AreEqual(FilterDecision.Neutral, gitignoreFilter("important.log"));  // Negation pattern
-        Assert.AreEqual(FilterDecision.Neutral, gitignoreFilter("Program.cs"));
+        var f = await Glob.CreateExcludeFilterFromGitignoreAsync(stream);
+        Func<string, GlobFilterStates> gitignoreFilter = path => f(GlobFilterStates.NotExclude, path);
+
+        Assert.AreEqual(GlobFilterStates.Exclude, gitignoreFilter("debug.log"));
+        Assert.AreEqual(GlobFilterStates.Exclude, gitignoreFilter("build/output.exe"));
+        Assert.AreEqual(GlobFilterStates.NotExclude, gitignoreFilter("important.log"));  // Negation pattern
+        Assert.AreEqual(GlobFilterStates.NotExclude, gitignoreFilter("Program.cs"));
     }
-} 
+}

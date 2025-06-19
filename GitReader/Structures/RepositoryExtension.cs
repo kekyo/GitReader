@@ -117,7 +117,7 @@ public static class RepositoryExtension
     /// <returns>A Task containing the structured working directory status.</returns>
     public static Task<WorkingDirectoryStatus> GetWorkingDirectoryStatusWithFilterAsync(
         this StructuredRepository repository,
-        FilterDecisionDelegate overridePathFilter,
+        GlobFilter overridePathFilter,
         CancellationToken ct = default) =>
 #if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP2_1_OR_GREATER
         WorkingDirectoryAccessor.GetStructuredWorkingDirectoryStatusWithFilterAsync(

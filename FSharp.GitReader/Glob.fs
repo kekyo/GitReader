@@ -30,50 +30,37 @@ type public Glob =
         Internal.Glob.IsMatch(path, pattern)
 
     /// <summary>
-    /// Combines multiple predicate functions using logical AND operation.
+    /// Combines multiple glob filter predicates into a single glob filter predicate that evaluates them in order.
     /// </summary>
     /// <param name="predicates">The predicate functions to combine.</param>
-    /// <returns>A combined predicate that returns Include if any predicate returns Include, or Exclude if all predicates return Exclude.</returns>
+    /// <returns>A combined predicate that applies hierarchical filtering logic.</returns>
     /// <example>
-    /// let filter1 = Glob.createExcludeFilter([| "*.log" |])
-    /// let filter2 = Glob.createIncludeFilter([| "*.cs"; "*.fs" |])
+    /// let filter1 = Glob.createExcludeFilter([| "*.log"; "*.cs" |])
+    /// let filter2 = Glob.createExcludeFilter([| "!important.log" |])
     /// let combined = Glob.combine([| filter1; filter2 |])
     /// </example>
-    static member combine([<ParamArray>] predicates: FilterDecisionDelegate[]) =
+    static member combine([<ParamArray>] predicates: GlobFilter[]) =
         Internal.Glob.Combine(predicates)
 
     /// <summary>
-    /// Creates a path filter predicate for use with GetWorkingDirectoryStatusAsync() 
+    /// Creates a glob path filter predicate for use with GetWorkingDirectoryStatusAsync() 
     /// that excludes files matching any of the provided .gitignore-style patterns.
     /// </summary>
     /// <param name="excludePatterns">Array of .gitignore-style patterns to exclude files.</param>
-    /// <returns>A predicate function that returns Exclude if the path should be excluded, or Neutral if undecided.</returns>
+    /// <returns>A predicate function that returns Exclude if the path should be excluded, NotExclude if unevaluated.</returns>
     /// <example>
-    /// let filter = Glob.createExcludeFilter([| "*.log"; "bin/"; "obj/"; "node_modules/" |])
+    /// let filter = Glob.createExcludeFilter([| "*.log"; "!important.log"; "bin/"; "obj/"; "node_modules/" |])
     /// let! status = repository.getWorkingDirectoryStatusWithFilter(filter)
     /// </example>
     static member createExcludeFilter([<ParamArray>] excludePatterns: string[]) =
         Internal.Glob.CreateExcludeFilter(excludePatterns)
 
     /// <summary>
-    /// Creates a path filter predicate for use with GetWorkingDirectoryStatusAsync() 
-    /// that includes only files matching any of the provided .gitignore-style patterns.
-    /// </summary>
-    /// <param name="includePatterns">Array of .gitignore-style patterns to include files.</param>
-    /// <returns>A predicate function that returns Include if the path should be included, or Neutral if undecided.</returns>
-    /// <example>
-    /// let filter = Glob.createIncludeFilter [| "*.cs"; "*.fs"; "*.ts" |]
-    /// let! status = repository.getWorkingDirectoryStatusWithFilter(filter)
-    /// </example>
-    static member createIncludeFilter([<ParamArray>] includePatterns: string[]) =
-        Internal.Glob.CreateIncludeFilter(includePatterns)
-
-    /// <summary>
-    /// Get a path filter predicate for use with GetWorkingDirectoryStatusAsync() 
+    /// Get a glob path filter predicate for use with GetWorkingDirectoryStatusAsync() 
     /// that applies embedded simple .gitignore patterns commonly used in development projects.
     /// This includes patterns for build outputs, dependencies, logs, and temporary files.
     /// </summary>
-    /// <returns>A predicate function that returns Exclude if the path should be excluded, or Neutral if undecided.</returns>
+    /// <returns>A predicate function that returns Exclude if the path should be excluded, NotExclude if unevaluated.</returns>
     /// <example>
     /// let filter = Glob.getCommonIgnoreFilter()
     /// let! status = repository.getWorkingDirectoryStatusWithFilter(filter)
@@ -82,19 +69,7 @@ type public Glob =
         Internal.Glob.commonIgnoreFilter
 
     /// <summary>
-    /// Creates a path filter predicate for use with GetWorkingDirectoryStatusAsync() 
-    /// that includes all files.
-    /// </summary>
-    /// <returns>Always returns Include.</returns>
-    /// <example>
-    /// let filter = Glob.getIncludeAllFilter()
-    /// let! status = repository.getWorkingDirectoryStatusWithFilter(filter)
-    /// </example>
-    static member getIncludeAllFilter() =
-        Internal.Glob.includeAllFilter
-
-    /// <summary>
-    /// Creates a path filter predicate for use with GetWorkingDirectoryStatusAsync() 
+    /// Creates a glob path filter predicate for use with GetWorkingDirectoryStatusAsync() 
     /// that excludes all files.
     /// </summary>
     /// <returns>Always returns Exclude.</returns>
@@ -104,16 +79,38 @@ type public Glob =
     /// </example>
     static member getExcludeAllFilter() =
         Internal.Glob.excludeAllFilter
-    
+
     /// <summary>
-    /// Creates a path filter predicate from a .gitignore stream.
+    /// Creates a glob path filter predicate from a .gitignore stream.
     /// </summary>
     /// <param name="gitignoreStream">Stream containing .gitignore content.</param>
     /// <param name="ct">Cancellation token</param>
-    /// <returns>A predicate function that returns Exclude if the path should be excluded, or Neutral if undecided.</returns>
+    /// <returns>A predicate function that returns Exclude if excluded, or NotExclude if unevaluated.</returns>
     /// <example>
     /// let stream = File.OpenRead(".gitignore")
     /// let! filter = Glob.createExcludeFilterFromGitignore(stream, ct)
     /// </example>
     static member createExcludeFilterFromGitignore(gitignoreStream: Stream, ?ct: CancellationToken) =
         Internal.Glob.CreateExcludeFilterFromGitignoreAsync(gitignoreStream, unwrapCT ct).asAsync()
+
+    /// <summary>
+    /// Creates a glob path filter predicate from a .gitignore stream.
+    /// </summary>
+    /// <param name="gitignoreReader">Text reader containing .gitignore content.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>A predicate function that returns Exclude if excluded, or NotExclude if unevaluated.</returns>
+    /// <example>
+    /// use reader = File.OpenText(".gitignore");
+    /// let! filter = Glob.CreateExcludeFilterFromGitignoreAsync(reader, ct);
+    /// </example>
+    static member createExcludeFilterFromGitignore(gitignoreReader: TextReader, ?ct: CancellationToken) =
+        Internal.Glob.CreateExcludeFilterFromGitignoreAsync(gitignoreReader, unwrapCT ct).asAsync()
+
+    /// <summary>
+    /// Creates a glob path filter predicate from a .gitignore stream.
+    /// </summary>
+    /// <param name="gitignoreLines">Text lines containing .gitignore content.</param>
+    /// <returns>A predicate function that returns Exclude if excluded, or NotExclude if unevaluated.</returns>
+    /// <remarks>Difference from CreateExcludeFilter() is that empty lines and comments are evaluated.</remarks>
+    static member createExcludeFilterFromGitignore([<ParamArray>] gitignoreLines: string[]) =
+        Internal.Glob.CreateExcludeFilterFromGitignore(gitignoreLines)

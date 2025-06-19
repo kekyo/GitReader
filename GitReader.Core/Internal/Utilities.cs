@@ -226,6 +226,13 @@ internal static class Utilities
         }
     }
 
+    public static bool IsNullOrWhiteSpace(string? str) =>
+#if NET35
+        string.IsNullOrEmpty(str) || str!.All(char.IsWhiteSpace);
+#else
+        string.IsNullOrWhiteSpace(str);
+#endif
+
 #if NET35 || NET40 || NET45
     private static class ArrayEmpty<T>
     {

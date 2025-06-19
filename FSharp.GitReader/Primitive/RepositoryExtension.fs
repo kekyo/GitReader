@@ -75,7 +75,7 @@ module public RepositoryExtension =
         member repository.getWorkingDirectoryStatus(?ct: CancellationToken) =
             WorkingDirectoryAccessor.GetPrimitiveWorkingDirectoryStatusAsync(
                 repository, unwrapCT ct).asAsync()
-        member repository.getWorkingDirectoryStatusWithFilter(overridePathFilter: FilterDecisionDelegate, ?ct: CancellationToken) =
+        member repository.getWorkingDirectoryStatusWithFilter(overridePathFilter: GlobFilter, ?ct: CancellationToken) =
             WorkingDirectoryAccessor.GetPrimitiveWorkingDirectoryStatusWithFilterAsync(
                 repository, overridePathFilter, unwrapCT ct).asAsync()
         member repository.getWorktrees(?ct: CancellationToken) =

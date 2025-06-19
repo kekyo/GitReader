@@ -73,7 +73,7 @@ public sealed class StandardFileSystem : IFileSystem
 {
     private static readonly bool isWindows =
 #if NETSTANDARD1_6
-        !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("HOMEDRIVE"));
+        !Utilities.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("HOMEDRIVE"));
 #else
         Environment.OSVersion.Platform.ToString().Contains("Win");
 #endif
