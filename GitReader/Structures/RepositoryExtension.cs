@@ -17,18 +17,41 @@ using System.Threading.Tasks;
 
 namespace GitReader.Structures;
 
+/// <summary>
+/// Provides extension methods for structured repository operations.
+/// </summary>
 public static class RepositoryExtension
 {
+    /// <summary>
+    /// Gets a commit from the repository by its hash.
+    /// </summary>
+    /// <param name="repository">The structured repository.</param>
+    /// <param name="commit">The commit hash to retrieve.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>A task that returns the commit, or null if not found.</returns>
     public static Task<Commit?> GetCommitAsync(
         this StructuredRepository repository,
         Hash commit, CancellationToken ct = default) =>
         StructuredRepositoryFacade.GetCommitDirectlyAsync(repository, commit, ct);
 
+    /// <summary>
+    /// Gets the head commit of the specified branch.
+    /// </summary>
+    /// <param name="branch">The branch to get the head commit from.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>A task that returns the head commit of the branch.</returns>
     public static Task<Commit> GetHeadCommitAsync(
         this Branch branch,
         CancellationToken ct = default) =>
         StructuredRepositoryFacade.GetCommitAsync(branch, ct);
 
+    /// <summary>
+    /// Gets the commit that the specified tag points to.
+    /// </summary>
+    /// <param name="tag">The tag to get the commit from.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>A task that returns the commit that the tag points to.</returns>
+    /// <exception cref="InvalidOperationException">Thrown when the tag does not point to a commit.</exception>
     public static Task<Commit> GetCommitAsync(
         this Tag tag,
         CancellationToken ct = default) =>
@@ -38,55 +61,120 @@ public static class RepositoryExtension
             _ => throw new InvalidOperationException($"Could not get commit: Type={tag.Type}"),
         };
 
+    /// <summary>
+    /// Gets the annotation associated with the specified tag.
+    /// </summary>
+    /// <param name="tag">The tag to get the annotation from.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>A task that returns the annotation of the tag.</returns>
     public static Task<Annotation> GetAnnotationAsync(
         this Tag tag,
         CancellationToken ct = default) =>
         StructuredRepositoryFacade.GetAnnotationAsync(tag, ct);
 
+    /// <summary>
+    /// Gets the commit associated with the specified stash entry.
+    /// </summary>
+    /// <param name="stash">The stash entry to get the commit from.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>A task that returns the commit associated with the stash.</returns>
     public static Task<Commit> GetCommitAsync(
         this Stash stash,
         CancellationToken ct = default) =>
         StructuredRepositoryFacade.GetCommitAsync(stash, ct);
 
+    /// <summary>
+    /// Gets the current commit from the specified reflog entry.
+    /// </summary>
+    /// <param name="reflog">The reflog entry.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>A task that returns the current commit of the reflog entry.</returns>
     public static Task<Commit> GetCurrentCommitAsync(
         this ReflogEntry reflog,
         CancellationToken ct = default) =>
         StructuredRepositoryFacade.GetCommitAsync(reflog, reflog.Commit, ct);
 
+    /// <summary>
+    /// Gets the old commit from the specified reflog entry.
+    /// </summary>
+    /// <param name="reflog">The reflog entry.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>A task that returns the old commit of the reflog entry.</returns>
     public static Task<Commit> GetOldCommitAsync(
         this ReflogEntry reflog,
         CancellationToken ct = default) =>
         StructuredRepositoryFacade.GetCommitAsync(reflog, reflog.OldCommit, ct);
 
+    /// <summary>
+    /// Gets the primary parent commit of the specified commit.
+    /// </summary>
+    /// <param name="commit">The commit to get the primary parent from.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>A task that returns the primary parent commit, or null if it has no parents.</returns>
     public static Task<Commit?> GetPrimaryParentCommitAsync(
         this Commit commit,
         CancellationToken ct = default) =>
         StructuredRepositoryFacade.GetPrimaryParentAsync(commit, ct);
 
+    /// <summary>
+    /// Gets all parent commits of the specified commit.
+    /// </summary>
+    /// <param name="commit">The commit to get the parents from.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>A task that returns an array of parent commits.</returns>
     public static Task<Commit[]> GetParentCommitsAsync(
         this Commit commit,
         CancellationToken ct = default) =>
         StructuredRepositoryFacade.GetParentsAsync(commit, ct);
 
+    /// <summary>
+    /// Gets the tree root associated with the specified commit.
+    /// </summary>
+    /// <param name="commit">The commit to get the tree root from.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>A task that returns the tree root of the commit.</returns>
     public static Task<TreeRoot> GetTreeRootAsync(
         this Commit commit,
         CancellationToken ct = default) =>
         StructuredRepositoryFacade.GetTreeAsync(commit, ct);
 
+    /// <summary>
+    /// Opens a blob stream for the specified tree blob entry.
+    /// </summary>
+    /// <param name="entry">The tree blob entry to open.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>A task that returns a stream for reading the blob content.</returns>
     public static Task<Stream> OpenBlobAsync(
         this TreeBlobEntry entry,
         CancellationToken ct = default) =>
         StructuredRepositoryFacade.OpenBlobAsync(entry, ct);
 
+    /// <summary>
+    /// Opens the submodule repository associated with the specified tree submodule entry.
+    /// </summary>
+    /// <param name="subModule">The tree submodule entry.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>A task that returns the structured repository of the submodule.</returns>
     public static Task<StructuredRepository> OpenSubModuleAsync(
         this TreeSubModuleEntry subModule,
         CancellationToken ct = default) =>
         StructuredRepositoryFacade.OpenSubModuleAsync(subModule, ct);
 
+    /// <summary>
+    /// Gets the full commit message of the specified commit.
+    /// </summary>
+    /// <param name="commit">The commit to get the message from.</param>
+    /// <returns>The full commit message.</returns>
     public static string GetMessage(
         this Commit commit) =>
         commit.message;
     
+    /// <summary>
+    /// Gets the head reflog entries for the repository.
+    /// </summary>
+    /// <param name="repository">The structured repository.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>A task that returns an array of reflog entries.</returns>
     public static Task<ReflogEntry[]> GetHeadReflogsAsync(
         this StructuredRepository repository, CancellationToken ct = default) =>
         StructuredRepositoryFacade.GetHeadReflogsAsync(
@@ -127,11 +215,26 @@ public static class RepositoryExtension
             repository, new WeakReference(repository), overridePathFilter, ct);
 #endif
 
+    /// <summary>
+    /// Gets all worktrees associated with the repository.
+    /// </summary>
+    /// <param name="repository">The structured repository.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>A task that returns a read-only array of worktrees.</returns>
     public static async Task<ReadOnlyArray<Worktree>> GetWorktreesAsync(
         this StructuredRepository repository, CancellationToken ct = default) =>
         await WorktreeAccessor.GetStructuredWorktreesAsync(
             repository, new WeakReference(repository), ct);
 
+    /// <summary>
+    /// Deconstructs a StructuredRepository into its component parts (including all branches).
+    /// </summary>
+    /// <param name="repository">The repository to deconstruct.</param>
+    /// <param name="gitPath">The Git repository path.</param>
+    /// <param name="remoteUrls">The remote URLs configured for the repository.</param>
+    /// <param name="head">The current head branch, or null if in detached HEAD state.</param>
+    /// <param name="branchesAll">All branches grouped by name (including remote branches).</param>
+    /// <param name="tags">All tags in the repository.</param>
     public static void Deconstruct(
         this StructuredRepository repository,
         out string gitPath,
@@ -147,6 +250,15 @@ public static class RepositoryExtension
         tags = repository.tags;
     }
 
+    /// <summary>
+    /// Deconstructs a StructuredRepository into its component parts (primary branches only).
+    /// </summary>
+    /// <param name="repository">The repository to deconstruct.</param>
+    /// <param name="gitPath">The Git repository path.</param>
+    /// <param name="remoteUrls">The remote URLs configured for the repository.</param>
+    /// <param name="head">The current head branch, or null if in detached HEAD state.</param>
+    /// <param name="branches">The primary branches in the repository.</param>
+    /// <param name="tags">All tags in the repository.</param>
     public static void Deconstruct(
         this StructuredRepository repository,
         out string gitPath,
@@ -162,6 +274,12 @@ public static class RepositoryExtension
         tags = repository.Tags;
     }
 
+    /// <summary>
+    /// Deconstructs a Branch into its component parts.
+    /// </summary>
+    /// <param name="branch">The branch to deconstruct.</param>
+    /// <param name="name">The name of the branch.</param>
+    /// <param name="head">The head commit hash of the branch.</param>
     public static void Deconstruct(
         this Branch branch,
         out string name,
@@ -171,6 +289,15 @@ public static class RepositoryExtension
         head = branch.Head;
     }
 
+    /// <summary>
+    /// Deconstructs a Commit into its component parts (with separate subject and body).
+    /// </summary>
+    /// <param name="commit">The commit to deconstruct.</param>
+    /// <param name="hash">The commit hash.</param>
+    /// <param name="author">The author signature.</param>
+    /// <param name="committer">The committer signature.</param>
+    /// <param name="subject">The commit subject (first line of the message).</param>
+    /// <param name="body">The commit body (remaining lines of the message).</param>
     public static void Deconstruct(
         this Commit commit,
         out Hash hash,
@@ -186,6 +313,14 @@ public static class RepositoryExtension
         body = commit.Body;
     }
 
+    /// <summary>
+    /// Deconstructs a Commit into its component parts (with full message).
+    /// </summary>
+    /// <param name="commit">The commit to deconstruct.</param>
+    /// <param name="hash">The commit hash.</param>
+    /// <param name="author">The author signature.</param>
+    /// <param name="committer">The committer signature.</param>
+    /// <param name="message">The full commit message.</param>
     public static void Deconstruct(
         this Commit commit,
         out Hash hash,

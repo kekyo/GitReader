@@ -16,6 +16,9 @@ using System.Threading.Tasks;
 
 namespace GitReader.IO;
 
+/// <summary>
+/// Provides a standard implementation of the IFileSystem interface using the local file system.
+/// </summary>
 public sealed class StandardFileSystem : IFileSystem
 {
     private static readonly string homePath =
@@ -25,17 +28,36 @@ public sealed class StandardFileSystem : IFileSystem
 
     private readonly int bufferSize;
 
+    /// <summary>
+    /// Initializes a new instance of the StandardFileSystem class with the specified buffer size.
+    /// </summary>
+    /// <param name="bufferSize">The buffer size to use for file operations.</param>
     public StandardFileSystem(int bufferSize) =>
         this.bufferSize = bufferSize;
 
 #if NET35
+    /// <summary>
+    /// Combines an array of paths into a single path.
+    /// </summary>
+    /// <param name="paths">The paths to combine.</param>
+    /// <returns>The combined path.</returns>
     public string Combine(params string[] paths) =>
         paths.Aggregate(Path.Combine);
 #else
+    /// <summary>
+    /// Combines an array of paths into a single path.
+    /// </summary>
+    /// <param name="paths">The paths to combine.</param>
+    /// <returns>The combined path.</returns>
     public string Combine(params string[] paths) =>
         Path.Combine(paths);
 #endif
 
+    /// <summary>
+    /// Gets the directory path portion of the specified path.
+    /// </summary>
+    /// <param name="path">The path to get the directory from.</param>
+    /// <returns>The directory path.</returns>
     public string GetDirectoryPath(string path) =>
         Path.GetDirectoryName(path) switch
         {
@@ -45,12 +67,28 @@ public sealed class StandardFileSystem : IFileSystem
             var dp => dp,
         };
 
+    /// <summary>
+    /// Gets the absolute path for the specified path.
+    /// </summary>
+    /// <param name="path">The path to get the full path for.</param>
+    /// <returns>The absolute path.</returns>
     public string GetFullPath(string path) =>
         Path.GetFullPath(path);
 
+    /// <summary>
+    /// Determines whether the specified path is rooted.
+    /// </summary>
+    /// <param name="path">The path to check.</param>
+    /// <returns>true if the path is rooted; otherwise, false.</returns>
     public bool IsPathRooted(string path) =>
         Path.IsPathRooted(path);
 
+    /// <summary>
+    /// Resolves a relative path against a base path.
+    /// </summary>
+    /// <param name="basePath">The base path to resolve against.</param>
+    /// <param name="path">The path to resolve.</param>
+    /// <returns>The resolved path.</returns>
     public string ResolveRelativePath(string basePath, string path) =>
         Path.GetFullPath(Path.IsPathRooted(path) ?
             path :
@@ -58,15 +96,35 @@ public sealed class StandardFileSystem : IFileSystem
                 Combine(homePath, path.Substring(2)) :
                 Combine(basePath, path));
 
+    /// <summary>
+    /// Determines whether the specified file exists.
+    /// </summary>
+    /// <param name="path">The path to the file.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>A task that returns true if the file exists; otherwise, false.</returns>
     public Task<bool> IsFileExistsAsync(string path, CancellationToken ct) =>
         Utilities.FromResult(File.Exists(path));
 
+    /// <summary>
+    /// Gets all files in the specified directory that match the given pattern.
+    /// </summary>
+    /// <param name="basePath">The base directory path.</param>
+    /// <param name="match">The search pattern.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>A task that returns an array of file paths.</returns>
     public Task<string[]> GetFilesAsync(
         string basePath, string match, CancellationToken ct) =>
         Utilities.FromResult(Directory.Exists(basePath) ?
             Directory.GetFiles(basePath, match, SearchOption.AllDirectories) :
             Utilities.Empty<string>());
 
+    /// <summary>
+    /// Opens a file stream for reading.
+    /// </summary>
+    /// <param name="path">The path to the file.</param>
+    /// <param name="isSeekable">Whether the stream should be seekable (currently unused).</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>A task that returns a stream for reading the file.</returns>
     public async Task<Stream> OpenAsync(
         string path, bool isSeekable, CancellationToken ct)
     {
@@ -121,6 +179,11 @@ public sealed class StandardFileSystem : IFileSystem
             true);
     }
 
+    /// <summary>
+    /// Creates a temporary file and returns a descriptor for it.
+    /// </summary>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>A task that returns a temporary file descriptor.</returns>
     public Task<TemporaryFileDescriptor> CreateTemporaryAsync(
         CancellationToken ct)
     {
@@ -139,17 +202,40 @@ public sealed class StandardFileSystem : IFileSystem
         return Utilities.FromResult(new TemporaryFileDescriptor(path, stream));
     }
 
+    /// <summary>
+    /// Gets the file name portion of the specified path.
+    /// </summary>
+    /// <param name="path">The path to get the file name from.</param>
+    /// <returns>The file name.</returns>
     public string GetFileName(string path) =>
         Path.GetFileName(path);
 
+    /// <summary>
+    /// Determines whether the specified directory exists.
+    /// </summary>
+    /// <param name="path">The path to the directory.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>A task that returns true if the directory exists; otherwise, false.</returns>
     public Task<bool> IsDirectoryExistsAsync(string path, CancellationToken ct) =>
         Utilities.FromResult(Directory.Exists(path));
 
+    /// <summary>
+    /// Gets all entries (files and directories) in the specified directory.
+    /// </summary>
+    /// <param name="path">The directory path.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>A task that returns an array of entry paths.</returns>
     public Task<string[]> GetDirectoryEntriesAsync(string path, CancellationToken ct) =>
         Utilities.FromResult(Directory.Exists(path) ?
             Directory.GetFileSystemEntries(path) :
             Utilities.Empty<string>());
 
+    /// <summary>
+    /// Gets the relative path from the base path to the target path.
+    /// </summary>
+    /// <param name="basePath">The base path.</param>
+    /// <param name="path">The target path.</param>
+    /// <returns>The relative path from base to target.</returns>
     public string GetRelativePath(string basePath, string path)
     {
         if (!Path.IsPathRooted(path))
@@ -167,6 +253,11 @@ public sealed class StandardFileSystem : IFileSystem
         return relativePath.Replace('/', Path.DirectorySeparatorChar);
     }
 
+    /// <summary>
+    /// Converts a path to POSIX format (using forward slashes).
+    /// </summary>
+    /// <param name="path">The path to convert.</param>
+    /// <returns>The path in POSIX format.</returns>
     public string ToPosixPath(string path) =>
         Utilities.IsWindows ? path.Replace('\\', '/') : path;
 }
