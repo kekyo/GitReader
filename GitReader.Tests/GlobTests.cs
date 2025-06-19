@@ -28,6 +28,8 @@ using System.Threading.Tasks;
 using System.Text;
 using System;
 
+using Assert = NUnit.Framework.Legacy.ClassicAssert;
+
 namespace GitReader;
 
 public sealed class GlobTests

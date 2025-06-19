@@ -18,6 +18,8 @@ using GitReader.Collections;
 using GitReader.Primitive;
 using NUnit.Framework;
 
+using Assert = NUnit.Framework.Legacy.ClassicAssert;
+
 namespace GitReader.Internal;
 
 [TestFixture]

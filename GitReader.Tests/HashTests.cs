@@ -11,6 +11,8 @@ using NUnit.Framework;
 using System;
 using System.Linq;
 
+using Assert = NUnit.Framework.Legacy.ClassicAssert;
+
 namespace GitReader;
 
 public sealed class HashTests

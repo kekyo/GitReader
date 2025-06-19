@@ -12,6 +12,7 @@ namespace GitReader.Primitive
 open GitReader
 open GitReader.Primitive
 open NUnit.Framework
+open NUnit.Framework.Legacy
 open System.IO
 
 type public Primitive_WorkingDirectoryStatusTests() =
@@ -37,10 +38,10 @@ type public Primitive_WorkingDirectoryStatusTests() =
             let! status = repository.getWorkingDirectoryStatus()
 
             // Empty repository should have no staged, unstaged, or untracked files
-            do Assert.AreEqual(0, status.StagedFiles.Count, "Empty repository should have no staged files")
-            do Assert.AreEqual(0, status.UnstagedFiles.Count, "Empty repository should have no unstaged files")
+            do ClassicAssert.AreEqual(0, status.StagedFiles.Count, "Empty repository should have no staged files")
+            do ClassicAssert.AreEqual(0, status.UnstagedFiles.Count, "Empty repository should have no unstaged files")
             let! untrackedFiles = repository.getUntrackedFiles(status)
-            do Assert.AreEqual(0, untrackedFiles.Count, "Empty repository should have no untracked files")
+            do ClassicAssert.AreEqual(0, untrackedFiles.Count, "Empty repository should have no untracked files")
         finally
             // Cleanup
             if Directory.Exists(testPath) then
@@ -80,27 +81,27 @@ type public Primitive_WorkingDirectoryStatusTests() =
 
             // Should have untracked files (including new_file.txt)
             let! untrackedFiles = repository.getUntrackedFiles(status)
-            do Assert.IsTrue(untrackedFiles.Count > 0, "Should have untracked files")
+            do ClassicAssert.IsTrue(untrackedFiles.Count > 0, "Should have untracked files")
             
             let newFile = untrackedFiles |> Seq.tryFind(fun f -> f.Path = "new_file.txt")
             match newFile with
             | Some nf ->
-                do Assert.AreEqual(FileStatus.Untracked, nf.Status)
-                do Assert.IsNull(nf.IndexHash)
-                do Assert.IsNotNull(nf.WorkingTreeHash)
+                do ClassicAssert.AreEqual(FileStatus.Untracked, nf.Status)
+                do ClassicAssert.IsNull(nf.IndexHash)
+                do ClassicAssert.IsNotNull(nf.WorkingTreeHash)
             | _ ->
-                do Assert.Fail("new_file.txt should be in untracked files")
+                do ClassicAssert.Fail("new_file.txt should be in untracked files")
 
             // README.md should be modified and appear in unstaged files
             let modifiedFile = status.UnstagedFiles |> Seq.tryFind(fun f -> f.Path = "README.md")
             match modifiedFile with
             | Some mf ->
-                do Assert.AreEqual(FileStatus.Modified, mf.Status)
-                do Assert.IsNotNull(mf.IndexHash)
-                do Assert.IsNotNull(mf.WorkingTreeHash)
-                do Assert.AreNotEqual(mf.IndexHash, mf.WorkingTreeHash)
+                do ClassicAssert.AreEqual(FileStatus.Modified, mf.Status)
+                do ClassicAssert.IsNotNull(mf.IndexHash)
+                do ClassicAssert.IsNotNull(mf.WorkingTreeHash)
+                do ClassicAssert.AreNotEqual(mf.IndexHash, mf.WorkingTreeHash)
             | _ ->
-                do Assert.Fail("README.md should be in unstaged files")
+                do ClassicAssert.Fail("README.md should be in unstaged files")
         finally
             // Cleanup
             if Directory.Exists(testPath) then
@@ -134,10 +135,10 @@ type public Primitive_WorkingDirectoryStatusTests() =
             let! status = repository.getWorkingDirectoryStatus()
 
             // Clean repository should have no changes at all (following git behavior)
-            do Assert.AreEqual(0, status.StagedFiles.Count, "Clean repository should have no staged files");
-            do Assert.AreEqual(0, status.UnstagedFiles.Count, "Clean repository should have no unstaged files");
+            do ClassicAssert.AreEqual(0, status.StagedFiles.Count, "Clean repository should have no staged files");
+            do ClassicAssert.AreEqual(0, status.UnstagedFiles.Count, "Clean repository should have no unstaged files");
             let! untrackedFiles = repository.getUntrackedFiles(status)
-            do Assert.AreEqual(0, untrackedFiles.Count, "Clean repository should have no untracked files");
+            do ClassicAssert.AreEqual(0, untrackedFiles.Count, "Clean repository should have no untracked files");
         finally
             // Cleanup
             if Directory.Exists(testPath) then
@@ -169,16 +170,16 @@ type public Primitive_WorkingDirectoryStatusTests() =
 
             // Test file properties
             let! untrackedFiles = repository.getUntrackedFiles(status)
-            do Assert.IsTrue(untrackedFiles.Count >= 1, "Should have at least one untracked file")
+            do ClassicAssert.IsTrue(untrackedFiles.Count >= 1, "Should have at least one untracked file")
             let testFile = untrackedFiles |> Seq.tryFind(fun f -> f.Path = "test_file.txt")
             match testFile with
             | Some tf ->
-                do Assert.AreEqual("test_file.txt", tf.Path)
-                do Assert.AreEqual(FileStatus.Untracked, tf.Status)
-                do Assert.IsNull(tf.IndexHash, "Untracked file should not have index hash")
-                do Assert.IsNotNull(tf.WorkingTreeHash, "Untracked file should have working tree hash")
+                do ClassicAssert.AreEqual("test_file.txt", tf.Path)
+                do ClassicAssert.AreEqual(FileStatus.Untracked, tf.Status)
+                do ClassicAssert.IsNull(tf.IndexHash, "Untracked file should not have index hash")
+                do ClassicAssert.IsNotNull(tf.WorkingTreeHash, "Untracked file should have working tree hash")
             | _ ->
-                do Assert.Fail("test_file.txt should be in untracked files")
+                do ClassicAssert.Fail("test_file.txt should be in untracked files")
         finally
             // Cleanup
             if Directory.Exists(testPath) then
