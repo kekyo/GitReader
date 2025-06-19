@@ -225,7 +225,7 @@ internal static class WorkingDirectoryAccessor
             repository, workingDirectoryPath, workingDirectoryPath, 
             processedPaths, untrackedFiles,
             overridePathFilter,    // Override path filter
-            Glob.nothingFilter,    // Initial path filter (always neutral)
+            Glob.nothingFilter,    // Initial path filter (always nothing)
             ct);
 
         return new PrimitiveWorkingDirectoryStatus(
@@ -369,7 +369,8 @@ internal static class WorkingDirectoryAccessor
                 }
 
                 // Get relative path and filter it
-                var relativePath = repository.fileSystem.GetRelativePath(workingDirectoryPath, entry);
+                var relativePath = repository.fileSystem.ToPosixPath(
+                    repository.fileSystem.GetRelativePath(workingDirectoryPath, entry));
                 var filterDecision = exactlyPathFilter(
                     GlobFilterStates.NotExclude,   // Start from neutral.
                     relativePath);

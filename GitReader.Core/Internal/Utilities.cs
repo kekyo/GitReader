@@ -121,6 +121,13 @@ internal readonly struct PairResult<T0, T1, T2, T3, T4>
 #endif
 internal static class Utilities
 {
+    public static readonly bool IsWindows =
+#if NETSTANDARD1_6
+        !IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("HOMEDRIVE"));
+#else
+        Environment.OSVersion.Platform.ToString().StartsWith("Win");
+#endif
+
     // Imported from corefx.
     private const long TicksPerMillisecond = 10000;
     private const long TicksPerSecond = TicksPerMillisecond * 1000;
