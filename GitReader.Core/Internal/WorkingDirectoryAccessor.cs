@@ -19,40 +19,95 @@ namespace GitReader.Internal;
 internal static class WorkingDirectoryAccessor
 {
     /// <summary>
-    /// Scans the working directory for untracked files.
+    /// Traverse context.
     /// </summary>
-    /// <param name="repository">The repository to scan.</param>
-    /// <param name="workingDirectoryPath">The path to the working directory.</param>
+    /// <remarks>
+    /// This class is used to limit the number of parallel tasks.
+    /// This is a very loose way to limit the number of parallel tasks.
+    /// </remarks>
+    private sealed class TraverseContext
+    {
+        // Ceiling task count. This may be exceeded by tasks.
+        private readonly int ceilingRunningCount;
+        // Current running task count.
+        private int runningCount = 0;
+
+        public readonly Repository Repository;
+        public readonly string WorkingDirectoryPath;
+        public readonly HashSet<string> ProcessedPaths;
+        public readonly GlobFilter OverrideGlobFilter;
+        public readonly List<PrimitiveWorkingDirectoryFile> UntrackedFiles;
+        public readonly CancellationToken CancellationToken;
+
+        /// <summary>
+        /// Initializes a new instance.
+        /// </summary>
+        /// <param name="repository">The repository to scan.</param>
+        /// <param name="workingDirectoryPath">The path to the working directory.</param>
+        /// <param name="processedPaths">The paths that have already been processed.</param>
+        /// <param name="overrideGlobFilter">The override glob filter.</param>
+        /// <param name="untrackedFiles">The list of untracked files (output)</param>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <param name="ceilingRunningCount">Ceiling task count.</param>
+        public TraverseContext(
+            Repository repository,
+            string workingDirectoryPath,
+            HashSet<string> processedPaths,
+            GlobFilter overrideGlobFilter,
+            List<PrimitiveWorkingDirectoryFile> untrackedFiles,
+            CancellationToken cancellationToken,
+            int ceilingRunningCount)
+            {
+                this.Repository = repository;
+                this.WorkingDirectoryPath = workingDirectoryPath;
+                this.ProcessedPaths = processedPaths;
+                this.OverrideGlobFilter = overrideGlobFilter;
+                this.UntrackedFiles = untrackedFiles;
+                this.CancellationToken = cancellationToken;
+                this.ceilingRunningCount = ceilingRunningCount;
+            }
+        
+        /// <summary>
+        /// Gets a value indicating whether parallel execution is allowed.
+        /// </summary>
+        public bool CanParallel =>
+            this.runningCount < this.ceilingRunningCount;
+        
+        /// <summary>
+        /// Increments the running count.
+        /// </summary>
+        /// <param name="count">The count to increment.</param>
+        public void IncrementRunningCount(int count) =>
+            Interlocked.Add(ref this.runningCount, count);
+
+        /// <summary>
+        /// Decrements the running count.
+        /// </summary>
+        /// <param name="count">The count to decrement.</param>
+        public void DecrementRunningCount(int count) =>
+            Interlocked.Add(ref this.runningCount, -count);
+    }
+    
+    /// <summary>
+    /// Scans the working directory for untracked files recursively.
+    /// </summary>
+    /// <param name="context">Traverse context</param>
     /// <param name="currentPath">The current path to scan.</param>
-    /// <param name="processedPaths">The paths that have already been processed.</param>
-    /// <param name="overrideGlobFilter">The override glob filter.</param>
-    /// <param name="parentPathFilter">The parent path filter.</param>
-    /// <param name="untrackedFiles">The list of untracked files (output)</param>
-    /// <param name="ct">The cancellation token.</param>
+    /// <param name="parentGlobFilter">The parent glob filter.</param>
 #if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP2_1_OR_GREATER
-    public static async ValueTask ScanWorkingDirectoryRecursiveAsync(
-        Repository repository,
-        string workingDirectoryPath,
+    private static async ValueTask ExtractUntrackedFilesRecursiveAsync(
+        TraverseContext context,
         string currentPath,
-        HashSet<string> processedPaths,
-        GlobFilter overrideGlobFilter,
-        GlobFilter parentPathFilter,
-        List<PrimitiveWorkingDirectoryFile> untrackedFiles,
-        CancellationToken ct)
+        GlobFilter parentGlobFilter)
 #else
-    public static async Task ScanWorkingDirectoryRecursiveAsync(
-        Repository repository,
-        string workingDirectoryPath,
+    private static async Task ExtractUntrackedFilesRecursiveAsync(
+        TraverseContext context,
         string currentPath,
-        HashSet<string> processedPaths,
-        GlobFilter overrideGlobFilter,
-        GlobFilter parentPathFilter,
-        List<PrimitiveWorkingDirectoryFile> untrackedFiles,
-        CancellationToken ct)
+        GlobFilter parentGlobFilter)
 #endif
     {
         // Skip .git directory/file (hardcoded exclusion, same as Git official behavior)
-        var currentName = repository.fileSystem.GetFileName(currentPath);
+        var currentName = context.Repository.fileSystem.GetFileName(currentPath);
         if (currentName.Equals(".git", StringComparison.OrdinalIgnoreCase))
         {
             return;
@@ -60,85 +115,79 @@ internal static class WorkingDirectoryAccessor
 
         try
         {
-            if (!await repository.fileSystem.IsDirectoryExistsAsync(currentPath, ct))
+            if (!await context.Repository.fileSystem.IsDirectoryExistsAsync(currentPath, context.CancellationToken))
             {
                 return;
             }
 
             // Read .gitignore in current directory and combine with pathFilter.
-            GlobFilter candidatePathFilter;
-            GlobFilter exactlyPathFilter;
-            var gitignorePath = repository.fileSystem.Combine(currentPath, ".gitignore");
+            GlobFilter candidateGlobFilter;
+            var gitignorePath = context.Repository.fileSystem.Combine(currentPath, ".gitignore");
             try
             {
                 // When .gitignore exists
-                if (await repository.fileSystem.IsFileExistsAsync(gitignorePath, ct))
+                if (await context.Repository.fileSystem.IsFileExistsAsync(gitignorePath, context.CancellationToken))
                 {
                     // Generate .gitignore filter
-                    using var gitignoreStream = await repository.fileSystem.OpenAsync(gitignorePath, false, ct);
-                    var gitignoreFilter = await Glob.CreateExcludeFilterFromGitignoreAsync(gitignoreStream, ct);
+                    using var gitignoreStream = await context.Repository.fileSystem.OpenAsync(gitignorePath, false, context.CancellationToken);
+                    var gitignoreFilter = await Glob.CreateExcludeFilterFromGitignoreAsync(gitignoreStream, context.CancellationToken);
 
                     // Combine filters with correct order: parent filter, .gitignore filter, override filter
-                    candidatePathFilter = Glob.Combine([parentPathFilter, gitignoreFilter]);
-                    exactlyPathFilter = Glob.Combine([parentPathFilter, gitignoreFilter, overrideGlobFilter]);
+                    candidateGlobFilter = Glob.Combine([parentGlobFilter, gitignoreFilter]);
                 }
                 else
                 {
                     // When .gitignore does not exist, continue with parent filter
-                    candidatePathFilter = parentPathFilter;
-                    exactlyPathFilter = Glob.Combine([parentPathFilter, overrideGlobFilter]);
+                    candidateGlobFilter = parentGlobFilter;
                 }
             }
             catch
             {
                 // If .gitignore cannot be read, continue with parent filter
-                candidatePathFilter = parentPathFilter;
-                exactlyPathFilter = Glob.Combine([parentPathFilter, overrideGlobFilter]);
+                candidateGlobFilter = parentGlobFilter;
             }
-
+            
             // Scan directory entries
-            var entries = await repository.fileSystem.GetDirectoryEntriesAsync(currentPath, ct);
-            await Utilities.WhenAll(entries.Select(async entry =>
+            var entries = await context.Repository.fileSystem.GetDirectoryEntriesAsync(currentPath, context.CancellationToken);
+
+            // Makes sub tasks iterator
+            var tasks = entries.Select(async entry =>
             {
                 // Skip .git directory/files (hardcoded exclusion matching Git's behavior)
-                var fileName = repository.fileSystem.GetFileName(entry);
+                var fileName = context.Repository.fileSystem.GetFileName(entry);
                 if (fileName.Equals(".git", StringComparison.OrdinalIgnoreCase))
                 {
                     return;
                 }
 
                 // Get relative path and filter it
-                var relativePath = repository.fileSystem.ToPosixPath(
-                    repository.fileSystem.GetRelativePath(workingDirectoryPath, entry));
-                var filterDecision = exactlyPathFilter(
-                    GlobFilterStates.NotExclude, // Start from neutral.
-                    relativePath);
+                var relativePath = context.Repository.fileSystem.ToPosixPath(
+                    context.Repository.fileSystem.GetRelativePath(context.WorkingDirectoryPath, entry));
+
+                var exactlyPathFilter = Glob.Combine([candidateGlobFilter, context.OverrideGlobFilter]);
+                var filterResult = Glob.ApplyFilter(exactlyPathFilter, relativePath);
 
                 // When entry is excluded, ignore it.
-                if (filterDecision == GlobFilterStates.Exclude)
+                if (filterResult == GlobFilterStates.Exclude)
                 {
                     return;
                 }
 
                 // When entry is a directory
-                if (await repository.fileSystem.IsDirectoryExistsAsync(entry, ct))
+                if (await context.Repository.fileSystem.IsDirectoryExistsAsync(entry, context.CancellationToken))
                 {
                     // Recursively scan subdirectories with the current candidate filter
-                    await ScanWorkingDirectoryRecursiveAsync(
-                        repository, workingDirectoryPath, entry,
-                        processedPaths,
-                        overrideGlobFilter, candidatePathFilter,
-                        untrackedFiles,
-                        ct);
+                    await ExtractUntrackedFilesRecursiveAsync(
+                        context, entry, candidateGlobFilter);
                 }
                 // When entry is a file
-                else if (await repository.fileSystem.IsFileExistsAsync(entry, ct))
+                else if (await context.Repository.fileSystem.IsFileExistsAsync(entry, context.CancellationToken))
                 {
                     // When entry is a file, add it to untracked files if it is not processed yet
-                    if (!processedPaths.Contains(relativePath))
+                    if (!context.ProcessedPaths.Contains(relativePath))
                     {
                         // This is an untracked file that passes the filter
-                        var fileHash = await CalculateFileHashAsync(repository, entry, ct);
+                        var fileHash = await CalculateFileHashAsync(context.Repository, entry, context.CancellationToken);
 
                         var untrackedFile = new PrimitiveWorkingDirectoryFile(
                             relativePath,
@@ -147,13 +196,37 @@ internal static class WorkingDirectoryAccessor
                             fileHash);
 
                         // Avoid race condition
-                        lock (untrackedFiles)
+                        lock (context.UntrackedFiles)
                         {
-                            untrackedFiles.Add(untrackedFile);
+                            context.UntrackedFiles.Add(untrackedFile);
                         }
                     }
                 }
-            }));
+            });
+
+            // Limits the number of parallel tasks
+            var canParallel = context.CanParallel;
+            context.IncrementRunningCount(entries.Length);
+            try
+            {
+                // When parallel is allowed, run all tasks in parallel
+                if (canParallel)
+                {
+                    await Utilities.WhenAll(tasks);
+                }
+                else
+                {
+                    // When parallel is not allowed, run all tasks sequentially
+                    foreach (var task in tasks)
+                    {
+                        await task;
+                    }
+                }
+            }
+            finally
+            {
+                context.DecrementRunningCount(entries.Length);
+            }
         }
         catch (UnauthorizedAccessException)
         {
@@ -164,6 +237,48 @@ internal static class WorkingDirectoryAccessor
             // Skip directories that cannot be accessed for any reason
         }
     }
+
+    /// <summary>
+    /// Scans the working directory for untracked files.
+    /// </summary>
+    /// <param name="repository">The repository to scan.</param>
+    /// <param name="workingDirectoryPath">The path to the working directory.</param>
+    /// <param name="processedPaths">The paths that have already been processed.</param>
+    /// <param name="overrideGlobFilter">The override glob filter.</param>
+    /// <param name="untrackedFiles">The list of untracked files (output)</param>
+    /// <param name="ct">The cancellation token.</param>
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP2_1_OR_GREATER
+    public static ValueTask ExtractUntrackedFilesAsync(
+        Repository repository,
+        string workingDirectoryPath,
+        HashSet<string> processedPaths,
+        GlobFilter overrideGlobFilter,
+        List<PrimitiveWorkingDirectoryFile> untrackedFiles,
+        CancellationToken ct) =>
+#else
+    public static Task ExtractUntrackedFilesAsync(
+        Repository repository,
+        string workingDirectoryPath,
+        HashSet<string> processedPaths,
+        GlobFilter overrideGlobFilter,
+        List<PrimitiveWorkingDirectoryFile> untrackedFiles,
+        CancellationToken ct) =>
+#endif
+        ExtractUntrackedFilesRecursiveAsync(
+            new TraverseContext(
+                repository,
+                workingDirectoryPath,
+                processedPaths,
+                overrideGlobFilter,
+                untrackedFiles,
+                ct,
+                // Exactly, it should be a value that depends on the I/O parallel degree that the machine can accept,
+                // but it is very difficult to determine it mechanically.
+                // Therefore, we use the number of processors as a substitute.
+                Environment.ProcessorCount),
+            workingDirectoryPath,
+            // Initial glob filter (always nothing)
+            Glob.nothingFilter);
 
     /// <summary>
     /// Builds a dictionary of file paths and their hashes from a tree.

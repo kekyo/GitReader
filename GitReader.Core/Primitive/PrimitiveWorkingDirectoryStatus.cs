@@ -95,4 +95,4 @@ public readonly struct PrimitiveWorkingDirectoryStatus : IEquatable<PrimitiveWor
     /// <returns>A string that represents the current instance.</returns>
     public override string ToString() =>
         $"Staged: {this.StagedFiles.Count}, Unstaged: {this.UnstagedFiles.Count}";
-} 
+}

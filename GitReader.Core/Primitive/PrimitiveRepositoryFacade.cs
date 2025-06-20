@@ -354,13 +354,11 @@ internal static class PrimitiveRepositoryFacade
         var untrackedFiles = new List<PrimitiveWorkingDirectoryFile>();
 
         // Find untracked files in working directory
-        await WorkingDirectoryAccessor.ScanWorkingDirectoryRecursiveAsync(
+        await WorkingDirectoryAccessor.ExtractUntrackedFilesAsync(
             repository,
             workingDirectoryStatus.workingDirectoryPath,
-            workingDirectoryStatus.workingDirectoryPath, 
             new(workingDirectoryStatus.processedPaths),
             overrideGlobFilter,    // Override path filter
-            Glob.nothingFilter,    // Initial path filter (always nothing)
             untrackedFiles,        // Results
             ct);
 
