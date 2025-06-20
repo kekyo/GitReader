@@ -61,7 +61,7 @@ jobs:
     # Test
 
     - name: Test
-      run: dotnet test --no-restore --verbosity normal -p:CITest=True GitReader.sln
+      run: dotnet test --no-restore --verbosity normal -p:Configuration=Release -p:Platform="Any CPU" -p:BuildIdentifier=${GITHUB_RUN_NUMBER} -p:CITest=True GitReader.sln
       timeout-minutes: 10
 
     #-----------------------------------------------------------------------

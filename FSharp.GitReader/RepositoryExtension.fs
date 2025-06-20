@@ -9,6 +9,7 @@
 
 namespace GitReader
 
+open System.Runtime.CompilerServices
 open GitReader.Internal
 open System
 open System.Threading
@@ -25,6 +26,7 @@ module public RepositoryExtension =
         /// Converts a DateTimeOffset to Git's standard date string format.
         /// </summary>
         /// <returns>A string representation of the date in Git format.</returns>
+        [<MethodImpl(MethodImplOptions.NoInlining)>]
         member date.toGitDateString() =
             Utilities.ToGitDateString(date)
         
@@ -32,6 +34,7 @@ module public RepositoryExtension =
         /// Converts a DateTimeOffset to Git's ISO date string format.
         /// </summary>
         /// <returns>A string representation of the date in ISO format.</returns>
+        [<MethodImpl(MethodImplOptions.NoInlining)>]
         member date.toGitIsoDateString() =
             Utilities.ToGitIsoDateString(date)
 
@@ -40,6 +43,7 @@ module public RepositoryExtension =
         /// Converts a Signature to Git's author string format.
         /// </summary>
         /// <returns>A string representation of the signature in Git author format.</returns>
+        [<MethodImpl(MethodImplOptions.NoInlining)>]
         member signature.toGitAuthorString() =
             Utilities.ToGitAuthorString(signature)
     
@@ -50,6 +54,7 @@ module public RepositoryExtension =
         /// <param name="objectId">The hash of the object to open.</param>
         /// <param name="ct">Optional cancellation token.</param>
         /// <returns>An async computation that returns an ObjectStreamResult containing the stream and object type.</returns>
+        [<MethodImpl(MethodImplOptions.NoInlining)>]
         [<EditorBrowsable(EditorBrowsableState.Advanced)>]
         member repository.openRawObjectStream(objectId: Hash, ?ct: CancellationToken) =
             RepositoryAccessor.OpenRawObjectStreamAsync(

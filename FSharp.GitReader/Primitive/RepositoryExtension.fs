@@ -9,6 +9,7 @@
 
 namespace GitReader.Primitive
 
+open System.Runtime.CompilerServices
 open GitReader
 open GitReader.Internal
 open GitReader.Primitive
@@ -28,6 +29,7 @@ module public RepositoryExtension =
         /// </summary>
         /// <param name="ct">Optional cancellation token.</param>
         /// <returns>An async computation that returns an optional current HEAD reference.</returns>
+        [<MethodImpl(MethodImplOptions.NoInlining)>]
         member repository.getCurrentHeadReference(?ct: CancellationToken) =
             PrimitiveRepositoryFacade.GetCurrentHeadReferenceAsync(
                 repository, unwrapCT ct) |> asOptionAsync
@@ -38,6 +40,7 @@ module public RepositoryExtension =
         /// <param name="branchName">The name of the branch.</param>
         /// <param name="ct">Optional cancellation token.</param>
         /// <returns>An async computation that returns the branch head reference.</returns>
+        [<MethodImpl(MethodImplOptions.NoInlining)>]
         member repository.getBranchHeadReference(branchName: string, ?ct: CancellationToken) =
             PrimitiveRepositoryFacade.GetBranchHeadReferenceAsync(
                 repository, branchName, unwrapCT ct).asAsync()
@@ -48,6 +51,7 @@ module public RepositoryExtension =
         /// <param name="branchName">The name of the branch.</param>
         /// <param name="ct">Optional cancellation token.</param>
         /// <returns>An async computation that returns all branch head references.</returns>
+        [<MethodImpl(MethodImplOptions.NoInlining)>]
         member repository.getBranchAllHeadReference(branchName: string, ?ct: CancellationToken) =
             PrimitiveRepositoryFacade.GetBranchAllHeadReferenceAsync(
                 repository, branchName, unwrapCT ct).asAsync()
@@ -58,6 +62,7 @@ module public RepositoryExtension =
         /// <param name="tagName">The name of the tag.</param>
         /// <param name="ct">Optional cancellation token.</param>
         /// <returns>An async computation that returns the tag reference.</returns>
+        [<MethodImpl(MethodImplOptions.NoInlining)>]
         member repository.getTagReference(tagName: string, ?ct: CancellationToken) =
             PrimitiveRepositoryFacade.GetTagReferenceAsync(
                 repository, tagName, unwrapCT ct).asAsync()
@@ -68,6 +73,7 @@ module public RepositoryExtension =
         /// <param name="commit">The hash of the commit.</param>
         /// <param name="ct">Optional cancellation token.</param>
         /// <returns>An async computation that returns an optional commit object.</returns>
+        [<MethodImpl(MethodImplOptions.NoInlining)>]
         member repository.getCommit(commit: Hash, ?ct: CancellationToken) =
             RepositoryAccessor.ReadCommitAsync(repository, commit, unwrapCT ct) |> asOptionAsync
 
@@ -77,6 +83,7 @@ module public RepositoryExtension =
         /// <param name="tag">The tag reference.</param>
         /// <param name="ct">Optional cancellation token.</param>
         /// <returns>An async computation that returns the tag object.</returns>
+        [<MethodImpl(MethodImplOptions.NoInlining)>]
         member repository.getTag(tag: PrimitiveTagReference, ?ct: CancellationToken) = async {
             let! t = RepositoryAccessor.ReadTagAsync(repository, tag.ObjectOrCommitHash, unwrapCT ct) |> asOptionAsync
             return match t with
@@ -89,6 +96,7 @@ module public RepositoryExtension =
         /// </summary>
         /// <param name="ct">Optional cancellation token.</param>
         /// <returns>An async computation that returns all branch head references.</returns>
+        [<MethodImpl(MethodImplOptions.NoInlining)>]
         member repository.getBranchHeadReferences(?ct: CancellationToken) =
             RepositoryAccessor.ReadReferencesAsync(
                 repository, ReferenceTypes.Branches, unwrapCT ct).asAsync()
@@ -98,6 +106,7 @@ module public RepositoryExtension =
         /// </summary>
         /// <param name="ct">Optional cancellation token.</param>
         /// <returns>An async computation that returns all remote branch head references.</returns>
+        [<MethodImpl(MethodImplOptions.NoInlining)>]
         member repository.getRemoteBranchHeadReferences(?ct: CancellationToken) =
             RepositoryAccessor.ReadReferencesAsync(
                 repository, ReferenceTypes.RemoteBranches, unwrapCT ct).asAsync()
@@ -107,6 +116,7 @@ module public RepositoryExtension =
         /// </summary>
         /// <param name="ct">Optional cancellation token.</param>
         /// <returns>An async computation that returns all tag references.</returns>
+        [<MethodImpl(MethodImplOptions.NoInlining)>]
         member repository.getTagReferences(?ct: CancellationToken) =
             RepositoryAccessor.ReadTagReferencesAsync(
                 repository, unwrapCT ct).asAsync()
@@ -116,6 +126,7 @@ module public RepositoryExtension =
         /// </summary>
         /// <param name="ct">Optional cancellation token.</param>
         /// <returns>An async computation that returns all stashes.</returns>
+        [<MethodImpl(MethodImplOptions.NoInlining)>]
         member repository.getStashes(?ct: CancellationToken) =
             RepositoryAccessor.ReadStashesAsync(
                 repository, unwrapCT ct).asAsync()
@@ -126,6 +137,7 @@ module public RepositoryExtension =
         /// <param name="reference">The reference to get reflog entries for.</param>
         /// <param name="ct">Optional cancellation token.</param>
         /// <returns>An async computation that returns reflog entries.</returns>
+        [<MethodImpl(MethodImplOptions.NoInlining)>]
         member repository.getRelatedReflogs(reference: PrimitiveReference, ?ct: CancellationToken) =
             RepositoryAccessor.ReadReflogEntriesAsync(
                 repository, reference, unwrapCT ct).asAsync()
@@ -136,6 +148,7 @@ module public RepositoryExtension =
         /// <param name="tree">The hash of the tree.</param>
         /// <param name="ct">Optional cancellation token.</param>
         /// <returns>An async computation that returns the tree object.</returns>
+        [<MethodImpl(MethodImplOptions.NoInlining)>]
         member repository.getTree(tree: Hash, ?ct: CancellationToken) =
             RepositoryAccessor.ReadTreeAsync(repository, tree, unwrapCT ct).asAsync()
                 
@@ -145,6 +158,7 @@ module public RepositoryExtension =
         /// <param name="blob">The hash of the blob.</param>
         /// <param name="ct">Optional cancellation token.</param>
         /// <returns>An async computation that returns the blob stream.</returns>
+        [<MethodImpl(MethodImplOptions.NoInlining)>]
         member repository.openBlob(blob: Hash, ?ct: CancellationToken) =
             RepositoryAccessor.OpenBlobAsync(repository, blob, unwrapCT ct).asAsync()
 
@@ -153,16 +167,19 @@ module public RepositoryExtension =
         /// </summary>
         /// <param name="ct">Optional cancellation token.</param>
         /// <returns>An async computation that returns the working directory status.</returns>
+        [<MethodImpl(MethodImplOptions.NoInlining)>]
         member repository.getWorkingDirectoryStatus(?ct: CancellationToken) =
             PrimitiveRepositoryFacade.GetWorkingDirectoryStatusAsync(
                 repository, unwrapCT ct).asAsync()
 
+        [<MethodImpl(MethodImplOptions.NoInlining)>]
         member repository.getUntrackedFiles(
             workingDirectoryStatus: PrimitiveWorkingDirectoryStatus,
             ?ct: CancellationToken) =
             PrimitiveRepositoryFacade.GetUntrackedFilesAsync(
                 repository, workingDirectoryStatus, Glob.nothingFilter, unwrapCT ct).asAsync()
 
+        [<MethodImpl(MethodImplOptions.NoInlining)>]
         member repository.getUntrackedFiles(
             workingDirectoryStatus: PrimitiveWorkingDirectoryStatus,
             overrideGlobFilter: GlobFilter,
@@ -175,6 +192,7 @@ module public RepositoryExtension =
         /// </summary>
         /// <param name="ct">Optional cancellation token.</param>
         /// <returns>An async computation that returns all worktrees.</returns>
+        [<MethodImpl(MethodImplOptions.NoInlining)>]
         member repository.getWorktrees(?ct: CancellationToken) =
             WorktreeAccessor.GetPrimitiveWorktreesAsync(repository, unwrapCT ct).asAsync()
 
@@ -184,6 +202,7 @@ module public RepositoryExtension =
         /// </summary>
         /// <param name="ct">Optional cancellation token.</param>
         /// <returns>An async computation that returns the HEAD reference.</returns>
+        [<MethodImpl(MethodImplOptions.NoInlining)>]
         member worktree.getHead(?ct: CancellationToken) =
             WorktreeAccessor.GetWorktreeHeadAsync(worktree, unwrapCT ct).asAsync()
 
@@ -192,6 +211,7 @@ module public RepositoryExtension =
         /// </summary>
         /// <param name="ct">Optional cancellation token.</param>
         /// <returns>An async computation that returns the branch.</returns>
+        [<MethodImpl(MethodImplOptions.NoInlining)>]
         member worktree.getBranch(?ct: CancellationToken) =
             WorktreeAccessor.GetWorktreeBranchAsync(worktree, unwrapCT ct).asAsync()
 

@@ -9,6 +9,7 @@
 
 namespace GitReader.Structures
 
+open System.Runtime.CompilerServices
 open GitReader
 open GitReader.Internal
 open GitReader.Structures
@@ -51,6 +52,7 @@ module public RepositoryExtension =
         /// </summary>
         /// <param name="ct">Optional cancellation token.</param>
         /// <returns>An async computation that returns HEAD reflog entries.</returns>
+        [<MethodImpl(MethodImplOptions.NoInlining)>]
         member repository.getHeadReflogs(?ct: CancellationToken) =
             StructuredRepositoryFacade.GetHeadReflogsAsync(
                 repository, WeakReference(repository), unwrapCT ct).asAsync()
@@ -60,6 +62,7 @@ module public RepositoryExtension =
         /// </summary>
         /// <param name="ct">Optional cancellation token.</param>
         /// <returns>An async computation that returns the working directory status.</returns>
+        [<MethodImpl(MethodImplOptions.NoInlining)>]
         member repository.getWorkingDirectoryStatus(?ct: CancellationToken) =
             StructuredRepositoryFacade.GetWorkingDirectoryStatusAsync(
                 repository, Glob.nothingFilter, unwrapCT ct).asAsync()
@@ -70,6 +73,7 @@ module public RepositoryExtension =
         /// <param name="overrideGlobFilter">A predicate override glob filter function.</param>
         /// <param name="ct">Optional cancellation token.</param>
         /// <returns>An async computation that returns the filtered working directory status.</returns>
+        [<MethodImpl(MethodImplOptions.NoInlining)>]
         member repository.getWorkingDirectoryStatus(
             overrideGlobFilter: GlobFilter, ?ct: CancellationToken) =
             StructuredRepositoryFacade.GetWorkingDirectoryStatusAsync(
@@ -80,6 +84,7 @@ module public RepositoryExtension =
         /// </summary>
         /// <param name="ct">Optional cancellation token.</param>
         /// <returns>An async computation that returns all worktrees.</returns>
+        [<MethodImpl(MethodImplOptions.NoInlining)>]
         member repository.getWorktrees(?ct: CancellationToken) =
             WorktreeAccessor.GetStructuredWorktreesAsync(
                 repository, unwrapCT ct).asAsync()
@@ -90,6 +95,7 @@ module public RepositoryExtension =
         /// </summary>
         /// <param name="ct">Optional cancellation token.</param>
         /// <returns>An async computation that returns the HEAD commit.</returns>
+        [<MethodImpl(MethodImplOptions.NoInlining)>]
         member branch.getHeadCommit(?ct: CancellationToken) =
             StructuredRepositoryFacade.GetCommitAsync(
                 branch, unwrapCT ct).asAsync()
@@ -100,6 +106,7 @@ module public RepositoryExtension =
         /// </summary>
         /// <param name="ct">Optional cancellation token.</param>
         /// <returns>An async computation that returns an optional primary parent commit.</returns>
+        [<MethodImpl(MethodImplOptions.NoInlining)>]
         member commit.getPrimaryParentCommit(?ct: CancellationToken) = async {
             let! c = StructuredRepositoryFacade.GetPrimaryParentAsync(
                 commit, unwrapCT ct).asAsync()
@@ -113,6 +120,7 @@ module public RepositoryExtension =
         /// </summary>
         /// <param name="ct">Optional cancellation token.</param>
         /// <returns>An async computation that returns all parent commits.</returns>
+        [<MethodImpl(MethodImplOptions.NoInlining)>]
         member commit.getParentCommits(?ct: CancellationToken) =
             StructuredRepositoryFacade.GetParentsAsync(
                 commit, unwrapCT ct).asAsync()
@@ -122,6 +130,7 @@ module public RepositoryExtension =
         /// </summary>
         /// <param name="ct">Optional cancellation token.</param>
         /// <returns>An async computation that returns the tree root.</returns>
+        [<MethodImpl(MethodImplOptions.NoInlining)>]
         member commit.getTreeRoot(?ct: CancellationToken) =
             StructuredRepositoryFacade.GetTreeAsync(
                 commit, unwrapCT ct).asAsync()
@@ -130,6 +139,7 @@ module public RepositoryExtension =
         /// Gets the commit message.
         /// </summary>
         /// <returns>The commit message.</returns>
+        [<MethodImpl(MethodImplOptions.NoInlining)>]
         member commit.getMessage() =
             commit.message
             
@@ -140,6 +150,7 @@ module public RepositoryExtension =
         /// <param name="ct">Optional cancellation token.</param>
         /// <returns>An async computation that returns the commit.</returns>
         /// <exception cref="InvalidOperationException">Thrown when the tag type is not a commit.</exception>
+        [<MethodImpl(MethodImplOptions.NoInlining)>]
         member tag.getCommit(?ct: CancellationToken) =
             match tag.Type with
             | ObjectTypes.Commit -> StructuredRepositoryFacade.GetCommitAsync(tag, unwrapCT ct).asAsync()
@@ -150,6 +161,7 @@ module public RepositoryExtension =
         /// </summary>
         /// <param name="ct">Optional cancellation token.</param>
         /// <returns>An async computation that returns the tag annotation.</returns>
+        [<MethodImpl(MethodImplOptions.NoInlining)>]
         member tag.getAnnotation(?ct: CancellationToken) =
             StructuredRepositoryFacade.GetAnnotationAsync(tag, unwrapCT ct).asAsync()
        
@@ -159,6 +171,7 @@ module public RepositoryExtension =
         /// </summary>
         /// <param name="ct">Optional cancellation token.</param>
         /// <returns>An async computation that returns the stash commit.</returns>
+        [<MethodImpl(MethodImplOptions.NoInlining)>]
         member stash.getCommit(?ct: CancellationToken) =
             StructuredRepositoryFacade.GetCommitAsync(
                 stash, unwrapCT ct).asAsync()
@@ -169,6 +182,7 @@ module public RepositoryExtension =
         /// </summary>
         /// <param name="ct">Optional cancellation token.</param>
         /// <returns>An async computation that returns the current commit.</returns>
+        [<MethodImpl(MethodImplOptions.NoInlining)>]
         member reflog.getCurrentCommit(?ct: CancellationToken) =
             StructuredRepositoryFacade.GetCommitAsync(
                 reflog, reflog.Commit, unwrapCT ct).asAsync()
@@ -178,6 +192,7 @@ module public RepositoryExtension =
         /// </summary>
         /// <param name="ct">Optional cancellation token.</param>
         /// <returns>An async computation that returns the old commit.</returns>
+        [<MethodImpl(MethodImplOptions.NoInlining)>]
         member reflog.getOldCommit(?ct: CancellationToken) =
             StructuredRepositoryFacade.GetCommitAsync(
                 reflog, reflog.OldCommit, unwrapCT ct).asAsync()
@@ -188,6 +203,7 @@ module public RepositoryExtension =
         /// </summary>
         /// <param name="ct">Optional cancellation token.</param>
         /// <returns>An async computation that returns the blob stream.</returns>
+        [<MethodImpl(MethodImplOptions.NoInlining)>]
         member entry.openBlob(?ct: CancellationToken) =
             StructuredRepositoryFacade.OpenBlobAsync(
                 entry, unwrapCT ct).asAsync()
@@ -198,6 +214,7 @@ module public RepositoryExtension =
         /// </summary>
         /// <param name="ct">Optional cancellation token.</param>
         /// <returns>An async computation that returns the submodule repository.</returns>
+        [<MethodImpl(MethodImplOptions.NoInlining)>]
         member entry.openSubModule(?ct: CancellationToken) =
             StructuredRepositoryFacade.OpenSubModuleAsync(
                 entry, unwrapCT ct).asAsync()
