@@ -1,3 +1,0 @@
-﻿{
-  origin: https://github.com/kekyo/CenterCLR.NamingFormatter
-}

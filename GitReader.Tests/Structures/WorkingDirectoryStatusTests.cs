@@ -14,6 +14,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Diagnostics;
 
+using Assert = NUnit.Framework.Legacy.ClassicAssert;
+
 namespace GitReader.Structures;
 
 public sealed class WorkingDirectoryStatusTests
