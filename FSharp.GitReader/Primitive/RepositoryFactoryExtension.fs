@@ -9,6 +9,7 @@
 
 namespace GitReader.Primitive
 
+open System.Runtime.CompilerServices
 open GitReader
 open GitReader.IO
 open System.Threading
@@ -26,6 +27,7 @@ module public RepositoryFactoryExtension =
         /// <param name="path">The path to the repository.</param>
         /// <param name="ct">Optional cancellation token.</param>
         /// <returns>An async computation that returns a PrimitiveRepository instance.</returns>
+        [<MethodImpl(MethodImplOptions.NoInlining)>]
         member _.openPrimitive(path: string, ?ct: CancellationToken) =
             PrimitiveRepositoryFacade.OpenPrimitiveAsync(
                 path, new StandardFileSystem(65536), unwrapCT ct).asAsync()
@@ -36,6 +38,7 @@ module public RepositoryFactoryExtension =
         /// <param name="fileSystem">The file system implementation to use.</param>
         /// <param name="ct">Optional cancellation token.</param>
         /// <returns>An async computation that returns a PrimitiveRepository instance.</returns>
+        [<MethodImpl(MethodImplOptions.NoInlining)>]
         member _.openPrimitive(path: string, fileSystem: IFileSystem, ?ct: CancellationToken) =
             PrimitiveRepositoryFacade.OpenPrimitiveAsync(
                 path, fileSystem, unwrapCT ct).asAsync()

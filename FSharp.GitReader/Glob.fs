@@ -11,6 +11,7 @@ namespace GitReader
 
 open System
 open System.IO
+open System.Runtime.CompilerServices
 open System.Threading
 
 /// <summary>
@@ -26,7 +27,8 @@ type public Glob =
     /// <param name="path">The path to test.</param>
     /// <param name="pattern">The glob pattern to match against.</param>
     /// <returns>true if the path matches the pattern; otherwise, false.</returns>
-    static member isMatch(path: string, pattern: string) =
+    [<MethodImpl(MethodImplOptions.NoInlining)>]
+    static member isMatch(path, pattern) =
         Internal.Glob.IsMatch(path, pattern)
 
     /// <summary>
@@ -39,7 +41,8 @@ type public Glob =
     /// let filter2 = Glob.createExcludeFilter([| "!important.log" |])
     /// let combined = Glob.combine([| filter1; filter2 |])
     /// </example>
-    static member combine([<ParamArray>] predicates: GlobFilter[]) =
+    [<MethodImpl(MethodImplOptions.NoInlining)>]
+    static member public combine([<ParamArray>] predicates) =
         Internal.Glob.Combine(predicates)
 
     /// <summary>
@@ -52,7 +55,8 @@ type public Glob =
     /// let filter = Glob.createExcludeFilter([| "*.log"; "!important.log"; "bin/"; "obj/"; "node_modules/" |])
     /// let! status = repository.getWorkingDirectoryStatusWithFilter(filter)
     /// </example>
-    static member createExcludeFilter([<ParamArray>] excludePatterns: string[]) =
+    [<MethodImpl(MethodImplOptions.NoInlining)>]
+    static member createExcludeFilter([<ParamArray>] excludePatterns) =
         Internal.Glob.CreateExcludeFilter(excludePatterns)
 
     /// <summary>
@@ -65,6 +69,7 @@ type public Glob =
     /// let filter = Glob.getCommonIgnoreFilter()
     /// let! status = repository.getWorkingDirectoryStatusWithFilter(filter)
     /// </example>
+    [<MethodImpl(MethodImplOptions.NoInlining)>]
     static member getCommonIgnoreFilter() =
         Internal.Glob.commonIgnoreFilter
 
@@ -77,6 +82,7 @@ type public Glob =
     /// let filter = Glob.getExcludeAllFilter()
     /// let! status = repository.getWorkingDirectoryStatusWithFilter(filter)
     /// </example>
+    [<MethodImpl(MethodImplOptions.NoInlining)>]
     static member getExcludeAllFilter() =
         Internal.Glob.excludeAllFilter
 
@@ -90,7 +96,8 @@ type public Glob =
     /// let stream = File.OpenRead(".gitignore")
     /// let! filter = Glob.createExcludeFilterFromGitignore(stream, ct)
     /// </example>
-    static member createExcludeFilterFromGitignore(gitignoreStream: Stream, ?ct: CancellationToken) =
+    [<MethodImpl(MethodImplOptions.NoInlining)>]
+    static member createExcludeFilterFromGitignore(gitignoreStream: Stream, ?ct) =
         Internal.Glob.CreateExcludeFilterFromGitignoreAsync(gitignoreStream, unwrapCT ct).asAsync()
 
     /// <summary>
@@ -103,7 +110,8 @@ type public Glob =
     /// use reader = File.OpenText(".gitignore");
     /// let! filter = Glob.CreateExcludeFilterFromGitignoreAsync(reader, ct);
     /// </example>
-    static member createExcludeFilterFromGitignore(gitignoreReader: TextReader, ?ct: CancellationToken) =
+    [<MethodImpl(MethodImplOptions.NoInlining)>]
+    static member createExcludeFilterFromGitignore(gitignoreReader: TextReader, ?ct) =
         Internal.Glob.CreateExcludeFilterFromGitignoreAsync(gitignoreReader, unwrapCT ct).asAsync()
 
     /// <summary>
@@ -112,5 +120,6 @@ type public Glob =
     /// <param name="gitignoreLines">Text lines containing .gitignore content.</param>
     /// <returns>A predicate function that returns Exclude if excluded, or NotExclude if unevaluated.</returns>
     /// <remarks>Difference from CreateExcludeFilter() is that empty lines and comments are evaluated.</remarks>
-    static member createExcludeFilterFromGitignore([<ParamArray>] gitignoreLines: string[]) =
+    [<MethodImpl(MethodImplOptions.NoInlining)>]
+    static member createExcludeFilterFromGitignore(gitignoreLines: string seq) =
         Internal.Glob.CreateExcludeFilterFromGitignore(gitignoreLines)

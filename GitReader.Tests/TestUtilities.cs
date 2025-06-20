@@ -9,12 +9,23 @@
 
 using System;
 using System.Diagnostics;
+using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace GitReader;
 
 internal static class TestUtilities
 {
+    public static Task WriteAllTextAsync(string path, string? contents, CancellationToken ct = default)
+    {
+#if NETFRAMEWORK
+        return Task.Run(() => File.WriteAllText(path, contents), ct);
+#else
+        return File.WriteAllTextAsync(path, contents, ct);
+#endif
+    }
+    
     public static async Task RunGitCommandAsync(string workingDirectory, string arguments)
     {
         var startInfo = new ProcessStartInfo
@@ -30,7 +41,11 @@ internal static class TestUtilities
 
         using var process = new Process { StartInfo = startInfo };
         process.Start();
+#if NETFRAMEWORK
+        await Task.Run(() => process.WaitForExit());
+#else
         await process.WaitForExitAsync();
+#endif
 
         if (process.ExitCode != 0)
         {

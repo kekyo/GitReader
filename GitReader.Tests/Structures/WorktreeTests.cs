@@ -41,7 +41,7 @@ public sealed class WorktreeTests
             await TestUtilities.RunGitCommandAsync(testPath, "config user.name \"Test User\"");
             
             // Create initial commit
-            await File.WriteAllTextAsync(Path.Combine(testPath, "README.md"), "# Test Repository");
+            await TestUtilities.WriteAllTextAsync(Path.Combine(testPath, "README.md"), "# Test Repository");
             await TestUtilities.RunGitCommandAsync(testPath, "add README.md");
             await TestUtilities.RunGitCommandAsync(testPath, "commit -m \"Initial commit\"");
 
@@ -93,7 +93,7 @@ public sealed class WorktreeTests
             await TestUtilities.RunGitCommandAsync(testPath, "config user.name \"Test User\"");
             
             // Create initial commit
-            await File.WriteAllTextAsync(Path.Combine(testPath, "README.md"), "# Test Repository");
+            await TestUtilities.WriteAllTextAsync(Path.Combine(testPath, "README.md"), "# Test Repository");
             await TestUtilities.RunGitCommandAsync(testPath, "add README.md");
             await TestUtilities.RunGitCommandAsync(testPath, "commit -m \"Initial commit\"");
             
@@ -167,7 +167,7 @@ public sealed class WorktreeTests
             await TestUtilities.RunGitCommandAsync(testPath, "config user.name \"Test User\"");
             
             // Create initial commit
-            await File.WriteAllTextAsync(Path.Combine(testPath, "README.md"), "# Test Repository");
+            await TestUtilities.WriteAllTextAsync(Path.Combine(testPath, "README.md"), "# Test Repository");
             await TestUtilities.RunGitCommandAsync(testPath, "add README.md");
             await TestUtilities.RunGitCommandAsync(testPath, "commit -m \"Initial commit\"");
 

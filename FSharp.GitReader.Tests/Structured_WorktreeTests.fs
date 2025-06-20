@@ -34,7 +34,7 @@ type public Structured_WorktreeTests() =
             do! runGitCommandAsync(testPath, "config user.name \"Test User\"")
             
             // Create initial file and commit
-            do! File.WriteAllTextAsync(Path.Combine(testPath, "README.md"), "# Test Repository").asAsync()
+            do! TestUtilities.WriteAllTextAsync(Path.Combine(testPath, "README.md"), "# Test Repository").asAsync()
             do! runGitCommandAsync(testPath, "add README.md")
             do! runGitCommandAsync(testPath, "commit -m \"Initial commit\"")
 
@@ -75,7 +75,7 @@ type public Structured_WorktreeTests() =
             do! runGitCommandAsync(testPath, "config user.name \"Test User\"")
             
             // Create initial file and commit
-            do! File.WriteAllTextAsync(Path.Combine(testPath, "README.md"), "# Test Repository").asAsync()
+            do! TestUtilities.WriteAllTextAsync(Path.Combine(testPath, "README.md"), "# Test Repository").asAsync()
             do! runGitCommandAsync(testPath, "add README.md")
             do! runGitCommandAsync(testPath, "commit -m \"Initial commit\"")
             
@@ -134,7 +134,7 @@ type public Structured_WorktreeTests() =
             do! runGitCommandAsync(testPath, "config user.name \"Test User\"")
             
             // Create initial file and commit
-            do! File.WriteAllTextAsync(Path.Combine(testPath, "README.md"), "# Test Repository").asAsync()
+            do! TestUtilities.WriteAllTextAsync(Path.Combine(testPath, "README.md"), "# Test Repository").asAsync()
             do! runGitCommandAsync(testPath, "add README.md")
             do! runGitCommandAsync(testPath, "commit -m \"Initial commit\"")
             

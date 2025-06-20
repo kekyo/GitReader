@@ -54,7 +54,7 @@ public sealed class WorkingDirectoryAccessorConcurrencyTests
             {
                 var fileName = $"test_file_{i:D4}.txt";
                 var filePath = Path.Combine(testPath, fileName);
-                fileTasks.Add(File.WriteAllTextAsync(filePath, $"Content of file {i}"));
+                fileTasks.Add(TestUtilities.WriteAllTextAsync(filePath, $"Content of file {i}"));
             }
             await Task.WhenAll(fileTasks);
 
@@ -119,7 +119,7 @@ public sealed class WorkingDirectoryAccessorConcurrencyTests
             await TestUtilities.RunGitCommandAsync(testPath, "config user.name \"Test User\"");
             
             // Create committed file
-            await File.WriteAllTextAsync(Path.Combine(testPath, "committed.txt"), "Committed content");
+            await TestUtilities.WriteAllTextAsync(Path.Combine(testPath, "committed.txt"), "Committed content");
             await TestUtilities.RunGitCommandAsync(testPath, "add committed.txt");
             await TestUtilities.RunGitCommandAsync(testPath, "commit -m \"Initial commit\"");
             
@@ -127,7 +127,7 @@ public sealed class WorkingDirectoryAccessorConcurrencyTests
             await Task.Delay(100);
             
             // Create staged file
-            await File.WriteAllTextAsync(Path.Combine(testPath, "staged.txt"), "Staged content");
+            await TestUtilities.WriteAllTextAsync(Path.Combine(testPath, "staged.txt"), "Staged content");
             await TestUtilities.RunGitCommandAsync(testPath, "add staged.txt");
             
             // Wait to ensure staging is complete
@@ -136,11 +136,11 @@ public sealed class WorkingDirectoryAccessorConcurrencyTests
             // Create untracked files
             for (int i = 0; i < 50; i++)
             {
-                await File.WriteAllTextAsync(Path.Combine(testPath, $"untracked_{i}.txt"), $"Untracked content {i}");
+                await TestUtilities.WriteAllTextAsync(Path.Combine(testPath, $"untracked_{i}.txt"), $"Untracked content {i}");
             }
             
             // Modify committed file
-            await File.WriteAllTextAsync(Path.Combine(testPath, "committed.txt"), "Modified committed content");
+            await TestUtilities.WriteAllTextAsync(Path.Combine(testPath, "committed.txt"), "Modified committed content");
 
             using var repository = await Repository.Factory.OpenPrimitiveAsync(testPath);
 
@@ -209,7 +209,7 @@ public sealed class WorkingDirectoryAccessorConcurrencyTests
             // Create stable set of files
             for (int i = 0; i < 50; i++)
             {
-                await File.WriteAllTextAsync(Path.Combine(testPath, $"file_{i}.txt"), $"Content {i}");
+                await TestUtilities.WriteAllTextAsync(Path.Combine(testPath, $"file_{i}.txt"), $"Content {i}");
             }
 
             using var repository = await Repository.Factory.OpenPrimitiveAsync(testPath);
@@ -300,7 +300,7 @@ public sealed class WorkingDirectoryAccessorConcurrencyTests
             
             foreach (var file in files)
             {
-                await File.WriteAllTextAsync(Path.Combine(testPath, file.Key), file.Value);
+                await TestUtilities.WriteAllTextAsync(Path.Combine(testPath, file.Key), file.Value);
             }
             
             // Stage some files to create mixed states
@@ -311,7 +311,7 @@ public sealed class WorkingDirectoryAccessorConcurrencyTests
             await TestUtilities.RunGitCommandAsync(testPath, "add dir2/file2.txt");
             
             // Modify a committed file
-            await File.WriteAllTextAsync(Path.Combine(testPath, "root.txt"), "Modified root content");
+            await TestUtilities.WriteAllTextAsync(Path.Combine(testPath, "root.txt"), "Modified root content");
 
             using var repository = await Repository.Factory.OpenPrimitiveAsync(testPath);
 
@@ -370,7 +370,7 @@ public sealed class WorkingDirectoryAccessorConcurrencyTests
             // Create stable files
             for (int i = 0; i < 100; i++)
             {
-                await File.WriteAllTextAsync(Path.Combine(testPath, $"file_{i}.txt"), $"Content {i}");
+                await TestUtilities.WriteAllTextAsync(Path.Combine(testPath, $"file_{i}.txt"), $"Content {i}");
             }
             await TestUtilities.RunGitCommandAsync(testPath, "add .");
             await TestUtilities.RunGitCommandAsync(testPath, "commit -m \"Initial commit\"");
@@ -474,7 +474,7 @@ public sealed class WorkingDirectoryAccessorConcurrencyTests
                 {
                     Directory.CreateDirectory(directory);
                 }
-                await File.WriteAllTextAsync(fullPath, $"Content for {path}");
+                await TestUtilities.WriteAllTextAsync(fullPath, $"Content for {path}");
             }
             
             // Stage some files to create index entries
