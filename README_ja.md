@@ -406,9 +406,12 @@ foreach (Worktree worktree in worktrees)
 
 ### ワーキングディレクトリの状態を取得
 
+GitReaderの他の機能はワーキングディレクトリの状態を読み取りませんが、この機能はワーキングディレクトリとリポジトリ内のメタデータとの統合を行います。従って、".gitignore"ファイルの内容も反映させた状態を取得できます。
+
 ```csharp
-// 現在のワーキングディレクトリの状態を取得
-WorkingDirectoryStatus status = await repository.GetWorkingDirectoryStatusAsync();
+// 現在のワーキングディレクトリの状態を取得 (".gitignore" の定義も反映される)
+WorkingDirectoryStatus status =
+    await repository.GetWorkingDirectoryStatusAsync();
 
 // ステージングされたファイルを取得
 foreach (var entry in status.StagedFiles)
@@ -427,7 +430,21 @@ foreach (var entry in status.UntrackedFiles)
 {
     Console.WriteLine($"Untracked: {entry.Path}");
 }
+
+// グロブフィルタでオーバーライドしてワーキングディレクトリの状態を取得
+var globFilter = Glob.CreateExcludeFilter("*.log", "*.tmp", "bin/", "obj/");
+WorkingDirectoryStatus filteredStatus =
+    await repository.GetWorkingDirectoryStatusWithFilterAsync(globFilter);
+
+// フィルタが適用されたファイルを表示
+foreach (var entry in filteredStatus.UntrackedFiles)
+{
+    Console.WriteLine($"Filtered Untracked: {entry.Path}");
+}
 ```
+
+グロブオーバーライドフィルタは、".gitignore"などのフィルタの評価後に適用されます。
+従って、".gitignore"で定義されたルールを、否定条件で無視させることもできます。
 
 ----
 
@@ -691,6 +708,64 @@ foreach (KeyValuePair<string, string> entry in repository.RemoteUrls)
     Console.WriteLine($"Remote: Name={entry.Key}, Url={entry.Value}");
 }
 ```
+
+### Globクラス
+
+`Glob` クラスは、 ".gitignore" のグロブパターンを解析する機能を提供します。
+これは、おおよそglibcの `fnmatch()` 関数と同等の実装です。
+
+```csharp
+// パスがパターンにマッチするかチェック
+var path = "src/Program.cs";
+bool matches = Glob.IsMatch(path, "*.cs");
+Console.WriteLine($"Matches: {matches}"); // True
+
+// 複数の除外パターンでフィルタを作成
+GlobFilter filter = Glob.CreateExcludeFilter("*.log", "*.tmp", "bin/", "obj/");
+
+// 一般的な除外パターンを取得
+GlobFilter commonFilter = Glob.GetCommonIgnoreFilter();
+
+// 複数のフィルタを組み合わせ。先頭から順に適用されることに注意。
+GlobFilter combinedFilter = Glob.Combine(filter, commonFilter);
+
+// フィルタを適用してファイルをチェック
+GlobFilterStates filterResult = Glob.ApplyFilter(combinedFilter, "debug.log");
+Console.WriteLine($"Filter result: {filterResult}"); // Exclude
+
+// すべてのファイルを除外するフィルタ
+GlobFilter excludeAllFilter = Glob.GetExcludeAllFilter();
+```
+
+以下のメソッドを使用して、".gitignore"を読み取ってグロブフィルターを生成することができます:
+
+```csharp
+// .gitignoreファイルからフィルタを作成
+using var stream = File.OpenRead(".gitignore");
+GlobFilter filter1 = await Glob.CreateExcludeFilterFromGitignoreAsync(stream, ct);
+
+// TextReaderから.gitignoreフィルタを作成
+using var reader = File.OpenText(".gitignore");
+GlobFilter filter2 = await Glob.CreateExcludeFilterFromGitignoreAsync(reader, ct);
+
+// 文字列の配列から.gitignoreフィルタを作成
+var gitignoreLines = new[] { "*.log", "bin/", "obj/", "# コメント", "" };
+GlobFilter filter3 = Glob.CreateExcludeFilterFromGitignore(gitignoreLines);
+```
+
+`GetCommonIgnoreFilter()`で得られるルールは、以下の通りです:
+
+|種類|パターン|
+|:----|:----|
+|Build outputs|"bin/", "obj/", "build/", "out/", "target/", "dist/"|
+|Dependencies|"node_modules/", "packages/", "vendor/"|
+|Log files|"*.log", "logs/"|
+|Temporary files|"*.tmp", "*.temp", "*.swp", "*.bak", "*~"|
+|IDE files|".vs/", ".vscode/", ".idea/", "*.suo", "*.user"|
+|OS files|".DS_Store", "Thumbs.db", "Desktop.ini"|
+|Version control files|"*.orig", "*.rej"|
+
+公式のGitでは、何ら標準的なパターンを定義していない（強制的に除外される".git"を除く）ので、このルールは有用ではないかもしれません。
 
 
 ----
