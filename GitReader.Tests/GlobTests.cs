@@ -27,7 +27,7 @@ using System.IO;
 using System.Threading.Tasks;
 using System.Text;
 using System;
-
+using GitReader.Internal;
 using Assert = NUnit.Framework.Legacy.ClassicAssert;
 
 namespace GitReader;
@@ -1112,7 +1112,7 @@ public sealed class GlobTests
     public async Task CreateGitignoreFilterAsync_BasicPatterns()
     {
         var gitignoreContent = "*.log\ntemp/\n*.tmp\n";
-        using var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(gitignoreContent));
+        using var stream = new MemoryStream(Utilities.UTF8.GetBytes(gitignoreContent));
 
         var f = await Glob.CreateExcludeFilterFromGitignoreAsync(stream);
         Func<string, GlobFilterStates> filter = path => Glob.ApplyFilter(f, path);
@@ -1133,7 +1133,7 @@ public sealed class GlobTests
     public async Task CreateGitignoreFilterAsync_NegationPatterns()
     {
         var gitignoreContent = "*.log\n!important.log\ntemp/\n!temp/keep.txt\n";
-        using var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(gitignoreContent));
+        using var stream = new MemoryStream(Utilities.UTF8.GetBytes(gitignoreContent));
 
         var f = await Glob.CreateExcludeFilterFromGitignoreAsync(stream);
         Func<string, GlobFilterStates> filter = path => Glob.ApplyFilter(f, path);
@@ -1154,7 +1154,7 @@ public sealed class GlobTests
     public async Task CreateGitignoreFilterAsync_CommentsAndEmptyLines()
     {
         var gitignoreContent = "# This is a comment\n\n*.log\n# Another comment\n\ntemp/\n";
-        using var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(gitignoreContent));
+        using var stream = new MemoryStream(Utilities.UTF8.GetBytes(gitignoreContent));
 
         var f = await Glob.CreateExcludeFilterFromGitignoreAsync(stream);
         Func<string, GlobFilterStates> filter = path => Glob.ApplyFilter(f, path);
@@ -1224,7 +1224,7 @@ Desktop.ini
 !docs/build/
 ";
 
-        using var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(gitignoreContent));
+        using var stream = new MemoryStream(Utilities.UTF8.GetBytes(gitignoreContent));
         var f = await Glob.CreateExcludeFilterFromGitignoreAsync(stream);
         Func<string, GlobFilterStates> filter = path => Glob.ApplyFilter(f, path);
 
@@ -1263,7 +1263,7 @@ Desktop.ini
     {
         // Test combining gitignore filter with base filter using Combine method
         var gitignoreContent = "*.log\n!important.log\n";
-        using var stream = new MemoryStream(Encoding.UTF8.GetBytes(gitignoreContent));
+        using var stream = new MemoryStream(Utilities.UTF8.GetBytes(gitignoreContent));
 
         var baseFilter = Glob.CreateExcludeFilter("*.tmp");
         var gitignoreFilter = await Glob.CreateExcludeFilterFromGitignoreAsync(stream);
@@ -1287,7 +1287,7 @@ Desktop.ini
         // Test that gitignore can work with base filter
         // Use a normal ignore pattern in gitignore, not negation
         var gitignoreContent = "*.log\n";  // Exclude log files
-        using var stream = new MemoryStream(Encoding.UTF8.GetBytes(gitignoreContent));
+        using var stream = new MemoryStream(Utilities.UTF8.GetBytes(gitignoreContent));
 
         var baseFilter = Glob.CreateExcludeFilter("*.cs");  // Exclude .cs files
         var gitignoreFilter = await Glob.CreateExcludeFilterFromGitignoreAsync(stream);
@@ -1304,7 +1304,7 @@ Desktop.ini
     public async Task CreateFilterFromGitignoreAsync_WithoutBaseFilter()
     {
         var gitignoreContent = "*.log\nbuild/\n!important.log\n";
-        using var stream = new MemoryStream(Encoding.UTF8.GetBytes(gitignoreContent));
+        using var stream = new MemoryStream(Utilities.UTF8.GetBytes(gitignoreContent));
 
         var f = await Glob.CreateExcludeFilterFromGitignoreAsync(stream);
         Func<string, GlobFilterStates> gitignoreFilter = path => Glob.ApplyFilter(f, path);

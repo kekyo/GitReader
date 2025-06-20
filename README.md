@@ -786,6 +786,8 @@ Apache-v2
 
 ## History
 
+* 1.13.0:
+  * Improved performance for working directory traverser.
 * 1.12.0:
   * Supported ".gitignore" interpretation. It is used to traverse working directory. (#16)
   * Added globbing parser/interpreter, for use ".gitignore". (#16)

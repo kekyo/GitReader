@@ -150,7 +150,7 @@ internal sealed class ObjectAccessor : IDisposable
                 preloadIndex++;
             }
 
-            var headerElements = Encoding.UTF8.GetString(preloadBuffer, 0, preloadIndex).
+            var headerElements = Utilities.UTF8.GetString(preloadBuffer, 0, preloadIndex).
                 Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
             if (headerElements.Length != 2)
             {

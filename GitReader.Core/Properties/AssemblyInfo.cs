@@ -10,5 +10,6 @@
 using System.Runtime.CompilerServices;
 
 [assembly: InternalsVisibleTo("GitReader")]
-[assembly: InternalsVisibleTo("FSharp.GitReader")]
 [assembly: InternalsVisibleTo("GitReader.Tests")]
+[assembly: InternalsVisibleTo("FSharp.GitReader")]
+[assembly: InternalsVisibleTo("FSharp.GitReader.Tests")]

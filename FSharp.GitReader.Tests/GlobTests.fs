@@ -18,6 +18,8 @@ open NUnit.Framework
 open NUnit.Framework.Legacy;
 
 type public GlobTests() =
+    
+    let UTF8 = Internal.Utilities.UTF8
 
     [<Test>]
     member _.``isMatch should work with basic patterns``() =
@@ -193,7 +195,7 @@ type public GlobTests() =
     member _.``createGitignoreFilter should work with basic patterns``() =
         task {
             let gitignoreContent = "*.log\ntemp/\n*.tmp\n"
-            use stream = new MemoryStream(Encoding.UTF8.GetBytes(gitignoreContent))
+            use stream = new MemoryStream(UTF8.GetBytes(gitignoreContent))
 
             let! f = Glob.createExcludeFilterFromGitignore(stream)
             let filter = Glob.applyFilter(f)
@@ -214,7 +216,7 @@ type public GlobTests() =
     member _.``createGitignoreFilter should work with negation patterns``() =
         task {
             let gitignoreContent = "*.log\n!important.log\ntemp/\n!temp/keep.txt\n"
-            use stream = new MemoryStream(Encoding.UTF8.GetBytes(gitignoreContent))
+            use stream = new MemoryStream(UTF8.GetBytes(gitignoreContent))
 
             let! f = Glob.createExcludeFilterFromGitignore(stream)
             let filter = Glob.applyFilter(f)
@@ -235,7 +237,7 @@ type public GlobTests() =
     member _.``F# async computation should work with gitignore filters``() =
         task {
             let gitignoreContent = "*.log\n!important.log\n"
-            use stream = new MemoryStream(Encoding.UTF8.GetBytes(gitignoreContent))
+            use stream = new MemoryStream(UTF8.GetBytes(gitignoreContent))
 
             let! f = Glob.createExcludeFilterFromGitignore(stream)
             let filter = Glob.applyFilter(f)
@@ -265,7 +267,7 @@ type public GlobTests() =
     member _.``createExcludeFilterFromGitignore should work with combine method``() =
         task {
             let gitignoreContent = "*.log\n!important.log\n"
-            use stream = new MemoryStream(Encoding.UTF8.GetBytes(gitignoreContent))
+            use stream = new MemoryStream(UTF8.GetBytes(gitignoreContent))
             
             let baseFilter = Glob.createExcludeFilter([| "*.tmp" |])
             let! gitignoreFilter = Glob.createExcludeFilterFromGitignore(stream)
@@ -287,7 +289,7 @@ type public GlobTests() =
     member _.``createExcludeFilterFromGitignore should work without base filter``() =
         task {
             let gitignoreContent = "*.log\nbuild/\n!important.log\n"
-            use stream = new MemoryStream(Encoding.UTF8.GetBytes(gitignoreContent))
+            use stream = new MemoryStream(UTF8.GetBytes(gitignoreContent))
             
             let! f = Glob.createExcludeFilterFromGitignore(stream)
             let gitignoreFilter = Glob.applyFilter(f)

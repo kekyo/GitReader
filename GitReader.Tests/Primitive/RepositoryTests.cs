@@ -13,6 +13,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using GitReader.Internal;
 
 namespace GitReader.Primitive;
 
@@ -356,7 +357,7 @@ public sealed class RepositoryTests
             "1205dc34ce48bda28fc543daaf9525a9bb6e6d10");
 
         var body = await new StreamReader(
-            result.Stream, Encoding.UTF8, true)
+            result.Stream, Utilities.UTF8, true)
             .ReadToEndAsync();
 
         Assert.That(result, Is.Not.Null);

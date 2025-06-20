@@ -72,17 +72,17 @@ internal static class GitIndexReader
             Throw(4);
         }
 
-        var entries = new List<GitIndexEntry>();
+        var entries = new GitIndexEntry[entryCount];
         using var entryBuffer = repository.pool.Take(62); // Minimum entry size
 
-        for (var i = 0; i < entryCount; i++)
+        for (var entryIndex = 0; entryIndex < entryCount; entryIndex++)
         {
             // Read fixed part of entry (62 bytes)
             read = await fs.ReadAsync(entryBuffer, 0, entryBuffer.Length, ct);
             if (read != entryBuffer.Length)
             {
                 throw new InvalidDataException(
-                    $"Broken Git index file: File={indexPath}, Step=5, Entry={i}/{entryCount}, Expected={entryBuffer.Length}, Actual={read}, Position={fs.Position}, Length={fs.Length}");
+                    $"Broken Git index file: File={indexPath}, Step=5, Entry={entryIndex}/{entryCount}, Expected={entryBuffer.Length}, Actual={read}, Position={fs.Position}, Length={fs.Length}");
             }
 
             // Parse fixed fields (all big-endian)
@@ -131,22 +131,22 @@ internal static class GitIndexReader
             if (pathLength < 0x0FFF)
             {
                 // Normal path length (pathLength does not include null terminator)
-                using var pathBuffer = repository.pool.Take((int)pathLength + 1);
-                read = await fs.ReadAsync(pathBuffer, 0, (int)pathLength + 1, ct);
+                using var pathBuffer = repository.pool.Take(pathLength + 1);
+                read = await fs.ReadAsync(pathBuffer, 0, pathLength + 1, ct);
                 if (read != pathLength + 1)
                 {
                     throw new InvalidDataException(
-                        $"Broken Git index file: File={indexPath}, Step=6, Entry={i}/{entryCount}, PathLength={pathLength}, Expected={pathLength + 1}, Actual={read}, Position={fs.Position}, Length={fs.Length}");
+                        $"Broken Git index file: File={indexPath}, Step=6, Entry={entryIndex}/{entryCount}, PathLength={pathLength}, Expected={pathLength + 1}, Actual={read}, Position={fs.Position}, Length={fs.Length}");
                 }
                 
                 // Verify null terminator
                 if (pathBuffer[pathLength] != 0)
                 {
                     throw new InvalidDataException(
-                        $"Missing null terminator: File={indexPath}, Entry={i}/{entryCount}, Expected=0x00, Actual=0x{pathBuffer[pathLength]:X2}");
+                        $"Missing null terminator: File={indexPath}, Entry={entryIndex}/{entryCount}, Expected=0x00, Actual=0x{pathBuffer[pathLength]:X2}");
                 }
                 
-                path = Encoding.UTF8.GetString(pathBuffer, 0, (int)pathLength);
+                path = Utilities.UTF8.GetString(pathBuffer, 0, pathLength);
             }
             else
             {
@@ -166,7 +166,7 @@ internal static class GitIndexReader
                     }
                     pathBytes.Add(singleByte[0]);
                 }
-                path = Encoding.UTF8.GetString(pathBytes.ToArray());
+                path = Utilities.UTF8.GetString(pathBytes.ToArray());
             }
             
             // Skip padding to align to 8-byte boundary
@@ -179,7 +179,7 @@ internal static class GitIndexReader
             if (padding > remainingBytes)
             {
                 throw new InvalidDataException(
-                    $"Insufficient padding bytes: File={indexPath}, Entry={i}/{entryCount}, " +
+                    $"Insufficient padding bytes: File={indexPath}, Entry={entryIndex}/{entryCount}, " +
                     $"Required={padding}, Remaining={remainingBytes}, Position={fs.Position}");
             }
             
@@ -193,7 +193,7 @@ internal static class GitIndexReader
                 }
             }
             
-            entries.Add(new GitIndexEntry(
+            entries[entryIndex] = new GitIndexEntry(
                 creationTime,
                 creationTimeNano,
                 modificationTime,
@@ -206,9 +206,9 @@ internal static class GitIndexReader
                 fileSize,
                 objectHash,
                 flags,
-                path));
+                path);
         }
 
-        return entries.ToArray();
+        return entries;
     }
 } 
