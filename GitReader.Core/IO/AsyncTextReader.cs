@@ -84,7 +84,7 @@ internal sealed class AsyncTextReader
     public AsyncTextReader(Stream stream)
     {
         this.stream = stream;
-        this.encoding = Encoding.UTF8;
+        this.encoding = Utilities.UTF8;
         decoder = encoding.GetDecoder();
         byteBuffer = new byte[DefaultBufferSize];
         _maxCharsPerBuffer = encoding.GetMaxCharCount(DefaultBufferSize);
@@ -140,7 +140,7 @@ internal sealed class AsyncTextReader
         else if (byteLen >= 3 && byteBuffer[0] == 0xEF && byteBuffer[1] == 0xBB && byteBuffer[2] == 0xBF)
         {
             // UTF-8
-            encoding = Encoding.UTF8;
+            encoding = Utilities.UTF8;
             CompressBuffer(3);
             changedEncoding = true;
         }

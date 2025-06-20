@@ -146,7 +146,7 @@ internal static class GitIndexReader
                         $"Missing null terminator: File={indexPath}, Entry={entryIndex}/{entryCount}, Expected=0x00, Actual=0x{pathBuffer[pathLength]:X2}");
                 }
                 
-                path = Encoding.UTF8.GetString(pathBuffer, 0, pathLength);
+                path = Utilities.UTF8.GetString(pathBuffer, 0, pathLength);
             }
             else
             {
@@ -166,7 +166,7 @@ internal static class GitIndexReader
                     }
                     pathBytes.Add(singleByte[0]);
                 }
-                path = Encoding.UTF8.GetString(pathBytes.ToArray());
+                path = Utilities.UTF8.GetString(pathBytes.ToArray());
             }
             
             // Skip padding to align to 8-byte boundary

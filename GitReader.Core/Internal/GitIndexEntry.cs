@@ -65,4 +65,4 @@ internal readonly struct GitIndexEntry
 
     public override string ToString() =>
         $"{this.Path}: {this.ObjectHash}";
-} 
+}

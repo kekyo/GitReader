@@ -963,7 +963,7 @@ internal static class RepositoryAccessor
                     }
                 }
 
-                var modeFlagsString = Encoding.UTF8.GetString(
+                var modeFlagsString = Utilities.UTF8.GetString(
                     buffer, start, index - start - 1);
                 PrimitiveModeFlags modeFlags;
                 try
@@ -992,7 +992,7 @@ internal static class RepositoryAccessor
                     }
                 }
 
-                var nameString = Encoding.UTF8.GetString(
+                var nameString = Utilities.UTF8.GetString(
                     buffer, start, index - start - 1);
                 if (nameString.Length == 0)
                 {

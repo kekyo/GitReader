@@ -227,7 +227,7 @@ type public PrimitiveRepositoryTests() =
             RepositoryTestsSetUp.getBasePath("test1"));
         use! result = repository.openRawObjectStream(
             "1205dc34ce48bda28fc543daaf9525a9bb6e6d10")
-        let tr = new StreamReader(result.Stream, Encoding.UTF8, true)
+        let tr = new StreamReader(result.Stream, Internal.Utilities.UTF8, true)
         let! body = tr.ReadToEndAsync()
         Assert.That(result.Type, Is.EqualTo(ObjectTypes.Commit))
         Assert.That(body, Does.StartWith("tree 5462bf28fdc4681762057cac7704730b1c590b38"))

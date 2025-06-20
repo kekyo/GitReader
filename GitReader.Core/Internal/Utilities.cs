@@ -13,6 +13,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -127,6 +128,8 @@ internal static class Utilities
 #else
         Environment.OSVersion.Platform.ToString().StartsWith("Win");
 #endif
+
+    public static readonly Encoding UTF8 = new UTF8Encoding(false, true);
 
     // Imported from corefx.
     private const long TicksPerMillisecond = 10000;
@@ -768,7 +771,7 @@ internal static class Utilities
 #endif
     {
         // Git calculates hash as: "blob <size>\0<content>"
-        var header = System.Text.Encoding.UTF8.GetBytes($"blob {size}\0");
+        var header = UTF8.GetBytes($"blob {size}\0");
 
 #if NETFRAMEWORK
         using var sha1 = new System.Security.Cryptography.SHA1CryptoServiceProvider();
