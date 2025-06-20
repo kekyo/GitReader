@@ -767,6 +767,9 @@ GlobFilter filter3 = Glob.CreateExcludeFilterFromGitignore(gitignoreLines);
 
 公式のGitでは、何ら標準的なパターンを定義していない（強制的に除外される".git"を除く）ので、このルールは有用ではないかもしれません。
 
+注意: `Glob` クラスは、パスの形式をPOSIXパス形式と仮定します。つまり、「バックスラッシュ」文字は、ディレクトリ名やファイル名の一部です。
+GitReaderがワーキングディレクトリを探索するときは、Windows環境かどうかに応じてバックスラッシュ文字をスラッシュ文字に置き換えます。
+この処理は、`StandardFileSystem.ToPosixPath()`メソッドで行っています。
 
 ----
 

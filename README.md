@@ -772,6 +772,7 @@ GlobFilter filter3 = Glob.CreateExcludeFilterFromGitignore(gitignoreLines);
 
 This rule may not be useful since official Git does not define any standard patterns (except for ".git" which is forcibly excluded).
 
+Note: The `Glob` class assumes the path format to be POSIX path format. This means that the “backslash” character is part of the directory name or filename. When GitReader searches for a working directory, it replaces the backslash character with a slash character, depending on whether you are in a Windows environment or not. This is done by the `StandardFileSystem.ToPosixPath()` method.
 
 ----
 
@@ -791,6 +792,7 @@ Apache-v2
   * Improved performance for working directory traverser. (#16)
   * Fixed raise MAE on access F# library on Release building.
     * This could occur when functions are automatically inlined at F# compile time.
+  * We do not think it is a problem since it was a short period of time, but please note that there is a disruptive change in the working directory related API that was added in 1.11.0.
 * 1.11.0:
   * Added worktree accessor.
   * Added index (working directory) information accessor.
