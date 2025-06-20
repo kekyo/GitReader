@@ -39,7 +39,8 @@ type public Primitive_WorkingDirectoryStatusTests() =
             // Empty repository should have no staged, unstaged, or untracked files
             do Assert.AreEqual(0, status.StagedFiles.Count, "Empty repository should have no staged files")
             do Assert.AreEqual(0, status.UnstagedFiles.Count, "Empty repository should have no unstaged files")
-            do Assert.AreEqual(0, status.UntrackedFiles.Count, "Empty repository should have no untracked files")
+            let! untrackedFiles = repository.getUntrackedFiles(status)
+            do Assert.AreEqual(0, untrackedFiles.Count, "Empty repository should have no untracked files")
         finally
             // Cleanup
             if Directory.Exists(testPath) then
@@ -63,24 +64,25 @@ type public Primitive_WorkingDirectoryStatusTests() =
             do! runGitCommandAsync(testPath, "config user.name \"Test User\"")
             
             // Create initial file and commit
-            do! File.WriteAllTextAsync(Path.Combine(testPath, "README.md"), "# Test Repository\n\nInitial content.") |> Async.AwaitTask
+            do! File.WriteAllTextAsync(Path.Combine(testPath, "README.md"), "# Test Repository\n\nInitial content.").asAsync()
             do! runGitCommandAsync(testPath, "add README.md")
             do! runGitCommandAsync(testPath, "commit -m \"Initial commit\"")
             
             // Create new untracked file
-            do! File.WriteAllTextAsync(Path.Combine(testPath, "new_file.txt"), "This is a new file for testing.") |> Async.AwaitTask
+            do! File.WriteAllTextAsync(Path.Combine(testPath, "new_file.txt"), "This is a new file for testing.").asAsync()
             
             // Modify existing tracked file
-            do! File.WriteAllTextAsync(Path.Combine(testPath, "README.md"), "# Test Repository\n\nInitial content.\n\nModified for testing.") |> Async.AwaitTask
+            do! File.WriteAllTextAsync(Path.Combine(testPath, "README.md"), "# Test Repository\n\nInitial content.\n\nModified for testing.").asAsync()
 
             use! repository = Repository.Factory.openPrimitive(testPath)
 
             let! status = repository.getWorkingDirectoryStatus()
 
             // Should have untracked files (including new_file.txt)
-            do Assert.IsTrue(status.UntrackedFiles.Count > 0, "Should have untracked files")
+            let! untrackedFiles = repository.getUntrackedFiles(status)
+            do Assert.IsTrue(untrackedFiles.Count > 0, "Should have untracked files")
             
-            let newFile = status.UntrackedFiles |> Seq.tryFind(fun f -> f.Path = "new_file.txt")
+            let newFile = untrackedFiles |> Seq.tryFind(fun f -> f.Path = "new_file.txt")
             match newFile with
             | Some nf ->
                 do Assert.AreEqual(FileStatus.Untracked, nf.Status)
@@ -122,8 +124,8 @@ type public Primitive_WorkingDirectoryStatusTests() =
             do! runGitCommandAsync(testPath, "config user.name \"Test User\"")
             
             // Create and commit files
-            do! File.WriteAllTextAsync(Path.Combine(testPath, "README.md"), "# Test Repository") |> Async.AwaitTask
-            do! File.WriteAllTextAsync(Path.Combine(testPath, "file1.txt"), "Content of file 1") |> Async.AwaitTask
+            do! File.WriteAllTextAsync(Path.Combine(testPath, "README.md"), "# Test Repository").asAsync()
+            do! File.WriteAllTextAsync(Path.Combine(testPath, "file1.txt"), "Content of file 1").asAsync()
             do! runGitCommandAsync(testPath, "add .")
             do! runGitCommandAsync(testPath, "commit -m \"Initial commit\"")
 
@@ -134,7 +136,8 @@ type public Primitive_WorkingDirectoryStatusTests() =
             // Clean repository should have no changes at all (following git behavior)
             do Assert.AreEqual(0, status.StagedFiles.Count, "Clean repository should have no staged files");
             do Assert.AreEqual(0, status.UnstagedFiles.Count, "Clean repository should have no unstaged files");
-            do Assert.AreEqual(0, status.UntrackedFiles.Count, "Clean repository should have no untracked files");
+            let! untrackedFiles = repository.getUntrackedFiles(status)
+            do Assert.AreEqual(0, untrackedFiles.Count, "Clean repository should have no untracked files");
         finally
             // Cleanup
             if Directory.Exists(testPath) then
@@ -158,15 +161,16 @@ type public Primitive_WorkingDirectoryStatusTests() =
             do! runGitCommandAsync(testPath, "config user.name \"Test User\"")
             
             // Create some test files
-            do! File.WriteAllTextAsync(Path.Combine(testPath, "test_file.txt"), "Test content") |> Async.AwaitTask
+            do! File.WriteAllTextAsync(Path.Combine(testPath, "test_file.txt"), "Test content").asAsync()
 
             use! repository = Repository.Factory.openPrimitive(testPath)
 
             let! status = repository.getWorkingDirectoryStatus()
 
             // Test file properties
-            do Assert.IsTrue(status.UntrackedFiles.Count >= 1, "Should have at least one untracked file")
-            let testFile = status.UntrackedFiles |> Seq.tryFind(fun f -> f.Path = "test_file.txt")
+            let! untrackedFiles = repository.getUntrackedFiles(status)
+            do Assert.IsTrue(untrackedFiles.Count >= 1, "Should have at least one untracked file")
+            let testFile = untrackedFiles |> Seq.tryFind(fun f -> f.Path = "test_file.txt")
             match testFile with
             | Some tf ->
                 do Assert.AreEqual("test_file.txt", tf.Path)

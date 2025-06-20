@@ -16,17 +16,37 @@ using System.Threading.Tasks;
 
 namespace GitReader.IO;
 
+/// <summary>
+/// Represents a temporary file descriptor containing both the file path and its stream.
+/// </summary>
 public readonly struct TemporaryFileDescriptor
 {
+    /// <summary>
+    /// The path to the temporary file.
+    /// </summary>
     public readonly string Path;
+    
+    /// <summary>
+    /// The stream for accessing the temporary file.
+    /// </summary>
     public readonly Stream Stream;
 
+    /// <summary>
+    /// Initializes a new instance of the TemporaryFileDescriptor struct.
+    /// </summary>
+    /// <param name="path">The path to the temporary file.</param>
+    /// <param name="stream">The stream for accessing the temporary file.</param>
     public TemporaryFileDescriptor(string path, Stream stream)
     {
         this.Path = path;
         this.Stream = stream;
     }
 
+    /// <summary>
+    /// Deconstructs the TemporaryFileDescriptor into its path and stream components.
+    /// </summary>
+    /// <param name="path">The path to the temporary file.</param>
+    /// <param name="stream">The stream for accessing the temporary file.</param>
     public void Deconstruct(out string path, out Stream stream)
     {
         path = this.Path;
@@ -34,196 +54,121 @@ public readonly struct TemporaryFileDescriptor
     }
 }
 
+/// <summary>
+/// Defines a contract for file system operations used by GitReader.
+/// </summary>
 public interface IFileSystem
 {
+    /// <summary>
+    /// Combines multiple path components into a single path.
+    /// </summary>
+    /// <param name="paths">The path components to combine.</param>
+    /// <returns>A combined path.</returns>
     string Combine(params string[] paths);
 
+    /// <summary>
+    /// Gets the directory name of the specified path.
+    /// </summary>
+    /// <param name="path">The path to get the directory for.</param>
+    /// <returns>The directory path.</returns>
     string GetDirectoryPath(string path);
 
+    /// <summary>
+    /// Gets the absolute path for the specified path.
+    /// </summary>
+    /// <param name="path">The path to get the full path for.</param>
+    /// <returns>The absolute path.</returns>
     string GetFullPath(string path);
 
+    /// <summary>
+    /// Determines whether the specified path is rooted.
+    /// </summary>
+    /// <param name="path">The path to check.</param>
+    /// <returns>true if the path is rooted; otherwise, false.</returns>
     bool IsPathRooted(string path);
 
+    /// <summary>
+    /// Resolves a relative path based on a base path.
+    /// </summary>
+    /// <param name="basePath">The base path.</param>
+    /// <param name="path">The relative path to resolve.</param>
+    /// <returns>The resolved path.</returns>
     string ResolveRelativePath(string basePath, string path);
 
+    /// <summary>
+    /// Determines whether the specified file exists.
+    /// </summary>
+    /// <param name="path">The path to the file to check.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>A task that represents the asynchronous operation. The task result is true if the file exists; otherwise, false.</returns>
     Task<bool> IsFileExistsAsync(
         string path, CancellationToken ct);
 
+    /// <summary>
+    /// Gets the files in the specified directory that match the specified pattern.
+    /// </summary>
+    /// <param name="basePath">The directory to search.</param>
+    /// <param name="match">The search pattern to match against files.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>A task that represents the asynchronous operation. The task result contains an array of file paths.</returns>
     Task<string[]> GetFilesAsync(
         string basePath, string match, CancellationToken ct);
 
+    /// <summary>
+    /// Opens a file stream for the specified path.
+    /// </summary>
+    /// <param name="path">The path to the file to open.</param>
+    /// <param name="isSeekable">true if the stream should be seekable; otherwise, false.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>A task that represents the asynchronous operation. The task result contains a stream for the file.</returns>
     Task<Stream> OpenAsync(
         string path, bool isSeekable, CancellationToken ct);
 
+    /// <summary>
+    /// Creates a temporary file and returns a descriptor for it.
+    /// </summary>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>A task that represents the asynchronous operation. The task result contains a temporary file descriptor.</returns>
     Task<TemporaryFileDescriptor> CreateTemporaryAsync(
         CancellationToken ct);
 
+    /// <summary>
+    /// Gets the file name from the specified path.
+    /// </summary>
+    /// <param name="path">The path to get the file name from.</param>
+    /// <returns>The file name.</returns>
     string GetFileName(string path);
 
+    /// <summary>
+    /// Determines whether the specified directory exists.
+    /// </summary>
+    /// <param name="path">The path to the directory to check.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>A task that represents the asynchronous operation. The task result is true if the directory exists; otherwise, false.</returns>
     Task<bool> IsDirectoryExistsAsync(
         string path, CancellationToken ct);
 
+    /// <summary>
+    /// Gets the entries (files and directories) in the specified directory.
+    /// </summary>
+    /// <param name="path">The path to the directory.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>A task that represents the asynchronous operation. The task result contains an array of entry paths.</returns>
     Task<string[]> GetDirectoryEntriesAsync(
         string path, CancellationToken ct);
 
+    /// <summary>
+    /// Gets the relative path from a base path to a target path.
+    /// </summary>
+    /// <param name="basePath">The base path.</param>
+    /// <param name="path">The target path.</param>
+    /// <returns>The relative path.</returns>
     string GetRelativePath(string basePath, string path);
-}
 
-public sealed class StandardFileSystem : IFileSystem
-{
-    private static readonly bool isWindows =
-#if NETSTANDARD1_6
-        !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("HOMEDRIVE"));
-#else
-        Environment.OSVersion.Platform.ToString().Contains("Win");
-#endif
-
-    private static readonly string homePath =
-        Path.GetFullPath(isWindows ?
-            $"{Environment.GetEnvironmentVariable("HOMEDRIVE") ?? "C:"}{Environment.GetEnvironmentVariable("HOMEPATH") ?? "\\"}" :
-            (Environment.GetEnvironmentVariable("HOME") ?? "/"));
-
-    private readonly int bufferSize;
-
-    public StandardFileSystem(int bufferSize) =>
-        this.bufferSize = bufferSize;
-
-#if NET35
-    public string Combine(params string[] paths) =>
-        paths.Aggregate(Path.Combine);
-#else
-    public string Combine(params string[] paths) =>
-        Path.Combine(paths);
-#endif
-
-    public string GetDirectoryPath(string path) =>
-        Path.GetDirectoryName(path) switch
-        {
-            // Not accurate in Windows, but a compromise...
-            null => Path.DirectorySeparatorChar.ToString(),
-            "" => string.Empty,
-            var dp => dp,
-        };
-
-    public string GetFullPath(string path) =>
-        Path.GetFullPath(path);
-
-    public bool IsPathRooted(string path) =>
-        Path.IsPathRooted(path);
-
-    public string ResolveRelativePath(string basePath, string path) =>
-        Path.GetFullPath(Path.IsPathRooted(path) ?
-            path :
-            path.StartsWith("~/") ?
-                Combine(homePath, path.Substring(2)) :
-                Combine(basePath, path));
-
-    public Task<bool> IsFileExistsAsync(string path, CancellationToken ct) =>
-        Utilities.FromResult(File.Exists(path));
-
-    public Task<string[]> GetFilesAsync(
-        string basePath, string match, CancellationToken ct) =>
-        Utilities.FromResult(Directory.Exists(basePath) ?
-            Directory.GetFiles(basePath, match, SearchOption.AllDirectories) :
-            Utilities.Empty<string>());
-
-    public async Task<Stream> OpenAsync(
-        string path, bool isSeekable, CancellationToken ct)
-    {
-        // Many Git clients are supposed to be OK to use at the same time.
-        // If we try to open a file with the FileShare.Read share flag (i.e., write-protected),
-        // an error will occur when another Git client is opening (with non-read-sharable) the file.
-        // Retry here as this situation is expected to take a short time to complete.
-        // However, if multiple files are opened sequentially,
-        // a deadlock may occur depending on the order in which they are opened.
-        // Because they are not processed as transactions.
-        // If a constraint is imposed by the number of open attempts,
-        // and if the file cannot be opened by any means,
-        // degrade to FileShare.ReadWrite and attempt to open it.
-        // (In this case it might read the wrong, that is the value in the process of writing...)
-
-        Random? r = null;
-
-        for (var count = 0; count < 20; count++)
-        {
-            try
-            {
-                return new FileStream(
-                    path,
-                    FileMode.Open,
-                    FileAccess.Read,
-                    FileShare.Read,
-                    this.bufferSize, true);
-            }
-            catch (FileNotFoundException)
-            {
-                throw;
-            }
-            catch (IOException)
-            {
-            }
-
-            if (r == null)
-            {
-                r = new Random();
-            }
-
-            await Utilities.Delay(TimeSpan.FromMilliseconds(r.Next(10, 500)), ct);
-        }
-
-        // Gave up and will try to open with read-write...
-        return new FileStream(
-            path,
-            FileMode.Open,
-            FileAccess.Read,
-            FileShare.ReadWrite,
-            65536,
-            true);
-    }
-
-    public Task<TemporaryFileDescriptor> CreateTemporaryAsync(
-        CancellationToken ct)
-    {
-        var path = this.Combine(
-            Path.GetTempPath(),
-            Path.GetTempFileName());
-
-        var stream = new FileStream(
-            path,
-            FileMode.Create,
-            FileAccess.ReadWrite,
-            FileShare.None,
-            this.bufferSize,
-            true);
-
-        return Utilities.FromResult(new TemporaryFileDescriptor(path, stream));
-    }
-
-    public string GetFileName(string path) =>
-        Path.GetFileName(path);
-
-    public Task<bool> IsDirectoryExistsAsync(string path, CancellationToken ct) =>
-        Utilities.FromResult(Directory.Exists(path));
-
-    public Task<string[]> GetDirectoryEntriesAsync(string path, CancellationToken ct) =>
-        Utilities.FromResult(Directory.Exists(path) ?
-            Directory.GetFileSystemEntries(path) :
-            Utilities.Empty<string>());
-
-    public string GetRelativePath(string basePath, string path)
-    {
-        if (!Path.IsPathRooted(path))
-        {
-            return path;
-        }
-
-        var baseUri = new Uri(Path.GetFullPath(basePath) + Path.DirectorySeparatorChar);
-        var targetUri = new Uri(Path.GetFullPath(path));
-        
-        var relativeUri = baseUri.MakeRelativeUri(targetUri);
-        var relativePath = Uri.UnescapeDataString(relativeUri.ToString());
-        
-        // Convert forward slashes to platform-specific directory separators
-        return relativePath.Replace('/', Path.DirectorySeparatorChar);
-    }
+    /// <summary>
+    /// Converts a path to POSIX format (using forward slashes).
+    /// </summary>
+    /// <param name="path">The path to convert.</param>
+    /// <returns>The path in POSIX format.</returns>
+    string ToPosixPath(string path);
 }

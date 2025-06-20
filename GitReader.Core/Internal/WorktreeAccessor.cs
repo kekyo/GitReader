@@ -83,21 +83,19 @@ internal static class WorktreeAccessor
     /// Gets structured worktree information for the specified repository.
     /// </summary>
     /// <param name="repository">The structured repository to get worktrees from.</param>
-    /// <param name="rwr">The weak reference to the repository.</param>
     /// <param name="ct">The cancellation token.</param>
     /// <returns>A ValueTask containing an array of structured worktrees.</returns>
     public static async ValueTask<ReadOnlyArray<Worktree>> GetStructuredWorktreesAsync(
-        StructuredRepository repository, WeakReference rwr, CancellationToken ct)
+        StructuredRepository repository, CancellationToken ct)
 #else
     /// <summary>
     /// Gets structured worktree information for the specified repository.
     /// </summary>
     /// <param name="repository">The structured repository to get worktrees from.</param>
-    /// <param name="rwr">The weak reference to the repository.</param>
     /// <param name="ct">The cancellation token.</param>
     /// <returns>A Task containing an array of structured worktrees.</returns>
     public static async Task<ReadOnlyArray<Worktree>> GetStructuredWorktreesAsync(
-        StructuredRepository repository, WeakReference rwr, CancellationToken ct)
+        StructuredRepository repository, CancellationToken ct)
 #endif
     {
         var primitiveWorktrees = await GetPrimitiveWorktreesAsync(repository, ct);
@@ -105,7 +103,7 @@ internal static class WorktreeAccessor
             {
                 var head = await GetWorktreeHeadAsync(worktree, ct);
                 var branch = await GetWorktreeBranchAsync(worktree, ct);
-                return new Worktree(rwr, worktree.Name, worktree.Path, head, branch, worktree.Status);
+                return new Worktree(worktree.Name, worktree.Path, head, branch, worktree.Status);
             }));
     }
 

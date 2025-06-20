@@ -45,7 +45,8 @@ public sealed class WorkingDirectoryStatusTests
             // Empty repository should have no staged, unstaged, or untracked files
             Assert.AreEqual(0, status.StagedFiles.Count, "Empty repository should have no staged files");
             Assert.AreEqual(0, status.UnstagedFiles.Count, "Empty repository should have no unstaged files");
-            Assert.AreEqual(0, status.UntrackedFiles.Count, "Empty repository should have no untracked files");
+            var untrackedFiles = await repository.GetUntrackedFilesAsync(status);
+            Assert.AreEqual(0, untrackedFiles.Count, "Empty repository should have no untracked files");
         }
         finally
         {
@@ -93,9 +94,10 @@ public sealed class WorkingDirectoryStatusTests
             var status = await repository.GetWorkingDirectoryStatusAsync();
 
             // Should have untracked files (including new_file.txt)
-            Assert.IsTrue(status.UntrackedFiles.Count > 0, "Should have untracked files");
+            var untrackedFiles = await repository.GetUntrackedFilesAsync(status);
+            Assert.IsTrue(untrackedFiles.Count > 0, "Should have untracked files");
             
-            var newFile = status.UntrackedFiles.FirstOrDefault(f => f.Path == "new_file.txt");
+            var newFile = untrackedFiles.FirstOrDefault(f => f.Path == "new_file.txt");
             if (!string.IsNullOrEmpty(newFile.Path))
             {
                 Assert.AreEqual(FileStatus.Untracked, (FileStatus)newFile.Status);
@@ -164,7 +166,8 @@ public sealed class WorkingDirectoryStatusTests
             // Clean repository should have no changes at all (following git behavior)
             Assert.AreEqual(0, status.StagedFiles.Count, "Clean repository should have no staged files");
             Assert.AreEqual(0, status.UnstagedFiles.Count, "Clean repository should have no unstaged files");
-            Assert.AreEqual(0, status.UntrackedFiles.Count, "Clean repository should have no untracked files");
+            var untrackedFiles = await repository.GetUntrackedFilesAsync(status);
+            Assert.AreEqual(0, untrackedFiles.Count, "Clean repository should have no untracked files");
         }
         finally
         {
@@ -216,7 +219,8 @@ public sealed class WorkingDirectoryStatusTests
             Assert.IsNotNull(status, "Status should not be null");
             Assert.IsNotNull(status.StagedFiles, "StagedFiles collection should not be null");
             Assert.IsNotNull(status.UnstagedFiles, "UnstagedFiles collection should not be null");
-            Assert.IsNotNull(status.UntrackedFiles, "UntrackedFiles collection should not be null");
+            var untrackedFiles = await repository.GetUntrackedFilesAsync(status);
+            Assert.IsNotNull(untrackedFiles, "UntrackedFiles collection should not be null");
 
             // Should have staged file (GitReader may interpret newly staged files differently)
             var stagedFile = status.StagedFiles.FirstOrDefault(f => f.Path == "staged_file.txt");
@@ -234,7 +238,7 @@ public sealed class WorkingDirectoryStatusTests
             }
 
             // Should have untracked file
-            var untrackedFile = status.UntrackedFiles.FirstOrDefault(f => f.Path == "untracked_file.txt");
+            var untrackedFile = untrackedFiles.FirstOrDefault(f => f.Path == "untracked_file.txt");
             if (!string.IsNullOrEmpty(untrackedFile.Path))
             {
                 Assert.AreEqual("untracked_file.txt", untrackedFile.Path);
