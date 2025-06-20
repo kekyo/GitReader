@@ -14,6 +14,11 @@ using System.Diagnostics;
 
 namespace GitReader.Collections;
 
+/// <summary>
+/// Represents a read-only dictionary that provides a view over an underlying dictionary.
+/// </summary>
+/// <typeparam name="TKey">The type of keys in the dictionary.</typeparam>
+/// <typeparam name="TValue">The type of values in the dictionary.</typeparam>
 [DebuggerDisplay("Count={Count}")]
 public sealed class ReadOnlyDictionary<TKey, TValue> :
     IDictionary<TKey, TValue>
@@ -24,18 +29,36 @@ public sealed class ReadOnlyDictionary<TKey, TValue> :
 {
     internal readonly Dictionary<TKey, TValue> parent;
 
+    /// <summary>
+    /// Initializes a new instance of the ReadOnlyDictionary class that wraps the specified dictionary.
+    /// </summary>
+    /// <param name="parent">The dictionary to wrap.</param>
     public ReadOnlyDictionary(Dictionary<TKey, TValue> parent) =>
         this.parent = parent;
 
+    /// <summary>
+    /// Gets the value associated with the specified key.
+    /// </summary>
+    /// <param name="key">The key of the value to get.</param>
+    /// <returns>The value associated with the specified key.</returns>
     public TValue this[TKey key] =>
         this.parent[key];
 
+    /// <summary>
+    /// Gets a collection containing the keys of the dictionary.
+    /// </summary>
     public Dictionary<TKey, TValue>.KeyCollection Keys =>
         this.parent.Keys;
 
+    /// <summary>
+    /// Gets a collection containing the values of the dictionary.
+    /// </summary>
     public Dictionary<TKey, TValue>.ValueCollection Values =>
         this.parent.Values;
 
+    /// <summary>
+    /// Gets the number of key/value pairs contained in the dictionary.
+    /// </summary>
     public int Count =>
         this.parent.Count;
 
@@ -45,6 +68,10 @@ public sealed class ReadOnlyDictionary<TKey, TValue> :
     internal bool ContainsValue(TValue value) =>
         this.parent.ContainsValue(value);
 
+    /// <summary>
+    /// Returns an enumerator that iterates through the dictionary.
+    /// </summary>
+    /// <returns>An enumerator for the dictionary.</returns>
     public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator() =>
         this.parent.GetEnumerator();
 
@@ -100,6 +127,11 @@ public sealed class ReadOnlyDictionary<TKey, TValue> :
     internal Dictionary<TKey, TValue> Clone() =>
         new(this.parent);
 
+    /// <summary>
+    /// Implicitly converts a Dictionary to a ReadOnlyDictionary.
+    /// </summary>
+    /// <param name="dict">The dictionary to convert.</param>
+    /// <returns>A ReadOnlyDictionary wrapping the specified dictionary.</returns>
     public static implicit operator ReadOnlyDictionary<TKey, TValue>(Dictionary<TKey, TValue> dict) =>
         new(dict);
 

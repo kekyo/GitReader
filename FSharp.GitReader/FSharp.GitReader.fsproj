@@ -17,6 +17,7 @@
 
   <ItemGroup>
     <Compile Include="Utilities.fs" />
+    <Compile Include="Glob.fs" />
     <Compile Include="Collections\DictionaryExtension.fs" />
     <Compile Include="Collections\ReadOnlyArrayExtension.fs" />
     <Compile Include="Collections\ReadOnlyDictionaryExtension.fs" />

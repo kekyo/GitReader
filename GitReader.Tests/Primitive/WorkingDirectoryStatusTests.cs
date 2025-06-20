@@ -14,6 +14,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Diagnostics;
 
+using Assert = NUnit.Framework.Legacy.ClassicAssert;
+
 namespace GitReader.Primitive;
 
 public sealed class WorkingDirectoryStatusTests
@@ -45,7 +47,8 @@ public sealed class WorkingDirectoryStatusTests
             // Empty repository should have no staged, unstaged, or untracked files
             Assert.AreEqual(0, status.StagedFiles.Count, "Empty repository should have no staged files");
             Assert.AreEqual(0, status.UnstagedFiles.Count, "Empty repository should have no unstaged files");
-            Assert.AreEqual(0, status.UntrackedFiles.Count, "Empty repository should have no untracked files");
+            var untrackedFiles = await repository.GetUntrackedFilesAsync(status);
+            Assert.AreEqual(0, untrackedFiles.Count, "Empty repository should have no untracked files");
         }
         finally
         {
@@ -78,24 +81,25 @@ public sealed class WorkingDirectoryStatusTests
             await TestUtilities.RunGitCommandAsync(testPath, "config user.name \"Test User\"");
             
             // Create initial file and commit
-            await File.WriteAllTextAsync(Path.Combine(testPath, "README.md"), "# Test Repository\n\nInitial content.");
+            await TestUtilities.WriteAllTextAsync(Path.Combine(testPath, "README.md"), "# Test Repository\n\nInitial content.");
             await TestUtilities.RunGitCommandAsync(testPath, "add README.md");
             await TestUtilities.RunGitCommandAsync(testPath, "commit -m \"Initial commit\"");
             
             // Create new untracked file
-            await File.WriteAllTextAsync(Path.Combine(testPath, "new_file.txt"), "This is a new file for testing.");
+            await TestUtilities.WriteAllTextAsync(Path.Combine(testPath, "new_file.txt"), "This is a new file for testing.");
             
             // Modify existing tracked file
-            await File.WriteAllTextAsync(Path.Combine(testPath, "README.md"), "# Test Repository\n\nInitial content.\n\nModified for testing.");
+            await TestUtilities.WriteAllTextAsync(Path.Combine(testPath, "README.md"), "# Test Repository\n\nInitial content.\n\nModified for testing.");
 
             using var repository = await Repository.Factory.OpenPrimitiveAsync(testPath);
 
             var status = await repository.GetWorkingDirectoryStatusAsync();
 
             // Should have untracked files (including new_file.txt)
-            Assert.IsTrue(status.UntrackedFiles.Count > 0, "Should have untracked files");
+            var untrackedFiles = await repository.GetUntrackedFilesAsync(status);
+            Assert.IsTrue(untrackedFiles.Count > 0, "Should have untracked files");
             
-            var newFile = status.UntrackedFiles.FirstOrDefault(f => f.Path == "new_file.txt");
+            var newFile = untrackedFiles.FirstOrDefault(f => f.Path == "new_file.txt");
             if (!string.IsNullOrEmpty(newFile.Path))
             {
                 Assert.AreEqual(FileStatus.Untracked, (FileStatus)newFile.Status);
@@ -152,8 +156,8 @@ public sealed class WorkingDirectoryStatusTests
             await TestUtilities.RunGitCommandAsync(testPath, "config user.name \"Test User\"");
             
             // Create and commit files
-            await File.WriteAllTextAsync(Path.Combine(testPath, "README.md"), "# Test Repository");
-            await File.WriteAllTextAsync(Path.Combine(testPath, "file1.txt"), "Content of file 1");
+            await TestUtilities.WriteAllTextAsync(Path.Combine(testPath, "README.md"), "# Test Repository");
+            await TestUtilities.WriteAllTextAsync(Path.Combine(testPath, "file1.txt"), "Content of file 1");
             await TestUtilities.RunGitCommandAsync(testPath, "add .");
             await TestUtilities.RunGitCommandAsync(testPath, "commit -m \"Initial commit\"");
 
@@ -164,7 +168,8 @@ public sealed class WorkingDirectoryStatusTests
             // Clean repository should have no changes at all (following git behavior)
             Assert.AreEqual(0, status.StagedFiles.Count, "Clean repository should have no staged files");
             Assert.AreEqual(0, status.UnstagedFiles.Count, "Clean repository should have no unstaged files");
-            Assert.AreEqual(0, status.UntrackedFiles.Count, "Clean repository should have no untracked files");
+            var untrackedFiles = await repository.GetUntrackedFilesAsync(status);
+            Assert.AreEqual(0, untrackedFiles.Count, "Clean repository should have no untracked files");
         }
         finally
         {
@@ -197,16 +202,16 @@ public sealed class WorkingDirectoryStatusTests
             await TestUtilities.RunGitCommandAsync(testPath, "config user.name \"Test User\"");
             
             // Create initial commit
-            await File.WriteAllTextAsync(Path.Combine(testPath, "README.md"), "# Test Repository");
+            await TestUtilities.WriteAllTextAsync(Path.Combine(testPath, "README.md"), "# Test Repository");
             await TestUtilities.RunGitCommandAsync(testPath, "add README.md");
             await TestUtilities.RunGitCommandAsync(testPath, "commit -m \"Initial commit\"");
             
             // Create new file and stage it
-            await File.WriteAllTextAsync(Path.Combine(testPath, "staged_file.txt"), "This file will be staged");
+            await TestUtilities.WriteAllTextAsync(Path.Combine(testPath, "staged_file.txt"), "This file will be staged");
             await TestUtilities.RunGitCommandAsync(testPath, "add staged_file.txt");
             
             // Create untracked file
-            await File.WriteAllTextAsync(Path.Combine(testPath, "untracked_file.txt"), "This file is untracked");
+            await TestUtilities.WriteAllTextAsync(Path.Combine(testPath, "untracked_file.txt"), "This file is untracked");
 
             using var repository = await Repository.Factory.OpenPrimitiveAsync(testPath);
 
@@ -216,7 +221,8 @@ public sealed class WorkingDirectoryStatusTests
             Assert.IsNotNull(status, "Status should not be null");
             Assert.IsNotNull(status.StagedFiles, "StagedFiles collection should not be null");
             Assert.IsNotNull(status.UnstagedFiles, "UnstagedFiles collection should not be null");
-            Assert.IsNotNull(status.UntrackedFiles, "UntrackedFiles collection should not be null");
+            var untrackedFiles = await repository.GetUntrackedFilesAsync(status);
+            Assert.IsNotNull(untrackedFiles, "UntrackedFiles collection should not be null");
 
             // Should have staged file (GitReader may interpret newly staged files differently)
             var stagedFile = status.StagedFiles.FirstOrDefault(f => f.Path == "staged_file.txt");
@@ -234,7 +240,7 @@ public sealed class WorkingDirectoryStatusTests
             }
 
             // Should have untracked file
-            var untrackedFile = status.UntrackedFiles.FirstOrDefault(f => f.Path == "untracked_file.txt");
+            var untrackedFile = untrackedFiles.FirstOrDefault(f => f.Path == "untracked_file.txt");
             if (!string.IsNullOrEmpty(untrackedFile.Path))
             {
                 Assert.AreEqual("untracked_file.txt", untrackedFile.Path);

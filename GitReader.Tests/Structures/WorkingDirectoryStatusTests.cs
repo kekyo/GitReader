@@ -14,6 +14,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Diagnostics;
 
+using Assert = NUnit.Framework.Legacy.ClassicAssert;
+
 namespace GitReader.Structures;
 
 public sealed class WorkingDirectoryStatusTests
@@ -78,15 +80,15 @@ public sealed class WorkingDirectoryStatusTests
             await TestUtilities.RunGitCommandAsync(testPath, "config user.name \"Test User\"");
             
             // Create initial file and commit
-            await File.WriteAllTextAsync(Path.Combine(testPath, "README.md"), "# Test Repository\n\nInitial content.");
+            await TestUtilities.WriteAllTextAsync(Path.Combine(testPath, "README.md"), "# Test Repository\n\nInitial content.");
             await TestUtilities.RunGitCommandAsync(testPath, "add README.md");
             await TestUtilities.RunGitCommandAsync(testPath, "commit -m \"Initial commit\"");
             
             // Create new untracked file
-            await File.WriteAllTextAsync(Path.Combine(testPath, "new_file.txt"), "This is a new file for testing.");
+            await TestUtilities.WriteAllTextAsync(Path.Combine(testPath, "new_file.txt"), "This is a new file for testing.");
             
             // Modify existing tracked file
-            await File.WriteAllTextAsync(Path.Combine(testPath, "README.md"), "# Test Repository\n\nInitial content.\n\nModified for testing.");
+            await TestUtilities.WriteAllTextAsync(Path.Combine(testPath, "README.md"), "# Test Repository\n\nInitial content.\n\nModified for testing.");
 
             using var repository = await Repository.Factory.OpenStructureAsync(testPath);
 
@@ -96,7 +98,7 @@ public sealed class WorkingDirectoryStatusTests
             Assert.IsTrue(status.UntrackedFiles.Count > 0, "Should have untracked files");
             
             var newFile = status.UntrackedFiles.FirstOrDefault(f => f.Path == "new_file.txt");
-            if (newFile != null)
+            if (newFile.Path != null)
             {
                 Assert.AreEqual(FileStatus.Untracked, newFile.Status);
                 Assert.IsNull(newFile.IndexHash);
@@ -109,7 +111,7 @@ public sealed class WorkingDirectoryStatusTests
 
             // README.md should be modified and appear in unstaged files
             var modifiedFile = status.UnstagedFiles.FirstOrDefault(f => f.Path == "README.md");
-            if (modifiedFile != null)
+            if (modifiedFile.Path != null)
             {
                 Assert.AreEqual(FileStatus.Modified, modifiedFile.Status);
                 Assert.IsNotNull(modifiedFile.IndexHash);
@@ -152,8 +154,8 @@ public sealed class WorkingDirectoryStatusTests
             await TestUtilities.RunGitCommandAsync(testPath, "config user.name \"Test User\"");
             
             // Create and commit files
-            await File.WriteAllTextAsync(Path.Combine(testPath, "README.md"), "# Test Repository");
-            await File.WriteAllTextAsync(Path.Combine(testPath, "file1.txt"), "Content of file 1");
+            await TestUtilities.WriteAllTextAsync(Path.Combine(testPath, "README.md"), "# Test Repository");
+            await TestUtilities.WriteAllTextAsync(Path.Combine(testPath, "file1.txt"), "Content of file 1");
             await TestUtilities.RunGitCommandAsync(testPath, "add .");
             await TestUtilities.RunGitCommandAsync(testPath, "commit -m \"Initial commit\"");
 
@@ -197,7 +199,7 @@ public sealed class WorkingDirectoryStatusTests
             await TestUtilities.RunGitCommandAsync(testPath, "config user.name \"Test User\"");
             
             // Create some test files
-            await File.WriteAllTextAsync(Path.Combine(testPath, "test_file.txt"), "Test content");
+            await TestUtilities.WriteAllTextAsync(Path.Combine(testPath, "test_file.txt"), "Test content");
 
             using var repository = await Repository.Factory.OpenStructureAsync(testPath);
 
@@ -206,7 +208,7 @@ public sealed class WorkingDirectoryStatusTests
             // Test file properties
             Assert.IsTrue(status.UntrackedFiles.Count >= 1, "Should have at least one untracked file");
             var testFile = status.UntrackedFiles.FirstOrDefault(f => f.Path == "test_file.txt");
-            if (testFile != null)
+            if (testFile.Path != null)
             {
                 Assert.AreEqual("test_file.txt", testFile.Path);
                 Assert.AreEqual(FileStatus.Untracked, testFile.Status);

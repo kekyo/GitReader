@@ -25,7 +25,12 @@ type public PrimitiveRepositoryTests() =
             RepositoryTestsSetUp.getBasePath("test1"))
         let! commit = repository.getCommit(
             "1205dc34ce48bda28fc543daaf9525a9bb6e6d10") |> unwrapOptionAsy
-        do! verify(commit)
+        Assert.That(commit.Hash.ToString(), Is.EqualTo("1205dc34ce48bda28fc543daaf9525a9bb6e6d10"))
+        Assert.That(commit.TreeRoot.ToString(), Is.EqualTo("5462bf28fdc4681762057cac7704730b1c590b38"))
+        Assert.That(commit.Author.Name, Is.EqualTo("Kouji Matsui"))
+        Assert.That(commit.Author.MailAddress, Is.EqualTo("k@kekyo.net"))
+        Assert.That(commit.Committer.Name, Is.EqualTo("Kouji Matsui"))
+        Assert.That(commit.Message, Does.StartWith("Merge branch 'devel'"))
     }
 
     [<Test>]
@@ -34,7 +39,7 @@ type public PrimitiveRepositoryTests() =
             RepositoryTestsSetUp.getBasePath("test1"))
         let! commit = repository.getCommit(
             "0000000000000000000000000000000000000000") |> unwrapOptionAsy
-        do! verify(commit)
+        Assert.That(commit.Hash.ToString(), Is.EqualTo("0000000000000000000000000000000000000000"))
     }
 
     [<Test>]
@@ -43,7 +48,10 @@ type public PrimitiveRepositoryTests() =
             RepositoryTestsSetUp.getBasePath("test1"))
         let! headref = repository.getCurrentHeadReference() |> unwrapOptionAsy
         let! commit = repository.getCommit(headref) |> unwrapOptionAsy
-        do! verify(commit)
+        Assert.That(commit.Hash.ToString(), Is.EqualTo("9bb78d13405cab568d3e213130f31beda1ce21d1"))
+        Assert.That(commit.Author.Name, Is.EqualTo("Kouji Matsui"))
+        Assert.That(commit.Committer.Name, Is.EqualTo("Kouji Matsui"))
+        Assert.That(commit.Message, Does.StartWith("Added installation .NET 6 SDK on GitHub Actions"))
     }
 
     [<Test>]
@@ -52,7 +60,10 @@ type public PrimitiveRepositoryTests() =
             RepositoryTestsSetUp.getBasePath("test1"))
         let! headref = repository.getBranchHeadReference("master")
         let! commit = repository.getCommit(headref) |> unwrapOptionAsy
-        do! verify(commit)
+        Assert.That(commit.Hash.ToString(), Is.EqualTo("9bb78d13405cab568d3e213130f31beda1ce21d1"))
+        Assert.That(commit.Author.Name, Is.EqualTo("Kouji Matsui"))
+        Assert.That(commit.Committer.Name, Is.EqualTo("Kouji Matsui"))
+        Assert.That(commit.Message, Does.StartWith("Added installation .NET 6 SDK on GitHub Actions"))
     }
 
     [<Test>]
@@ -61,7 +72,10 @@ type public PrimitiveRepositoryTests() =
             RepositoryTestsSetUp.getBasePath("test1"))
         let! headref = repository.getBranchHeadReference("origin/devel")
         let! commit = repository.getCommit(headref) |> unwrapOptionAsy
-        do! verify(commit)
+        Assert.That(commit.Hash.ToString(), Is.EqualTo("f2f51b6fe6076ca630ca66c5c9f451217762652a"))
+        Assert.That(commit.Author.Name, Is.EqualTo("Kouji Matsui"))
+        Assert.That(commit.Committer.Name, Is.EqualTo("Kouji Matsui"))
+        Assert.That(commit.Message, Does.StartWith("Updates test nuget refs."))
     }
 
     [<Test>]
@@ -70,7 +84,10 @@ type public PrimitiveRepositoryTests() =
             RepositoryTestsSetUp.getBasePath("test1"))
         let! tagref = repository.getTagReference("2.0.0")
         let! tag = repository.getTag(tagref)
-        do! verify(tag)
+        Assert.That(tag.Name, Is.EqualTo("2.0.0"))
+        Assert.That(tag.Type, Is.EqualTo(ObjectTypes.Commit))
+        Assert.That(tag.Hash.ToString(), Is.EqualTo("f64de5e3ad34528757207109e68f626bf8cc1a31"))
+        Assert.That(tag.Tagger.HasValue, Is.False)
     }
 
     [<Test>]
@@ -79,7 +96,11 @@ type public PrimitiveRepositoryTests() =
             RepositoryTestsSetUp.getBasePath("test1"))
         let! tagref = repository.getTagReference("0.9.6")
         let! tag = repository.getTag(tagref)
-        do! verify(tag)
+        Assert.That(tag.Name, Is.EqualTo("0.9.6"))
+        Assert.That(tag.Type, Is.EqualTo(ObjectTypes.Commit))
+        Assert.That(tag.Hash.ToString(), Is.EqualTo("a7187601f4b4b9dacc3c78895397bb2911d190d6"))
+        Assert.That(tag.Tagger.HasValue, Is.True)
+        Assert.That(tag.Tagger.Value.Name, Is.EqualTo("Kouji Matsui"))
     }
 
     [<Test>]
@@ -87,7 +108,10 @@ type public PrimitiveRepositoryTests() =
         use! repository = Repository.Factory.openPrimitive(
             RepositoryTestsSetUp.getBasePath("test1"))
         let! branchrefs = repository.getBranchHeadReferences()
-        do! verify(branchrefs |> Array.sortBy(fun br -> br.Name))
+        Assert.That(branchrefs.Length, Is.EqualTo(1))
+        Assert.That(branchrefs.[0].Name, Is.EqualTo("master"))
+        Assert.That(branchrefs.[0].RelativePath, Is.EqualTo("refs/heads/master"))
+        Assert.That(branchrefs.[0].Target.ToString(), Is.EqualTo("9bb78d13405cab568d3e213130f31beda1ce21d1"))
     }
 
     [<Test>]
@@ -95,7 +119,13 @@ type public PrimitiveRepositoryTests() =
         use! repository = Repository.Factory.openPrimitive(
             RepositoryTestsSetUp.getBasePath("test1"))
         let! branchrefs = repository.getRemoteBranchHeadReferences()
-        do! verify(branchrefs |> Array.sortBy(fun br -> br.Name))
+        Assert.That(branchrefs.Length, Is.EqualTo(7))
+        let sorted = branchrefs |> Array.sortBy(fun br -> br.Name)
+        Assert.That(sorted.[0].Name, Is.EqualTo("origin/HEAD"))
+        Assert.That(sorted.[1].Name, Is.EqualTo("origin/appveyor"))
+        Assert.That(sorted.[2].Name, Is.EqualTo("origin/devel"))
+        Assert.That(sorted.[2].Target.ToString(), Is.EqualTo("f2f51b6fe6076ca630ca66c5c9f451217762652a"))
+        Assert.That(sorted.[6].Name, Is.EqualTo("origin/netcore"))
     }
     
     [<Test>]
@@ -106,7 +136,11 @@ type public PrimitiveRepositoryTests() =
         let! tags = Task.WhenAll(
             tagrefs |>
             Seq.map (fun tagReference -> repository.getTag(tagReference) |> Async.StartImmediateAsTask))
-        do! verify(tags |> Array.sortBy(fun t -> t.Name))
+        Assert.That(tags.Length, Is.EqualTo(15))
+        let sorted = tags |> Array.sortBy(fun t -> t.Name)
+        Assert.That(sorted.[0].Name, Is.EqualTo("0.9.5"))
+        Assert.That(sorted.[14].Name, Is.EqualTo("2.2.0"))
+        Assert.That(sorted.[14].Hash.ToString(), Is.EqualTo("63a8f2c84a8c1b2cf6eabd3e1bd7f1971b912a91"))
     }
      
     [<Test>]
@@ -116,7 +150,11 @@ type public PrimitiveRepositoryTests() =
         let! commit = repository.getCommit(
             "1205dc34ce48bda28fc543daaf9525a9bb6e6d10") |> unwrapOptionAsy
         let! tree = repository.getTree(commit.TreeRoot);
-        do! verify(tree)
+        Assert.That(tree.Hash.ToString(), Is.EqualTo("5462bf28fdc4681762057cac7704730b1c590b38"))
+        Assert.That(tree.Children.Count, Is.EqualTo(8))
+        Assert.That(tree.Children |> Seq.exists (fun c -> c.Name = ".github"), Is.True)
+        Assert.That(tree.Children |> Seq.exists (fun c -> c.Name = "build-nupkg.bat"), Is.True)
+        Assert.That(tree.Children |> Seq.exists (fun c -> c.Name = "README.md"), Is.True)
     }
      
     [<Test>]
@@ -129,7 +167,9 @@ type public PrimitiveRepositoryTests() =
         let blob = tree.Children |> Seq.find (fun child -> child.Name = "build-nupkg.bat")
         use! blobStream = repository.openBlob blob.Hash
         let tr = new StreamReader(blobStream)
-        do! verify(tr.ReadToEnd())
+        let content = tr.ReadToEnd()
+        Assert.That(content, Does.StartWith("@echo off"))
+        Assert.That(content, Does.Contain("dotnet pack"))
     }
 
     [<Test>]
@@ -151,7 +191,9 @@ type public PrimitiveRepositoryTests() =
                 let primary = c.Parents.[0]
                 let! commit = repository.getCommit(primary) |> unwrapOptionAsy
                 c <- commit
-        return! verify(commits.ToArray())
+        Assert.That(commits.Count, Is.GreaterThan(5))
+        Assert.That(commits.[0].Hash.ToString(), Is.EqualTo("9bb78d13405cab568d3e213130f31beda1ce21d1"))
+        Assert.That(commits.[0].Author.Name, Is.EqualTo("Kouji Matsui"))
     }
         
     [<Test>]
@@ -159,7 +201,11 @@ type public PrimitiveRepositoryTests() =
         use! repository = Repository.Factory.openPrimitive(
             RepositoryTestsSetUp.getBasePath("test1"))
         let! stashes = repository.getStashes()
-        return! verify(stashes |> Array.sortByDescending(fun stash -> stash.Committer.Date))
+        Assert.That(stashes.Length, Is.EqualTo(2))
+        let sorted = stashes |> Array.sortByDescending(fun stash -> stash.Committer.Date)
+        Assert.That(sorted.[0].Committer.Name, Is.EqualTo("Julien Richard"))
+        Assert.That(sorted.[0].Message, Is.EqualTo("On master: Stash with custom message"))
+        Assert.That(sorted.[1].Message, Does.StartWith("WIP on master:"))
     }
     
     [<Test>]
@@ -168,7 +214,11 @@ type public PrimitiveRepositoryTests() =
             RepositoryTestsSetUp.getBasePath("test1"))
         let! headRef = repository.getCurrentHeadReference()
         let! reflogs = repository.getRelatedReflogs(headRef.Value)
-        return! verify(reflogs |> Array.sortByDescending(fun reflog -> reflog.Committer.Date))
+        Assert.That(reflogs.Length, Is.GreaterThan(0))
+        let sorted = reflogs |> Array.sortByDescending(fun reflog -> reflog.Committer.Date)
+        Assert.That(sorted.[0].Committer.Name, Is.Not.Empty)
+        Assert.That(sorted.[0].Message, Is.Not.Empty)
+        Assert.That(sorted |> Array.forall (fun r -> r.Current.ToString().Length = 40), Is.True)
     }
     
     [<Test>]
@@ -179,5 +229,6 @@ type public PrimitiveRepositoryTests() =
             "1205dc34ce48bda28fc543daaf9525a9bb6e6d10")
         let tr = new StreamReader(result.Stream, Encoding.UTF8, true)
         let! body = tr.ReadToEndAsync()
-        return! verify((result.Type, body))
+        Assert.That(result.Type, Is.EqualTo(ObjectTypes.Commit))
+        Assert.That(body, Does.StartWith("tree 5462bf28fdc4681762057cac7704730b1c590b38"))
     }

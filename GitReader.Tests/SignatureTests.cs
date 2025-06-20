@@ -11,6 +11,8 @@ using GitReader.Internal;
 using NUnit.Framework;
 using System;
 
+using Assert = NUnit.Framework.Legacy.ClassicAssert;
+
 namespace GitReader;
 
 public sealed class SignatureTests

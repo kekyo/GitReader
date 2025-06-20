@@ -121,6 +121,13 @@ internal readonly struct PairResult<T0, T1, T2, T3, T4>
 #endif
 internal static class Utilities
 {
+    public static readonly bool IsWindows =
+#if NETSTANDARD1_6
+        !IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("HOMEDRIVE"));
+#else
+        Environment.OSVersion.Platform.ToString().StartsWith("Win");
+#endif
+
     // Imported from corefx.
     private const long TicksPerMillisecond = 10000;
     private const long TicksPerSecond = TicksPerMillisecond * 1000;
@@ -226,6 +233,13 @@ internal static class Utilities
         }
     }
 
+    public static bool IsNullOrWhiteSpace(string? str) =>
+#if NET35
+        string.IsNullOrEmpty(str) || str!.All(char.IsWhiteSpace);
+#else
+        string.IsNullOrWhiteSpace(str);
+#endif
+
 #if NET35 || NET40 || NET45
     private static class ArrayEmpty<T>
     {
@@ -238,6 +252,10 @@ internal static class Utilities
     public static T[] Empty<T>() =>
         Array.Empty<T>();
 #endif
+    
+    public static bool CollectionEqual<T>(this IEnumerable<T> a, IEnumerable<T> b) =>
+        object.ReferenceEquals(a, b) ||
+        a.SequenceEqual(b);
 
     [DebuggerStepThrough]
     public static IEnumerable<U> Collect<T, U>(
@@ -366,6 +384,26 @@ internal static class Utilities
         return results;
     }
 
+    [DebuggerStepThrough]
+    public static async Task WhenAll(IEnumerable<Task> tasks)
+    {
+        // Sequential execution on `Debug` conditional.
+        foreach (var task in tasks)
+        {
+            await task;
+        }
+    }
+
+    [DebuggerStepThrough]
+    public static async Task WhenAll(params Task[] tasks)
+    {
+        // Sequential execution on `Debug` conditional.
+        foreach (var task in tasks)
+        {
+            await task;
+        }
+    }
+
 #if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
     [DebuggerStepThrough]
     public static async ValueTask<T[]> WhenAll<T>(IEnumerable<ValueTask<T>> tasks)
@@ -389,6 +427,27 @@ internal static class Utilities
         }
         return results.ToArray();
     }
+
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP2_1_OR_GREATER
+    [DebuggerStepThrough]
+    public static async ValueTask WhenAll(IEnumerable<ValueTask> tasks)
+    {
+        // Sequential execution on `Debug` conditional.
+        foreach (var task in tasks)
+        {
+            await task;
+        }
+    }
+
+    [DebuggerStepThrough]
+    public static async ValueTask WhenAll(params ValueTask[] tasks)
+    {
+        foreach (var task in tasks)
+        {
+            await task;
+        }
+    }
+#endif
 #endif
 #else
 #if NET35 || NET40
@@ -399,6 +458,14 @@ internal static class Utilities
     [DebuggerStepThrough]
     public static Task<T[]> WhenAll<T>(params Task<T>[] tasks) =>
         TaskEx.WhenAll(tasks);
+
+    [DebuggerStepThrough]
+    public static Task WhenAll(IEnumerable<Task> tasks) =>
+        TaskEx.WhenAll(tasks);
+
+    [DebuggerStepThrough]
+    public static Task WhenAll(params Task[] tasks) =>
+        TaskEx.WhenAll(tasks);
 #else
     [DebuggerStepThrough]
     public static Task<T[]> WhenAll<T>(IEnumerable<Task<T>> tasks) =>
@@ -408,6 +475,15 @@ internal static class Utilities
     public static Task<T[]> WhenAll<T>(params Task<T>[] tasks) =>
         Task.WhenAll(tasks);
 
+    [DebuggerStepThrough]
+    public static Task WhenAll(IEnumerable<Task> tasks) =>
+        Task.WhenAll(tasks);
+
+    [DebuggerStepThrough]
+    public static Task WhenAll(params Task[] tasks) =>
+        Task.WhenAll(tasks);
+
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
     [DebuggerStepThrough]
     public static ValueTask<T[]> WhenAll<T>(IEnumerable<ValueTask<T>> tasks) =>
         WhenAll(
@@ -425,6 +501,25 @@ internal static class Utilities
         }
         return results.ToArray();
     }
+
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP2_1_OR_GREATER
+    [DebuggerStepThrough]
+    public static ValueTask WhenAll(IEnumerable<ValueTask> tasks) =>
+        WhenAll(
+            // Implicit starting ValueTask'ed state machines just now.
+            tasks.ToArray()
+        );
+
+    [DebuggerStepThrough]
+    public static async ValueTask WhenAll(params ValueTask[] tasks)
+    {
+        foreach (var task in tasks)
+        {
+            await task;
+        }
+    }
+#endif
+#endif
 #endif
 #endif
 

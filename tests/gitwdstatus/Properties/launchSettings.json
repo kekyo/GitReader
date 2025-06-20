@@ -1,0 +1,9 @@
+{
+  "profiles": {
+    "gitwdstatus": {
+        "commandName": "Project",
+        "commandLineArgs": "/home/kouji/Projects/RJK.PolyFit",
+        "workingDirectory": "bin/Debug/net6.0"
+    }
+  }
+} 

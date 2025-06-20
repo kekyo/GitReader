@@ -39,6 +39,10 @@ jobs:
           8.0.x
           9.0.x
 
+    - name: Setup mono
+      run:
+        sudo apt-get -y install mono-devel
+
 #    - name: Setup NuGet package reference
 #      run: |
 #        dotnet nuget add source ${{secrets.GH_LOCAL_NUGET_URL}} -n ref1 -u ${{secrets.GH_LOCAL_NUGET_USER}} -p ${{secrets.GH_LOCAL_NUGET_PASSWORD}} --store-password-in-clear-text --allow-insecure-connections --configfile nuget.config
@@ -57,7 +61,7 @@ jobs:
     # Test
 
     - name: Test
-      run: dotnet test --no-restore --verbosity normal -p:CITest=True GitReader.sln
+      run: dotnet test --no-restore --verbosity normal -p:Configuration=Release -p:Platform="Any CPU" -p:BuildIdentifier=${GITHUB_RUN_NUMBER} -p:CITest=True GitReader.sln
       timeout-minutes: 10
 
     #-----------------------------------------------------------------------

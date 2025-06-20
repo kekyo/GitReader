@@ -411,9 +411,12 @@ foreach (Worktree worktree in worktrees)
 
 ### Get working directory status
 
+While other features of GitReader do not read the state of the working directory, but this feature integrates the working directory with the metadata in the repository. Thus, you can get a state that reflects the contents of the ".gitignore" file as well.
+
 ```csharp
-// Get the current working directory status
-WorkingDirectoryStatus status = await repository.GetWorkingDirectoryStatusAsync();
+// Get the current working directory status (“.gitignore” is also reflected.)
+WorkingDirectoryStatus status =
+    await repository.GetWorkingDirectoryStatusAsync();
 
 // Get staged files
 foreach (var entry in status.StagedFiles)
@@ -432,7 +435,21 @@ foreach (var entry in status.UntrackedFiles)
 {
     Console.WriteLine($"Untracked: {entry.Path}");
 }
+
+// Get working directory status with custom glob override filter
+var globFilter = Glob.CreateExcludeFilter("*.log", "*.tmp", "bin/", "obj/");
+WorkingDirectoryStatus filteredStatus =
+    await repository.GetWorkingDirectoryStatusWithFilterAsync(globFilter);
+
+// Display filtered files
+foreach (var entry in filteredStatus.UntrackedFiles)
+{
+    Console.WriteLine($"Filtered Untracked: {entry.Path}");
+}
 ```
+
+The glob override filter is applied after evaluation of filters such as ".gitignore".
+Thus, rules defined in ".gitignore" can be ignored with a negation condition expression.
 
 ----
 
@@ -697,6 +714,64 @@ foreach (KeyValuePair<string, string> entry in repository.RemoteUrls)
 }
 ```
 
+### Glob class
+
+The `Glob` class provides a function to parse glob patterns for “.gitignore”.
+This implementation is roughly equivalent to glibc's `fnmatch()` function.
+
+```csharp
+// Check if path matches pattern
+var path = "src/Program.cs";
+bool matches = Glob.IsMatch(path, "*.cs");
+Console.WriteLine($"Matches: {matches}"); // True
+
+// Create filter with multiple exclude patterns
+GlobFilter filter = Glob.CreateExcludeFilter("*.log", "*.tmp", "bin/", "obj/");
+
+// Get common ignore patterns
+GlobFilter commonFilter = Glob.GetCommonIgnoreFilter();
+
+// Combine multiple filters. Note that they are applied in order from the first argument.
+GlobFilter combinedFilter = Glob.Combine(filter, commonFilter);
+
+// Apply filter to check files
+GlobFilterStates filterResult = Glob.ApplyFilter(combinedFilter, "debug.log");
+Console.WriteLine($"Filter result: {filterResult}"); // Exclude
+
+// Filter that excludes all files
+GlobFilter excludeAllFilter = Glob.GetExcludeAllFilter();
+```
+
+The following method can be used to read ".gitignore" and generate a glob filter:
+
+```csharp 
+// Create filter from .gitignore file 
+using var stream = File.OpenRead(".gitignore"); 
+GlobFilter filter1 = await Glob.CreateExcludeFilterFromGitignoreAsync(stream, ct);
+
+// Create .gitignore filter from TextReader 
+using var reader = File.OpenText(".gitignore"); 
+GlobFilter filter2 = await Glob.CreateExcludeFilterFromGitignoreAsync(reader, ct);
+
+// Create .gitignore filter from an array of strings 
+var gitignoreLines = new[] { "*.log", "bin/", "obj/", "# comment", "" }; 
+GlobFilter filter3 = Glob.CreateExcludeFilterFromGitignore(gitignoreLines); 
+```
+
+`GetCommonIgnoreFilter()`で得られるルールは、以下の通りです:
+
+|Type|Pattern|
+|:----|:----|
+|Build outputs|"bin/", "obj/", "build/", "out/", "target/", "dist/"|
+|Dependencies|"node_modules/", "packages/", "vendor/"|
+|Log files|"*.log", "logs/"|
+|Temporary files|"*.tmp", "*.temp", "*.swp", "*.bak", "*~"|
+|IDE files|".vs/", ".vscode/", ".idea/", "*.suo", "*.user"|
+|OS files|".DS_Store", "Thumbs.db", "Desktop.ini"|
+|Version control files|"*.orig", "*.rej"|
+
+This rule may not be useful since official Git does not define any standard patterns (except for ".git" which is forcibly excluded).
+
 
 ----
 
@@ -710,6 +785,12 @@ Apache-v2
 
 ## History
 
+* 1.12.0:
+  * Supported ".gitignore" interpretation. It is used to traverse working directory. (#16)
+  * Added globbing parser/interpreter, for use ".gitignore". (#16)
+  * Improved performance for working directory traverser. (#16)
+  * Fixed raise MAE on access F# library on Release building.
+    * This could occur when functions are automatically inlined at F# compile time.
 * 1.11.0:
   * Added worktree accessor.
   * Added index (working directory) information accessor.

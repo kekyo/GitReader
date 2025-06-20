@@ -12,6 +12,7 @@ namespace GitReader.Primitive
 open GitReader
 open GitReader.Primitive
 open NUnit.Framework
+open NUnit.Framework.Legacy
 open System.IO
 
 type public Primitive_WorktreeTests() =
@@ -33,7 +34,7 @@ type public Primitive_WorktreeTests() =
             do! runGitCommandAsync(testPath, "config user.name \"Test User\"")
             
             // Create initial file and commit
-            do! File.WriteAllTextAsync(Path.Combine(testPath, "README.md"), "# Test Repository") |> Async.AwaitTask
+            do! TestUtilities.WriteAllTextAsync(Path.Combine(testPath, "README.md"), "# Test Repository").asAsync()
             do! runGitCommandAsync(testPath, "add README.md")
             do! runGitCommandAsync(testPath, "commit -m \"Initial commit\"")
 
@@ -42,20 +43,20 @@ type public Primitive_WorktreeTests() =
             let! worktrees = repository.getWorktrees()
 
             // Should have only main worktree
-            do Assert.AreEqual(1, worktrees.Count, "Should have exactly one worktree")
+            do ClassicAssert.AreEqual(1, worktrees.Count, "Should have exactly one worktree")
             
             let mainWorktree = worktrees.[0]
-            do Assert.AreEqual("(main)", mainWorktree.Name)
-            do Assert.AreEqual(testPath, mainWorktree.Path)
-            do Assert.AreEqual(WorktreeStatus.Normal, mainWorktree.Status)
-            do Assert.IsTrue(mainWorktree.IsMain)
+            do ClassicAssert.AreEqual("(main)", mainWorktree.Name)
+            do ClassicAssert.AreEqual(testPath, mainWorktree.Path)
+            do ClassicAssert.AreEqual(WorktreeStatus.Normal, mainWorktree.Status)
+            do ClassicAssert.IsTrue(mainWorktree.IsMain)
             
             // Test async methods
             let! head = mainWorktree.getHead()
             let! branch = mainWorktree.getBranch()
             
-            do Assert.IsNotNull(head, "Should have HEAD commit")
-            do Assert.IsNotNull(branch, "Should have current branch")
+            do ClassicAssert.IsNotNull(head, "Should have HEAD commit")
+            do ClassicAssert.IsNotNull(branch, "Should have current branch")
         finally
             // Cleanup
             if Directory.Exists(testPath) then
@@ -81,7 +82,7 @@ type public Primitive_WorktreeTests() =
             do! runGitCommandAsync(testPath, "config user.name \"Test User\"")
             
             // Create initial file and commit
-            do! File.WriteAllTextAsync(Path.Combine(testPath, "README.md"), "# Test Repository") |> Async.AwaitTask
+            do! TestUtilities.WriteAllTextAsync(Path.Combine(testPath, "README.md"), "# Test Repository").asAsync()
             do! runGitCommandAsync(testPath, "add README.md")
             do! runGitCommandAsync(testPath, "commit -m \"Initial commit\"")
             
@@ -96,30 +97,30 @@ type public Primitive_WorktreeTests() =
             let! worktrees = repository.getWorktrees()
 
             // Should have main + 2 additional worktrees
-            do Assert.AreEqual(3, worktrees.Count, "Should have exactly three worktrees")
+            do ClassicAssert.AreEqual(3, worktrees.Count, "Should have exactly three worktrees")
             
             // Find main worktree
             let mainWorktree = worktrees |> Seq.find(fun w -> w.IsMain)
-            do Assert.AreEqual("(main)", mainWorktree.Name)
-            do Assert.AreEqual(testPath, mainWorktree.Path)
-            do Assert.AreEqual(WorktreeStatus.Normal, mainWorktree.Status)
+            do ClassicAssert.AreEqual("(main)", mainWorktree.Name)
+            do ClassicAssert.AreEqual(testPath, mainWorktree.Path)
+            do ClassicAssert.AreEqual(WorktreeStatus.Normal, mainWorktree.Status)
             
             // Find feature worktrees and test async methods
             let feature1Worktree = worktrees |> Seq.find(fun w -> w.Name = "worktree1")
-            do Assert.AreEqual(worktree1Path, feature1Worktree.Path)
-            do Assert.AreEqual(WorktreeStatus.Normal, feature1Worktree.Status)
-            do Assert.IsFalse(feature1Worktree.IsMain)
+            do ClassicAssert.AreEqual(worktree1Path, feature1Worktree.Path)
+            do ClassicAssert.AreEqual(WorktreeStatus.Normal, feature1Worktree.Status)
+            do ClassicAssert.IsFalse(feature1Worktree.IsMain)
             
             let! feature1Branch = feature1Worktree.getBranch()
-            do Assert.AreEqual("feature1", feature1Branch)
+            do ClassicAssert.AreEqual("feature1", feature1Branch)
             
             let feature2Worktree = worktrees |> Seq.find(fun w -> w.Name = "worktree2")
-            do Assert.AreEqual(worktree2Path, feature2Worktree.Path)
-            do Assert.AreEqual(WorktreeStatus.Normal, feature2Worktree.Status)
-            do Assert.IsFalse(feature2Worktree.IsMain)
+            do ClassicAssert.AreEqual(worktree2Path, feature2Worktree.Path)
+            do ClassicAssert.AreEqual(WorktreeStatus.Normal, feature2Worktree.Status)
+            do ClassicAssert.IsFalse(feature2Worktree.IsMain)
             
             let! feature2Branch = feature2Worktree.getBranch()
-            do Assert.AreEqual("feature2", feature2Branch)
+            do ClassicAssert.AreEqual("feature2", feature2Branch)
         finally
             // Cleanup
             if Directory.Exists(testPath) then
@@ -144,7 +145,7 @@ type public Primitive_WorktreeTests() =
             do! runGitCommandAsync(testPath, "config user.name \"Test User\"")
             
             // Create initial file and commit
-            do! File.WriteAllTextAsync(Path.Combine(testPath, "README.md"), "# Test Repository") |> Async.AwaitTask
+            do! TestUtilities.WriteAllTextAsync(Path.Combine(testPath, "README.md"), "# Test Repository").asAsync()
             do! runGitCommandAsync(testPath, "add README.md")
             do! runGitCommandAsync(testPath, "commit -m \"Initial commit\"")
             
@@ -158,20 +159,20 @@ type public Primitive_WorktreeTests() =
             let! worktrees = repository.getWorktrees()
 
             // Should have main + 1 additional worktree
-            do Assert.AreEqual(2, worktrees.Count, "Should have exactly two worktrees")
+            do ClassicAssert.AreEqual(2, worktrees.Count, "Should have exactly two worktrees")
             
             // Check that we can see both worktrees even when opening from worktree
             let mainWorktree = worktrees |> Seq.find(fun w -> w.IsMain)
-            do Assert.AreEqual("(main)", mainWorktree.Name)
-            do Assert.AreEqual(testPath, mainWorktree.Path)
+            do ClassicAssert.AreEqual("(main)", mainWorktree.Name)
+            do ClassicAssert.AreEqual(testPath, mainWorktree.Path)
             
             let featureWorktree = worktrees |> Seq.find(fun w -> not w.IsMain)
-            do Assert.AreEqual(worktreePath, featureWorktree.Path)
-            do Assert.IsFalse(featureWorktree.IsMain)
+            do ClassicAssert.AreEqual(worktreePath, featureWorktree.Path)
+            do ClassicAssert.IsFalse(featureWorktree.IsMain)
             
             // Test async method for branch
             let! featureBranch = featureWorktree.getBranch()
-            do Assert.AreEqual("feature", featureBranch)
+            do ClassicAssert.AreEqual("feature", featureBranch)
         finally
             // Cleanup
             if Directory.Exists(testPath) then

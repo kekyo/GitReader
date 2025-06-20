@@ -11,6 +11,8 @@ using NUnit.Framework;
 using System.Linq;
 using System.Threading.Tasks;
 
+using Assert = NUnit.Framework.Legacy.ClassicAssert;
+
 namespace GitReader.IO;
 
 public sealed class PreloadedStreamTests

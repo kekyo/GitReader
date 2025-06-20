@@ -7,62 +7,51 @@
 //
 ////////////////////////////////////////////////////////////////////////////
 
-using System;
-using System.ComponentModel;
-
 namespace GitReader.Structures;
 
 /// <summary>
 /// Represents a Git worktree.
 /// </summary>
-public sealed class Worktree : IRepositoryReference
+public readonly struct Worktree
 {
-    private readonly WeakReference rwr;
+    /// <summary>
+    /// Gets the name of the worktree.
+    /// </summary>
+    public readonly string Name;
+    
+    /// <summary>
+    /// Gets the path to the worktree directory.
+    /// </summary>
+    public readonly string Path;
+    
+    /// <summary>
+    /// Gets the hash of the current HEAD commit, if available.
+    /// </summary>
+    public readonly Hash? Head;
+    
+    /// <summary>
+    /// Gets the name of the branch currently checked out in this worktree, if any.
+    /// </summary>
+    public readonly string? Branch;
+    
+    /// <summary>
+    /// Gets the status of the worktree.
+    /// </summary>
+    public readonly WorktreeStatus Status;
 
     internal Worktree(
-        WeakReference rwr,
         string name,
         string path,
         Hash? head,
         string? branch,
         WorktreeStatus status)
     {
-        this.rwr = rwr;
         this.Name = name;
         this.Path = path;
         this.Head = head;
         this.Branch = branch;
         this.Status = status;
     }
-
-    [EditorBrowsable(EditorBrowsableState.Never)]
-    WeakReference IRepositoryReference.Repository =>
-        this.rwr;
-
-    /// <summary>
-    /// Gets the name of the worktree.
-    /// </summary>
-    public string Name { get; }
-    
-    /// <summary>
-    /// Gets the path to the worktree directory.
-    /// </summary>
-    public string Path { get; }
-    
-    /// <summary>
-    /// Gets the hash of the current HEAD commit, if available.
-    /// </summary>
-    public Hash? Head { get; }
-    
-    /// <summary>
-    /// Gets the name of the branch currently checked out in this worktree, if any.
-    /// </summary>
-    public string? Branch { get; }
-    
-    /// <summary>
-    /// Gets the status of the worktree.
-    /// </summary>
-    public WorktreeStatus Status { get; }
 
     /// <summary>
     /// Gets a value indicating whether this is the main worktree.
