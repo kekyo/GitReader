@@ -26,10 +26,6 @@ jobs:
 
     #-----------------------------------------------------------------------
     # Setup environments
-    
-    - name: Setup mono
-      run:
-        sudo apt-get -y install mono-devel
 
     - name: Setup .NET
       uses: actions/setup-dotnet@v3
@@ -42,6 +38,10 @@ jobs:
           7.0.x
           8.0.x
           9.0.x
+
+    - name: Setup mono
+      run:
+        sudo apt-get -y install mono-devel
 
 #    - name: Setup NuGet package reference
 #      run: |
