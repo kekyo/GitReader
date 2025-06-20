@@ -129,4 +129,13 @@ public static class Glob
     public static GlobFilter CreateExcludeFilterFromGitignore(
         IEnumerable<string> gitignoreLines) =>
         Internal.Glob.CreateExcludeFilterFromGitignore(gitignoreLines);
+
+    /// <summary>
+    /// Applies a glob filter to a path.
+    /// </summary>
+    /// <param name="filter">The glob filter to apply.</param>
+    /// <param name="path">The path to apply the filter to.</param>
+    /// <returns>The result of the filter application.</returns>
+    public static GlobFilterStates ApplyFilter(GlobFilter filter, string path) =>
+        Internal.Glob.ApplyFilter(filter, path);
 }

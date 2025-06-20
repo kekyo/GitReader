@@ -962,12 +962,14 @@ public sealed class GlobTests
         }
     }
 
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+
     [Test]
     public void CreateIgnoreFilterTest()
     {
         // Test CreateExcludeFilter method that creates a function to exclude matching patterns
         var f = Glob.CreateExcludeFilter("*.log", "*.tmp", "bin/", "obj/");
-        Func<string, GlobFilterStates> filter = path => f(GlobFilterStates.NotExclude, path);
+        Func<string, GlobFilterStates> filter = path => Glob.ApplyFilter(f, path);
 
         // Files that don't match patterns should return Neutral (undecided)
         Assert.AreEqual(GlobFilterStates.NotExclude, filter("src/Program.cs"));
@@ -989,7 +991,7 @@ public sealed class GlobTests
     {
         // Test CreateExcludeFilter with complex patterns including ** and character classes
         var f = Glob.CreateExcludeFilter("**/node_modules/**", "**/*.log", "**/*.tmp", "[Bb]in/", "[Oo]bj/");
-        Func<string, GlobFilterStates> filter = path => f(GlobFilterStates.NotExclude, path);
+        Func<string, GlobFilterStates> filter = path => Glob.ApplyFilter(f, path);
 
         // Files that don't match patterns should return Neutral
         Assert.AreEqual(GlobFilterStates.NotExclude, filter("src/main.ts"));
@@ -1012,7 +1014,7 @@ public sealed class GlobTests
     {
         // Test CreateCommonIgnoreFilter method that provides common ignore patterns
         var f = Glob.GetCommonIgnoreFilter();
-        Func<string, GlobFilterStates> finalFilter = path => f(GlobFilterStates.NotExclude, path);
+        Func<string, GlobFilterStates> finalFilter = path => Glob.ApplyFilter(f, path);
 
         // Common files that should be neutral (not matching ignore patterns)
         Assert.AreEqual(GlobFilterStates.NotExclude, finalFilter("src/Program.cs"));
@@ -1036,7 +1038,7 @@ public sealed class GlobTests
     {
         // Test the new Combine method for composing predicate functions
         var f = Glob.CreateExcludeFilter("*.log", "*.tmp");
-        Func<string, GlobFilterStates> combinedFilter = path => f(GlobFilterStates.NotExclude, path);
+        Func<string, GlobFilterStates> combinedFilter = path => Glob.ApplyFilter(f, path);
 
         // Test files that should be excluded by filter1 (override filter2)
         Assert.AreEqual(GlobFilterStates.Exclude, combinedFilter("app.log"));      // .log file is ignored
@@ -1052,7 +1054,7 @@ public sealed class GlobTests
     {
         // Test Combine method with empty array - should return neutral for everything
         var f = Glob.Combine();
-        Func<string, GlobFilterStates> combinedFilter = path => f(GlobFilterStates.NotExclude, path);
+        Func<string, GlobFilterStates> combinedFilter = path => Glob.ApplyFilter(f, path);
 
         Assert.AreEqual(GlobFilterStates.NotExclude, combinedFilter("any-file.txt"));
         Assert.AreEqual(GlobFilterStates.NotExclude, combinedFilter("another-file.log"));
@@ -1064,7 +1066,7 @@ public sealed class GlobTests
         // Test Combine method with single filter - should return the same filter
         var originalFilter = Glob.CreateExcludeFilter("*.log");
         var f = Glob.Combine(originalFilter);
-        Func<string, GlobFilterStates> combinedFilter = path => f(GlobFilterStates.NotExclude, path);
+        Func<string, GlobFilterStates> combinedFilter = path => Glob.ApplyFilter(f, path);
 
         Assert.AreEqual(GlobFilterStates.NotExclude, combinedFilter("test.txt"));
         Assert.AreEqual(GlobFilterStates.Exclude, combinedFilter("test.log"));
@@ -1079,7 +1081,7 @@ public sealed class GlobTests
         var filter3 = Glob.CreateExcludeFilter("*.bak");
 
         var f = Glob.Combine(filter1, filter2, filter3);
-        Func<string, GlobFilterStates> combinedFilter = path => f(GlobFilterStates.NotExclude, path);
+        Func<string, GlobFilterStates> combinedFilter = path => Glob.ApplyFilter(f, path);
 
         // Should exclude files that match filter1 or filter2
         Assert.AreEqual(GlobFilterStates.Exclude, combinedFilter("app.log"));      // .log file fails filter1
@@ -1097,7 +1099,7 @@ public sealed class GlobTests
     {
         // Test ignore filter with empty patterns (should return neutral for everything)
         var f1 = Glob.CreateExcludeFilter();
-        Func<string, GlobFilterStates> emptyIgnoreFilter = path => f1(GlobFilterStates.NotExclude, path);
+        Func<string, GlobFilterStates> emptyIgnoreFilter = path => Glob.ApplyFilter(f1, path);
 
         Assert.AreEqual(GlobFilterStates.NotExclude, emptyIgnoreFilter("any-file.txt"));
         Assert.AreEqual(GlobFilterStates.NotExclude, emptyIgnoreFilter("another-file.log"));
@@ -1113,7 +1115,7 @@ public sealed class GlobTests
         using var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(gitignoreContent));
 
         var f = await Glob.CreateExcludeFilterFromGitignoreAsync(stream);
-        Func<string, GlobFilterStates> filter = path => f(GlobFilterStates.NotExclude, path);
+        Func<string, GlobFilterStates> filter = path => Glob.ApplyFilter(f, path);
 
         // Should exclude files matching patterns
         Assert.AreEqual(GlobFilterStates.Exclude, filter("debug.log"));
@@ -1134,7 +1136,7 @@ public sealed class GlobTests
         using var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(gitignoreContent));
 
         var f = await Glob.CreateExcludeFilterFromGitignoreAsync(stream);
-        Func<string, GlobFilterStates> filter = path => f(GlobFilterStates.NotExclude, path);
+        Func<string, GlobFilterStates> filter = path => Glob.ApplyFilter(f, path);
 
         // Should exclude files matching exclude patterns
         Assert.AreEqual(GlobFilterStates.Exclude, filter("debug.log"));
@@ -1155,7 +1157,7 @@ public sealed class GlobTests
         using var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(gitignoreContent));
 
         var f = await Glob.CreateExcludeFilterFromGitignoreAsync(stream);
-        Func<string, GlobFilterStates> filter = path => f(GlobFilterStates.NotExclude, path);
+        Func<string, GlobFilterStates> filter = path => Glob.ApplyFilter(f, path);
 
         // Should exclude files matching patterns (comments should be ignored)
         Assert.AreEqual(GlobFilterStates.Exclude, filter("debug.log"));
@@ -1171,7 +1173,7 @@ public sealed class GlobTests
         using var stream = new MemoryStream();
 
         var f = await Glob.CreateExcludeFilterFromGitignoreAsync(stream);
-        Func<string, GlobFilterStates> filter = path => f(GlobFilterStates.NotExclude, path);
+        Func<string, GlobFilterStates> filter = path => Glob.ApplyFilter(f, path);
 
         // Empty .gitignore should neutral all files
         Assert.AreEqual(GlobFilterStates.NotExclude, filter("any-file.txt"));
@@ -1224,7 +1226,7 @@ Desktop.ini
 
         using var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(gitignoreContent));
         var f = await Glob.CreateExcludeFilterFromGitignoreAsync(stream);
-        Func<string, GlobFilterStates> filter = path => f(GlobFilterStates.NotExclude, path);
+        Func<string, GlobFilterStates> filter = path => Glob.ApplyFilter(f, path);
 
         // Should exclude dependencies
         Assert.AreEqual(GlobFilterStates.Exclude, filter("node_modules/package.json"));
@@ -1266,7 +1268,7 @@ Desktop.ini
         var baseFilter = Glob.CreateExcludeFilter("*.tmp");
         var gitignoreFilter = await Glob.CreateExcludeFilterFromGitignoreAsync(stream);
         var f = Glob.Combine(baseFilter, gitignoreFilter);
-        Func<string, GlobFilterStates> combinedFilter = path => f(GlobFilterStates.NotExclude, path);
+        Func<string, GlobFilterStates> combinedFilter = path => Glob.ApplyFilter(f, path);
 
         // Should exclude .log files (gitignore) and .tmp files (base)
         Assert.AreEqual(GlobFilterStates.Exclude, combinedFilter("error.log"));
@@ -1290,7 +1292,7 @@ Desktop.ini
         var baseFilter = Glob.CreateExcludeFilter("*.cs");  // Exclude .cs files
         var gitignoreFilter = await Glob.CreateExcludeFilterFromGitignoreAsync(stream);
         var f = Glob.Combine(baseFilter, gitignoreFilter);
-        Func<string, GlobFilterStates> combinedFilter = path => f(GlobFilterStates.NotExclude, path);
+        Func<string, GlobFilterStates> combinedFilter = path => Glob.ApplyFilter(f, path);
 
         // Combined filter should exclude both .cs and .log files
         Assert.AreEqual(GlobFilterStates.Exclude, combinedFilter("Program.cs"));     // Excluded by base
@@ -1305,11 +1307,19 @@ Desktop.ini
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(gitignoreContent));
 
         var f = await Glob.CreateExcludeFilterFromGitignoreAsync(stream);
-        Func<string, GlobFilterStates> gitignoreFilter = path => f(GlobFilterStates.NotExclude, path);
+        Func<string, GlobFilterStates> gitignoreFilter = path => Glob.ApplyFilter(f, path);
 
         Assert.AreEqual(GlobFilterStates.Exclude, gitignoreFilter("debug.log"));
         Assert.AreEqual(GlobFilterStates.Exclude, gitignoreFilter("build/output.exe"));
         Assert.AreEqual(GlobFilterStates.NotExclude, gitignoreFilter("important.log"));  // Negation pattern
         Assert.AreEqual(GlobFilterStates.NotExclude, gitignoreFilter("Program.cs"));
+    }
+
+    [Test]
+    public void ApplyFilterTest()
+    {
+        var filter = Glob.CreateExcludeFilter("*.log");
+        Assert.AreEqual(GlobFilterStates.Exclude, Glob.ApplyFilter(filter, "debug.log"));
+        Assert.AreEqual(GlobFilterStates.NotExclude, Glob.ApplyFilter(filter, "Program.cs"));
     }
 }

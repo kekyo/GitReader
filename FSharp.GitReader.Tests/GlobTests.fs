@@ -37,7 +37,7 @@ type public GlobTests() =
     member _.``createExcludeFilter should return F# function type``() =
         // Test that it returns F# function type (string -> FilterDecision)
         let f = Glob.createExcludeFilter([| "*.log"; "bin/" |])
-        let filter = fun path -> f.Invoke(GlobFilterStates.NotExclude, path)
+        let filter = Glob.applyFilter(f)
 
         // Test function call syntax
         ClassicAssert.AreEqual(GlobFilterStates.NotExclude, filter "src/main.cs")  // Should be neutral (not matching exclude patterns)
@@ -47,7 +47,7 @@ type public GlobTests() =
     [<Test>]
     member _.``createExcludeFilter should work with multiple patterns``() =
         let f = Glob.createExcludeFilter([| "*.log"; "*.tmp"; "bin/"; "obj/" |])
-        let filter = fun path -> f.Invoke(GlobFilterStates.NotExclude, path)
+        let filter = Glob.applyFilter(f)
 
         // Files that should be neutral (not matching exclude patterns)
         ClassicAssert.AreEqual(GlobFilterStates.NotExclude, filter "src/Program.cs")
@@ -63,7 +63,7 @@ type public GlobTests() =
     [<Test>]
     member _.``getCommonIgnoreFilter should return F# function type``() =
         let f = Glob.getCommonIgnoreFilter()
-        let filter = fun path -> f.Invoke(GlobFilterStates.NotExclude, path)
+        let filter = Glob.applyFilter(f)
         
         // Common included files (not matching ignore patterns)
         ClassicAssert.AreEqual(GlobFilterStates.NotExclude, filter "src/Program.cs")
@@ -82,7 +82,7 @@ type public GlobTests() =
         
         // Use the new combine method
         let f = Glob.combine([| filter1; filter2 |])
-        let combinedFilter = fun path -> f.Invoke(GlobFilterStates.NotExclude, path)
+        let combinedFilter = Glob.applyFilter(f)
         
         // Test files that should be excluded by filter1
         ClassicAssert.AreEqual(GlobFilterStates.Exclude, combinedFilter "app.log")      // .log file is ignored
@@ -99,7 +99,7 @@ type public GlobTests() =
     member _.``combine method should work with empty array``() =
         // Test combine method with empty array - should include all
         let f = Glob.combine()
-        let combinedFilter = fun path -> f.Invoke(GlobFilterStates.NotExclude, path)
+        let combinedFilter = Glob.applyFilter(f)
         
         ClassicAssert.AreEqual(GlobFilterStates.NotExclude, combinedFilter "any-file.txt")
         ClassicAssert.AreEqual(GlobFilterStates.NotExclude, combinedFilter "another-file.log")
@@ -108,7 +108,7 @@ type public GlobTests() =
     member _.``combine method should work with single filter``() =
         let originalFilter = Glob.createExcludeFilter([| "*.log" |])
         let f = Glob.combine([| originalFilter |])
-        let combinedFilter = fun path -> f.Invoke(GlobFilterStates.NotExclude, path)
+        let combinedFilter = Glob.applyFilter(f)
         
         ClassicAssert.AreEqual(GlobFilterStates.NotExclude, combinedFilter "test.txt")
         ClassicAssert.AreEqual(GlobFilterStates.Exclude, combinedFilter "test.log")
@@ -120,7 +120,7 @@ type public GlobTests() =
         let filter3 = Glob.createExcludeFilter([| "*.bak" |])
         
         let f = Glob.combine([| filter1; filter2; filter3 |])
-        let combinedFilter = fun path -> f.Invoke(GlobFilterStates.NotExclude, path)
+        let combinedFilter = Glob.applyFilter(f)
         
         // Should fail at least one filter
         ClassicAssert.AreEqual(GlobFilterStates.Exclude, combinedFilter "app.log")      // .log file fails filter1
@@ -134,7 +134,7 @@ type public GlobTests() =
     [<Test>]
     member _.``F# list processing should work``() =
         let f = Glob.createExcludeFilter([| "*.log"; "*.tmp" |])
-        let filter = fun path -> f.Invoke(GlobFilterStates.NotExclude, path)
+        let filter = Glob.applyFilter(f)
         
         let testFiles = [
             "src/Program.cs"
@@ -162,7 +162,7 @@ type public GlobTests() =
         let filter = Glob.createExcludeFilter([| "*.log" |])
         
         let categorizeFile path =
-            match filter.Invoke(GlobFilterStates.NotExclude, path) with
+            match Glob.applyFilter(filter) path with
             | GlobFilterStates.Exclude -> "ignored"
             | GlobFilterStates.NotExclude -> "neutral"
             | _ -> failwith "Fail"
@@ -174,7 +174,7 @@ type public GlobTests() =
     [<Test>]
     member _.``F# pipe operator should work with filters``() =
         let f = Glob.getCommonIgnoreFilter()
-        let filter = fun path -> f.Invoke(GlobFilterStates.NotExclude, path)
+        let filter = Glob.applyFilter(f)
         
         let result = 
             "src/Program.cs"
@@ -196,7 +196,7 @@ type public GlobTests() =
             use stream = new MemoryStream(Encoding.UTF8.GetBytes(gitignoreContent))
 
             let! f = Glob.createExcludeFilterFromGitignore(stream)
-            let filter = fun path -> f.Invoke(GlobFilterStates.NotExclude, path)
+            let filter = Glob.applyFilter(f)
 
             // Should exclude files matching patterns
             ClassicAssert.AreEqual(GlobFilterStates.Exclude, filter "debug.log")
@@ -217,7 +217,7 @@ type public GlobTests() =
             use stream = new MemoryStream(Encoding.UTF8.GetBytes(gitignoreContent))
 
             let! f = Glob.createExcludeFilterFromGitignore(stream)
-            let filter = fun path -> f.Invoke(GlobFilterStates.NotExclude, path)
+            let filter = Glob.applyFilter(f)
 
             // Should exclude files matching exclude patterns
             ClassicAssert.AreEqual(GlobFilterStates.Exclude, filter "debug.log")
@@ -238,7 +238,7 @@ type public GlobTests() =
             use stream = new MemoryStream(Encoding.UTF8.GetBytes(gitignoreContent))
 
             let! f = Glob.createExcludeFilterFromGitignore(stream)
-            let filter = fun path -> f.Invoke(GlobFilterStates.NotExclude, path)
+            let filter = Glob.applyFilter(f)
 
             let testFiles = [
                 "src/Program.cs"
@@ -270,7 +270,7 @@ type public GlobTests() =
             let baseFilter = Glob.createExcludeFilter([| "*.tmp" |])
             let! gitignoreFilter = Glob.createExcludeFilterFromGitignore(stream)
             let f = Glob.combine([| baseFilter; gitignoreFilter |])
-            let combinedFilter = fun path -> f.Invoke(GlobFilterStates.NotExclude, path)
+            let combinedFilter = Glob.applyFilter(f)
             
             // Should exclude .log files (gitignore) and .tmp files (base)
             ClassicAssert.AreEqual(GlobFilterStates.Exclude, combinedFilter "error.log")
@@ -290,10 +290,16 @@ type public GlobTests() =
             use stream = new MemoryStream(Encoding.UTF8.GetBytes(gitignoreContent))
             
             let! f = Glob.createExcludeFilterFromGitignore(stream)
-            let gitignoreFilter = fun path -> f.Invoke(GlobFilterStates.NotExclude, path)
+            let gitignoreFilter = Glob.applyFilter(f)
 
             ClassicAssert.AreEqual(GlobFilterStates.Exclude, gitignoreFilter "debug.log")
             ClassicAssert.AreEqual(GlobFilterStates.Exclude, gitignoreFilter "build/output.exe")
             ClassicAssert.AreEqual(GlobFilterStates.NotExclude, gitignoreFilter "important.log")  // Negation pattern
             ClassicAssert.AreEqual(GlobFilterStates.NotExclude, gitignoreFilter "Program.cs")
         }
+
+    [<Test>]
+    member _.``applyFilter should work``() =
+        let filter = Glob.createExcludeFilter([| "*.log" |])
+        ClassicAssert.AreEqual(GlobFilterStates.Exclude, Glob.applyFilter(filter) "debug.log")
+        ClassicAssert.AreEqual(GlobFilterStates.NotExclude, Glob.applyFilter(filter) "Program.cs")

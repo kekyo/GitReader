@@ -512,8 +512,6 @@ internal static class Glob
         }
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
     /// <summary>
     /// Creates a glob path filter predicate for use with GetWorkingDirectoryStatusAsync() 
     /// that excludes files matching any of the provided .gitignore-style patterns.
@@ -526,8 +524,6 @@ internal static class Glob
     /// </example>
     public static GlobFilter CreateExcludeFilter(string[] excludePatterns) =>
         CreateExcludePatternFilter(excludePatterns);
-
-    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     /// <summary>
     /// Creates a glob path filter predicate from a .gitignore stream.
@@ -643,4 +639,15 @@ internal static class Glob
 
         return CreateExcludePatternFilter(excludePatterns.ToArray());
     }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    /// <summary>
+    /// Applies a glob filter to a path.
+    /// </summary>
+    /// <param name="filter">The glob filter to apply.</param>
+    /// <param name="path">The path to apply the filter to.</param>
+    /// <returns>The result of the filter application.</returns>
+    public static GlobFilterStates ApplyFilter(GlobFilter filter, string path) =>
+        filter(GlobFilterStates.NotExclude, path);
 }

@@ -42,7 +42,7 @@ type public Glob =
     /// let combined = Glob.combine([| filter1; filter2 |])
     /// </example>
     [<MethodImpl(MethodImplOptions.NoInlining)>]
-    static member public combine([<ParamArray>] predicates) =
+    static member combine([<ParamArray>] predicates) =
         Internal.Glob.Combine(predicates)
 
     /// <summary>
@@ -123,3 +123,12 @@ type public Glob =
     [<MethodImpl(MethodImplOptions.NoInlining)>]
     static member createExcludeFilterFromGitignore(gitignoreLines: string seq) =
         Internal.Glob.CreateExcludeFilterFromGitignore(gitignoreLines)
+
+    /// <summary>
+    /// Applies a glob filter to a path.
+    /// </summary>
+    /// <param name="filter">The glob filter to apply.</param>
+    /// <returns>The result of the filter application.</returns>
+    [<MethodImpl(MethodImplOptions.NoInlining)>]
+    static member applyFilter(filter) =
+        fun path -> Internal.Glob.ApplyFilter(filter, path)
