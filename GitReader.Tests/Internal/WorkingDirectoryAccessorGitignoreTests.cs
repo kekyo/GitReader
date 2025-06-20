@@ -60,7 +60,7 @@ public sealed class WorkingDirectoryAccessorGitignoreTests
         
         // Create .gitignore in root
         var rootGitignore = Path.Combine(testPath, ".gitignore");
-        await File.WriteAllTextAsync(rootGitignore, "*.log\ntemp/\n");
+        await TestUtilities.WriteAllTextAsync(rootGitignore, "*.log\ntemp/\n");
         
         // Create test files
         var logFile = Path.Combine(testPath, "debug.log");
@@ -68,10 +68,10 @@ public sealed class WorkingDirectoryAccessorGitignoreTests
         var tempDir = Path.Combine(testPath, "temp");
         var tempFile = Path.Combine(tempDir, "temp.txt");
         
-        await File.WriteAllTextAsync(logFile, "log content");
-        await File.WriteAllTextAsync(csFile, "cs content");
+        await TestUtilities.WriteAllTextAsync(logFile, "log content");
+        await TestUtilities.WriteAllTextAsync(csFile, "cs content");
         Directory.CreateDirectory(tempDir);
-        await File.WriteAllTextAsync(tempFile, "temp content");
+        await TestUtilities.WriteAllTextAsync(tempFile, "temp content");
 
         using var repository = await Repository.Factory.OpenPrimitiveAsync(testPath);
 
@@ -108,13 +108,13 @@ public sealed class WorkingDirectoryAccessorGitignoreTests
         
         // Create root .gitignore
         var rootGitignore = Path.Combine(testPath, ".gitignore");
-        await File.WriteAllTextAsync(rootGitignore, "*.log\n");
+        await TestUtilities.WriteAllTextAsync(rootGitignore, "*.log\n");
         
         // Create src directory with its own .gitignore
         var srcDir = Path.Combine(testPath, "src");
         Directory.CreateDirectory(srcDir);
         var srcGitignore = Path.Combine(srcDir, ".gitignore");
-        await File.WriteAllTextAsync(srcGitignore, "!important.log\n*.tmp\n");
+        await TestUtilities.WriteAllTextAsync(srcGitignore, "!important.log\n*.tmp\n");
         
         // Create test files
         var rootLogFile = Path.Combine(testPath, "debug.log");
@@ -122,10 +122,10 @@ public sealed class WorkingDirectoryAccessorGitignoreTests
         var srcTmpFile = Path.Combine(srcDir, "temp.tmp");
         var srcCsFile = Path.Combine(srcDir, "Program.cs");
         
-        await File.WriteAllTextAsync(rootLogFile, "root log");
-        await File.WriteAllTextAsync(srcLogFile, "important log");
-        await File.WriteAllTextAsync(srcTmpFile, "temp content");
-        await File.WriteAllTextAsync(srcCsFile, "cs content");
+        await TestUtilities.WriteAllTextAsync(rootLogFile, "root log");
+        await TestUtilities.WriteAllTextAsync(srcLogFile, "important log");
+        await TestUtilities.WriteAllTextAsync(srcTmpFile, "temp content");
+        await TestUtilities.WriteAllTextAsync(srcCsFile, "cs content");
 
         using var repository = await Repository.Factory.OpenPrimitiveAsync(testPath);
 
@@ -161,14 +161,14 @@ public sealed class WorkingDirectoryAccessorGitignoreTests
         
         // Create .gitignore that ignores *.cs files
         var rootGitignore = Path.Combine(testPath, ".gitignore");
-        await File.WriteAllTextAsync(rootGitignore, "*.cs\n");
+        await TestUtilities.WriteAllTextAsync(rootGitignore, "*.cs\n");
         
         // Create test files
         var csFile = Path.Combine(testPath, "Program.cs");
         var jsFile = Path.Combine(testPath, "script.js");
         
-        await File.WriteAllTextAsync(csFile, "cs content");
-        await File.WriteAllTextAsync(jsFile, "js content");
+        await TestUtilities.WriteAllTextAsync(csFile, "cs content");
+        await TestUtilities.WriteAllTextAsync(jsFile, "js content");
 
         using var repository = await Repository.Factory.OpenPrimitiveAsync(testPath);
 
@@ -209,13 +209,13 @@ public sealed class WorkingDirectoryAccessorGitignoreTests
         
         // Create .gitignore files at different levels
         var rootGitignore = Path.Combine(testPath, ".gitignore");
-        await File.WriteAllTextAsync(rootGitignore, "*.log\ntarget/\n");
+        await TestUtilities.WriteAllTextAsync(rootGitignore, "*.log\ntarget/\n");
         
         var srcGitignore = Path.Combine(srcDir, ".gitignore");
-        await File.WriteAllTextAsync(srcGitignore, "*.tmp\n!important.tmp\n");
+        await TestUtilities.WriteAllTextAsync(srcGitignore, "*.tmp\n!important.tmp\n");
         
         var javaGitignore = Path.Combine(javaDir, ".gitignore");
-        await File.WriteAllTextAsync(javaGitignore, "*.class\n!Main.class\n");
+        await TestUtilities.WriteAllTextAsync(javaGitignore, "*.class\n!Main.class\n");
         
         // Create test files
         var files = new (string, string)[]
@@ -232,7 +232,7 @@ public sealed class WorkingDirectoryAccessorGitignoreTests
         
         foreach (var (filePath, content) in files)
         {
-            await File.WriteAllTextAsync(filePath, content);
+            await TestUtilities.WriteAllTextAsync(filePath, content);
         }
 
         using var repository = await Repository.Factory.OpenPrimitiveAsync(testPath);
@@ -269,7 +269,7 @@ public sealed class WorkingDirectoryAccessorGitignoreTests
         
         // Create .gitignore
         var rootGitignore = Path.Combine(testPath, ".gitignore");
-        await File.WriteAllTextAsync(rootGitignore, "*.log\n");
+        await TestUtilities.WriteAllTextAsync(rootGitignore, "*.log\n");
         
         // Create test files
         var files = new (string, string)[]
@@ -282,7 +282,7 @@ public sealed class WorkingDirectoryAccessorGitignoreTests
         
         foreach (var (filePath, content) in files)
         {
-            await File.WriteAllTextAsync(filePath, content);
+            await TestUtilities.WriteAllTextAsync(filePath, content);
         }
 
         using var repository = await Repository.Factory.OpenPrimitiveAsync(testPath);
@@ -322,29 +322,29 @@ public sealed class WorkingDirectoryAccessorGitignoreTests
         
         // Create and commit initial files
         var committedFile = Path.Combine(testPath, "committed.txt");
-        await File.WriteAllTextAsync(committedFile, "initial content");
+        await TestUtilities.WriteAllTextAsync(committedFile, "initial content");
         await TestUtilities.RunGitCommandAsync(testPath, "add committed.txt");
         await TestUtilities.RunGitCommandAsync(testPath, "commit -m \"Initial commit\"");
         
         // Create and stage file BEFORE .gitignore exists
         var stagedLogFile = Path.Combine(testPath, "staged.log");
-        await File.WriteAllTextAsync(stagedLogFile, "staged log content");
+        await TestUtilities.WriteAllTextAsync(stagedLogFile, "staged log content");
         await TestUtilities.RunGitCommandAsync(testPath, "add staged.log");
         
         // Create .gitignore AFTER staging the file
         var rootGitignore = Path.Combine(testPath, ".gitignore");
-        await File.WriteAllTextAsync(rootGitignore, "*.log\n");
+        await TestUtilities.WriteAllTextAsync(rootGitignore, "*.log\n");
         
         // Modify committed file
-        await File.WriteAllTextAsync(committedFile, "modified content");
+        await TestUtilities.WriteAllTextAsync(committedFile, "modified content");
         
         // Create untracked file that matches .gitignore pattern
         var untrackedLogFile = Path.Combine(testPath, "untracked.log");
-        await File.WriteAllTextAsync(untrackedLogFile, "untracked log content");
+        await TestUtilities.WriteAllTextAsync(untrackedLogFile, "untracked log content");
         
         // Create untracked file that doesn't match .gitignore pattern
         var untrackedCsFile = Path.Combine(testPath, "untracked.cs");
-        await File.WriteAllTextAsync(untrackedCsFile, "cs content");
+        await TestUtilities.WriteAllTextAsync(untrackedCsFile, "cs content");
 
         using var repository = await Repository.Factory.OpenPrimitiveAsync(testPath);
 
@@ -380,29 +380,29 @@ public sealed class WorkingDirectoryAccessorGitignoreTests
         
         // Create and commit initial files
         var committedFile = Path.Combine(testPath, "committed.txt");
-        await File.WriteAllTextAsync(committedFile, "initial content");
+        await TestUtilities.WriteAllTextAsync(committedFile, "initial content");
         await TestUtilities.RunGitCommandAsync(testPath, "add committed.txt");
         await TestUtilities.RunGitCommandAsync(testPath, "commit -m \"Initial commit\"");
         
         // Create .gitignore
         var rootGitignore = Path.Combine(testPath, ".gitignore");
-        await File.WriteAllTextAsync(rootGitignore, "*.log\n");
+        await TestUtilities.WriteAllTextAsync(rootGitignore, "*.log\n");
         
         // Modify committed file
-        await File.WriteAllTextAsync(committedFile, "modified content");
+        await TestUtilities.WriteAllTextAsync(committedFile, "modified content");
         
         // Create staged file that matches .gitignore pattern and force-add it
         var stagedLogFile = Path.Combine(testPath, "staged.log");
-        await File.WriteAllTextAsync(stagedLogFile, "staged log content");
+        await TestUtilities.WriteAllTextAsync(stagedLogFile, "staged log content");
         await TestUtilities.RunGitCommandAsync(testPath, "add -f staged.log");
         
         // Create untracked file that matches .gitignore pattern
         var untrackedLogFile = Path.Combine(testPath, "untracked.log");
-        await File.WriteAllTextAsync(untrackedLogFile, "untracked log content");
+        await TestUtilities.WriteAllTextAsync(untrackedLogFile, "untracked log content");
         
         // Create untracked file that doesn't match .gitignore pattern
         var untrackedCsFile = Path.Combine(testPath, "untracked.cs");
-        await File.WriteAllTextAsync(untrackedCsFile, "cs content");
+        await TestUtilities.WriteAllTextAsync(untrackedCsFile, "cs content");
 
         using var repository = await Repository.Factory.OpenPrimitiveAsync(testPath);
 
@@ -445,19 +445,19 @@ public sealed class WorkingDirectoryAccessorGitignoreTests
             await TestUtilities.RunGitCommandAsync(testPath, "config user.name \"Test User\"");
             
             // Create test files
-            await File.WriteAllTextAsync(Path.Combine(testPath, "normal_file.txt"), "normal content");
-            await File.WriteAllTextAsync(Path.Combine(testPath, ".git_like_file"), "not a real git file");
+            await TestUtilities.WriteAllTextAsync(Path.Combine(testPath, "normal_file.txt"), "normal content");
+            await TestUtilities.WriteAllTextAsync(Path.Combine(testPath, ".git_like_file"), "not a real git file");
             
             // Create .git-like directory (should be included)
             var gitLikeDir = Path.Combine(testPath, ".git_like_dir");
             Directory.CreateDirectory(gitLikeDir);
-            await File.WriteAllTextAsync(Path.Combine(gitLikeDir, "file.txt"), "content");
+            await TestUtilities.WriteAllTextAsync(Path.Combine(gitLikeDir, "file.txt"), "content");
             
             // Create additional files inside .git directory (these should be excluded)
             var gitPath = Path.Combine(testPath, ".git");
-            await File.WriteAllTextAsync(Path.Combine(gitPath, "test_file"), "should be excluded");
+            await TestUtilities.WriteAllTextAsync(Path.Combine(gitPath, "test_file"), "should be excluded");
             Directory.CreateDirectory(Path.Combine(gitPath, "test_objects"));
-            await File.WriteAllTextAsync(Path.Combine(gitPath, "test_objects", "test"), "object content");
+            await TestUtilities.WriteAllTextAsync(Path.Combine(gitPath, "test_objects", "test"), "object content");
             
             using var repository = await Repository.Factory.OpenPrimitiveAsync(testPath);
             var status = await repository.GetWorkingDirectoryStatusAsync();
@@ -515,8 +515,8 @@ public sealed class WorkingDirectoryAccessorGitignoreTests
             Directory.CreateDirectory(subDir1);
             Directory.CreateDirectory(subDir2);
             
-            await File.WriteAllTextAsync(Path.Combine(subDir1, "main.cpp"), "int main() { return 0; }");
-            await File.WriteAllTextAsync(Path.Combine(subDir2, "helper.js"), "function help() {}");
+            await TestUtilities.WriteAllTextAsync(Path.Combine(subDir1, "main.cpp"), "int main() { return 0; }");
+            await TestUtilities.WriteAllTextAsync(Path.Combine(subDir2, "helper.js"), "function help() {}");
             
             // Create .git directories in subdirectories (these should be excluded)
             var gitInSub1 = Path.Combine(subDir1, ".git");
@@ -525,27 +525,27 @@ public sealed class WorkingDirectoryAccessorGitignoreTests
             Directory.CreateDirectory(gitInSub2);
             
             // Create files inside subdirectory .git directories (should all be excluded)
-            await File.WriteAllTextAsync(Path.Combine(gitInSub1, "config"), "[core]\nrepositoryformatversion = 0");
-            await File.WriteAllTextAsync(Path.Combine(gitInSub1, "HEAD"), "ref: refs/heads/main");
+            await TestUtilities.WriteAllTextAsync(Path.Combine(gitInSub1, "config"), "[core]\nrepositoryformatversion = 0");
+            await TestUtilities.WriteAllTextAsync(Path.Combine(gitInSub1, "HEAD"), "ref: refs/heads/main");
             Directory.CreateDirectory(Path.Combine(gitInSub1, "objects"));
-            await File.WriteAllTextAsync(Path.Combine(gitInSub1, "objects", "test1"), "object data 1");
+            await TestUtilities.WriteAllTextAsync(Path.Combine(gitInSub1, "objects", "test1"), "object data 1");
             
-            await File.WriteAllTextAsync(Path.Combine(gitInSub2, "index"), "binary index data");
+            await TestUtilities.WriteAllTextAsync(Path.Combine(gitInSub2, "index"), "binary index data");
             Directory.CreateDirectory(Path.Combine(gitInSub2, "refs", "heads"));
-            await File.WriteAllTextAsync(Path.Combine(gitInSub2, "refs", "heads", "master"), "abc123def456");
+            await TestUtilities.WriteAllTextAsync(Path.Combine(gitInSub2, "refs", "heads", "master"), "abc123def456");
             
             // Create .git files in subdirectories (should be excluded)
-            await File.WriteAllTextAsync(Path.Combine(testPath, "project", ".git"), "gitdir: /some/other/path/.git");
-            await File.WriteAllTextAsync(Path.Combine(testPath, "vendor", ".git"), "gitdir: ../main/.git");
+            await TestUtilities.WriteAllTextAsync(Path.Combine(testPath, "project", ".git"), "gitdir: /some/other/path/.git");
+            await TestUtilities.WriteAllTextAsync(Path.Combine(testPath, "vendor", ".git"), "gitdir: ../main/.git");
             
             // Create .git-like files that should NOT be excluded
-            await File.WriteAllTextAsync(Path.Combine(subDir1, ".git_backup"), "backup data");
-            await File.WriteAllTextAsync(Path.Combine(subDir2, ".gitkeep"), "keep this directory");
+            await TestUtilities.WriteAllTextAsync(Path.Combine(subDir1, ".git_backup"), "backup data");
+            await TestUtilities.WriteAllTextAsync(Path.Combine(subDir2, ".gitkeep"), "keep this directory");
             
             // Create .git-like directories that should NOT be excluded
             var gitLikeDir = Path.Combine(testPath, "tools", ".git_hooks");
             Directory.CreateDirectory(gitLikeDir);
-            await File.WriteAllTextAsync(Path.Combine(gitLikeDir, "pre-commit"), "#!/bin/bash");
+            await TestUtilities.WriteAllTextAsync(Path.Combine(gitLikeDir, "pre-commit"), "#!/bin/bash");
             
             using var repository = await Repository.Factory.OpenPrimitiveAsync(testPath);
             var status = await repository.GetWorkingDirectoryStatusAsync();

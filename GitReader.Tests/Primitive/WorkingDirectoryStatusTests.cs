@@ -81,15 +81,15 @@ public sealed class WorkingDirectoryStatusTests
             await TestUtilities.RunGitCommandAsync(testPath, "config user.name \"Test User\"");
             
             // Create initial file and commit
-            await File.WriteAllTextAsync(Path.Combine(testPath, "README.md"), "# Test Repository\n\nInitial content.");
+            await TestUtilities.WriteAllTextAsync(Path.Combine(testPath, "README.md"), "# Test Repository\n\nInitial content.");
             await TestUtilities.RunGitCommandAsync(testPath, "add README.md");
             await TestUtilities.RunGitCommandAsync(testPath, "commit -m \"Initial commit\"");
             
             // Create new untracked file
-            await File.WriteAllTextAsync(Path.Combine(testPath, "new_file.txt"), "This is a new file for testing.");
+            await TestUtilities.WriteAllTextAsync(Path.Combine(testPath, "new_file.txt"), "This is a new file for testing.");
             
             // Modify existing tracked file
-            await File.WriteAllTextAsync(Path.Combine(testPath, "README.md"), "# Test Repository\n\nInitial content.\n\nModified for testing.");
+            await TestUtilities.WriteAllTextAsync(Path.Combine(testPath, "README.md"), "# Test Repository\n\nInitial content.\n\nModified for testing.");
 
             using var repository = await Repository.Factory.OpenPrimitiveAsync(testPath);
 
@@ -156,8 +156,8 @@ public sealed class WorkingDirectoryStatusTests
             await TestUtilities.RunGitCommandAsync(testPath, "config user.name \"Test User\"");
             
             // Create and commit files
-            await File.WriteAllTextAsync(Path.Combine(testPath, "README.md"), "# Test Repository");
-            await File.WriteAllTextAsync(Path.Combine(testPath, "file1.txt"), "Content of file 1");
+            await TestUtilities.WriteAllTextAsync(Path.Combine(testPath, "README.md"), "# Test Repository");
+            await TestUtilities.WriteAllTextAsync(Path.Combine(testPath, "file1.txt"), "Content of file 1");
             await TestUtilities.RunGitCommandAsync(testPath, "add .");
             await TestUtilities.RunGitCommandAsync(testPath, "commit -m \"Initial commit\"");
 
@@ -202,16 +202,16 @@ public sealed class WorkingDirectoryStatusTests
             await TestUtilities.RunGitCommandAsync(testPath, "config user.name \"Test User\"");
             
             // Create initial commit
-            await File.WriteAllTextAsync(Path.Combine(testPath, "README.md"), "# Test Repository");
+            await TestUtilities.WriteAllTextAsync(Path.Combine(testPath, "README.md"), "# Test Repository");
             await TestUtilities.RunGitCommandAsync(testPath, "add README.md");
             await TestUtilities.RunGitCommandAsync(testPath, "commit -m \"Initial commit\"");
             
             // Create new file and stage it
-            await File.WriteAllTextAsync(Path.Combine(testPath, "staged_file.txt"), "This file will be staged");
+            await TestUtilities.WriteAllTextAsync(Path.Combine(testPath, "staged_file.txt"), "This file will be staged");
             await TestUtilities.RunGitCommandAsync(testPath, "add staged_file.txt");
             
             // Create untracked file
-            await File.WriteAllTextAsync(Path.Combine(testPath, "untracked_file.txt"), "This file is untracked");
+            await TestUtilities.WriteAllTextAsync(Path.Combine(testPath, "untracked_file.txt"), "This file is untracked");
 
             using var repository = await Repository.Factory.OpenPrimitiveAsync(testPath);
 

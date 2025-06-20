@@ -13,6 +13,7 @@ open System
 open System.Diagnostics
 open System.IO
 open System.IO.Compression
+open System.Threading
 open System.Threading.Tasks
 
 [<Sealed; AbstractClass>]
@@ -79,9 +80,21 @@ module public Utilities =
         if (r = false) then
             raise (InvalidOperationException())
 
+#if NETFRAMEWORK
+        do! Task.Run(fun () -> proc.WaitForExit()).asAsync()
+#else
         do! proc.WaitForExitAsync().asAsync()
+#endif
 
         if proc.ExitCode <> 0 then
             let! error = proc.StandardError.ReadToEndAsync().asAsync()
             raise (InvalidOperationException($"Git command failed: git {arguments}\nError: {error}"))
     }
+
+type TestUtilities =
+    static member WriteAllTextAsync(path: string, contents: string) =
+#if NETFRAMEWORK
+        Task.Run(fun () -> File.WriteAllText(path, contents))
+#else
+        File.WriteAllTextAsync(path, contents)
+#endif

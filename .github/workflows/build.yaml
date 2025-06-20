@@ -26,6 +26,10 @@ jobs:
 
     #-----------------------------------------------------------------------
     # Setup environments
+    
+    - name: Setup mono
+      run:
+        sudo apt-get -y install mono-devel
 
     - name: Setup .NET
       uses: actions/setup-dotnet@v3
