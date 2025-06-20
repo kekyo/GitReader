@@ -199,7 +199,7 @@ internal static class PrimitiveRepositoryFacade
         var workingDirectoryPath = repository.fileSystem.GetDirectoryPath(repository.GitPath);
 
         // Get the current commit's tree for comparison
-        var headReference = await PrimitiveRepositoryFacade.GetCurrentHeadReferenceAsync(repository, ct);
+        var headReference = await GetCurrentHeadReferenceAsync(repository, ct);
         var headTreeFiles = new Dictionary<string, Hash>();
         
         if (headReference != null)

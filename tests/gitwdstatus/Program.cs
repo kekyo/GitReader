@@ -182,9 +182,8 @@ public static class Program
         }
         else
         {
-            // Use default path specified by user
-            repositoryPath = "/home/kouji/Projects/RJK.PolyFit";
-            Console.WriteLine($"No arguments specified. Using default path: {repositoryPath}");
+            Console.WriteLine($"No repository path specified.");
+            return Task.CompletedTask;
         }
 
         return MeasureWorkingDirectoryStatusAsync(Console.Out, repositoryPath);
