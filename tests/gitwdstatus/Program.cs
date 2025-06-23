@@ -13,6 +13,7 @@ using System.Threading.Tasks;
 using System.Threading;
 using System.IO;
 using System.Diagnostics;
+using GitReader.IO;
 
 #if DEBUG
 using Lepracaun;
@@ -41,6 +42,8 @@ public static class Program
         sw.Stop();
 
         tw.WriteLine($"Repository open time: {sw.Elapsed}");
+        
+        tw.WriteLine($"Concurrent execution seats: {LooseConcurrentScope.Default.FloorExecutionSeat}/{LooseConcurrentScope.Default.AvailableExecutionSeat}");
 
         // Execute Working Directory Status retrieval multiple times to calculate average time
         var iterations = 5;
@@ -61,6 +64,8 @@ public static class Program
             tw.WriteLine($"Run {i + 1}: {sw.Elapsed}");
             totalTimeNoFilter += sw.Elapsed;
             statusNoFilter = status;
+        
+            tw.WriteLine($"Concurrent execution seats: {LooseConcurrentScope.Default.FloorExecutionSeat}/{LooseConcurrentScope.Default.AvailableExecutionSeat}");
         }
 
         var averageTimeNoFilter = new TimeSpan(totalTimeNoFilter.Ticks / iterations);

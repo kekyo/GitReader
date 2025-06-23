@@ -25,6 +25,7 @@ namespace GitReader;
 public abstract class Repository : IDisposable
 {
     internal BufferPool pool = new();
+    internal IConcurrentScope concurrentScope;
     internal IFileSystem fileSystem;
     internal FileStreamCache fileStreamCache;
     internal ObjectAccessor objectAccessor;
@@ -34,13 +35,15 @@ public abstract class Repository : IDisposable
     private protected Repository(
         string gitPath,
         string[] alternativeGitPaths,
-        IFileSystem fileSystem)
+        IFileSystem fileSystem,
+        IConcurrentScope concurrentScope)
     {
         this.GitPath = gitPath;
         this.TryingPathList = [..alternativeGitPaths, gitPath];
+        this.concurrentScope = concurrentScope;
         this.fileSystem = fileSystem;
         this.fileStreamCache = new(this.fileSystem);
-        this.objectAccessor = new(this.pool, this.fileSystem, this.fileStreamCache, gitPath);
+        this.objectAccessor = new(this.pool, this.concurrentScope, this.fileSystem, this.fileStreamCache, gitPath);
     }
 
     /// <summary>

@@ -7,6 +7,7 @@
 //
 ////////////////////////////////////////////////////////////////////////////
 
+using GitReader.Collections;
 using GitReader.Internal;
 using GitReader.IO;
 using System;
@@ -15,8 +16,6 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using GitReader.Collections;
-using GitReader.Structures;
 
 namespace GitReader.Primitive;
 
@@ -26,9 +25,11 @@ internal static class PrimitiveRepositoryFacade
         string repositoryPath,
         string[] alternativePaths,
         IFileSystem fileSystem,
+        IConcurrentScope concurrentScope,
         CancellationToken ct)
     {
-        var repository = new PrimitiveRepository(repositoryPath, alternativePaths, fileSystem);
+        var repository = new PrimitiveRepository(
+            repositoryPath, alternativePaths, fileSystem, concurrentScope);
 
         try
         {
@@ -54,11 +55,13 @@ internal static class PrimitiveRepositoryFacade
     public static async Task<PrimitiveRepository> OpenPrimitiveAsync(
         string path,
         IFileSystem fileSystem,
+        IConcurrentScope concurrentScope,
         CancellationToken ct)
     {
         var (gitPath, alternativePaths) = await RepositoryAccessor.DetectLocalRepositoryPathAsync(
             path, fileSystem, ct);
-        return await InternalOpenPrimitiveAsync(gitPath, alternativePaths, fileSystem, ct);
+        return await InternalOpenPrimitiveAsync(
+            gitPath, alternativePaths, fileSystem, concurrentScope, ct);
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -143,7 +146,8 @@ internal static class PrimitiveRepositoryFacade
             throw new ArgumentException("Submodule repository does not exist.");
         }
 
-        return await InternalOpenPrimitiveAsync(cp.BasePath, [], repository.fileSystem, ct);
+        return await InternalOpenPrimitiveAsync(
+            cp.BasePath, [], repository.fileSystem, repository.concurrentScope, ct);
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -214,8 +218,8 @@ internal static class PrimitiveRepositoryFacade
         }
 
         // Process index entries in parallel
-        var results = await Utilities.WhenAll(
-            indexFileDict.Values.Select(async indexEntry =>
+        var results = await repository.concurrentScope.WhenAll(ct,
+            indexFileDict.Values.Select((async indexEntry =>
             {
                 var stagedFile = (PrimitiveWorkingDirectoryFile?)null;
                 var unstagedFile = (PrimitiveWorkingDirectoryFile?)null;
@@ -309,7 +313,7 @@ internal static class PrimitiveRepositoryFacade
                 }
 
                 return new Status(stagedFile, unstagedFile, processedPath);
-            }));
+            })));
 
         // Collect file lists
         var stagedFiles = new List<PrimitiveWorkingDirectoryFile>();

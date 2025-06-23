@@ -101,8 +101,8 @@ internal static class StructuredRepositoryFacade
         var tagReferences = await RepositoryAccessor.ReadTagReferencesAsync(
             repository, ct);
 
-        var tags = await Utilities.WhenAll(
-            tagReferences.Select(async tagReference =>
+        var tags = await repository.concurrentScope.WhenAll(ct,
+            tagReferences.Select((async tagReference =>
             {
                 // If produced a peeled-tag, we can get the commit hash with no additional costs.
                 if (tagReference.CommitHash is { } commitTarget)
@@ -132,7 +132,7 @@ internal static class StructuredRepositoryFacade
                         ObjectTypes.Commit, commitHash, tagReference.Name,
                         null);
                 }
-            }));
+            })));
 
         return tags.
             Where(tag => tag != null).
@@ -172,9 +172,11 @@ internal static class StructuredRepositoryFacade
         string repositoryPath,
         string[] alternativePaths,
         IFileSystem fileSystem,
+        IConcurrentScope concurrentScope,
         CancellationToken ct)
     {
-        var repository = new StructuredRepository(repositoryPath, alternativePaths, fileSystem);
+        var repository = new StructuredRepository(
+            repositoryPath, alternativePaths, fileSystem, concurrentScope);
 
         try
         {
@@ -213,11 +215,13 @@ internal static class StructuredRepositoryFacade
     public static async Task<StructuredRepository> OpenStructuredAsync(
         string path,
         IFileSystem fileSystem,
+        IConcurrentScope concurrentScope,
         CancellationToken ct)
     {
         var (gitPath, alternativePaths) = await RepositoryAccessor.DetectLocalRepositoryPathAsync(
             path, fileSystem, ct);
-        return await InternalOpenStructuredAsync(gitPath, alternativePaths, fileSystem, ct);
+        return await InternalOpenStructuredAsync(
+            gitPath, alternativePaths, fileSystem, concurrentScope, ct);
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -306,8 +310,8 @@ internal static class StructuredRepositoryFacade
     {
         var (repository, rwr) = GetRelatedRepository(commit);
 
-        return Utilities.WhenAll(
-            commit.parents.Select(async parent =>
+        return repository.concurrentScope.WhenAll(ct,
+            commit.parents.Select((async parent =>
             {
                 var pc = await RepositoryAccessor.ReadCommitAsync(
                     repository, parent, ct);
@@ -315,7 +319,7 @@ internal static class StructuredRepositoryFacade
                     new Commit(rwr, pc!.Value) :
                     throw new InvalidDataException(
                         $"Could not find a commit: {parent}");
-            }));
+            })));
     }
 
     public static Branch[] GetRelatedBranches(Commit commit)
@@ -345,45 +349,17 @@ internal static class StructuredRepositoryFacade
         var rootTree = await RepositoryAccessor.ReadTreeAsync(
             repository, commit.treeRoot, ct);
 
-#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
         // This is a rather aggressive algorithm that recursively and in parallel searches all entries
         // in the tree and builds all elements.
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
         async ValueTask<TreeEntry[]> GetChildrenAsync(
             ReadOnlyArray<PrimitiveTreeEntry> entries, Tree parent) =>
-            (await Utilities.WhenAll(
-                entries.Select((Func<PrimitiveTreeEntry, ValueTask<TreeEntry>>)(async entry =>
-                {
-                    var modeFlags = (ModeFlags)((int)entry.Modes & 0x1ff);
-                    switch (entry.SpecialModes)
-                    {
-                        case PrimitiveSpecialModes.Directory:
-                            var tree = await RepositoryAccessor.ReadTreeAsync(
-                                repository!, entry.Hash, ct);
-                            var directory = new TreeDirectoryEntry(
-                                entry.Hash, entry.Name, modeFlags, parent);
-                            var children = await GetChildrenAsync(tree.Children, directory);
-                            directory.SetChildren(children);
-                            return directory;
-                        case PrimitiveSpecialModes.Blob:
-                            return new TreeBlobEntry(
-                                rwr, entry.Hash, entry.Name, modeFlags, parent);
-                        case PrimitiveSpecialModes.SubModule:
-                            return new TreeSubModuleEntry(
-                                rwr, entry.Hash, entry.Name, modeFlags, parent);
-                        default:
-                            // TODO:
-                            return null!;
-                    }
-                })))).
-            Where(entry => entry != null).
-            ToArray();
 #else
-        // This is a rather aggressive algorithm that recursively and in parallel searches all entries
-        // in the tree and builds all elements.
         async Task<TreeEntry[]> GetChildrenAsync(
             ReadOnlyArray<PrimitiveTreeEntry> entries, Tree parent) =>
-            (await Utilities.WhenAll(
-                entries.Select(async entry =>
+#endif
+            (await repository.concurrentScope.WhenAll(ct,
+                entries.Select((async entry =>
                 {
                     var modeFlags = (ModeFlags)((int)entry.Modes & 0x1ff);
                     switch (entry.SpecialModes)
@@ -406,10 +382,9 @@ internal static class StructuredRepositoryFacade
                             // TODO:
                             return null!;
                     }
-                }))).
+                })))).
             Where(entry => entry != null).
             ToArray();
-#endif
 
         var treeRoot = new TreeRoot(commit.Hash);
         var children = await GetChildrenAsync(rootTree.Children, treeRoot);
@@ -437,7 +412,8 @@ internal static class StructuredRepositoryFacade
             throw new ArgumentException("Submodule repository does not exist.");
         }
 
-        return await InternalOpenStructuredAsync(cp.BasePath, [], repository.fileSystem, ct);
+        return await InternalOpenStructuredAsync(
+            cp.BasePath, [], repository.fileSystem, repository.concurrentScope, ct);
     }
 
     public static Task<Stream> OpenBlobAsync(

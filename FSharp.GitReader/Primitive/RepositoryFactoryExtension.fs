@@ -10,9 +10,10 @@
 namespace GitReader.Primitive
 
 open System.Runtime.CompilerServices
+open System.Threading
 open GitReader
 open GitReader.IO
-open System.Threading
+open GitReader.Internal
 
 /// <summary>
 /// Provides F#-specific extension methods for creating primitive repository instances.
@@ -30,7 +31,8 @@ module public RepositoryFactoryExtension =
         [<MethodImpl(MethodImplOptions.NoInlining)>]
         member _.openPrimitive(path: string, ?ct: CancellationToken) =
             PrimitiveRepositoryFacade.OpenPrimitiveAsync(
-                path, new StandardFileSystem(65536), unwrapCT ct).asAsync()
+                path, new StandardFileSystem(65536), LooseConcurrentScope.Default, unwrapCT ct).asAsync()
+
         /// <summary>
         /// Opens a primitive repository at the specified path using a custom file system.
         /// </summary>
@@ -41,4 +43,17 @@ module public RepositoryFactoryExtension =
         [<MethodImpl(MethodImplOptions.NoInlining)>]
         member _.openPrimitive(path: string, fileSystem: IFileSystem, ?ct: CancellationToken) =
             PrimitiveRepositoryFacade.OpenPrimitiveAsync(
-                path, fileSystem, unwrapCT ct).asAsync()
+                path, fileSystem, LooseConcurrentScope.Default, unwrapCT ct).asAsync()
+
+        /// <summary>
+        /// Opens a primitive repository at the specified path using a custom file system.
+        /// </summary>
+        /// <param name="path">The path to the repository.</param>
+        /// <param name="fileSystem">The file system implementation to use.</param>
+        /// <param name="concurrentScope">Concurrent scope.</param>
+        /// <param name="ct">Optional cancellation token.</param>
+        /// <returns>An async computation that returns a PrimitiveRepository instance.</returns>
+        [<MethodImpl(MethodImplOptions.NoInlining)>]
+        member _.openPrimitive(path: string, fileSystem: IFileSystem, concurrentScope: IConcurrentScope, ?ct: CancellationToken) =
+            PrimitiveRepositoryFacade.OpenPrimitiveAsync(
+                path, fileSystem, concurrentScope, unwrapCT ct).asAsync()

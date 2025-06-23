@@ -571,9 +571,20 @@ internal static class Utilities
 #if NET35 || NET40
     public static Task<T> FromResult<T>(T result) =>
         TaskEx.FromResult(result);
+
+    public static Task CompletedTask =>
+        TaskEx.FromResult(0);
 #else
     public static Task<T> FromResult<T>(T result) =>
         Task.FromResult(result);
+    
+#if NET45
+    public static Task CompletedTask =>
+        Task.FromResult(0);
+#else
+    public static Task CompletedTask =>
+        Task.CompletedTask;
+#endif
 #endif
 
 #if NET35 || NET40
