@@ -7,6 +7,7 @@
 //
 ////////////////////////////////////////////////////////////////////////////
 
+using GitReader.IO;
 using GitReader.Primitive;
 using System;
 using System.Collections.Generic;
@@ -27,11 +28,6 @@ internal static class WorkingDirectoryAccessor
     /// </remarks>
     private sealed class TraverseContext
     {
-        // Ceiling task count. This may be exceeded by tasks.
-        private readonly int ceilingRunningCount;
-        // Current running task count.
-        private int runningCount = 0;
-
         public readonly Repository Repository;
         public readonly string WorkingDirectoryPath;
         public readonly HashSet<string> ProcessedPaths;
@@ -48,15 +44,13 @@ internal static class WorkingDirectoryAccessor
         /// <param name="overrideGlobFilter">The override glob filter.</param>
         /// <param name="untrackedFiles">The list of untracked files (output)</param>
         /// <param name="cancellationToken">The cancellation token.</param>
-        /// <param name="ceilingRunningCount">Ceiling task count.</param>
         public TraverseContext(
             Repository repository,
             string workingDirectoryPath,
             HashSet<string> processedPaths,
             GlobFilter overrideGlobFilter,
             List<PrimitiveWorkingDirectoryFile> untrackedFiles,
-            CancellationToken cancellationToken,
-            int ceilingRunningCount)
+            CancellationToken cancellationToken)
             {
                 this.Repository = repository;
                 this.WorkingDirectoryPath = workingDirectoryPath;
@@ -64,30 +58,9 @@ internal static class WorkingDirectoryAccessor
                 this.OverrideGlobFilter = overrideGlobFilter;
                 this.UntrackedFiles = untrackedFiles;
                 this.CancellationToken = cancellationToken;
-                this.ceilingRunningCount = ceilingRunningCount;
             }
-        
-        /// <summary>
-        /// Gets a value indicating whether parallel execution is allowed.
-        /// </summary>
-        public bool CanParallel =>
-            this.runningCount < this.ceilingRunningCount;
-        
-        /// <summary>
-        /// Increments the running count.
-        /// </summary>
-        /// <param name="count">The count to increment.</param>
-        public void IncrementRunningCount(int count) =>
-            Interlocked.Add(ref this.runningCount, count);
-
-        /// <summary>
-        /// Decrements the running count.
-        /// </summary>
-        /// <param name="count">The count to decrement.</param>
-        public void DecrementRunningCount(int count) =>
-            Interlocked.Add(ref this.runningCount, -count);
     }
-    
+
     /// <summary>
     /// Scans the working directory for untracked files recursively.
     /// </summary>
@@ -151,7 +124,8 @@ internal static class WorkingDirectoryAccessor
             var entries = await context.Repository.fileSystem.GetDirectoryEntriesAsync(currentPath, context.CancellationToken);
 
             // Makes sub tasks iterator
-            var tasks = entries.Select(async entry =>
+            await context.Repository.concurrentScope.WhenAll(
+                entries.Select((async entry =>
             {
                 // Skip .git directory/files (hardcoded exclusion matching Git's behavior)
                 var fileName = context.Repository.fileSystem.GetFileName(entry);
@@ -202,31 +176,7 @@ internal static class WorkingDirectoryAccessor
                         }
                     }
                 }
-            });
-
-            // Limits the number of parallel tasks
-            var canParallel = context.CanParallel;
-            context.IncrementRunningCount(entries.Length);
-            try
-            {
-                // When parallel is allowed, run all tasks in parallel
-                if (canParallel)
-                {
-                    await Utilities.WhenAll(tasks);
-                }
-                else
-                {
-                    // When parallel is not allowed, run all tasks sequentially
-                    foreach (var task in tasks)
-                    {
-                        await task;
-                    }
-                }
-            }
-            finally
-            {
-                context.DecrementRunningCount(entries.Length);
-            }
+            })));
         }
         catch (UnauthorizedAccessException)
         {
@@ -271,11 +221,7 @@ internal static class WorkingDirectoryAccessor
                 processedPaths,
                 overrideGlobFilter,
                 untrackedFiles,
-                ct,
-                // Exactly, it should be a value that depends on the I/O parallel degree that the machine can accept,
-                // but it is very difficult to determine it mechanically.
-                // Therefore, we use the number of processors as a substitute.
-                Environment.ProcessorCount),
+                ct),
             workingDirectoryPath,
             // Initial glob filter (always nothing)
             Glob.nothingFilter);
@@ -302,21 +248,26 @@ internal static class WorkingDirectoryAccessor
         var tree = await RepositoryAccessor.ReadTreeAsync(repository, treeHash, ct);
 
         // Iterate over the tree entries
-        foreach (var entry in tree.Children)
-        {
-            var fullPath = string.IsNullOrEmpty(basePath) ? entry.Name : basePath + "/" + entry.Name;
-            
-            if (entry.SpecialModes is PrimitiveSpecialModes.Tree or PrimitiveSpecialModes.Directory)
+        await repository.concurrentScope.WhenAll(ct,
+            tree.Children.Select((async entry =>
             {
-                // Recursively process subdirectories
-                await BuildTreeFileDictionaryAsync(repository, entry.Hash, fullPath, fileDict, ct);
-            }
-            else
-            {
-                // Add file to dictionary
-                fileDict[fullPath] = entry.Hash;
-            }
-        }
+                var fullPath = string.IsNullOrEmpty(basePath) ? entry.Name : basePath + "/" + entry.Name;
+
+                if (entry.SpecialModes is PrimitiveSpecialModes.Tree or PrimitiveSpecialModes.Directory)
+                {
+                    // Recursively process subdirectories
+                    await BuildTreeFileDictionaryAsync(repository, entry.Hash, fullPath, fileDict, ct);
+                }
+                else
+                {
+                    // Avoid race condition
+                    lock (fileDict)
+                    {
+                        // Add file to dictionary
+                        fileDict[fullPath] = entry.Hash;
+                    }
+                }
+            })));
     }
 
     /// <summary>

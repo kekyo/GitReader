@@ -7,6 +7,7 @@
 //
 ////////////////////////////////////////////////////////////////////////////
 
+using GitReader.Internal;
 using GitReader.IO;
 
 namespace GitReader.Primitive;
@@ -22,11 +23,13 @@ public sealed class PrimitiveRepository : Repository
     /// <param name="gitPath">The path to the Git repository.</param>
     /// <param name="alternativePaths">Alternative paths to try when accessing the repository.</param>
     /// <param name="fileSystem">The file system implementation to use.</param>
+    /// <param name="concurrentScope">Concurrent scope.</param>
     internal PrimitiveRepository(
         string gitPath,
         string[] alternativePaths,
-        IFileSystem fileSystem) :
-        base(gitPath, alternativePaths, fileSystem)
+        IFileSystem fileSystem,
+        IConcurrentScope concurrentScope) :
+        base(gitPath, alternativePaths, fileSystem, concurrentScope)
     {
     }
 }

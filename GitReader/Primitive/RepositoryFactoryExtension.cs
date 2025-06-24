@@ -10,6 +10,7 @@
 using GitReader.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using GitReader.Internal;
 
 namespace GitReader.Primitive;
 
@@ -29,7 +30,7 @@ public static class RepositoryFactoryExtension
         this RepositoryFactory _,
         string path, CancellationToken ct = default) =>
         PrimitiveRepositoryFacade.OpenPrimitiveAsync(
-            path, new StandardFileSystem(65536), ct);
+            path, new StandardFileSystem(65536), LooseConcurrentScope.Default, ct);
 
     /// <summary>
     /// Opens a primitive repository at the specified path using a custom file system.
@@ -43,5 +44,20 @@ public static class RepositoryFactoryExtension
         this RepositoryFactory _,
         string path, IFileSystem fileSystem, CancellationToken ct = default) =>
         PrimitiveRepositoryFacade.OpenPrimitiveAsync(
-            path, fileSystem, ct);
+            path, fileSystem, LooseConcurrentScope.Default, ct);
+
+    /// <summary>
+    /// Opens a primitive repository at the specified path using a custom file system.
+    /// </summary>
+    /// <param name="_">The repository factory instance.</param>
+    /// <param name="path">The path to the repository.</param>
+    /// <param name="fileSystem">The file system implementation to use.</param>
+    /// <param name="concurrentScope">Concurrent scope.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>A task that returns a PrimitiveRepository instance.</returns>
+    public static Task<PrimitiveRepository> OpenPrimitiveAsync(
+        this RepositoryFactory _,
+        string path, IFileSystem fileSystem, IConcurrentScope concurrentScope, CancellationToken ct = default) =>
+        PrimitiveRepositoryFacade.OpenPrimitiveAsync(
+            path, fileSystem, concurrentScope, ct);
 }
