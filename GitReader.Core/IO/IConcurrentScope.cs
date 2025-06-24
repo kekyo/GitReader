@@ -67,6 +67,62 @@ public static class ConcurrentScopeExtension
         this IConcurrentScope concurrentScope,
         IEnumerable<Task<T>> tasks) =>
         concurrentScope.WhenAll(default, tasks);
+
+    private static async Task<object?> RunInJoin<T>(Task<T> task) =>
+        await task;
+
+    public static async Task<PairResult<T0, T1>> Join<T0, T1>(
+        this IConcurrentScope concurrentScope,
+        Task<T0> task0, Task<T1> task1)
+    {
+        var results = await concurrentScope.WhenAll([RunInJoin(task0), RunInJoin(task1)]);
+        return new((T0)results[0]!, (T1)results[1]!);
+    }
+
+    public static async Task<PairResult<T0, T1, T2>> Join<T0, T1, T2>(
+        this IConcurrentScope concurrentScope,
+        Task<T0> task0, Task<T1> task1, Task<T2> task2)
+    {
+        var results = await concurrentScope.WhenAll([RunInJoin(task0), RunInJoin(task1), RunInJoin(task2)]);
+        return new((T0)results[0]!, (T1)results[1]!, (T2)results[2]!);
+    }
+
+    public static async Task<PairResult<T0, T1, T2, T3>> Join<T0, T1, T2, T3>(
+        this IConcurrentScope concurrentScope,
+        Task<T0> task0, Task<T1> task1, Task<T2> task2, Task<T3> task3)
+    {
+        var results = await concurrentScope.WhenAll([RunInJoin(task0), RunInJoin(task1), RunInJoin(task2), RunInJoin(task3)]);
+        return new((T0)results[0]!, (T1)results[1]!, (T2)results[2]!, (T3)results[3]!);
+    }
+
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
+    private static async Task<object?> RunInJoin<T>(ValueTask<T> task) =>
+        await task;
+
+    internal static async Task<PairResult<T0, T1>> Join<T0, T1>(
+        this IConcurrentScope concurrentScope,
+        ValueTask<T0> task0, ValueTask<T1> task1)
+    {
+        var results = await concurrentScope.WhenAll([RunInJoin(task0), RunInJoin(task1)]);
+        return new((T0)results[0]!, (T1)results[1]!);
+    }
+
+    internal static async Task<PairResult<T0, T1, T2>> Join<T0, T1, T2>(
+        this IConcurrentScope concurrentScope,
+        ValueTask<T0> task0, ValueTask<T1> task1, ValueTask<T2> task2)
+    {
+        var results = await concurrentScope.WhenAll([RunInJoin(task0), RunInJoin(task1), RunInJoin(task2)]);
+        return new((T0)results[0]!, (T1)results[1]!, (T2)results[2]!);
+    }
+
+    internal static async Task<PairResult<T0, T1, T2, T3>> Join<T0, T1, T2, T3>(
+        this IConcurrentScope concurrentScope,
+        ValueTask<T0> task0, ValueTask<T1> task1, ValueTask<T2> task2, ValueTask<T3> task3)
+    {
+        var results = await concurrentScope.WhenAll([RunInJoin(task0), RunInJoin(task1), RunInJoin(task2), RunInJoin(task3)]);
+        return new((T0)results[0]!, (T1)results[1]!, (T2)results[2]!, (T3)results[3]!);
+    }
+#endif
 }
 
 /// <summary>

@@ -33,12 +33,11 @@ internal static class PrimitiveRepositoryFacade
 
         try
         {
-            // Read remote references from config file.
-            repository.remoteUrls =
-                await RepositoryAccessor.ReadRemoteReferencesAsync(repository, ct);
-
+            // Must set remote urls first
+            repository.remoteUrls = await RepositoryAccessor.ReadRemoteReferencesAsync(repository, ct);
+            
             // Read FETCH_HEAD and packed-refs.
-            var (fhc1, fhc2) = await Utilities.Join(
+            var (fhc1, fhc2) = await repository.concurrentScope.Join(
                 RepositoryAccessor.ReadFetchHeadsAsync(repository, ct),
                 RepositoryAccessor.ReadPackedRefsAsync(repository, ct));
             repository.referenceCache = fhc1.Combine(fhc2);
@@ -85,7 +84,7 @@ internal static class PrimitiveRepositoryFacade
     {
         var path = $"refs/heads/{branchName}";
         var remotePath = $"refs/remotes/{branchName}";
-        var (results, remoteResults) = await Utilities.Join(
+        var (results, remoteResults) = await repository.concurrentScope.Join(
             RepositoryAccessor.ReadHashAsync(repository, path, ct),
             RepositoryAccessor.ReadHashAsync(repository, remotePath, ct));
         return results is { } r ?
@@ -102,7 +101,7 @@ internal static class PrimitiveRepositoryFacade
     {
         var path = $"refs/heads/{branchName}";
         var remotePath = $"refs/remotes/{branchName}";
-        var (results, remoteResults) = await Utilities.Join(
+        var (results, remoteResults) = await repository.concurrentScope.Join(
             RepositoryAccessor.ReadHashAsync(repository, path, ct),
             RepositoryAccessor.ReadHashAsync(repository, remotePath, ct));
         return (results is { } r ?
@@ -193,29 +192,39 @@ internal static class PrimitiveRepositoryFacade
         Repository repository, CancellationToken ct)
 #endif
     {
-        // Get staged files from index
-        var indexEntries = await GitIndexReader.ReadIndexEntriesAsync(repository, ct);
-        var indexFileDict = indexEntries.
-            Where(entry => entry is { IsValidFlag: true, IsStageFlag: false }).
-            ToDictionary(entry => entry.Path, entry => entry);
+        async Task<Dictionary<string, GitIndexEntry>> GetStagedFilesAsync()
+        {
+            // Get staged files from index
+            var indexEntries = await GitIndexReader.ReadIndexEntriesAsync(repository, ct);
+            var dict = indexEntries.
+                Where(entry => entry is { IsValidFlag: true, IsStageFlag: false }).
+                ToDictionary(entry => entry.Path);
+            return dict;
+        }
+
+        async Task<Dictionary<string, Hash>> GetCommitHeadTreeFilesAsync()
+        {
+            // Get the current commit's tree for comparison
+            var headReference = await GetCurrentHeadReferenceAsync(repository, ct);
+            var headTreeFiles = new Dictionary<string, Hash>();
+            if (headReference != null)
+            {
+                var headCommit = await RepositoryAccessor.ReadCommitAsync(repository, headReference.Value.Target, ct);
+                if (headCommit != null)
+                {
+                    // Build dictionary of files from HEAD commit tree
+                    await WorkingDirectoryAccessor.BuildTreeFileDictionaryAsync(
+                        repository, headCommit.Value.TreeRoot, "", headTreeFiles, ct);
+                }
+            }
+            return headTreeFiles;
+        }
+
+        var (indexFileDict, headTreeFiles) = await repository.concurrentScope.
+            Join(GetStagedFilesAsync(), GetCommitHeadTreeFilesAsync());
 
         // Get working directory path
         var workingDirectoryPath = repository.fileSystem.GetDirectoryPath(repository.GitPath);
-
-        // Get the current commit's tree for comparison
-        var headReference = await GetCurrentHeadReferenceAsync(repository, ct);
-        var headTreeFiles = new Dictionary<string, Hash>();
-        
-        if (headReference != null)
-        {
-            var headCommit = await RepositoryAccessor.ReadCommitAsync(repository, headReference.Value.Target, ct);
-            if (headCommit != null)
-            {
-                // Build dictionary of files from HEAD commit tree
-                await WorkingDirectoryAccessor.BuildTreeFileDictionaryAsync(
-                    repository, headCommit.Value.TreeRoot, "", headTreeFiles, ct);
-            }
-        }
 
         // Process index entries in parallel
         var results = await repository.concurrentScope.WhenAll(ct,

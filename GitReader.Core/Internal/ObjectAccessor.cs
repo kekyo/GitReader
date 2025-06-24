@@ -501,7 +501,7 @@ internal sealed class ObjectAccessor : IDisposable
                             new PreloadedStream(preloadBuffer.Detach(), preloadIndex, read),
                             fs);
 
-                        var (zlibStream, objectEntry) = await Utilities.Join(
+                        var (zlibStream, objectEntry) = await this.concurrentScope.Join(
                             ZLibStream.CreateAsync(stream, this.pool, ct),
                             this.OpenFromPackedFileAsync(packedFilePath, referenceOffset, disableCaching, ct));
 
@@ -545,7 +545,7 @@ internal sealed class ObjectAccessor : IDisposable
                             new PreloadedStream(preloadBuffer.Detach(), preloadIndex, read),
                             fs);
 
-                        var (zlibStream, objectEntry) = await Utilities.Join(
+                        var (zlibStream, objectEntry) = await this.concurrentScope.Join(
                             ZLibStream.CreateAsync(stream, this.pool, ct),
                             this.OpenAsync(referenceHash, disableCaching, ct));
 

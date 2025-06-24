@@ -80,7 +80,7 @@ internal static class StructuredRepositoryFacade
     {
         Debug.Assert(object.ReferenceEquals(rwr.Target, repository));
 
-        var (references, remoteReferences) = await Utilities.Join(
+        var (references, remoteReferences) = await repository.concurrentScope.Join(
             RepositoryAccessor.ReadReferencesAsync(
                 repository, ReferenceTypes.Branches, ct),
             RepositoryAccessor.ReadReferencesAsync(
@@ -180,19 +180,18 @@ internal static class StructuredRepositoryFacade
 
         try
         {
-            // Read remote references from config file.
-            repository.remoteUrls =
-                await RepositoryAccessor.ReadRemoteReferencesAsync(repository, ct);
+            // Must set remote urls first
+            repository.remoteUrls = await RepositoryAccessor.ReadRemoteReferencesAsync(repository, ct);
 
             // Read FETCH_HEAD and packed-refs.
-            var (fhc1, fhc2) = await Utilities.Join(
+            var (fhc1, fhc2) = await repository.concurrentScope.Join(
                 RepositoryAccessor.ReadFetchHeadsAsync(repository, ct),
                 RepositoryAccessor.ReadPackedRefsAsync(repository, ct));
             repository.referenceCache = fhc1.Combine(fhc2);
 
             // Read all other requirements.
             var rwr = new WeakReference(repository);
-            var (head, branchesAll, tags, stashes) = await Utilities.Join(
+            var (head, branchesAll, tags, stashes) = await repository.concurrentScope.Join(
                 GetCurrentHeadAsync(repository, rwr, ct),
                 GetStructuredBranchesAsync(repository, rwr, ct),
                 GetStructuredTagsAsync(repository, rwr, ct),
