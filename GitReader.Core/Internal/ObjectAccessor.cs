@@ -47,6 +47,7 @@ internal sealed class ObjectAccessor : IDisposable
     }
 
     private readonly BufferPool pool;
+    private readonly IConcurrentScope concurrentScope;
     private readonly IFileSystem fileSystem;
     private readonly FileStreamCache fileStreamCache;
     private readonly string objectsBasePath;
@@ -62,11 +63,13 @@ internal sealed class ObjectAccessor : IDisposable
 
     public ObjectAccessor(
         BufferPool pool,
+        IConcurrentScope concurrentScope,
         IFileSystem fileSystem,
         FileStreamCache fileStreamCache,
         string gitPath)
     {
         this.pool = pool;
+        this.concurrentScope = concurrentScope;
         this.fileSystem = fileSystem;
         this.fileStreamCache = fileStreamCache;
         this.objectsBasePath = fileSystem.Combine(
@@ -209,13 +212,8 @@ internal sealed class ObjectAccessor : IDisposable
         }
     }
 
-#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
-    private async ValueTask<IndexEntry> GetOrCacheIndexEntryAsync(
-        string indexFileRelativePath, CancellationToken ct)
-#else
     private async Task<IndexEntry> GetOrCacheIndexEntryAsync(
         string indexFileRelativePath, CancellationToken ct)
-#endif
     {
         using var _ = await this.locker.LockAsync(ct);
 
@@ -503,7 +501,7 @@ internal sealed class ObjectAccessor : IDisposable
                             new PreloadedStream(preloadBuffer.Detach(), preloadIndex, read),
                             fs);
 
-                        var (zlibStream, objectEntry) = await Utilities.Join(
+                        var (zlibStream, objectEntry) = await this.concurrentScope.Join(
                             ZLibStream.CreateAsync(stream, this.pool, ct),
                             this.OpenFromPackedFileAsync(packedFilePath, referenceOffset, disableCaching, ct));
 
@@ -547,7 +545,7 @@ internal sealed class ObjectAccessor : IDisposable
                             new PreloadedStream(preloadBuffer.Detach(), preloadIndex, read),
                             fs);
 
-                        var (zlibStream, objectEntry) = await Utilities.Join(
+                        var (zlibStream, objectEntry) = await this.concurrentScope.Join(
                             ZLibStream.CreateAsync(stream, this.pool, ct),
                             this.OpenAsync(referenceHash, disableCaching, ct));
 
@@ -621,7 +619,7 @@ internal sealed class ObjectAccessor : IDisposable
 #endif
     {
         var files = await this.fileSystem.GetFilesAsync(this.packedBasePath, "pack-*.idx", ct);
-        var entries = await Utilities.WhenAll(
+        var entries = await this.concurrentScope.WhenAll(ct,
             files.Select(indexFilePath =>
                 this.GetOrCacheIndexEntryAsync(indexFilePath.Substring(this.packedBasePath.Length + 1), ct)));
 

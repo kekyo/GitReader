@@ -16,106 +16,9 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using GitReader.IO;
 
 namespace GitReader.Internal;
-
-[DebuggerStepThrough]
-internal readonly struct PairResult<T0, T1>
-{
-    public readonly T0 Item0;
-    public readonly T1 Item1;
-
-    public PairResult(T0 item0, T1 item1)
-    {
-        this.Item0 = item0;
-        this.Item1 = item1;
-    }
-
-    public void Deconstruct(out T0 item0, out T1 item1)
-    {
-        item0 = this.Item0;
-        item1 = this.Item1;
-    }
-}
-
-[DebuggerStepThrough]
-internal readonly struct PairResult<T0, T1, T2>
-{
-    public readonly T0 Item0;
-    public readonly T1 Item1;
-    public readonly T2 Item2;
-
-    public PairResult(T0 item0, T1 item1, T2 item2)
-    {
-        this.Item0 = item0;
-        this.Item1 = item1;
-        this.Item2 = item2;
-    }
-
-    public void Deconstruct(out T0 item0, out T1 item1, out T2 item2)
-    {
-        item0 = this.Item0;
-        item1 = this.Item1;
-        item2 = this.Item2;
-    }
-}
-
-[DebuggerStepThrough]
-internal readonly struct PairResult<T0, T1, T2, T3>
-{
-    public readonly T0 Item0;
-    public readonly T1 Item1;
-    public readonly T2 Item2;
-    public readonly T3 Item3;
-
-    public PairResult(
-        T0 item0, T1 item1, T2 item2, T3 item3)
-    {
-        this.Item0 = item0;
-        this.Item1 = item1;
-        this.Item2 = item2;
-        this.Item3 = item3;
-    }
-
-    public void Deconstruct(
-        out T0 item0, out T1 item1, out T2 item2, out T3 item3)
-    {
-        item0 = this.Item0;
-        item1 = this.Item1;
-        item2 = this.Item2;
-        item3 = this.Item3;
-    }
-}
-
-[DebuggerStepThrough]
-internal readonly struct PairResult<T0, T1, T2, T3, T4>
-{
-    public readonly T0 Item0;
-    public readonly T1 Item1;
-    public readonly T2 Item2;
-    public readonly T3 Item3;
-    public readonly T4 Item4;
-
-    public PairResult(
-        T0 item0, T1 item1, T2 item2, T3 item3, T4 item4)
-    {
-        this.Item0 = item0;
-        this.Item1 = item1;
-        this.Item2 = item2;
-        this.Item3 = item3;
-        this.Item4 = item4;
-    }
-
-    public void Deconstruct(
-        out T0 item0, out T1 item1, out T2 item2, out T3 item3, out T4 item4)
-    {
-        item0 = this.Item0;
-        item1 = this.Item1;
-        item2 = this.Item2;
-        item3 = this.Item3;
-        item4 = this.Item4;
-    }
-}
 
 #if !DEBUG
 [DebuggerStepThrough]
@@ -525,55 +428,96 @@ internal static class Utilities
 #endif
 #endif
 #endif
+    
+    private static async Task<object?> RunInJoin<T>(Task<T> task) =>
+        await task;
 
     [DebuggerStepThrough]
     public static async Task<PairResult<T0, T1>> Join<T0, T1>(
-        Task<T0> task0, Task<T1> task1) =>
-        new(await task0, await task1);
+        Task<T0> task0, Task<T1> task1)
+    {
+        var results = await WhenAll(RunInJoin(task0), RunInJoin(task1));
+        return new((T0)results[0]!, (T1)results[1]!);
+    }
 
     [DebuggerStepThrough]
     public static async Task<PairResult<T0, T1, T2>> Join<T0, T1, T2>(
-        Task<T0> task0, Task<T1> task1, Task<T2> task2) =>
-        new(await task0, await task1, await task2);
+        Task<T0> task0, Task<T1> task1, Task<T2> task2)
+    {
+        var results = await WhenAll(RunInJoin(task0), RunInJoin(task1), RunInJoin(task2));
+        return new((T0)results[0]!, (T1)results[1]!, (T2)results[2]!);
+    }
 
     [DebuggerStepThrough]
     public static async Task<PairResult<T0, T1, T2, T3>> Join<T0, T1, T2, T3>(
-        Task<T0> task0, Task<T1> task1, Task<T2> task2, Task<T3> task3) =>
-        new(await task0, await task1, await task2, await task3);
+        Task<T0> task0, Task<T1> task1, Task<T2> task2, Task<T3> task3)
+    {
+        var results = await WhenAll(RunInJoin(task0), RunInJoin(task1), RunInJoin(task2), RunInJoin(task3));
+        return new((T0)results[0]!, (T1)results[1]!, (T2)results[2]!, (T3)results[3]!);
+    }
 
     [DebuggerStepThrough]
     public static async Task<PairResult<T0, T1, T2, T3, T4>> Join<T0, T1, T2, T3, T4>(
-        Task<T0> task0, Task<T1> task1, Task<T2> task2, Task<T3> task3, Task<T4> task4) =>
-        new(await task0, await task1, await task2, await task3, await task4);
+        Task<T0> task0, Task<T1> task1, Task<T2> task2, Task<T3> task3, Task<T4> task4)
+    {
+        var results = await WhenAll(RunInJoin(task0), RunInJoin(task1), RunInJoin(task2), RunInJoin(task3), RunInJoin(task4));
+        return new((T0)results[0]!, (T1)results[1]!, (T2)results[2]!, (T3)results[3]!, (T4)results[4]!);
+    }
 
 #if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
+    private static async ValueTask<object?> RunInJoin<T>(ValueTask<T> task) =>
+        await task;
+
     [DebuggerStepThrough]
     public static async ValueTask<PairResult<T0, T1>> Join<T0, T1>(
-        ValueTask<T0> task0, ValueTask<T1> task1) =>
-        new(await task0, await task1);
+        ValueTask<T0> task0, ValueTask<T1> task1)
+    {
+        var results = await WhenAll(RunInJoin(task0), RunInJoin(task1));
+        return new((T0)results[0]!, (T1)results[1]!);
+    }
 
     [DebuggerStepThrough]
     public static async ValueTask<PairResult<T0, T1, T2>> Join<T0, T1, T2>(
-        ValueTask<T0> task0, ValueTask<T1> task1, ValueTask<T2> task2) =>
-        new(await task0, await task1, await task2);
+        ValueTask<T0> task0, ValueTask<T1> task1, ValueTask<T2> task2)
+    {
+        var results = await WhenAll(RunInJoin(task0), RunInJoin(task1), RunInJoin(task2));
+        return new((T0)results[0]!, (T1)results[1]!, (T2)results[2]!);
+    }
 
     [DebuggerStepThrough]
     public static async ValueTask<PairResult<T0, T1, T2, T3>> Join<T0, T1, T2, T3>(
-        ValueTask<T0> task0, ValueTask<T1> task1, ValueTask<T2> task2, ValueTask<T3> task3) =>
-        new(await task0, await task1, await task2, await task3);
+        ValueTask<T0> task0, ValueTask<T1> task1, ValueTask<T2> task2, ValueTask<T3> task3)
+    {
+        var results = await WhenAll(RunInJoin(task0), RunInJoin(task1), RunInJoin(task2), RunInJoin(task3));
+        return new((T0)results[0]!, (T1)results[1]!, (T2)results[2]!, (T3)results[3]!);
+    }
 
     [DebuggerStepThrough]
     public static async ValueTask<PairResult<T0, T1, T2, T3, T4>> Join<T0, T1, T2, T3, T4>(
-        ValueTask<T0> task0, ValueTask<T1> task1, ValueTask<T2> task2, ValueTask<T3> task3, ValueTask<T4> task4) =>
-        new(await task0, await task1, await task2, await task3, await task4);
+        ValueTask<T0> task0, ValueTask<T1> task1, ValueTask<T2> task2, ValueTask<T3> task3, ValueTask<T4> task4)
+    {
+        var results = await WhenAll(RunInJoin(task0), RunInJoin(task1), RunInJoin(task2), RunInJoin(task3), RunInJoin(task4));
+        return new((T0)results[0]!, (T1)results[1]!, (T2)results[2]!, (T3)results[3]!, (T4)results[4]!);
+    }
 #endif
 
 #if NET35 || NET40
     public static Task<T> FromResult<T>(T result) =>
         TaskEx.FromResult(result);
+
+    public static Task CompletedTask =>
+        TaskEx.FromResult(0);
 #else
     public static Task<T> FromResult<T>(T result) =>
         Task.FromResult(result);
+    
+#if NET45
+    public static Task CompletedTask =>
+        Task.FromResult(0);
+#else
+    public static Task CompletedTask =>
+        Task.CompletedTask;
+#endif
 #endif
 
 #if NET35 || NET40
@@ -773,17 +717,47 @@ internal static class Utilities
         // Git calculates hash as: "blob <size>\0<content>"
         var header = UTF8.GetBytes($"blob {size}\0");
 
-#if NETFRAMEWORK
-        using var sha1 = new System.Security.Cryptography.SHA1CryptoServiceProvider();
-        using var combinedStream = new MemoryStream();
-        combinedStream.Write(header, 0, header.Length);
-        await CopyToAsync(stream, combinedStream, 65536, bufferPool, ct);
-        var hash = sha1.ComputeHash(combinedStream.ToArray());
-        return new Hash(hash);
-#else
+#if NETFRAMEWORK || NETSTANDARD2_0_OR_GREATER || NETCOREAPP
         using var sha1 = System.Security.Cryptography.SHA1.Create();
+
+        // Initialize SHA1 with header
+        sha1.TransformBlock(header, 0, header.Length, null, 0);
+
+        // Process stream content in chunks
+        using var buffer = bufferPool.Take(65536);
+        var totalRead = 0L;
+        var finalBlockProcessed = false;
+        int read;
+
+        while ((read = await stream.ReadAsync(buffer, 0, buffer.Length, ct)) > 0)
+        {
+            totalRead += read;
+            
+            if (totalRead >= size)
+            {
+                // This is the final block (or we've read all expected data)
+                var finalSize = read - (int)(totalRead - size);
+                sha1.TransformFinalBlock(buffer, 0, finalSize);
+                finalBlockProcessed = true;
+                break;
+            }
+            else
+            {
+                // Intermediate block
+                sha1.TransformBlock(buffer, 0, read, null, 0);
+            }
+        }
         
-        // For frameworks that don't support TransformBlock, use a memory stream approach
+        // If no final block was processed, finalize with empty block
+        if (!finalBlockProcessed)
+        {
+            sha1.TransformFinalBlock(Empty<byte>(), 0, 0);
+        }
+        
+        return new Hash(sha1.Hash!);
+#else
+        // Some tfms don't support TransformBlock, use a memory stream approach
+        using var sha1 = System.Security.Cryptography.SHA1.Create();
         using var combinedStream = new MemoryStream();
         combinedStream.Write(header, 0, header.Length);
         await CopyToAsync(stream, combinedStream, 65536, bufferPool, ct);

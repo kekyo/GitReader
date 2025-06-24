@@ -786,6 +786,8 @@ Apache-v2
 
 ## History
 
+* 1.14.0:
+  * Added concurrent scope, controls concurrency so that it does not exceed the necessary number of executions.
 * 1.13.0:
   * Improved performance for working directory traverser.
 * 1.12.0:

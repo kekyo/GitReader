@@ -216,19 +216,15 @@ internal static class RepositoryAccessor
         string relativePathFromGitPath,
         string match,
         CancellationToken ct) =>
-        (await Utilities.WhenAll(repository.TryingPathList.
-#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
-            Select((Func<string, ValueTask<CandidateFilePath[]>>)(async gitPath =>
-#else
+        (await repository.concurrentScope.WhenAll(ct, repository.TryingPathList.
             Select((async gitPath =>
-#endif
-        {
-            var basePath = repository.fileSystem.Combine(gitPath, relativePathFromGitPath);
-            var candidatePaths = await repository.fileSystem.GetFilesAsync(basePath, match, ct);
-            return candidatePaths.
-                Select(candidatePath => new CandidateFilePath(gitPath, basePath, candidatePath)).
-                ToArray();
-        })))).
+            {
+                var basePath = repository.fileSystem.Combine(gitPath, relativePathFromGitPath);
+                var candidatePaths = await repository.fileSystem.GetFilesAsync(basePath, match, ct);
+                return candidatePaths.
+                    Select(candidatePath => new CandidateFilePath(gitPath, basePath, candidatePath)).
+                    ToArray();
+            })))).
         SelectMany(paths => paths).
         ToArray();
 
@@ -616,13 +612,9 @@ internal static class RepositoryAccessor
     {
         var candidatePaths = await GetCandidateFilePathsAsync(
             repository, repository.fileSystem.Combine("refs", GetReferenceTypeName(type)), "*", ct);
-        var references = (await Utilities.WhenAll(
+        var references = (await repository.concurrentScope.WhenAll(ct,
             candidatePaths.
-#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
-            Select((Func<CandidateFilePath, ValueTask<PrimitiveReference?>>)(async cp =>
-#else
             Select((async cp =>
-#endif
             {
                 if (await ReadHashAsync(
                     repository,
@@ -682,13 +674,9 @@ internal static class RepositoryAccessor
     {
         var candidatePaths = await GetCandidateFilePathsAsync(
             repository, repository.fileSystem.Combine("refs", "tags"), "*", ct);
-        var references = (await Utilities.WhenAll(
+        var references = (await repository.concurrentScope.WhenAll(ct,
             candidatePaths.
-#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
-            Select((Func<CandidateFilePath, ValueTask<PrimitiveTagReference?>>)(async cp =>
-#else
             Select((async cp =>
-#endif
             {
                 if (await ReadHashAsync(
                     repository,

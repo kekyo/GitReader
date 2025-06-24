@@ -59,8 +59,8 @@ internal static class WorktreeAccessor
         {
             var worktreeDirectories = await repository.fileSystem.GetDirectoryEntriesAsync(worktreesPath, ct);
             
-            worktrees.AddRange((await Utilities.WhenAll(
-                worktreeDirectories.Select(async worktreeDir =>
+            worktrees.AddRange((await repository.concurrentScope.WhenAll(ct,
+                worktreeDirectories.Select((async worktreeDir =>
                 {
                     if (await repository.fileSystem.IsDirectoryExistsAsync(worktreeDir, ct))
                     {
@@ -71,7 +71,7 @@ internal static class WorktreeAccessor
                     {
                         return null;
                     }
-                }))).
+                })))).
                 CollectValue(worktree => worktree));
         }
 
@@ -99,12 +99,13 @@ internal static class WorktreeAccessor
 #endif
     {
         var primitiveWorktrees = await GetPrimitiveWorktreesAsync(repository, ct);
-        return await Utilities.WhenAll(primitiveWorktrees.Select(async worktree =>
+        return await repository.concurrentScope.WhenAll(ct,
+            primitiveWorktrees.Select((async worktree =>
             {
                 var head = await GetWorktreeHeadAsync(worktree, ct);
                 var branch = await GetWorktreeBranchAsync(worktree, ct);
                 return new Worktree(worktree.Name, worktree.Path, head, branch, worktree.Status);
-            }));
+            })));
     }
 
 #if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP2_1_OR_GREATER
