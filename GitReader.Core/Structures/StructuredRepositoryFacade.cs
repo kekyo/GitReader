@@ -102,37 +102,17 @@ internal static class StructuredRepositoryFacade
             repository, ct);
 
         var tags = await repository.concurrentScope.WhenAll(ct,
-            tagReferences.Select((async tagReference =>
+            tagReferences.Select(async tagReference =>
             {
-                // If produced a peeled-tag, we can get the commit hash with no additional costs.
-                if (tagReference.CommitHash is { } commitTarget)
-                {
-                    var tagHash = tagReference.ObjectOrCommitHash;
-                    return new Tag(rwr, tagHash,
-                        ObjectTypes.Commit, commitTarget, tagReference.Name,
-                        null);
-                }
-                // If peeled-tags are not provided by the 'packed-refs' file at open time,
-                // a tag object will be read occur here. This is expensive and extends open time.
-                // However, since the commit hash cannot be identified without reading the tag object
-                // (given that this is a high-level interface), a compromise is made.
-                else if (await RepositoryAccessor.ReadTagAsync(
-                    repository, tagReference.ObjectOrCommitHash, ct) is { } tag)
-                {
-                    var tagHash = tagReference.ObjectOrCommitHash;
-                    return new Tag(rwr, tagHash,
-                        tag.Type, tag.Hash, tagReference.Name,
-                        new(tag.Tagger, tag.Message));
-                }
-                // If the read result shows that it is not a tag object, it is a commit object.
-                else
-                {
-                    var commitHash = tagReference.ObjectOrCommitHash;
-                    return new Tag(rwr, null,
-                        ObjectTypes.Commit, commitHash, tagReference.Name,
-                        null);
-                }
-            })));
+                var primitiveTag = await PrimitiveRepositoryFacade.GetTagAsync(repository, tagReference, ct);
+                
+                // TagHash is the hash of the tag object itself (for annotated tags), or null for lightweight tags
+                var tagHash = tagReference.CommitHash is not null ? tagReference.ObjectOrCommitHash : (Hash?)null;
+                
+                return new Tag(rwr, tagHash,
+                    primitiveTag.Type, primitiveTag.Hash, primitiveTag.Name,
+                    primitiveTag.Tagger is { } tagger ? new Annotation(tagger, primitiveTag.Message) : null);
+            }));
 
         return tags.
             Where(tag => tag != null).
@@ -422,7 +402,11 @@ internal static class StructuredRepositoryFacade
         var (repository, rwr) = GetRelatedRepository(entry);
 
         return RepositoryAccessor.OpenBlobAsync(
-            repository, entry.Hash, ct);
+            repository, entry.Hash, ct)
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
+            .AsTask()
+#endif
+            ;
     }
 
     //////////////////////////////////////////////////////////////////////////
@@ -434,7 +418,7 @@ internal static class StructuredRepositoryFacade
     /// <param name="overrideGlobFilter">The path filter to apply.</param>
     /// <param name="ct">The cancellation token.</param>
     /// <returns>A ValueTask containing the structured working directory status.</returns>
-#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP2_1_OR_GREATER
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
     public static async ValueTask<WorkingDirectoryStatus> GetWorkingDirectoryStatusAsync(
         StructuredRepository repository, GlobFilter overrideGlobFilter, CancellationToken ct = default)
 #else

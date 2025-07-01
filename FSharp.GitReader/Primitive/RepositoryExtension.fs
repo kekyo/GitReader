@@ -75,7 +75,11 @@ module public RepositoryExtension =
         /// <returns>An async computation that returns an optional commit object.</returns>
         [<MethodImpl(MethodImplOptions.NoInlining)>]
         member repository.getCommit(commit: Hash, ?ct: CancellationToken) =
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
+            RepositoryAccessor.ReadCommitAsync(repository, commit, unwrapCT ct).AsTask() |> asOptionAsync
+#else
             RepositoryAccessor.ReadCommitAsync(repository, commit, unwrapCT ct) |> asOptionAsync
+#endif
 
         /// <summary>
         /// Gets the tag object for the specified tag reference.

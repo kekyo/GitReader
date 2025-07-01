@@ -52,6 +52,8 @@ module internal Utilities =
     type ValueTask with
         member public task.asAsync() =
             task.AsTask() |> Async.AwaitTask
+#endif
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
     type ValueTask<'T> with
         member public task.asAsync() =
             task.AsTask() |> Async.AwaitTask

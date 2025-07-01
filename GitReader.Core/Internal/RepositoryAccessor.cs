@@ -726,12 +726,21 @@ internal static class RepositoryAccessor
         return repository.objectAccessor;
     }
 
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
+    private static async ValueTask<string?> ParseObjectBodyAsync(
+        Repository repository,
+        Hash hash,
+        Func<ObjectTypes, bool> validateType,
+        Action<string, string> gotLine,
+        CancellationToken ct)
+#else
     private static async Task<string?> ParseObjectBodyAsync(
         Repository repository,
         Hash hash,
         Func<ObjectTypes, bool> validateType,
         Action<string, string> gotLine,
         CancellationToken ct)
+#endif
     {
         var accessor = GetObjectAccessor(repository);
         if (await accessor.OpenAsync(hash, false, ct) is not { } streamResult)
@@ -796,9 +805,15 @@ internal static class RepositoryAccessor
         }
     }
 
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
+    public static async ValueTask<PrimitiveCommit?> ReadCommitAsync(
+        Repository repository,
+        Hash hash, CancellationToken ct)
+#else
     public static async Task<PrimitiveCommit?> ReadCommitAsync(
         Repository repository,
         Hash hash, CancellationToken ct)
+#endif
     {
         var tree = default(Hash?);
         var parents = new List<Hash>();
@@ -848,10 +863,17 @@ internal static class RepositoryAccessor
         }
     }
 
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
+    public static async ValueTask<PrimitiveTag?> ReadTagAsync(
+        Repository repository,
+        Hash hash,
+        CancellationToken ct)
+#else
     public static async Task<PrimitiveTag?> ReadTagAsync(
         Repository repository,
         Hash hash,
         CancellationToken ct)
+#endif
     {
         var obj = default(Hash?);
         var objectType = default(ObjectTypes?);
@@ -904,10 +926,17 @@ internal static class RepositoryAccessor
         }
     }
 
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
+    public static async ValueTask<PrimitiveTree> ReadTreeAsync(
+        Repository repository,
+        Hash hash,
+        CancellationToken ct)
+#else
     public static async Task<PrimitiveTree> ReadTreeAsync(
         Repository repository,
         Hash hash,
         CancellationToken ct)
+#endif
     {
         var accessor = GetObjectAccessor(repository);
 
@@ -1008,10 +1037,17 @@ internal static class RepositoryAccessor
         }
     }
 
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
+    public static async ValueTask<Stream> OpenBlobAsync(
+        Repository repository,
+        Hash hash,
+        CancellationToken ct)
+#else
     public static async Task<Stream> OpenBlobAsync(
         Repository repository,
         Hash hash,
         CancellationToken ct)
+#endif
     {
         var accessor = GetObjectAccessor(repository);
         if (await accessor.OpenAsync(hash, true, ct) is not { } streamResult)
@@ -1037,10 +1073,17 @@ internal static class RepositoryAccessor
         }
     }
 
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
+    public static async ValueTask<ObjectStreamResult> OpenRawObjectStreamAsync(
+        Repository repository,
+        Hash objectId,
+        CancellationToken ct)
+#else
     public static async Task<ObjectStreamResult> OpenRawObjectStreamAsync(
         Repository repository,
         Hash objectId,
         CancellationToken ct)
+#endif
     {
         var accessor = GetObjectAccessor(repository);
         if (await accessor.OpenAsync(objectId, true, ct) is not { } streamResult)

@@ -78,7 +78,11 @@ public static class RepositoryExtension
     public static Task<PrimitiveCommit?> GetCommitAsync(
         this PrimitiveRepository repository,
         Hash commit, CancellationToken ct = default) =>
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
+        RepositoryAccessor.ReadCommitAsync(repository, commit, ct).AsTask();
+#else
         RepositoryAccessor.ReadCommitAsync(repository, commit, ct);
+#endif
 
     /// <summary>
     /// Gets a tag from the specified tag reference.
@@ -90,7 +94,11 @@ public static class RepositoryExtension
     public static Task<PrimitiveTag> GetTagAsync(
         this PrimitiveRepository repository,
         PrimitiveTagReference tag, CancellationToken ct = default) =>
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
+        PrimitiveRepositoryFacade.GetTagAsync(repository, tag, ct).AsTask();
+#else
         PrimitiveRepositoryFacade.GetTagAsync(repository, tag, ct);
+#endif
 
     /// <summary>
     /// Gets all branch head references from the repository.
@@ -160,7 +168,11 @@ public static class RepositoryExtension
         this PrimitiveRepository repository,
         Hash tree,
         CancellationToken ct = default) =>
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
+        RepositoryAccessor.ReadTreeAsync(repository, tree, ct).AsTask();
+#else
         RepositoryAccessor.ReadTreeAsync(repository, tree, ct);
+#endif
 
     /// <summary>
     /// Opens a blob stream by its hash from the repository.
@@ -173,7 +185,11 @@ public static class RepositoryExtension
         this PrimitiveRepository repository,
         Hash blob,
         CancellationToken ct = default) =>
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
+        RepositoryAccessor.OpenBlobAsync(repository, blob, ct).AsTask();
+#else
         RepositoryAccessor.OpenBlobAsync(repository, blob, ct);
+#endif
 
     /// <summary>
     /// Opens a submodule repository from the specified tree path.
@@ -197,7 +213,7 @@ public static class RepositoryExtension
     public static Task<PrimitiveWorkingDirectoryStatus> GetWorkingDirectoryStatusAsync(
         this PrimitiveRepository repository,
         CancellationToken ct = default) =>
-#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP2_1_OR_GREATER
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
         PrimitiveRepositoryFacade.GetWorkingDirectoryStatusAsync(repository, ct).AsTask();
 #else
         PrimitiveRepositoryFacade.GetWorkingDirectoryStatusAsync(repository, ct);
@@ -207,7 +223,7 @@ public static class RepositoryExtension
         this PrimitiveRepository repository,
         PrimitiveWorkingDirectoryStatus workingDirectoryStatus,
         CancellationToken ct = default) =>
-#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP2_1_OR_GREATER
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
         PrimitiveRepositoryFacade.GetUntrackedFilesAsync(
             repository, workingDirectoryStatus, Internal.Glob.nothingFilter, ct).AsTask();
 #else
@@ -220,7 +236,7 @@ public static class RepositoryExtension
         PrimitiveWorkingDirectoryStatus workingDirectoryStatus,
         GlobFilter overrideGlobFilter,
         CancellationToken ct = default) =>
-#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP2_1_OR_GREATER
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
         PrimitiveRepositoryFacade.GetUntrackedFilesAsync(
             repository, workingDirectoryStatus, overrideGlobFilter, ct).AsTask();
 #else
@@ -237,7 +253,7 @@ public static class RepositoryExtension
     public static Task<ReadOnlyArray<PrimitiveWorktree>> GetWorktreesAsync(
         this PrimitiveRepository repository,
         CancellationToken ct = default) =>
-#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP2_1_OR_GREATER
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
         WorktreeAccessor.GetPrimitiveWorktreesAsync(repository, ct).AsTask();
 #else
         WorktreeAccessor.GetPrimitiveWorktreesAsync(repository, ct);
@@ -252,7 +268,7 @@ public static class RepositoryExtension
     public static Task<Hash?> GetHeadAsync(
         this PrimitiveWorktree worktree,
         CancellationToken ct = default) =>
-#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP2_1_OR_GREATER
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
         WorktreeAccessor.GetWorktreeHeadAsync(worktree, ct).AsTask();
 #else
         WorktreeAccessor.GetWorktreeHeadAsync(worktree, ct);
@@ -267,7 +283,7 @@ public static class RepositoryExtension
     public static Task<string?> GetBranchAsync(
         this PrimitiveWorktree worktree,
         CancellationToken ct = default) =>
-#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP2_1_OR_GREATER
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
         WorktreeAccessor.GetWorktreeBranchAsync(worktree, ct).AsTask();
 #else
         WorktreeAccessor.GetWorktreeBranchAsync(worktree, ct);

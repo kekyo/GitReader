@@ -130,10 +130,17 @@ internal static class PrimitiveRepositoryFacade
     /// <param name="tagReference">The tag reference.</param>
     /// <param name="ct">The cancellation token.</param>
     /// <returns>A task that returns the primitive tag.</returns>
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
+    public static async ValueTask<PrimitiveTag> GetTagAsync(
+        Repository repository,
+        PrimitiveTagReference tagReference,
+        CancellationToken ct)
+#else
     public static async Task<PrimitiveTag> GetTagAsync(
         Repository repository,
         PrimitiveTagReference tagReference,
         CancellationToken ct)
+#endif
     {
         // If produced a peeled-tag, we can get the commit hash with no additional costs.
         if (tagReference.CommitHash is { } commitTarget)
@@ -232,7 +239,7 @@ internal static class PrimitiveRepositoryFacade
     /// <param name="repository">The repository to get working directory status from.</param>
     /// <param name="ct">The cancellation token.</param>
     /// <returns>A ValueTask containing the primitive working directory status.</returns>
-#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP2_1_OR_GREATER
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
     public static async ValueTask<PrimitiveWorkingDirectoryStatus> GetWorkingDirectoryStatusAsync(
         Repository repository, CancellationToken ct)
 #else
@@ -398,7 +405,7 @@ internal static class PrimitiveRepositoryFacade
             new(processedPaths.OrderBy(p => p).ToArray()));
     }
 
-#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP2_1_OR_GREATER
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
     public static async ValueTask<ReadOnlyArray<PrimitiveWorkingDirectoryFile>> GetUntrackedFilesAsync(
         Repository repository,
         PrimitiveWorkingDirectoryStatus workingDirectoryStatus,
