@@ -785,7 +785,8 @@ Note: The `Glob` class assumes the path format to be POSIX path format. This mea
 Apache-v2
 
 ## History
-
+* 1.15.0:
+  * Added lookup for commit-related branches/tags on primitive interface.
 * 1.14.0:
   * Added concurrent scope, controls concurrency so that it does not exceed the necessary number of executions.
 * 1.13.0:

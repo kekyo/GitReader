@@ -60,7 +60,11 @@ public static class RepositoryExtension
         this Repository repository,
         Hash objectId,
         CancellationToken ct = default) =>
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
+        RepositoryAccessor.OpenRawObjectStreamAsync(repository, objectId, ct).AsTask();
+#else
         RepositoryAccessor.OpenRawObjectStreamAsync(repository, objectId, ct);
+#endif
 
     /// <summary>
     /// Deconstructs a Hash into its byte array representation.

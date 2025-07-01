@@ -22,7 +22,7 @@ namespace GitReader.Internal;
 
 internal static class WorktreeAccessor
 {
-#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP2_1_OR_GREATER
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
     /// <summary>
     /// Gets primitive worktree information for the specified repository.
     /// </summary>
@@ -78,7 +78,7 @@ internal static class WorktreeAccessor
         return worktrees.ToArray();
     }
 
-#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP2_1_OR_GREATER
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
     /// <summary>
     /// Gets structured worktree information for the specified repository.
     /// </summary>
@@ -108,7 +108,7 @@ internal static class WorktreeAccessor
             })));
     }
 
-#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP2_1_OR_GREATER
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
     internal static async ValueTask<Hash?> GetWorktreeHeadAsync(
         PrimitiveWorktree worktree, CancellationToken ct)
 #else
@@ -158,7 +158,7 @@ internal static class WorktreeAccessor
         }
     }
 
-#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP2_1_OR_GREATER
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
     internal static async ValueTask<string?> GetWorktreeBranchAsync(
         PrimitiveWorktree worktree, CancellationToken ct)
 #else
@@ -216,7 +216,7 @@ internal static class WorktreeAccessor
         }
     }
 
-#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP2_1_OR_GREATER
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
     private static async ValueTask<PrimitiveWorktree?> GetWorktreeInfoAsync(
         Repository repository, string worktreeDir, string worktreeName, CancellationToken ct)
 #else

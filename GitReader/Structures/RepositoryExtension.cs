@@ -189,7 +189,7 @@ public static class RepositoryExtension
     public static Task<WorkingDirectoryStatus> GetWorkingDirectoryStatusAsync(
         this StructuredRepository repository,
         CancellationToken ct = default) =>
-#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP2_1_OR_GREATER
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
         StructuredRepositoryFacade.GetWorkingDirectoryStatusAsync(
             repository, Internal.Glob.nothingFilter, ct).AsTask();
 #else
@@ -208,7 +208,7 @@ public static class RepositoryExtension
         this StructuredRepository repository,
         GlobFilter overrideGlobFilter,
         CancellationToken ct = default) =>
-#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP2_1_OR_GREATER
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
         StructuredRepositoryFacade.GetWorkingDirectoryStatusAsync(
             repository, overrideGlobFilter, ct).AsTask();
 #else
@@ -224,7 +224,7 @@ public static class RepositoryExtension
     /// <returns>A task that returns a read-only array of worktrees.</returns>
     public static Task<ReadOnlyArray<Worktree>> GetWorktreesAsync(
         this StructuredRepository repository, CancellationToken ct = default) =>
-#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP2_1_OR_GREATER
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
         WorktreeAccessor.GetStructuredWorktreesAsync(repository, ct).AsTask();
 #else
         WorktreeAccessor.GetStructuredWorktreesAsync(repository, ct);

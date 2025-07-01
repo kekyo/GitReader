@@ -75,7 +75,11 @@ module public RepositoryExtension =
         /// <returns>An async computation that returns an optional commit object.</returns>
         [<MethodImpl(MethodImplOptions.NoInlining)>]
         member repository.getCommit(commit: Hash, ?ct: CancellationToken) =
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
+            RepositoryAccessor.ReadCommitAsync(repository, commit, unwrapCT ct).AsTask() |> asOptionAsync
+#else
             RepositoryAccessor.ReadCommitAsync(repository, commit, unwrapCT ct) |> asOptionAsync
+#endif
 
         /// <summary>
         /// Gets the tag object for the specified tag reference.
@@ -84,12 +88,8 @@ module public RepositoryExtension =
         /// <param name="ct">Optional cancellation token.</param>
         /// <returns>An async computation that returns the tag object.</returns>
         [<MethodImpl(MethodImplOptions.NoInlining)>]
-        member repository.getTag(tag: PrimitiveTagReference, ?ct: CancellationToken) = async {
-            let! t = RepositoryAccessor.ReadTagAsync(repository, tag.ObjectOrCommitHash, unwrapCT ct) |> asOptionAsync
-            return match t with
-                   | Some t -> t
-                   | None -> PrimitiveTag(tag.ObjectOrCommitHash, ObjectTypes.Commit, tag.Name, System.Nullable(), null)
-        }
+        member repository.getTag(tag: PrimitiveTagReference, ?ct: CancellationToken) =
+            PrimitiveRepositoryFacade.GetTagAsync(repository, tag, unwrapCT ct).asAsync()
 
         /// <summary>
         /// Gets all branch head references.
@@ -141,6 +141,39 @@ module public RepositoryExtension =
         member repository.getRelatedReflogs(reference: PrimitiveReference, ?ct: CancellationToken) =
             RepositoryAccessor.ReadReflogEntriesAsync(
                 repository, reference, unwrapCT ct).asAsync()
+
+        /// <summary>
+        /// Gets all branch head references that point to the specified commit.
+        /// </summary>
+        /// <param name="commitHash">The commit hash to find related branches for.</param>
+        /// <param name="ct">Optional cancellation token.</param>
+        /// <returns>An async computation that returns related branch head references.</returns>
+        [<MethodImpl(MethodImplOptions.NoInlining)>]
+        member repository.getRelatedBranchHeadReferences(commitHash: Hash, ?ct: CancellationToken) =
+            PrimitiveRepositoryFacade.GetRelatedBranchHeadReferencesAsync(
+                repository, commitHash, unwrapCT ct).asAsync()
+
+        /// <summary>
+        /// Gets all tag references that point to the specified commit.
+        /// </summary>
+        /// <param name="commitHash">The commit hash to find related tags for.</param>
+        /// <param name="ct">Optional cancellation token.</param>
+        /// <returns>An async computation that returns related tag references.</returns>
+        [<MethodImpl(MethodImplOptions.NoInlining)>]
+        member repository.getRelatedTagReferences(commitHash: Hash, ?ct: CancellationToken) =
+            PrimitiveRepositoryFacade.GetRelatedTagReferencesAsync(
+                repository, commitHash, unwrapCT ct).asAsync()
+
+        /// <summary>
+        /// Gets all tags that point to the specified commit.
+        /// </summary>
+        /// <param name="commitHash">The commit hash to find related tags for.</param>
+        /// <param name="ct">Optional cancellation token.</param>
+        /// <returns>An async computation that returns related tags.</returns>
+        [<MethodImpl(MethodImplOptions.NoInlining)>]
+        member repository.getRelatedTags(commitHash: Hash, ?ct: CancellationToken) =
+            PrimitiveRepositoryFacade.GetRelatedTagsAsync(
+                repository, commitHash, unwrapCT ct).asAsync()
 
         /// <summary>
         /// Gets the tree object for the specified hash.

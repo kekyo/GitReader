@@ -123,7 +123,184 @@ internal static class PrimitiveRepositoryFacade
             throw new ArgumentException($"Could not find a tag: {tagName}");
     }
 
-    public static async Task<PrimitiveRepository> OpenSubModuleAsync(
+    /// <summary>
+    /// Gets a primitive tag from the specified tag reference with proper peeled-tag handling.
+    /// </summary>
+    /// <param name="repository">The repository.</param>
+    /// <param name="tagReference">The tag reference.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>A task that returns the primitive tag.</returns>
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
+    public static async ValueTask<PrimitiveTag> GetTagAsync(
+        Repository repository,
+        PrimitiveTagReference tagReference,
+        CancellationToken ct)
+#else
+    public static async Task<PrimitiveTag> GetTagAsync(
+        Repository repository,
+        PrimitiveTagReference tagReference,
+        CancellationToken ct)
+#endif
+    {
+        // If produced a peeled-tag, we can get the commit hash with no additional costs.
+        if (tagReference.CommitHash is { } commitTarget)
+        {
+            return new PrimitiveTag(
+                commitTarget,
+                ObjectTypes.Commit,
+                tagReference.Name,
+                null,
+                null);
+        }
+        // If peeled-tags are not provided by the 'packed-refs' file at open time,
+        // a tag object will be read occur here. This is expensive and extends open time.
+        // However, since the commit hash cannot be identified without reading the tag object
+        // (given that this is a high-level interface), a compromise is made.
+        else if (await RepositoryAccessor.ReadTagAsync(
+            repository, tagReference.ObjectOrCommitHash, ct) is { } tag)
+        {
+            return new PrimitiveTag(
+                tag.Hash,
+                tag.Type,
+                tagReference.Name,
+                tag.Tagger,
+                tag.Message);
+        }
+        // If the read result shows that it is not a tag object, it is a commit object.
+        else
+        {
+            return new PrimitiveTag(
+                tagReference.ObjectOrCommitHash,
+                ObjectTypes.Commit,
+                tagReference.Name,
+                null,
+                null);
+        }
+    }
+
+    /// <summary>
+    /// Gets all branch head references that point to the specified commit.
+    /// </summary>
+    /// <param name="repository">The repository.</param>
+    /// <param name="commitHash">The commit hash to find related branches for.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>A task that returns an array of related branch head references.</returns>
+    public static async Task<PrimitiveReference[]> GetRelatedBranchHeadReferencesAsync(
+        Repository repository,
+        Hash commitHash,
+        CancellationToken ct)
+    {
+        // Get both local and remote branches in parallel
+        var (localBranches, remoteBranches) = await repository.concurrentScope.Join(
+            RepositoryAccessor.ReadReferencesAsync(repository, ReferenceTypes.Branches, ct),
+            RepositoryAccessor.ReadReferencesAsync(repository, ReferenceTypes.RemoteBranches, ct));
+
+        // Extract branch references that point to the specified commit hash
+        return localBranches.
+            Where(branch => branch.Target.Equals(commitHash)).
+            Concat(remoteBranches.Where(branch => branch.Target.Equals(commitHash))).
+            ToArray();
+    }
+
+    /// <summary>
+    /// Gets all tag references that point to the specified commit.
+    /// </summary>
+    /// <param name="repository">The repository.</param>
+    /// <param name="commitHash">The commit hash to find related tags for.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>A task that returns an array of related tag references.</returns>
+    public static async Task<PrimitiveTagReference[]> GetRelatedTagReferencesAsync(
+        Repository repository,
+        Hash commitHash,
+        CancellationToken ct)
+    {
+        // Get all tag references
+        var allTagReferences = await RepositoryAccessor.ReadTagReferencesAsync(repository, ct);
+        
+        // Filter tags that point to the specified commit
+        var relatedTags = await repository.concurrentScope.WhenAll(ct,
+            allTagReferences.Select(async tagReference =>
+            {
+                // If we have peeled-tag information available, use it for efficient comparison
+                if (tagReference.CommitHash is { } commitTarget)
+                {
+                    return commitTarget.Equals(commitHash) ?
+                        tagReference : (PrimitiveTagReference?)null;
+                }
+
+                // For lightweight tags or when peeled-tag info is not available,
+                // we need to check if ObjectOrCommitHash directly points to our commit
+                if (tagReference.ObjectOrCommitHash.Equals(commitHash))
+                {
+                    return tagReference;
+                }
+
+                // For annotated tags without peeled-tag info, we need to read the tag object
+                // to determine the actual commit it points to
+                var primitiveTag = await GetTagAsync(repository, tagReference, ct);
+                
+                return primitiveTag.Hash.Equals(commitHash) ?
+                    tagReference : (PrimitiveTagReference?)null;
+            }));
+
+        return relatedTags.
+            Where(tag => tag.HasValue).
+            Select(tag => tag!.Value).
+            ToArray();
+     }
+
+     /// <summary>
+     /// Gets all tags that point to the specified commit.
+     /// </summary>
+     /// <param name="repository">The repository.</param>
+     /// <param name="commitHash">The commit hash to find related tags for.</param>
+     /// <param name="ct">The cancellation token.</param>
+     /// <returns>A task that returns an array of related tags.</returns>
+     public static async Task<PrimitiveTag[]> GetRelatedTagsAsync(
+         Repository repository,
+         Hash commitHash,
+         CancellationToken ct)
+     {
+         // Get all tag references
+         var allTagReferences = await RepositoryAccessor.ReadTagReferencesAsync(repository, ct);
+         
+         // Filter tags that point to the specified commit
+         var relatedTags = await repository.concurrentScope.WhenAll(ct,
+             allTagReferences.Select(async tagReference =>
+             {
+                 // If we have peeled-tag information available, use it for efficient comparison
+                 if (tagReference.CommitHash is { } commitTarget)
+                 {
+                     if (commitTarget.Equals(commitHash))
+                     {
+                         // Need to get the actual tag object
+                         return await GetTagAsync(repository, tagReference, ct);
+                     }
+                     return (PrimitiveTag?)null;
+                 }
+                 
+                 // For lightweight tags or when peeled-tag info is not available,
+                 // we need to check if ObjectOrCommitHash directly points to our commit
+                 if (tagReference.ObjectOrCommitHash.Equals(commitHash))
+                 {
+                     return await GetTagAsync(repository, tagReference, ct);
+                 }
+                 
+                 // For annotated tags without peeled-tag info, we need to read the tag object
+                 // to determine the actual commit it points to
+                 var primitiveTag = await GetTagAsync(repository, tagReference, ct);
+                 
+                 return primitiveTag.Hash.Equals(commitHash) ?
+                     primitiveTag : (PrimitiveTag?)null;
+             }));
+         
+         return relatedTags.
+             Where(tag => tag.HasValue).
+             Select(tag => tag!.Value).
+             ToArray();
+     }
+
+     public static async Task<PrimitiveRepository> OpenSubModuleAsync(
         Repository repository,
         PrimitiveTreeEntry[] treePath, CancellationToken ct)
     {
@@ -184,7 +361,7 @@ internal static class PrimitiveRepositoryFacade
     /// <param name="repository">The repository to get working directory status from.</param>
     /// <param name="ct">The cancellation token.</param>
     /// <returns>A ValueTask containing the primitive working directory status.</returns>
-#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP2_1_OR_GREATER
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
     public static async ValueTask<PrimitiveWorkingDirectoryStatus> GetWorkingDirectoryStatusAsync(
         Repository repository, CancellationToken ct)
 #else
@@ -350,7 +527,7 @@ internal static class PrimitiveRepositoryFacade
             new(processedPaths.OrderBy(p => p).ToArray()));
     }
 
-#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP2_1_OR_GREATER
+#if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP
     public static async ValueTask<ReadOnlyArray<PrimitiveWorkingDirectoryFile>> GetUntrackedFilesAsync(
         Repository repository,
         PrimitiveWorkingDirectoryStatus workingDirectoryStatus,
