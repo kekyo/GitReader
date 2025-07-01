@@ -134,6 +134,18 @@ public static class RepositoryExtension
         RepositoryAccessor.ReadTagReferencesAsync(repository, ct);
     
     /// <summary>
+    /// Gets all branch head references that point to the specified commit.
+    /// </summary>
+    /// <param name="repository">The primitive repository.</param>
+    /// <param name="commitHash">The commit hash to find related branches for.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>A task that returns an array of related branch head references.</returns>
+    public static Task<PrimitiveReference[]> GetRelatedBranchHeadReferencesAsync(
+        this PrimitiveRepository repository,
+        Hash commitHash, CancellationToken ct = default) =>
+        PrimitiveRepositoryFacade.GetRelatedBranchHeadReferencesAsync(repository, commitHash, ct);
+    
+    /// <summary>
     /// Gets all stashes from the repository.
     /// </summary>
     /// <param name="repository">The primitive repository.</param>

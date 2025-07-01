@@ -8,6 +8,7 @@
 ////////////////////////////////////////////////////////////////////////////
 
 using NUnit.Framework;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -366,5 +367,86 @@ public sealed class RepositoryTests
         Assert.That(body, Does.StartWith("tree 5462bf28fdc4681762057cac7704730b1c590b38"));
         Assert.That(body, Does.Contain("author Kouji Matsui"));
         Assert.That(body, Does.Contain("committer Kouji Matsui"));
+    }
+
+    [Test]
+    public async Task GetRelatedBranchHeadReferencesAsync()
+    {
+        using var repository = await Repository.Factory.OpenPrimitiveAsync(
+            RepositoryTestsSetUp.GetBasePath("test1"));
+
+        var commitHash = Hash.Parse("f690f0e7bf703582a1fad7e6f1c2d1586390f43d");
+        var relatedBranches = await repository.GetRelatedBranchHeadReferencesAsync(commitHash);
+
+        Assert.That(relatedBranches, Is.Not.Null);
+        Assert.That(relatedBranches.Length, Is.GreaterThan(0));
+        
+        // Verify that all returned branches point to the specified commit
+        Assert.That(relatedBranches.All(branch => branch.Target.Equals(commitHash)), Is.True);
+        
+        // Verify branch types - this commit may only have remote branches
+        var orderedBranches = relatedBranches.OrderBy(br => br.Name).ToArray();
+        var localBranches = orderedBranches.Where(br => br.RelativePath.StartsWith("refs/heads/")).ToArray();
+        var remoteBranches = orderedBranches.Where(br => br.RelativePath.StartsWith("refs/remotes/")).ToArray();
+        
+        // This specific commit should have at least remote branches
+        Assert.That(remoteBranches.Length, Is.GreaterThan(0), "Should have remote branches");
+        
+        // Log the branch types for debugging
+        Console.WriteLine($"Found {localBranches.Length} local branches and {remoteBranches.Length} remote branches");
+        
+        // Verify branch names are not empty
+        Assert.That(orderedBranches.All(br => br.Name.Length > 0), Is.True);
+        
+        // Verify that each branch actually exists and points to the correct commit
+        foreach (var branch in relatedBranches)
+        {
+            Assert.That(branch.Target, Is.EqualTo(commitHash), $"Branch {branch.Name} should point to the expected commit");
+        }
+    }
+
+    [Test]
+    public async Task GetRelatedBranchHeadReferencesAsync_MultipleRemoteBranches()
+    {
+        using var repository = await Repository.Factory.OpenPrimitiveAsync(
+            RepositoryTestsSetUp.GetBasePath("test1"));
+
+        // This commit is pointed to by both origin/HEAD and origin/master
+        var commitHash = Hash.Parse("1a85b097bde6e9800a1700f702202b3f232c8bda");
+        var relatedBranches = await repository.GetRelatedBranchHeadReferencesAsync(commitHash);
+
+        Assert.That(relatedBranches, Is.Not.Null);
+        Assert.That(relatedBranches.Length, Is.EqualTo(2), "Should have exactly 2 branches pointing to this commit");
+        
+        // Verify that all returned branches point to the specified commit
+        Assert.That(relatedBranches.All(branch => branch.Target.Equals(commitHash)), Is.True);
+        
+        // Verify that all are remote branches
+        Assert.That(relatedBranches.All(br => br.RelativePath.StartsWith("refs/remotes/")), Is.True, "All should be remote branches");
+        
+        // Verify specific branches found
+        var branchNames = relatedBranches.Select(br => br.Name).OrderBy(name => name).ToArray();
+        Assert.That(branchNames[0], Is.EqualTo("origin/HEAD"));
+        Assert.That(branchNames[1], Is.EqualTo("origin/master"));
+        
+        // Verify that each branch actually exists and points to the correct commit
+        foreach (var branch in relatedBranches)
+        {
+            Assert.That(branch.Target, Is.EqualTo(commitHash), $"Branch {branch.Name} should point to the expected commit");
+        }
+    }
+
+    [Test]
+    public async Task GetRelatedBranchHeadReferencesAsync_NoMatches()
+    {
+        using var repository = await Repository.Factory.OpenPrimitiveAsync(
+            RepositoryTestsSetUp.GetBasePath("test1"));
+
+        // This is an intermediate commit that is not at any branch HEAD
+        var commitHash = Hash.Parse("30aaea993cc0a3cb1dad2968d3e5f4d90a287e25");
+        var relatedBranches = await repository.GetRelatedBranchHeadReferencesAsync(commitHash);
+
+        Assert.That(relatedBranches, Is.Not.Null);
+        Assert.That(relatedBranches.Length, Is.EqualTo(0), "Should have no branches pointing to this intermediate commit");
     }
 }

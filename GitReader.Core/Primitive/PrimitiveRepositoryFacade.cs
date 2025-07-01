@@ -178,6 +178,30 @@ internal static class PrimitiveRepositoryFacade
         }
     }
 
+    /// <summary>
+    /// Gets all branch head references that point to the specified commit.
+    /// </summary>
+    /// <param name="repository">The repository.</param>
+    /// <param name="commitHash">The commit hash to find related branches for.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>A task that returns an array of related branch head references.</returns>
+    public static async Task<PrimitiveReference[]> GetRelatedBranchHeadReferencesAsync(
+        Repository repository,
+        Hash commitHash,
+        CancellationToken ct)
+    {
+        // Get both local and remote branches in parallel
+        var (localBranches, remoteBranches) = await repository.concurrentScope.Join(
+            RepositoryAccessor.ReadReferencesAsync(repository, ReferenceTypes.Branches, ct),
+            RepositoryAccessor.ReadReferencesAsync(repository, ReferenceTypes.RemoteBranches, ct));
+
+        // Extract branch references that point to the specified commit hash
+        return localBranches
+            .Where(branch => branch.Target.Equals(commitHash))
+            .Concat(remoteBranches.Where(branch => branch.Target.Equals(commitHash)))
+            .ToArray();
+    }
+
     public static async Task<PrimitiveRepository> OpenSubModuleAsync(
         Repository repository,
         PrimitiveTreeEntry[] treePath, CancellationToken ct)
