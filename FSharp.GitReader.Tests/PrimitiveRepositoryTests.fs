@@ -232,3 +232,82 @@ type public PrimitiveRepositoryTests() =
         Assert.That(result.Type, Is.EqualTo(ObjectTypes.Commit))
         Assert.That(body, Does.StartWith("tree 5462bf28fdc4681762057cac7704730b1c590b38"))
     }
+
+    [<Test>]
+    member _.GetRelatedBranchHeadReferences() = task {
+        use! repository = Repository.Factory.openPrimitive(
+            RepositoryTestsSetUp.getBasePath("test1"))
+        let commitHash = Hash.Parse("f690f0e7bf703582a1fad7e6f1c2d1586390f43d")
+        let! relatedBranches = repository.getRelatedBranchHeadReferences(commitHash)
+        
+        Assert.That(relatedBranches, Is.Not.Null)
+        Assert.That(relatedBranches.Length, Is.GreaterThan(0))
+        
+        // Verify that all returned branches point to the specified commit
+        Assert.That(relatedBranches |> Array.forall (fun branch -> branch.Target.Equals(commitHash)), Is.True)
+        
+        // This specific commit should have at least remote branches
+        let remoteBranches = relatedBranches |> Array.filter (fun br -> br.RelativePath.StartsWith("refs/remotes/"))
+        Assert.That(remoteBranches.Length, Is.GreaterThan(0), "Should have remote branches")
+        
+        // Verify branch names are not empty
+        Assert.That(relatedBranches |> Array.forall (fun br -> br.Name.Length > 0), Is.True)
+    }
+
+    [<Test>]
+    member _.GetRelatedTagReferences() = task {
+        use! repository = Repository.Factory.openPrimitive(
+            RepositoryTestsSetUp.getBasePath("test1"))
+        let commitHash = Hash.Parse("30aaea993cc0a3cb1dad2968d3e5f4d90a287e25")
+        let! relatedTags = repository.getRelatedTagReferences(commitHash)
+        
+        Assert.That(relatedTags, Is.Not.Null)
+        Assert.That(relatedTags.Length, Is.EqualTo(1), "Should have exactly 1 tag pointing to this commit")
+        
+        // Verify the specific tag found
+        Assert.That(relatedTags.[0].Name, Is.EqualTo("2.1.0"))
+        Assert.That(relatedTags.[0].RelativePath, Is.EqualTo("refs/tags/2.1.0"))
+        
+        // Verify that each tag actually points to the correct commit
+        let! primitiveTag = repository.getTag(relatedTags.[0])
+        Assert.That(primitiveTag.Hash, Is.EqualTo(commitHash), "Tag should point to the expected commit")
+    }
+
+    [<Test>]
+    member _.GetRelatedTags() = task {
+        use! repository = Repository.Factory.openPrimitive(
+            RepositoryTestsSetUp.getBasePath("test1"))
+        let commitHash = Hash.Parse("30aaea993cc0a3cb1dad2968d3e5f4d90a287e25")
+        let! relatedTags = repository.getRelatedTags(commitHash)
+        
+        Assert.That(relatedTags, Is.Not.Null)
+        Assert.That(relatedTags.Length, Is.EqualTo(1), "Should have exactly 1 tag pointing to this commit")
+        
+        // Verify the specific tag found
+        let tag = relatedTags.[0]
+        Assert.That(tag.Hash, Is.EqualTo(commitHash), "Tag should point to the expected commit")
+        Assert.That(tag.Name, Is.EqualTo("2.1.0"))
+        Assert.That(tag.Type, Is.EqualTo(ObjectTypes.Commit))
+    }
+
+    [<Test>]
+    member _.GetRelatedTags_CompareWithGetRelatedTagReferences() = task {
+        use! repository = Repository.Factory.openPrimitive(
+            RepositoryTestsSetUp.getBasePath("test1"))
+        let commitHash = Hash.Parse("30aaea993cc0a3cb1dad2968d3e5f4d90a287e25")
+        
+        // Get tags using both methods
+        let! tagReferences = repository.getRelatedTagReferences(commitHash)
+        let! tags = repository.getRelatedTags(commitHash)
+        
+        Assert.That(tags.Length, Is.EqualTo(tagReferences.Length), 
+                   "Both methods should return the same number of results")
+        
+        // Verify that each tag corresponds to the correct tag reference
+        for i in 0 .. tags.Length - 1 do
+            let tag = tags.[i]
+            let tagRef = tagReferences |> Array.find (fun tr -> tr.Name = tag.Name)
+            
+            Assert.That(tagRef, Is.Not.Null, sprintf "Tag reference for '%s' should exist" tag.Name)
+            Assert.That(tag.Hash, Is.EqualTo(commitHash), sprintf "Tag '%s' should point to the expected commit" tag.Name)
+    }

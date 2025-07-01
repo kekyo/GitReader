@@ -143,6 +143,39 @@ module public RepositoryExtension =
                 repository, reference, unwrapCT ct).asAsync()
 
         /// <summary>
+        /// Gets all branch head references that point to the specified commit.
+        /// </summary>
+        /// <param name="commitHash">The commit hash to find related branches for.</param>
+        /// <param name="ct">Optional cancellation token.</param>
+        /// <returns>An async computation that returns related branch head references.</returns>
+        [<MethodImpl(MethodImplOptions.NoInlining)>]
+        member repository.getRelatedBranchHeadReferences(commitHash: Hash, ?ct: CancellationToken) =
+            PrimitiveRepositoryFacade.GetRelatedBranchHeadReferencesAsync(
+                repository, commitHash, unwrapCT ct).asAsync()
+
+        /// <summary>
+        /// Gets all tag references that point to the specified commit.
+        /// </summary>
+        /// <param name="commitHash">The commit hash to find related tags for.</param>
+        /// <param name="ct">Optional cancellation token.</param>
+        /// <returns>An async computation that returns related tag references.</returns>
+        [<MethodImpl(MethodImplOptions.NoInlining)>]
+        member repository.getRelatedTagReferences(commitHash: Hash, ?ct: CancellationToken) =
+            PrimitiveRepositoryFacade.GetRelatedTagReferencesAsync(
+                repository, commitHash, unwrapCT ct).asAsync()
+
+        /// <summary>
+        /// Gets all tags that point to the specified commit.
+        /// </summary>
+        /// <param name="commitHash">The commit hash to find related tags for.</param>
+        /// <param name="ct">Optional cancellation token.</param>
+        /// <returns>An async computation that returns related tags.</returns>
+        [<MethodImpl(MethodImplOptions.NoInlining)>]
+        member repository.getRelatedTags(commitHash: Hash, ?ct: CancellationToken) =
+            PrimitiveRepositoryFacade.GetRelatedTagsAsync(
+                repository, commitHash, unwrapCT ct).asAsync()
+
+        /// <summary>
         /// Gets the tree object for the specified hash.
         /// </summary>
         /// <param name="tree">The hash of the tree.</param>
