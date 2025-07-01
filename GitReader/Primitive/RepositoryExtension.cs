@@ -146,6 +146,30 @@ public static class RepositoryExtension
         PrimitiveRepositoryFacade.GetRelatedBranchHeadReferencesAsync(repository, commitHash, ct);
     
     /// <summary>
+    /// Gets all tag references that point to the specified commit.
+    /// </summary>
+    /// <param name="repository">The primitive repository.</param>
+    /// <param name="commitHash">The commit hash to find related tags for.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>A task that returns an array of related tag references.</returns>
+    public static Task<PrimitiveTagReference[]> GetRelatedTagReferencesAsync(
+        this PrimitiveRepository repository,
+        Hash commitHash, CancellationToken ct = default) =>
+        PrimitiveRepositoryFacade.GetRelatedTagReferencesAsync(repository, commitHash, ct);
+    
+    /// <summary>
+    /// Gets all tags that point to the specified commit.
+    /// </summary>
+    /// <param name="repository">The primitive repository.</param>
+    /// <param name="commitHash">The commit hash to find related tags for.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>A task that returns an array of related tags.</returns>
+    public static Task<PrimitiveTag[]> GetRelatedTagsAsync(
+        this PrimitiveRepository repository,
+        Hash commitHash, CancellationToken ct = default) =>
+        PrimitiveRepositoryFacade.GetRelatedTagsAsync(repository, commitHash, ct);
+    
+    /// <summary>
     /// Gets all stashes from the repository.
     /// </summary>
     /// <param name="repository">The primitive repository.</param>

@@ -449,4 +449,208 @@ public sealed class RepositoryTests
         Assert.That(relatedBranches, Is.Not.Null);
         Assert.That(relatedBranches.Length, Is.EqualTo(0), "Should have no branches pointing to this intermediate commit");
     }
+
+    [Test]
+    public async Task GetRelatedTagReferencesAsync_SingleTag()
+    {
+        using var repository = await Repository.Factory.OpenPrimitiveAsync(
+            RepositoryTestsSetUp.GetBasePath("test1"));
+
+        // This commit is pointed to by tag "2.1.0"
+        var commitHash = Hash.Parse("30aaea993cc0a3cb1dad2968d3e5f4d90a287e25");
+        var relatedTags = await repository.GetRelatedTagReferencesAsync(commitHash);
+
+        Assert.That(relatedTags, Is.Not.Null);
+        Assert.That(relatedTags.Length, Is.EqualTo(1), "Should have exactly 1 tag pointing to this commit");
+        
+        // Verify the specific tag found
+        Assert.That(relatedTags[0].Name, Is.EqualTo("2.1.0"));
+        Assert.That(relatedTags[0].RelativePath, Is.EqualTo("refs/tags/2.1.0"));
+        
+        // Verify that each tag actually points to the correct commit
+        var primitiveTag = await repository.GetTagAsync(relatedTags[0]);
+        Assert.That(primitiveTag.Hash, Is.EqualTo(commitHash), "Tag should point to the expected commit");
+    }
+
+    [Test]
+    public async Task GetRelatedTagReferencesAsync_NoMatches()
+    {
+        using var repository = await Repository.Factory.OpenPrimitiveAsync(
+            RepositoryTestsSetUp.GetBasePath("test1"));
+
+        // This is the current master HEAD commit that has no tags pointing to it
+        var commitHash = Hash.Parse("9bb78d13405cab568d3e213130f31beda1ce21d1");
+        var relatedTags = await repository.GetRelatedTagReferencesAsync(commitHash);
+
+        Assert.That(relatedTags, Is.Not.Null);
+        Assert.That(relatedTags.Length, Is.EqualTo(0), "Should have no tags pointing to this commit");
+    }
+
+    [Test]
+    public async Task GetRelatedTagReferencesAsync_MultipleTags()
+    {
+        using var repository = await Repository.Factory.OpenPrimitiveAsync(
+            RepositoryTestsSetUp.GetBasePath("test1"));
+
+        // Use an existing commit for creating multiple tags
+        var commitHash = Hash.Parse("f64de5e3ad34528757207109e68f626bf8cc1a31"); // commit for tag "2.0.0"
+        
+        // First, verify we have at least the original tag
+        var originalTags = await repository.GetRelatedTagReferencesAsync(commitHash);
+        Assert.That(originalTags.Length, Is.GreaterThanOrEqualTo(1), "Should have at least the original tag");
+        
+        // Create additional tags pointing to the same commit using git commands
+        var repositoryPath = RepositoryTestsSetUp.GetBasePath("test1");
+        await TestUtilities.RunGitCommandAsync(repositoryPath, $"tag test-tag-1 {commitHash}");
+        await TestUtilities.RunGitCommandAsync(repositoryPath, $"tag test-tag-2 {commitHash}");
+        
+        try
+        {
+            // Reopen repository to ensure new tags are detected
+            using var reloadedRepository = await Repository.Factory.OpenPrimitiveAsync(repositoryPath);
+            var relatedTags = await reloadedRepository.GetRelatedTagReferencesAsync(commitHash);
+
+            Assert.That(relatedTags, Is.Not.Null);
+            Assert.That(relatedTags.Length, Is.GreaterThanOrEqualTo(3), "Should have at least 3 tags pointing to this commit");
+            
+            // Verify that all returned tags point to the specified commit
+            Assert.That(relatedTags.All(tag => tag.ObjectOrCommitHash.Equals(commitHash) || 
+                                              (tag.CommitHash.HasValue && tag.CommitHash.Value.Equals(commitHash))), 
+                       Is.True, "All tags should point to the expected commit");
+            
+            // Verify the new tags are included
+            var tagNames = relatedTags.Select(tag => tag.Name).ToArray();
+            Assert.That(tagNames, Contains.Item("test-tag-1"));
+            Assert.That(tagNames, Contains.Item("test-tag-2"));
+            
+            Console.WriteLine($"Found {relatedTags.Length} tags pointing to commit {commitHash}: {string.Join(", ", tagNames)}");
+        }
+        finally
+        {
+            // Clean up the test tags
+            try
+            {
+                await TestUtilities.RunGitCommandAsync(repositoryPath, "tag -d test-tag-1");
+                await TestUtilities.RunGitCommandAsync(repositoryPath, "tag -d test-tag-2");
+            }
+            catch
+            {
+                // Ignore cleanup failures
+            }
+        }
+    }
+
+    [Test]
+    public async Task GetRelatedTagsAsync_SingleTag()
+    {
+        using var repository = await Repository.Factory.OpenPrimitiveAsync(
+            RepositoryTestsSetUp.GetBasePath("test1"));
+
+        // This commit is pointed to by tag "2.1.0"
+        var commitHash = Hash.Parse("30aaea993cc0a3cb1dad2968d3e5f4d90a287e25");
+        var relatedTags = await repository.GetRelatedTagsAsync(commitHash);
+
+        Assert.That(relatedTags, Is.Not.Null);
+        Assert.That(relatedTags.Length, Is.EqualTo(1), "Should have exactly 1 tag pointing to this commit");
+        
+        // Verify the specific tag found
+        var tag = relatedTags[0];
+        Assert.That(tag.Hash, Is.EqualTo(commitHash), "Tag should point to the expected commit");
+        Assert.That(tag.Name, Is.EqualTo("2.1.0"));
+        Assert.That(tag.Type, Is.EqualTo(ObjectTypes.Commit));
+    }
+
+    [Test]
+    public async Task GetRelatedTagsAsync_NoMatches()
+    {
+        using var repository = await Repository.Factory.OpenPrimitiveAsync(
+            RepositoryTestsSetUp.GetBasePath("test1"));
+
+        // This is the current master HEAD commit that has no tags pointing to it
+        var commitHash = Hash.Parse("9bb78d13405cab568d3e213130f31beda1ce21d1");
+        var relatedTags = await repository.GetRelatedTagsAsync(commitHash);
+
+        Assert.That(relatedTags, Is.Not.Null);
+        Assert.That(relatedTags.Length, Is.EqualTo(0), "Should have no tags pointing to this commit");
+    }
+
+    [Test]
+    public async Task GetRelatedTagsAsync_MultipleTags()
+    {
+        using var repository = await Repository.Factory.OpenPrimitiveAsync(
+            RepositoryTestsSetUp.GetBasePath("test1"));
+
+        // Use an existing commit for creating multiple tags
+        var commitHash = Hash.Parse("f64de5e3ad34528757207109e68f626bf8cc1a31"); // commit for tag "2.0.0"
+        
+        // First, verify we have at least the original tag
+        var originalTags = await repository.GetRelatedTagsAsync(commitHash);
+        Assert.That(originalTags.Length, Is.GreaterThanOrEqualTo(1), "Should have at least the original tag");
+        
+        // Create additional tags pointing to the same commit using git commands
+        var repositoryPath = RepositoryTestsSetUp.GetBasePath("test1");
+        await TestUtilities.RunGitCommandAsync(repositoryPath, $"tag test-tag-3 {commitHash}");
+        await TestUtilities.RunGitCommandAsync(repositoryPath, $"tag test-tag-4 {commitHash}");
+        
+        try
+        {
+            // Reopen repository to ensure new tags are detected
+            using var reloadedRepository = await Repository.Factory.OpenPrimitiveAsync(repositoryPath);
+            var relatedTags = await reloadedRepository.GetRelatedTagsAsync(commitHash);
+
+            Assert.That(relatedTags, Is.Not.Null);
+            Assert.That(relatedTags.Length, Is.GreaterThanOrEqualTo(3), "Should have at least 3 tags pointing to this commit");
+            
+            // Verify that all returned tags point to the specified commit
+            Assert.That(relatedTags.All(tag => tag.Hash.Equals(commitHash)), 
+                       Is.True, "All tags should point to the expected commit");
+            
+            // Verify the new tags are included
+            var tagNames = relatedTags.Select(tag => tag.Name).ToArray();
+            Assert.That(tagNames, Contains.Item("test-tag-3"));
+            Assert.That(tagNames, Contains.Item("test-tag-4"));
+            
+            Console.WriteLine($"Found {relatedTags.Length} tags pointing to commit {commitHash}: {string.Join(", ", tagNames)}");
+        }
+        finally
+        {
+            // Clean up the test tags
+            try
+            {
+                await TestUtilities.RunGitCommandAsync(repositoryPath, "tag -d test-tag-3");
+                await TestUtilities.RunGitCommandAsync(repositoryPath, "tag -d test-tag-4");
+            }
+            catch
+            {
+                // Ignore cleanup failures
+            }
+        }
+    }
+
+    [Test]
+    public async Task GetRelatedTagsAsync_CompareWithGetRelatedTagReferencesAsync()
+    {
+        using var repository = await Repository.Factory.OpenPrimitiveAsync(
+            RepositoryTestsSetUp.GetBasePath("test1"));
+
+        // Test with a commit that has tags
+        var commitHash = Hash.Parse("30aaea993cc0a3cb1dad2968d3e5f4d90a287e25");
+        
+        // Get tags using both methods
+        var tagReferences = await repository.GetRelatedTagReferencesAsync(commitHash);
+        var tags = await repository.GetRelatedTagsAsync(commitHash);
+
+        Assert.That(tags.Length, Is.EqualTo(tagReferences.Length), 
+                   "Both methods should return the same number of results");
+        
+        // Verify that each tag corresponds to the correct tag reference
+        for (int i = 0; i < tags.Length; i++)
+        {
+            var tag = tags[i];
+            var tagRef = tagReferences.FirstOrDefault(tr => tr.Name == tag.Name);
+            
+            Assert.That(tagRef, Is.Not.Null, $"Tag reference for '{tag.Name}' should exist");
+            Assert.That(tag.Hash, Is.EqualTo(commitHash), $"Tag '{tag.Name}' should point to the expected commit");
+        }
+    }
 }
