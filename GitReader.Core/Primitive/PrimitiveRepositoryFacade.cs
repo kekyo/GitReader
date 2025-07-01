@@ -123,6 +123,54 @@ internal static class PrimitiveRepositoryFacade
             throw new ArgumentException($"Could not find a tag: {tagName}");
     }
 
+    /// <summary>
+    /// Gets a primitive tag from the specified tag reference with proper peeled-tag handling.
+    /// </summary>
+    /// <param name="repository">The repository.</param>
+    /// <param name="tagReference">The tag reference.</param>
+    /// <param name="ct">The cancellation token.</param>
+    /// <returns>A task that returns the primitive tag.</returns>
+    public static async Task<PrimitiveTag> GetTagAsync(
+        Repository repository,
+        PrimitiveTagReference tagReference,
+        CancellationToken ct)
+    {
+        // If produced a peeled-tag, we can get the commit hash with no additional costs.
+        if (tagReference.CommitHash is { } commitTarget)
+        {
+            return new PrimitiveTag(
+                commitTarget,
+                ObjectTypes.Commit,
+                tagReference.Name,
+                null,
+                null);
+        }
+        // If peeled-tags are not provided by the 'packed-refs' file at open time,
+        // a tag object will be read occur here. This is expensive and extends open time.
+        // However, since the commit hash cannot be identified without reading the tag object
+        // (given that this is a high-level interface), a compromise is made.
+        else if (await RepositoryAccessor.ReadTagAsync(
+            repository, tagReference.ObjectOrCommitHash, ct) is { } tag)
+        {
+            return new PrimitiveTag(
+                tag.Hash,
+                tag.Type,
+                tagReference.Name,
+                tag.Tagger,
+                tag.Message);
+        }
+        // If the read result shows that it is not a tag object, it is a commit object.
+        else
+        {
+            return new PrimitiveTag(
+                tagReference.ObjectOrCommitHash,
+                ObjectTypes.Commit,
+                tagReference.Name,
+                null,
+                null);
+        }
+    }
+
     public static async Task<PrimitiveRepository> OpenSubModuleAsync(
         Repository repository,
         PrimitiveTreeEntry[] treePath, CancellationToken ct)

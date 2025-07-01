@@ -87,11 +87,10 @@ public static class RepositoryExtension
     /// <param name="tag">The tag reference.</param>
     /// <param name="ct">The cancellation token.</param>
     /// <returns>A task that returns the primitive tag.</returns>
-    public static async Task<PrimitiveTag> GetTagAsync(
+    public static Task<PrimitiveTag> GetTagAsync(
         this PrimitiveRepository repository,
         PrimitiveTagReference tag, CancellationToken ct = default) =>
-        await RepositoryAccessor.ReadTagAsync(repository, tag.ObjectOrCommitHash, ct) is { } t ?
-            t : new(tag.ObjectOrCommitHash, ObjectTypes.Commit, tag.Name, null, null);
+        PrimitiveRepositoryFacade.GetTagAsync(repository, tag, ct);
 
     /// <summary>
     /// Gets all branch head references from the repository.

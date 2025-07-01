@@ -84,12 +84,8 @@ module public RepositoryExtension =
         /// <param name="ct">Optional cancellation token.</param>
         /// <returns>An async computation that returns the tag object.</returns>
         [<MethodImpl(MethodImplOptions.NoInlining)>]
-        member repository.getTag(tag: PrimitiveTagReference, ?ct: CancellationToken) = async {
-            let! t = RepositoryAccessor.ReadTagAsync(repository, tag.ObjectOrCommitHash, unwrapCT ct) |> asOptionAsync
-            return match t with
-                   | Some t -> t
-                   | None -> PrimitiveTag(tag.ObjectOrCommitHash, ObjectTypes.Commit, tag.Name, System.Nullable(), null)
-        }
+        member repository.getTag(tag: PrimitiveTagReference, ?ct: CancellationToken) =
+            PrimitiveRepositoryFacade.GetTagAsync(repository, tag, unwrapCT ct).asAsync()
 
         /// <summary>
         /// Gets all branch head references.
