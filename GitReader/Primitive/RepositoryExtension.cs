@@ -9,6 +9,7 @@
 
 using GitReader.Internal;
 using GitReader.Collections;
+using GitReader.IO;
 using System;
 using System.IO;
 using System.Threading;
@@ -99,6 +100,38 @@ public static class RepositoryExtension
 #else
         PrimitiveRepositoryFacade.GetTagAsync(repository, tag, ct);
 #endif
+
+    /// <summary>
+    /// Cracks the message of the specified commit into its subject and body.
+    /// </summary>
+    /// <param name="commit">The commit to crack the message from.</param>
+    /// <param name="subject">The subject of the commit message.</param>
+    /// <param name="body">The body of the commit message.</param>
+    /// <remarks>
+    /// The subject line is the first line of the commit message. It is nearly as git command `git log --format=%s`.
+    /// The body is the rest of the commit message after the first blank line. It is nearly as git command `git log --format=%b`.
+    /// </remarks>
+    public static void CrackMessage(
+        this PrimitiveCommit commit,
+        out string subject,
+        out string body) =>
+        Utilities.CrackGitMessage(commit.Message, out subject, out body);
+
+    /// <summary>
+    /// Cracks the message of the specified commit into its subject and body.
+    /// </summary>
+    /// <param name="commit">The commit to crack the message from.</param>
+    /// <returns>A PairResult containing the subject and body of the commit message.</returns>
+    /// <remarks>
+    /// The subject line is the first line of the commit message. It is nearly as git command `git log --format=%s`.
+    /// The body is the rest of the commit message after the first blank line. It is nearly as git command `git log --format=%b`.
+    /// </remarks>
+    public static PairResult<string, string> CrackMessage(
+        this PrimitiveCommit commit)
+    {
+        Utilities.CrackGitMessage(commit.Message, out var subject, out var body);
+        return new(subject, body);
+    }
 
     /// <summary>
     /// Gets all branch head references from the repository.
@@ -255,6 +288,12 @@ public static class RepositoryExtension
         PrimitiveRepositoryFacade.GetWorkingDirectoryStatusAsync(repository, ct);
 #endif
 
+    /// <summary>
+    /// Gets all untracked files in the working directory.
+    /// </summary>
+    /// <param name="repository">The primitive repository.</param>
+    /// <param name="workingDirectoryStatus">The working directory status.</param>
+    /// <param name="ct">The cancellation token.</param>
     public static Task<ReadOnlyArray<PrimitiveWorkingDirectoryFile>> GetUntrackedFilesAsync(
         this PrimitiveRepository repository,
         PrimitiveWorkingDirectoryStatus workingDirectoryStatus,
@@ -267,6 +306,13 @@ public static class RepositoryExtension
             repository, workingDirectoryStatus, Internal.Glob.nothingFilter, ct);
 #endif
 
+    /// <summary>
+    /// Gets all untracked files in the working directory.
+    /// </summary>
+    /// <param name="repository">The primitive repository.</param>
+    /// <param name="workingDirectoryStatus">The working directory status.</param>
+    /// <param name="overrideGlobFilter">The glob filter to use.</param>
+    /// <param name="ct">The cancellation token.</param>
     public static Task<ReadOnlyArray<PrimitiveWorkingDirectoryFile>> GetUntrackedFilesAsync(
         this PrimitiveRepository repository,
         PrimitiveWorkingDirectoryStatus workingDirectoryStatus,
@@ -377,6 +423,35 @@ public static class RepositoryExtension
         relativePath = tagReference.RelativePath;
         objectOrCommitHash = tagReference.ObjectOrCommitHash;
         commitHash = tagReference.CommitHash;
+    }
+
+    /// <summary>
+    /// Deconstructs a PrimitiveCommit into its component parts.
+    /// </summary>
+    /// <param name="commit">The commit to deconstruct.</param>
+    /// <param name="hash">The commit hash.</param>
+    /// <param name="treeRoot">The tree root hash.</param>
+    /// <param name="author">The author signature.</param>
+    /// <param name="committer">The committer signature.</param>
+    /// <param name="parents">The parent commit hashes.</param>
+    /// <param name="subject">The commit message subject.</param>
+    /// <param name="body">The commit message body.</param>
+    public static void Deconstruct(
+        this PrimitiveCommit commit,
+        out Hash hash,
+        out Hash treeRoot,
+        out Signature author,
+        out Signature committer,
+        out ReadOnlyArray<Hash> parents,
+        out string subject,
+        out string body)
+    {
+        hash = commit.Hash;
+        treeRoot = commit.TreeRoot;
+        author = commit.Author;
+        committer = commit.Committer;
+        parents = commit.Parents;
+        Utilities.CrackGitMessage(commit.Message, out subject, out body);
     }
 
     /// <summary>

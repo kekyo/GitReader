@@ -653,4 +653,161 @@ public sealed class RepositoryTests
             Assert.That(tag.Hash, Is.EqualTo(commitHash), $"Tag '{tag.Name}' should point to the expected commit");
         }
     }
+
+    [Test]
+    public async Task CrackMessage_SimpleMessage()
+    {
+        // Create a temporary repository with a commit that has a body
+        var tempDir = Path.Combine(Path.GetTempPath(), "GitReader_Test_" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(tempDir);
+
+        try
+        {
+            await TestUtilities.RunGitCommandAsync(tempDir, "init");
+            await TestUtilities.RunGitCommandAsync(tempDir, "config user.name \"Test User\"");
+            await TestUtilities.RunGitCommandAsync(tempDir, "config user.email \"test@example.com\"");
+            
+            // Create a test file
+            await TestUtilities.WriteAllTextAsync(Path.Combine(tempDir, "test.txt"), "Test content");
+            await TestUtilities.RunGitCommandAsync(tempDir, "add test.txt");
+            
+            // Create a commit with subject and body
+            var commitMessage = "Test commit subject\n\nThis is the body of the commit.\nIt has multiple lines.";
+            await TestUtilities.RunGitCommandAsync(tempDir, $"commit -m \"{commitMessage}\"");
+            
+            using var repository = await Repository.Factory.OpenPrimitiveAsync(tempDir);
+            var headRef = await repository.GetCurrentHeadReferenceAsync();
+            var commit = await repository.GetCommitAsync(headRef!.Value);
+
+            Assert.That(commit, Is.Not.Null);
+            
+            // Test CrackMessage with out parameters
+            commit!.Value.CrackMessage(out var subject, out var body);
+            
+            Assert.That(subject, Is.EqualTo("Test commit subject"));
+            Assert.That(body, Is.Not.Empty);
+            Assert.That(body, Does.StartWith("This is the body of the commit."));
+        }
+        finally
+        {
+            if (Directory.Exists(tempDir))
+            {
+                Directory.Delete(tempDir, true);
+            }
+        }
+    }
+
+    [Test]
+    public async Task CrackMessage_ReturnPair()
+    {
+        // Create a temporary repository with a commit that has a body
+        var tempDir = Path.Combine(Path.GetTempPath(), "GitReader_Test_" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(tempDir);
+
+        try
+        {
+            await TestUtilities.RunGitCommandAsync(tempDir, "init");
+            await TestUtilities.RunGitCommandAsync(tempDir, "config user.name \"Test User\"");
+            await TestUtilities.RunGitCommandAsync(tempDir, "config user.email \"test@example.com\"");
+            
+            // Create a test file
+            await TestUtilities.WriteAllTextAsync(Path.Combine(tempDir, "test.txt"), "Test content");
+            await TestUtilities.RunGitCommandAsync(tempDir, "add test.txt");
+            
+            // Create a commit with subject and body
+            var commitMessage = "Test subject line\n\nBody line 1\nBody line 2";
+            await TestUtilities.RunGitCommandAsync(tempDir, $"commit -m \"{commitMessage}\"");
+            
+            using var repository = await Repository.Factory.OpenPrimitiveAsync(tempDir);
+            var headRef = await repository.GetCurrentHeadReferenceAsync();
+            var commit = await repository.GetCommitAsync(headRef!.Value);
+
+            Assert.That(commit, Is.Not.Null);
+            
+            // Test CrackMessage returning PairResult
+            var (subject, body) = commit!.Value.CrackMessage();
+            
+            Assert.That(subject, Is.EqualTo("Test subject line"));
+            Assert.That(body, Is.Not.Empty);
+            Assert.That(body, Does.StartWith("Body line 1"));
+        }
+        finally
+        {
+            if (Directory.Exists(tempDir))
+            {
+                Directory.Delete(tempDir, true);
+            }
+        }
+    }
+
+    [Test]
+    public async Task CrackMessage_SingleLineMessage()
+    {
+        using var repository = await Repository.Factory.OpenPrimitiveAsync(
+            RepositoryTestsSetUp.GetBasePath("test1"));
+
+        var commit = await repository.GetCommitAsync(
+            "9bb78d13405cab568d3e213130f31beda1ce21d1");
+
+        Assert.That(commit, Is.Not.Null);
+        
+        commit!.Value.CrackMessage(out var subject, out var body);
+        
+        Assert.That(subject, Is.EqualTo("Added installation .NET 6 SDK on GitHub Actions."));
+        Assert.That(body, Is.Empty);
+    }
+
+    [Test]
+    public async Task Deconstruct_WithSubjectAndBody()
+    {
+        // Create a temporary repository with a commit that has a body
+        var tempDir = Path.Combine(Path.GetTempPath(), "GitReader_Test_" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(tempDir);
+
+        try
+        {
+            await TestUtilities.RunGitCommandAsync(tempDir, "init");
+            await TestUtilities.RunGitCommandAsync(tempDir, "config user.name \"Test User\"");
+            await TestUtilities.RunGitCommandAsync(tempDir, "config user.email \"test@example.com\"");
+            
+            // Create a test file
+            await TestUtilities.WriteAllTextAsync(Path.Combine(tempDir, "test.txt"), "Test content");
+            await TestUtilities.RunGitCommandAsync(tempDir, "add test.txt");
+            
+            // Create a commit with subject and body
+            var commitMessage = "Deconstruct test subject\n\nDeconstruct test body\nWith multiple lines";
+            await TestUtilities.RunGitCommandAsync(tempDir, $"commit -m \"{commitMessage}\"");
+            
+            using var repository = await Repository.Factory.OpenPrimitiveAsync(tempDir);
+            var headRef = await repository.GetCurrentHeadReferenceAsync();
+            var commit = await repository.GetCommitAsync(headRef!.Value);
+
+            Assert.That(commit, Is.Not.Null);
+            
+            // Test new Deconstruct method with subject and body
+            commit!.Value.Deconstruct(
+                out var hash,
+                out var treeRoot,
+                out var author,
+                out var committer,
+                out var parents,
+                out var subject,
+                out var body);
+            
+            Assert.That(hash.ToString().Length, Is.EqualTo(40));
+            Assert.That(treeRoot.ToString().Length, Is.EqualTo(40));
+            Assert.That(author.Name, Is.EqualTo("Test User"));
+            Assert.That(committer.Name, Is.EqualTo("Test User"));
+            Assert.That(parents.Count, Is.EqualTo(0)); // Initial commit has no parents
+            Assert.That(subject, Is.EqualTo("Deconstruct test subject"));
+            Assert.That(body, Does.StartWith("Deconstruct test body"));
+        }
+        finally
+        {
+            if (Directory.Exists(tempDir))
+            {
+                Directory.Delete(tempDir, true);
+            }
+        }
+    }
 }

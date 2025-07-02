@@ -47,4 +47,4 @@ public sealed class WorkingDirectoryStatus
     /// <returns>A string representation of the working directory status.</returns>
     public override string ToString() =>
         $"Staged: {this.StagedFiles.Count}, Unstaged: {this.UnstagedFiles.Count}, Untracked: {this.UntrackedFiles.Count}";
-} 
+}

@@ -40,6 +40,15 @@ public static class RepositoryExtension
         Utilities.ToGitIsoDateString(date);
 
     /// <summary>
+    /// Converts a DateTimeOffset to Git's raw date string format.
+    /// </summary>
+    /// <param name="date">The date to convert.</param>
+    /// <returns>A string representation of the date in raw format.</returns>
+    public static string ToGitRawDateString(
+        this DateTimeOffset date) =>
+        Utilities.ToGitRawDateString(date);
+
+    /// <summary>
     /// Converts a Signature to Git's author string format.
     /// </summary>
     /// <param name="signature">The signature to convert.</param>

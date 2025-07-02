@@ -547,7 +547,7 @@ internal static class PrimitiveRepositoryFacade
         await WorkingDirectoryAccessor.ExtractUntrackedFilesAsync(
             repository,
             workingDirectoryStatus.workingDirectoryPath,
-            new(workingDirectoryStatus.processedPaths),
+            new(workingDirectoryStatus.ProcessedPaths),
             overrideGlobFilter,    // Override path filter
             untrackedFiles,        // Results
             ct);

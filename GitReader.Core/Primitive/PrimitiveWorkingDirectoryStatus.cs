@@ -8,6 +8,7 @@
 ////////////////////////////////////////////////////////////////////////////
 
 using System;
+using System.ComponentModel;
 using System.Linq;
 using GitReader.Collections;
 using GitReader.Internal;
@@ -20,7 +21,6 @@ namespace GitReader.Primitive;
 public readonly struct PrimitiveWorkingDirectoryStatus : IEquatable<PrimitiveWorkingDirectoryStatus>
 {
     internal readonly string workingDirectoryPath;
-    internal readonly ReadOnlyArray<string> processedPaths;
     
     /// <summary>
     /// Files that have been staged for commit.
@@ -33,12 +33,21 @@ public readonly struct PrimitiveWorkingDirectoryStatus : IEquatable<PrimitiveWor
     public readonly ReadOnlyArray<PrimitiveWorkingDirectoryFile> UnstagedFiles;
 
     /// <summary>
+    /// The paths of the files that have been processed.
+    /// </summary>
+    /// <remarks>
+    /// This is used to avoid processing the same file multiple times.
+    /// </remarks>
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public readonly ReadOnlyArray<string> ProcessedPaths;
+
+    /// <summary>
     /// Initializes a new instance of the PrimitiveWorkingDirectoryStatus structure.
     /// </summary>
     /// <param name="workingDirectoryPath">Working directory path.</param>
     /// <param name="stagedFiles">Files that have been staged for commit.</param>
     /// <param name="unstagedFiles">Files that have unstaged changes in the working directory.</param>
-    /// <param name="processedPaths"></param>
+    /// <param name="processedPaths">The paths of the files that have been processed.</param>
     internal PrimitiveWorkingDirectoryStatus(
         string workingDirectoryPath,
         ReadOnlyArray<PrimitiveWorkingDirectoryFile> stagedFiles,
@@ -48,7 +57,7 @@ public readonly struct PrimitiveWorkingDirectoryStatus : IEquatable<PrimitiveWor
         this.workingDirectoryPath = workingDirectoryPath;
         this.StagedFiles = stagedFiles;
         this.UnstagedFiles = unstagedFiles;
-        this.processedPaths = processedPaths;
+        this.ProcessedPaths = processedPaths;
     }
 
     /// <summary>
@@ -60,7 +69,7 @@ public readonly struct PrimitiveWorkingDirectoryStatus : IEquatable<PrimitiveWor
         this.workingDirectoryPath.Equals(rhs.workingDirectoryPath) &&
         this.StagedFiles.CollectionEqual(rhs.StagedFiles) &&
         this.UnstagedFiles.CollectionEqual(rhs.UnstagedFiles) &&
-        this.processedPaths.CollectionEqual(rhs.processedPaths);
+        this.ProcessedPaths.CollectionEqual(rhs.ProcessedPaths);
 
     bool IEquatable<PrimitiveWorkingDirectoryStatus>.Equals(PrimitiveWorkingDirectoryStatus rhs) =>
         this.Equals(rhs);
@@ -84,7 +93,7 @@ public readonly struct PrimitiveWorkingDirectoryStatus : IEquatable<PrimitiveWor
             var hashCode = this.workingDirectoryPath.GetHashCode();
             hashCode = (hashCode * 397) ^ this.StagedFiles.Aggregate(0, (s, v) => (s * 397) ^ v.GetHashCode());
             hashCode = (hashCode * 397) ^ this.UnstagedFiles.Aggregate(0, (s, v) => (s * 397) ^ v.GetHashCode());
-            hashCode = (hashCode * 397) ^ this.processedPaths.Aggregate(0, (s, v) => (s * 397) ^ v.GetHashCode());
+            hashCode = (hashCode * 397) ^ this.ProcessedPaths.Aggregate(0, (s, v) => (s * 397) ^ v.GetHashCode());
             return hashCode;
         }
     }

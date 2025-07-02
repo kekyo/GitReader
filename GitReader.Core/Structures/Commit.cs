@@ -8,6 +8,7 @@
 ////////////////////////////////////////////////////////////////////////////
 
 using GitReader.Collections;
+using GitReader.Internal;
 using GitReader.Primitive;
 using System;
 using System.Linq;
@@ -21,8 +22,8 @@ public sealed class Commit :
     IEquatable<Commit>, IRepositoryReference
 {
     private readonly WeakReference rwr;
-    internal readonly string message;
     internal readonly ReadOnlyArray<Hash> parents;
+    internal readonly string message;
     internal readonly Hash treeRoot;
 
     private ReadOnlyArray<Branch>? branches;
@@ -60,24 +61,30 @@ public sealed class Commit :
     /// <summary>
     /// Gets the subject line of the commit message (first line).
     /// </summary>
+    /// <remarks>
+    /// The subject line is the first line of the commit message. It is nearly as git command `git log --format=%s`.
+    /// </remarks>
     public string Subject
     {
         get
         {
-            var index = this.message.IndexOf("\n\n");
-            return ((index >= 0) ? this.message.Substring(0, index) : this.message).Trim('\n').Replace('\n', ' ');
+            Utilities.CrackGitMessage(this.message, out var subject, out _);
+            return subject;
         }
     }
 
     /// <summary>
     /// Gets the body of the commit message (everything after the first blank line).
     /// </summary>
+    /// <remarks>
+    /// The body is the rest of the commit message after the first blank line. It is nearly as git command `git log --format=%b`.
+    /// </remarks>
     public string Body
     {
         get
         {
-            var index = this.message.IndexOf("\n\n");
-            return (index >= 0) ? this.message.Substring(index + 2) : string.Empty;
+            Utilities.CrackGitMessage(this.message, out _, out var body);
+            return body;
         }
     }
 

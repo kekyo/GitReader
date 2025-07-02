@@ -398,4 +398,79 @@ public sealed class RepositoryTests
 
         fileStream.Dispose();
     }
+
+    [Test]
+    public async Task GetMessage()
+    {
+        using var repository = await Repository.Factory.OpenStructureAsync(
+            RepositoryTestsSetUp.GetBasePath("test1"));
+
+        var commit = await repository.GetCommitAsync(
+            "1205dc34ce48bda28fc543daaf9525a9bb6e6d10");
+
+        Assert.That(commit, Is.Not.Null);
+        
+        var message = commit!.GetMessage();
+        
+        Assert.That(message, Does.StartWith("Merge branch 'devel'"));
+        Assert.That(message, Is.EqualTo(commit!.GetMessage()));
+    }
+
+    [Test]
+    public async Task Commit_MessageProperty()
+    {
+        using var repository = await Repository.Factory.OpenStructureAsync(
+            RepositoryTestsSetUp.GetBasePath("test1"));
+
+        var commit = await repository.GetCommitAsync(
+            "9bb78d13405cab568d3e213130f31beda1ce21d1");
+
+        Assert.That(commit, Is.Not.Null);
+        
+        Assert.That(commit!.GetMessage(), Does.StartWith("Added installation .NET 6 SDK on GitHub Actions."));
+        Assert.That(commit!.Subject, Is.EqualTo("Added installation .NET 6 SDK on GitHub Actions."));
+        Assert.That(commit!.Body, Is.Empty);
+    }
+
+    [Test]
+    public async Task Commit_SubjectAndBodySeparation()
+    {
+        using var repository = await Repository.Factory.OpenStructureAsync(
+            RepositoryTestsSetUp.GetBasePath("test1"));
+
+        var commit = await repository.GetCommitAsync(
+            "1205dc34ce48bda28fc543daaf9525a9bb6e6d10");
+
+        Assert.That(commit, Is.Not.Null);
+        
+        Assert.That(commit!.Subject, Is.EqualTo("Merge branch 'devel'"));
+        Assert.That(commit!.Body, Is.Empty);
+        Assert.That(commit!.GetMessage(), Does.StartWith("Merge branch 'devel'"));
+    }
+
+    [Test]
+    public async Task Commit_Deconstruct_WithMessageSubjectBody()
+    {
+        using var repository = await Repository.Factory.OpenStructureAsync(
+            RepositoryTestsSetUp.GetBasePath("test1"));
+
+        var commit = await repository.GetCommitAsync(
+            "1205dc34ce48bda28fc543daaf9525a9bb6e6d10");
+
+        Assert.That(commit, Is.Not.Null);
+        
+        // Test deconstruct with subject and body
+        commit!.Deconstruct(
+            out var hash,
+            out var author,
+            out var committer,
+            out var subject,
+            out var body);
+        
+        Assert.That(hash.ToString(), Is.EqualTo("1205dc34ce48bda28fc543daaf9525a9bb6e6d10"));
+        Assert.That(author.Name, Is.EqualTo("Kouji Matsui"));
+        Assert.That(committer.Name, Is.EqualTo("Kouji Matsui"));
+        Assert.That(subject, Is.EqualTo("Merge branch 'devel'"));
+        Assert.That(body, Is.Empty);
+    }
 }
