@@ -701,10 +701,26 @@ internal static class Utilities
         return string.Format(CultureInfo.InvariantCulture, "{0:yyyy-MM-dd HH:mm:ss} {1}", date, zone);
     }
 
+    public static string ToGitRawDateString(
+        DateTimeOffset date)
+    {
+        var zone = date.Offset.TotalSeconds >= 0 ?
+                string.Format(CultureInfo.InvariantCulture, "+{0:hhmm}", date.Offset) :
+                string.Format(CultureInfo.InvariantCulture, "-{0:hhmm}", date.Offset);
+        return $"{date.ToUnixTimeSeconds()} {zone}";
+    }
+
     public static string ToGitAuthorString(
         Signature signature) =>
         signature.MailAddress is { } mailAddress ?
             $"{signature.Name} <{mailAddress}>" : signature.Name;
+
+    public static void CrackGitMessage(string message, out string subject, out string body)
+    {
+        var index = message.IndexOf("\n\n", StringComparison.Ordinal);
+        subject = ((index >= 0) ? message.Substring(0, index) : message).Trim('\n').Replace('\n', ' ');
+        body = (index >= 0) ? message.Substring(index + 2) : string.Empty;
+    }
 
 #if NET45_OR_GREATER || NETSTANDARD || NETCOREAPP2_1_OR_GREATER
     public static async ValueTask<Hash> CalculateGitBlobHashAsync(

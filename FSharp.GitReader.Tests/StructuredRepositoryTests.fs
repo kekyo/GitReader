@@ -252,3 +252,26 @@ type public StructuredRepositoryTests() =
         Assert.That((results.[0] |> fun (_, _, r) -> r).Message, Is.Not.Empty)
         Assert.That(results |> Array.forall (fun (_, _, r) -> r.Commit.ToString().Length = 40), Is.True)
     }
+
+    [<Test>]
+    member _.GetMessage() = task {
+        use! repository = Repository.Factory.openStructured(
+            RepositoryTestsSetUp.getBasePath("test1"))
+        let! commit = repository.getCommit(
+            "1205dc34ce48bda28fc543daaf9525a9bb6e6d10") |> unwrapOptionAsy
+        
+        let message = commit.getMessage()
+        
+        Assert.That(message, Does.StartWith("Merge branch 'devel'"))
+    }
+
+    [<Test>]
+    member _.Commit_MessageProperty() = task {
+        use! repository = Repository.Factory.openStructured(
+            RepositoryTestsSetUp.getBasePath("test1"))
+        let! commit = repository.getCommit(
+            "9bb78d13405cab568d3e213130f31beda1ce21d1") |> unwrapOptionAsy
+        
+        Assert.That(commit.Subject, Is.EqualTo("Added installation .NET 6 SDK on GitHub Actions."))
+        Assert.That(commit.Body, Is.Empty)
+    }

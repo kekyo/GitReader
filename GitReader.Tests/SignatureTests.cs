@@ -182,4 +182,50 @@ public sealed class SignatureTests
         Assert.IsNull(sig.MailAddress);
         Assert.AreEqual(now, sig.Date);
     }
+
+    [Test]
+    public void ToGitRawDateString_PositiveOffset()
+    {
+        var date = new DateTimeOffset(2023, 7, 15, 14, 30, 45, TimeSpan.FromHours(9));
+        var rawString = date.ToGitRawDateString();
+        
+        // Use the actual computed Unix timestamp
+        var expectedUnixTime = date.ToUnixTimeSeconds();
+        Assert.AreEqual($"{expectedUnixTime} +0900", rawString);
+    }
+
+    [Test]
+    public void ToGitRawDateString_NegativeOffset()
+    {
+        var date = new DateTimeOffset(2023, 7, 15, 14, 30, 45, TimeSpan.FromHours(-5));
+        var rawString = date.ToGitRawDateString();
+        
+        // Use the actual computed Unix timestamp
+        var expectedUnixTime = date.ToUnixTimeSeconds();
+        Assert.AreEqual($"{expectedUnixTime} -0500", rawString);
+    }
+
+    [Test]
+    public void ToGitRawDateString_ZeroOffset()
+    {
+        var date = new DateTimeOffset(2023, 7, 15, 14, 30, 45, TimeSpan.Zero);
+        var rawString = date.ToGitRawDateString();
+        
+        // Use the actual computed Unix timestamp
+        var expectedUnixTime = date.ToUnixTimeSeconds();
+        Assert.AreEqual($"{expectedUnixTime} +0000", rawString);
+    }
+
+    [Test]
+    public void ToGitRawDateString_MatchesSignatureRawDate()
+    {
+        var now = Utilities.TruncateMilliseconds(DateTimeOffset.Now);
+        var signature = new Signature("Test User", "test@example.com", now);
+        
+        var extensionResult = now.ToGitRawDateString();
+        var signatureRaw = signature.RawFormat;
+        
+        // The signature raw string includes name and email, so we check if it ends with the date part
+        Assert.That(signatureRaw, Does.EndWith(extensionResult));
+    }
 }

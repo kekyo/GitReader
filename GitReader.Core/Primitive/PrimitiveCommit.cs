@@ -22,27 +22,27 @@ public readonly struct PrimitiveCommit : IEquatable<PrimitiveCommit>
     /// The hash of the commit.
     /// </summary>
     public readonly Hash Hash;
-    
+
     /// <summary>
     /// The hash of the tree root associated with this commit.
     /// </summary>
     public readonly Hash TreeRoot;
-    
+
     /// <summary>
     /// The author signature of the commit.
     /// </summary>
     public readonly Signature Author;
-    
+
     /// <summary>
     /// The committer signature of the commit.
     /// </summary>
     public readonly Signature Committer;
-    
+
     /// <summary>
     /// The hashes of the parent commits.
     /// </summary>
     public readonly ReadOnlyArray<Hash> Parents;
-    
+
     /// <summary>
     /// The commit message.
     /// </summary>

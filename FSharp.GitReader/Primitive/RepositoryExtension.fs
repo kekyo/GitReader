@@ -248,6 +248,22 @@ module public RepositoryExtension =
         member worktree.getBranch(?ct: CancellationToken) =
             WorktreeAccessor.GetWorktreeBranchAsync(worktree, unwrapCT ct).asAsync()
 
+    type PrimitiveCommit with
+        /// <summary>
+        /// Cracks the message of the specified commit into its subject and body.
+        /// </summary>
+        /// <returns>A tuple containing the subject and body of the commit message.</returns>
+        /// <remarks>
+        /// The subject line is the first line of the commit message. It is nearly as git command `git log --format=%s`.
+        /// The body is the rest of the commit message after the first blank line. It is nearly as git command `git log --format=%b`.
+        /// </remarks>
+        [<MethodImpl(MethodImplOptions.NoInlining)>]
+        member commit.crackMessage() =
+            let mutable subject: string = Unchecked.defaultof<string>
+            let mutable body: string = Unchecked.defaultof<string>
+            Utilities.CrackGitMessage(commit.Message, &subject, &body)
+            (subject, body)
+    
     /// <summary>
     /// Active pattern for deconstructing a PrimitiveRepository into its component parts.
     /// </summary>

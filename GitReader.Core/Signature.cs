@@ -74,7 +74,7 @@ public readonly struct Signature : IEquatable<Signature>
         this = Parse(signatureString);
 
     private string RawDate =>
-        $"{this.Date.ToUnixTimeSeconds()} {this.Date.Offset:hhmm}";
+        Utilities.ToGitRawDateString(this.Date);
 
     /// <summary>
     /// Gets the raw format representation of the signature as used in Git objects.

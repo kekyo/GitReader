@@ -138,7 +138,7 @@ module public RepositoryExtension =
         /// <summary>
         /// Gets the commit message.
         /// </summary>
-        /// <returns>The commit message.</returns>
+        /// <returns>The full commit message.</returns>
         [<MethodImpl(MethodImplOptions.NoInlining)>]
         member commit.getMessage() =
             commit.message

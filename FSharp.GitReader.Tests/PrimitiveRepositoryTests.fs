@@ -12,6 +12,7 @@ namespace GitReader.Primitive
 open GitReader
 open GitReader.Primitive
 open NUnit.Framework
+open System
 open System.Collections.Generic
 open System.IO
 open System.Text
@@ -311,3 +312,58 @@ type public PrimitiveRepositoryTests() =
             Assert.That(tagRef, Is.Not.Null, sprintf "Tag reference for '%s' should exist" tag.Name)
             Assert.That(tag.Hash, Is.EqualTo(commitHash), sprintf "Tag '%s' should point to the expected commit" tag.Name)
     }
+
+    [<Test>]
+    member _.CrackMessage_SimpleMessage() = task {
+        // Use existing test repository for F# test
+        use! repository = Repository.Factory.openPrimitive(
+            RepositoryTestsSetUp.getBasePath("test1"))
+        let! commit = repository.getCommit(
+            "9bb78d13405cab568d3e213130f31beda1ce21d1") |> unwrapOptionAsy
+        
+        let (subject, body) = commit.crackMessage()
+        
+        Assert.That(subject, Is.EqualTo("Added installation .NET 6 SDK on GitHub Actions."))
+        Assert.That(body, Is.Empty) // This commit has no body
+    }
+
+    [<Test>]
+    member _.CrackMessage_SingleLineMessage() = task {
+        // This test uses the existing test1 repository which has single-line commits
+        use! repository = Repository.Factory.openPrimitive(
+            RepositoryTestsSetUp.getBasePath("test1"))
+        let! commit = repository.getCommit(
+            "9bb78d13405cab568d3e213130f31beda1ce21d1") |> unwrapOptionAsy
+        
+        let (subject, body) = commit.crackMessage()
+        
+        Assert.That(subject, Is.EqualTo("Added installation .NET 6 SDK on GitHub Actions."))
+        Assert.That(body, Is.Empty)
+    }
+
+    [<Test>]
+    member _.ToGitRawDateString_PositiveOffset() =
+        let date = DateTimeOffset(2023, 7, 15, 14, 30, 45, TimeSpan.FromHours(9.0))
+        let rawString = date.toGitRawDateString()
+        
+        // Use the actual computed Unix timestamp
+        let expectedUnixTime = date.ToUnixTimeSeconds()
+        Assert.That(rawString, Is.EqualTo($"{expectedUnixTime} +0900"))
+
+    [<Test>]
+    member _.ToGitRawDateString_NegativeOffset() =
+        let date = DateTimeOffset(2023, 7, 15, 14, 30, 45, TimeSpan.FromHours(-5.0))
+        let rawString = date.toGitRawDateString()
+        
+        // Use the actual computed Unix timestamp
+        let expectedUnixTime = date.ToUnixTimeSeconds()
+        Assert.That(rawString, Is.EqualTo($"{expectedUnixTime} -0500"))
+
+    [<Test>]
+    member _.ToGitRawDateString_ZeroOffset() =
+        let date = DateTimeOffset(2023, 7, 15, 14, 30, 45, TimeSpan.Zero)
+        let rawString = date.toGitRawDateString()
+        
+        // Use the actual computed Unix timestamp
+        let expectedUnixTime = date.ToUnixTimeSeconds()
+        Assert.That(rawString, Is.EqualTo($"{expectedUnixTime} +0000"))

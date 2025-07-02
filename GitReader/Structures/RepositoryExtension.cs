@@ -302,6 +302,10 @@ public static class RepositoryExtension
     /// <param name="committer">The committer signature.</param>
     /// <param name="subject">The commit subject (first line of the message).</param>
     /// <param name="body">The commit body (remaining lines of the message).</param>
+    /// <remarks>
+    /// The subject line is the first line of the commit message. It is nearly as git command `git log --format=%s`.
+    /// The body is the rest of the commit message after the first blank line. It is nearly as git command `git log --format=%b`.
+    /// </remarks>
     public static void Deconstruct(
         this Commit commit,
         out Hash hash,
@@ -338,6 +342,14 @@ public static class RepositoryExtension
         message = commit.message;
     }
 
+    /// <summary>
+    /// Deconstructs a Tag into its component parts.
+    /// </summary>
+    /// <param name="tag">The tag to deconstruct.</param>
+    /// <param name="tagHash">The tag hash.</param>
+    /// <param name="type">The type of the tag.</param>
+    /// <param name="objectHash">The hash of the object the tag points to.</param>
+    /// <param name="name">The name of the tag.</param>
     public static void Deconstruct(
         this Tag tag,
         out Hash? tagHash,
@@ -351,6 +363,12 @@ public static class RepositoryExtension
         name = tag.Name;
     }
 
+    /// <summary>
+    /// Deconstructs an Annotation into its component parts.
+    /// </summary>
+    /// <param name="annotation">The annotation to deconstruct.</param>
+    /// <param name="tagger">The tagger signature.</param>
+    /// <param name="message">The annotation message.</param>
     public static void Deconstruct(
         this Annotation annotation,
         out Signature? tagger,
@@ -360,6 +378,14 @@ public static class RepositoryExtension
         message = annotation.Message;
     }
 
+    /// <summary>
+    /// Deconstructs a WorkingDirectoryFile into its component parts.
+    /// </summary>
+    /// <param name="file">The working directory file to deconstruct.</param>
+    /// <param name="path">The path of the file.</param>
+    /// <param name="status">The status of the file.</param>
+    /// <param name="indexHash">The hash of the file in the index.</param>
+    /// <param name="workingTreeHash">The hash of the file in the working tree.</param>
     public static void Deconstruct(
         this WorkingDirectoryFile file,
         out string path,
@@ -373,6 +399,13 @@ public static class RepositoryExtension
         workingTreeHash = file.WorkingTreeHash;
     }
 
+    /// <summary>
+    /// Deconstructs a WorkingDirectoryStatus into its component parts.
+    /// </summary>
+    /// <param name="status">The working directory status to deconstruct.</param>
+    /// <param name="stagedFiles">The staged files.</param>
+    /// <param name="unstagedFiles">The unstaged files.</param>
+    /// <param name="untrackedFiles">The untracked files.</param>
     public static void Deconstruct(
         this WorkingDirectoryStatus status,
         out ReadOnlyArray<WorkingDirectoryFile> stagedFiles,
@@ -384,6 +417,15 @@ public static class RepositoryExtension
         untrackedFiles = status.UntrackedFiles;
     }
 
+    /// <summary>
+    /// Deconstructs a Worktree into its component parts.
+    /// </summary>
+    /// <param name="worktree">The worktree to deconstruct.</param>
+    /// <param name="name">The name of the worktree.</param>
+    /// <param name="path">The path of the worktree.</param>
+    /// <param name="head">The head commit hash of the worktree.</param>
+    /// <param name="branch">The branch of the worktree.</param>
+    /// <param name="status">The status of the worktree.</param>
     public static void Deconstruct(
         this Worktree worktree,
         out string name,

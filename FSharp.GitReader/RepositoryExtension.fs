@@ -38,6 +38,14 @@ module public RepositoryExtension =
         member date.toGitIsoDateString() =
             Utilities.ToGitIsoDateString(date)
 
+        /// <summary>
+        /// Converts a DateTimeOffset to Git's raw date string format.
+        /// </summary>
+        /// <returns>A string representation of the date in raw format.</returns>
+        [<MethodImpl(MethodImplOptions.NoInlining)>]
+        member date.toGitRawDateString() =
+            Utilities.ToGitRawDateString(date)
+
     type Signature with
         /// <summary>
         /// Converts a Signature to Git's author string format.
