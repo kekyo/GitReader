@@ -785,6 +785,9 @@ Note: The `Glob` class assumes the path format to be POSIX path format. This mea
 Apache-v2
 
 ## History
+
+* 1.16.0:
+  * Added primitive message cracker and minor functions.
 * 1.15.0:
   * Added lookup for commit-related branches/tags on primitive interface.
 * 1.14.0:
