@@ -786,6 +786,9 @@ Apache-v2
 
 ## History
 
+* 1.17.0:
+  * Added .NET 10 assemblies.
+  * Support non-standard pack index prefixes.
 * 1.16.0:
   * Added primitive message cracker and minor functions.
 * 1.15.0:
