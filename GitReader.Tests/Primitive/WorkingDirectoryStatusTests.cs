@@ -21,6 +21,76 @@ namespace GitReader.Primitive;
 public sealed class WorkingDirectoryStatusTests
 {
     [Test]
+    public async Task GetWorkingDirectoryStatusWithNonPackPrefixedPackIndex()
+    {
+        var testPath = Path.GetFullPath(Path.Combine(Path.GetTempPath(), $"GitReader_WorkingDirTest_{System.Guid.NewGuid():N}"));
+
+        if (Directory.Exists(testPath))
+        {
+            Directory.Delete(testPath, true);
+        }
+
+        try
+        {
+            Directory.CreateDirectory(testPath);
+
+            await TestUtilities.RunGitCommandAsync(testPath, "init");
+            await TestUtilities.RunGitCommandAsync(testPath, "config user.email \"test@example.com\"");
+            await TestUtilities.RunGitCommandAsync(testPath, "config user.name \"Test User\"");
+
+            Directory.CreateDirectory(Path.Combine(testPath, "nested"));
+            await TestUtilities.WriteAllTextAsync(Path.Combine(testPath, "README.md"), "# Test Repository");
+            await TestUtilities.WriteAllTextAsync(Path.Combine(testPath, "nested", "file.txt"), "Nested content");
+            await TestUtilities.RunGitCommandAsync(testPath, "add .");
+            await TestUtilities.RunGitCommandAsync(testPath, "commit -m \"Initial commit\"");
+
+            var commitBody = await TestUtilities.RunGitCommandWithOutputAsync(testPath, "cat-file commit HEAD");
+
+            await TestUtilities.RunGitCommandAsync(testPath, "repack -Ad");
+            await TestUtilities.RunGitCommandAsync(testPath, "prune-packed");
+
+            var gitPath = Path.Combine(testPath, ".git");
+            var packPath = Path.Combine(gitPath, "objects", "pack");
+            var packFiles = Directory.GetFiles(packPath, "pack-*.*");
+            Assert.IsTrue(packFiles.Any(path => Path.GetExtension(path) == ".idx"), "The test repository should have a pack index.");
+
+            var holdingPath = Path.Combine(testPath, "pack-hold");
+            Directory.CreateDirectory(holdingPath);
+            foreach (var packFile in packFiles)
+            {
+                var fileName = Path.GetFileName(packFile);
+                File.Move(packFile, Path.Combine(holdingPath, "loose-" + fileName.Substring("pack-".Length)));
+            }
+
+            var commitObjectPath = Path.Combine(gitPath, "gitreader-test-commit.txt");
+            await TestUtilities.WriteAllTextAsync(commitObjectPath, commitBody);
+            await TestUtilities.RunGitCommandAsync(testPath, "hash-object -t commit -w .git/gitreader-test-commit.txt");
+            File.Delete(commitObjectPath);
+
+            foreach (var heldPackFile in Directory.GetFiles(holdingPath, "loose-*.*"))
+            {
+                File.Move(heldPackFile, Path.Combine(packPath, Path.GetFileName(heldPackFile)));
+            }
+
+            using var repository = await Repository.Factory.OpenPrimitiveAsync(testPath);
+
+            var status = await repository.GetWorkingDirectoryStatusAsync();
+
+            Assert.AreEqual(0, status.StagedFiles.Count, "Clean repository should have no staged files");
+            Assert.AreEqual(0, status.UnstagedFiles.Count, "Clean repository should have no unstaged files");
+            var untrackedFiles = await repository.GetUntrackedFilesAsync(status);
+            Assert.AreEqual(0, untrackedFiles.Count, "Clean repository should have no untracked files");
+        }
+        finally
+        {
+            if (Directory.Exists(testPath))
+            {
+                Directory.Delete(testPath, true);
+            }
+        }
+    }
+
+    [Test]
     public async Task GetWorkingDirectoryStatusEmptyRepository()
     {
         // Use a path outside the project directory to avoid parent directory search
