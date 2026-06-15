@@ -26,7 +26,10 @@ internal static class TestUtilities
 #endif
     }
     
-    public static async Task RunGitCommandAsync(string workingDirectory, string arguments)
+    public static Task RunGitCommandAsync(string workingDirectory, string arguments) =>
+        RunGitCommandWithOutputAsync(workingDirectory, arguments);
+
+    public static async Task<string> RunGitCommandWithOutputAsync(string workingDirectory, string arguments)
     {
         var startInfo = new ProcessStartInfo
         {
@@ -41,16 +44,21 @@ internal static class TestUtilities
 
         using var process = new Process { StartInfo = startInfo };
         process.Start();
+        var outputTask = process.StandardOutput.ReadToEndAsync();
+        var errorTask = process.StandardError.ReadToEndAsync();
 #if NETFRAMEWORK
         await Task.Run(() => process.WaitForExit());
 #else
         await process.WaitForExitAsync();
 #endif
+        var output = await outputTask;
+        var error = await errorTask;
 
         if (process.ExitCode != 0)
         {
-            var error = await process.StandardError.ReadToEndAsync();
             throw new InvalidOperationException($"Git command failed: git {arguments}\nError: {error}");
         }
+
+        return output;
     }
 }
