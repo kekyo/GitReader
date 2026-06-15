@@ -618,7 +618,8 @@ internal sealed class ObjectAccessor : IDisposable
         Hash hash, bool disableCaching, CancellationToken ct)
 #endif
     {
-        var files = await this.fileSystem.GetFilesAsync(this.packedBasePath, "pack-*.idx", ct);
+        // Git can use any matching pack/index basename, not only the default pack-* prefix.
+        var files = await this.fileSystem.GetFilesAsync(this.packedBasePath, "*.idx", ct);
         var entries = await this.concurrentScope.WhenAll(ct,
             files.Select(indexFilePath =>
                 this.GetOrCacheIndexEntryAsync(indexFilePath.Substring(this.packedBasePath.Length + 1), ct)));
