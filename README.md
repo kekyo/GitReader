@@ -68,7 +68,7 @@ It primarily fits the purpose of easily extracting commit information from a Git
 
 ### Target .NET platforms
 
-* .NET 9.0 to 5.0
+* .NET 10.0 to 5.0
 * .NET Core 3.1 to 2.0
 * .NET Standard 2.1 to 1.6
 * .NET Framework 4.8.1 to 3.5
@@ -78,7 +78,7 @@ It primarily fits the purpose of easily extracting commit information from a Git
 F# 5.0 or upper, it contains F# friendly signature definition.
 (Asynchronous operations with `Async` type, elimination of null values with `Option`, etc.)
 
-* .NET 9.0 to 5.0
+* .NET 10.0 to 5.0
 * .NET Core 3.1 to 2.0
 * .NET Standard 2.1, 2.0
 * .NET Framework 4.8.1 to 4.6.1
@@ -786,6 +786,8 @@ Apache-v2
 
 ## History
 
+* 1.18.0:
+  * Fixed dirty file detection when using submodules.
 * 1.17.0:
   * Added .NET 10 assemblies.
   * Support non-standard pack index prefixes.

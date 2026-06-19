@@ -69,7 +69,7 @@ if (repository.Head is { } head)
 
 ### 対応する.NETプラットフォーム
 
-* .NET 9.0 to 5.0
+* .NET 10.0 to 5.0
 * .NET Core 3.1 to 2.0
 * .NET Standard 2.1 to 1.6
 * .NET Framework 4.8.1 to 3.5
@@ -79,7 +79,7 @@ if (repository.Head is { } head)
 F# 5.0以上が対象で、F#フレンドリーなシグネチャ定義が含まれています。
 (`Async`型による非同期操作、`Option`によるnull値排除など)
 
-* .NET 9.0 to 5.0
+* .NET 10.0 to 5.0
 * .NET Core 3.1 to 2.0
 * .NET Standard 2.1, 2.0
 * .NET Framework 4.8.1 to 4.6.1

@@ -252,6 +252,55 @@ public sealed class WorkingDirectoryStatusTests
     }
 
     [Test]
+    public async Task GetWorkingDirectoryStatusWithCleanSubmodule()
+    {
+        var testPath = Path.GetFullPath(Path.Combine(Path.GetTempPath(), $"GitReader_WorkingDirTest_{System.Guid.NewGuid():N}"));
+        var childPath = Path.GetFullPath(Path.Combine(Path.GetTempPath(), $"GitReader_SubmoduleChild_{System.Guid.NewGuid():N}"));
+
+        try
+        {
+            Directory.CreateDirectory(testPath);
+            Directory.CreateDirectory(childPath);
+
+            await TestUtilities.RunGitCommandAsync(childPath, "init");
+            await TestUtilities.RunGitCommandAsync(childPath, "config user.email \"test@example.com\"");
+            await TestUtilities.RunGitCommandAsync(childPath, "config user.name \"Test User\"");
+            await TestUtilities.WriteAllTextAsync(Path.Combine(childPath, "child.txt"), "Child content");
+            await TestUtilities.RunGitCommandAsync(childPath, "add child.txt");
+            await TestUtilities.RunGitCommandAsync(childPath, "commit -m \"Initial child commit\"");
+
+            await TestUtilities.RunGitCommandAsync(testPath, "init");
+            await TestUtilities.RunGitCommandAsync(testPath, "config user.email \"test@example.com\"");
+            await TestUtilities.RunGitCommandAsync(testPath, "config user.name \"Test User\"");
+            await TestUtilities.WriteAllTextAsync(Path.Combine(testPath, "README.md"), "# Test Repository");
+            await TestUtilities.RunGitCommandAsync(testPath, "add README.md");
+            await TestUtilities.RunGitCommandAsync(testPath, "commit -m \"Initial commit\"");
+            await TestUtilities.RunGitCommandAsync(testPath, $"-c protocol.file.allow=always submodule add {childPath.Replace("\\", "/")} deps/child");
+            await TestUtilities.RunGitCommandAsync(testPath, "commit -m \"Add submodule\"");
+
+            using var repository = await Repository.Factory.OpenPrimitiveAsync(testPath);
+
+            var status = await repository.GetWorkingDirectoryStatusAsync();
+
+            Assert.AreEqual(0, status.StagedFiles.Count, "Clean submodule should not produce staged files");
+            Assert.AreEqual(0, status.UnstagedFiles.Count, "Clean submodule should not produce unstaged files");
+            var untrackedFiles = await repository.GetUntrackedFilesAsync(status);
+            Assert.AreEqual(0, untrackedFiles.Count, "Clean submodule should not produce untracked files");
+        }
+        finally
+        {
+            if (Directory.Exists(testPath))
+            {
+                Directory.Delete(testPath, true);
+            }
+            if (Directory.Exists(childPath))
+            {
+                Directory.Delete(childPath, true);
+            }
+        }
+    }
+
+    [Test]
     public async Task GetWorkingDirectoryStatusWithStagedFiles()
     {
         // Use a path outside the project directory to avoid parent directory search

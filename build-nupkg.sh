@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 
 # GitReader
 # Copyright (c) Kouji Matsui (@kozy_kekyo, @kekyo@mi.kekyo.net)
