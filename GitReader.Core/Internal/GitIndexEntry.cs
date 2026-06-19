@@ -63,6 +63,8 @@ internal readonly struct GitIndexEntry
 
     public bool IsValidFlag => (this.Flags & 0x8000) == 0;
 
+    public bool IsSubModule => (this.Mode & 0xf000) == 0xe000;
+
     public override string ToString() =>
         $"{this.Path}: {this.ObjectHash}";
 }

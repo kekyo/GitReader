@@ -411,15 +411,56 @@ internal static class PrimitiveRepositoryFacade
                 var unstagedFile = (PrimitiveWorkingDirectoryFile?)null;
                 var processedPath = indexEntry.Path;
                 var workingFilePath = repository.fileSystem.Combine(workingDirectoryPath, indexEntry.Path);
-                
+                var isInHeadCommit = headTreeFiles.TryGetValue(indexEntry.Path, out var headFileHash);
+
+                if (indexEntry.IsSubModule)
+                {
+                    var subModulePathExists =
+                        await repository.fileSystem.IsDirectoryExistsAsync(workingFilePath, ct) ||
+                        await repository.fileSystem.IsFileExistsAsync(workingFilePath, ct);
+
+                    if (subModulePathExists)
+                    {
+                        if (!isInHeadCommit || !indexEntry.ObjectHash.Equals(headFileHash))
+                        {
+                            stagedFile = new PrimitiveWorkingDirectoryFile(
+                                indexEntry.Path,
+                                isInHeadCommit ? FileStatus.Modified : FileStatus.Added,
+                                isInHeadCommit ? (Hash?)headFileHash : null,
+                                indexEntry.ObjectHash);
+                        }
+                    }
+                    else if (isInHeadCommit && indexEntry.ObjectHash.Equals(headFileHash))
+                    {
+                        unstagedFile = new PrimitiveWorkingDirectoryFile(
+                            indexEntry.Path,
+                            FileStatus.Deleted,
+                            indexEntry.ObjectHash,
+                            null);
+                    }
+                    else
+                    {
+                        stagedFile = new PrimitiveWorkingDirectoryFile(
+                            indexEntry.Path,
+                            isInHeadCommit ? FileStatus.Modified : FileStatus.Added,
+                            isInHeadCommit ? (Hash?)headFileHash : null,
+                            indexEntry.ObjectHash);
+
+                        unstagedFile = new PrimitiveWorkingDirectoryFile(
+                            indexEntry.Path,
+                            FileStatus.Deleted,
+                            indexEntry.ObjectHash,
+                            null);
+                    }
+
+                    return new Status(stagedFile, unstagedFile, processedPath);
+                }
+
                 if (await repository.fileSystem.IsFileExistsAsync(workingFilePath, ct))
                 {
                     // File exists in working directory
                     var workingHash = await WorkingDirectoryAccessor.CalculateFileHashAsync(
                         repository, workingFilePath, ct);
-                    
-                    // Check if this file exists in HEAD commit
-                    var isInHeadCommit = headTreeFiles.TryGetValue(indexEntry.Path, out var headFileHash);
                     
                     if (workingHash.Equals(indexEntry.ObjectHash))
                     {
@@ -470,8 +511,6 @@ internal static class PrimitiveRepositoryFacade
                 else
                 {
                     // File is in index but missing from working directory
-                    var isInHeadCommit = headTreeFiles.TryGetValue(indexEntry.Path, out var headFileHash);
-                    
                     if (isInHeadCommit && indexEntry.ObjectHash.Equals(headFileHash))
                     {
                         // File was committed and is now deleted from working directory

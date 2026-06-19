@@ -150,6 +150,11 @@ internal static class WorkingDirectoryAccessor
                 // When entry is a directory
                 if (await context.Repository.fileSystem.IsDirectoryExistsAsync(entry, context.CancellationToken))
                 {
+                    if (context.ProcessedPaths.Contains(relativePath))
+                    {
+                        return;
+                    }
+
                     // Recursively scan subdirectories with the current candidate filter
                     await ExtractUntrackedFilesRecursiveAsync(
                         context, entry, candidateGlobFilter);
@@ -287,4 +292,4 @@ internal static class WorkingDirectoryAccessor
         using var fs = await repository.fileSystem.OpenAsync(filePath, false, ct);
         return await Utilities.CalculateGitBlobHashAsync(fs, fs.Length, repository.pool, ct);
     }
-} 
+}
